@@ -4,7 +4,7 @@ CFLAGS  += -std=c99 -D_POSIX_C_SOURCE=200112L
 CFLAGS  += $(shell pkg-config --cflags openssl)
 LDFLAGS += $(shell pkg-config --libs openssl)
 
-.PHONY: all clean
+.PHONY: all doc clean
 all: build/nb
 
 -include build/dependencies.makefile
@@ -18,5 +18,8 @@ build/nb: $(patsubst src/%.c,build/%.o,$(wildcard src/*.c))
 build/%.o:
 	$(CC) $(CFLAGS) -c $< -o $@
 
+doc:
+	doxygen
+
 clean:
-	- rm -rf build/
+	- rm -rf build/ doc/
