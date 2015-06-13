@@ -28,6 +28,7 @@
 
 #include "safe-wrappers.h"
 
+#include <stdint.h>
 #include <stdlib.h>
 
 #include "error-handling.h"
@@ -91,6 +92,40 @@ void *sRealloc(void *ptr, size_t size)
   }
 
   return data;
+}
+
+/** Adds two sizes and terminates the program on overflows.
+
+  @param a The first summand.
+  @param b The second summand.
+
+  @return The sum of a and b.
+*/
+size_t sSizeAdd(size_t a, size_t b)
+{
+  if(a > SIZE_MAX - b)
+  {
+    die("overflow calculating object size");
+  }
+
+  return a + b;
+}
+
+/** Multiplies two sizes and terminates the program on overflows.
+
+  @param a The first factor.
+  @param b The second factor.
+
+  @return The product of a and b.
+*/
+size_t sSizeMul(size_t a, size_t b)
+{
+  if(b != 0 && a > SIZE_MAX/b)
+  {
+    die("overflow calculating object size");
+  }
+
+  return a * b;
 }
 
 /** A failsafe wrapper around stat().

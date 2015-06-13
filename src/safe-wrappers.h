@@ -35,6 +35,9 @@
 extern void *sMalloc(size_t size);
 extern void *sRealloc(void *ptr, size_t size);
 
+extern size_t sSizeAdd(size_t a, size_t b);
+extern size_t sSizeMul(size_t a, size_t b);
+
 extern struct stat sStat(const char *path);
 extern struct stat sLStat(const char *path);
 
