@@ -33,6 +33,8 @@
 #include <sys/stat.h>
 
 extern void *sMalloc(size_t size);
+extern void *sRealloc(void *ptr, size_t size);
+
 extern struct stat sStat(const char *path);
 extern struct stat sLStat(const char *path);
 

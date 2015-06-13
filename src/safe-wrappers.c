@@ -65,7 +65,29 @@ void *sMalloc(size_t size)
   void *data = malloc(size);
   if(!data)
   {
-    die("out of mem: failed to allocate %zu bytes", size);
+    die("out of memory: failed to allocate %zu bytes", size);
+  }
+
+  return data;
+}
+
+/** A failsafe wrapper around realloc().
+
+  @param ptr The pointer to the data, which should be reallocated. The data
+  may be moved, so the caller shouldn't use this pointer anymore once this
+  function returns.
+  @param size A value larger than 0. Standard realloc() handles 0 by
+  returning NULL, but this wrapper will terminate the program instead.
+
+  @return A pointer to the reallocated memory. Must be freed by the caller
+  using free().
+*/
+void *sRealloc(void *ptr, size_t size)
+{
+  void *data = realloc(ptr, size);
+  if(!data)
+  {
+    die("out of memory: failed to reallocate %zu bytes", size);
   }
 
   return data;
