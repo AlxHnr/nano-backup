@@ -133,7 +133,7 @@ size_t sSizeMul(size_t a, size_t b)
   @param path The path to the file, which should be opened for reading.
 
   @return A file stream that can be used for reading. Must be closed by the
-  caller using fclose().
+  caller.
 */
 FILE *sFopenRead(const char *path)
 {
@@ -151,7 +151,7 @@ FILE *sFopenRead(const char *path)
   @param path The path to the file, which should be opened for writing.
 
   @return A file stream that can be used for writing. Must be closed by the
-  caller using fclose().
+  caller.
 */
 FILE *sFopenWrite(const char *path)
 {
@@ -243,7 +243,7 @@ FileContent sReadFile(const char *path)
   FILE *stream = sFopenRead(path);
   void *data = sMalloc(file_stats.st_size);
   sFread(data, file_stats.st_size, stream, path);
-  fclose(stream);
+  sFclose(stream, path);
 
   return (FileContent){ .data = data, .size = file_stats.st_size };
 }
