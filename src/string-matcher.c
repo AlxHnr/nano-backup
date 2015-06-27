@@ -32,7 +32,6 @@
 #include "memory-pool.h"
 #include "safe-wrappers.h"
 
-/** Contains informations for string matching. */
 struct StringMatcher
 {
   /** The expression as a string. It will be used for matching if is_regex
@@ -53,7 +52,7 @@ struct StringMatcher
 
   /** True, if the expression actually matched an existing file during
     its lifetime. */
-  bool matched;
+  bool has_matched;
 };
 
 /** All StringMatcher are allocated inside the programs memory pool and
@@ -82,7 +81,31 @@ StringMatcher *strmatchString(String expression, size_t line_nr)
   matcher->expression = expression;
   matcher->is_regex = false;
   matcher->line_nr = line_nr;
-  matcher->matched = false;
+  matcher->has_matched = false;
 
   return matcher;
+}
+
+/** Returns true, if the given StringMatcher has successfully matched a
+  string in its lifetime. */
+bool strmatchHasMatched(StringMatcher *matcher)
+{
+  return matcher->has_matched;
+}
+
+/** Returns The number of the line, on which the match was defined in the
+  config file. */
+size_t strmatchLineNr(StringMatcher *matcher)
+{
+  return matcher->line_nr;
+}
+
+/** Returns the matching expression of the given StringMatcher as a String.
+
+  @return A String, which should not be freed by the caller. This string is
+  not owned by the matcher.
+*/
+String strmatchGetExpression(StringMatcher *matcher)
+{
+  return matcher->expression;
 }

@@ -33,6 +33,7 @@
 
 #include "string-utils.h"
 
+/** An opaque struct which contains informations for string matching. */
 typedef struct StringMatcher StringMatcher;
 
 extern StringMatcher *strmatchString(String expression, size_t line_nr);
@@ -41,6 +42,6 @@ extern StringMatcher *strmatchRegex(String expression, size_t line_nr);
 extern bool strmatch(StringMatcher *matcher, const char *string);
 extern bool strmatchHasMatched(StringMatcher *matcher);
 extern size_t strmatchLineNr(StringMatcher *matcher);
-extern String strmatchGetString(void);
+extern String strmatchGetExpression(StringMatcher *matcher);
 
 #endif
