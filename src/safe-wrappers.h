@@ -29,7 +29,7 @@
 #ifndef _NANO_BACKUP_SAFE_WRAPPERS_H_
 #define _NANO_BACKUP_SAFE_WRAPPERS_H_
 
-#include <stddef.h>
+#include <stdio.h>
 #include <sys/stat.h>
 
 extern void *sMalloc(size_t size);
@@ -38,6 +38,8 @@ extern void *sRealloc(void *ptr, size_t size);
 extern size_t sSizeAdd(size_t a, size_t b);
 extern size_t sSizeMul(size_t a, size_t b);
 
+extern FILE *sFopenRead(const char *path);
+extern FILE *sFopenWrite(const char *path);
 extern struct stat sStat(const char *path);
 extern struct stat sLStat(const char *path);
 

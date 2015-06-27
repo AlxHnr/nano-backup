@@ -128,6 +128,42 @@ size_t sSizeMul(size_t a, size_t b)
   return a * b;
 }
 
+/** Safe wrapper around fopen().
+
+  @param path The path to the file, which should be opened for reading.
+
+  @return A file stream that can be used for reading. Must be closed by the
+  caller using fclose().
+*/
+FILE *sFopenRead(const char *path)
+{
+  FILE *file = fopen(path, "rb");
+  if(!file)
+  {
+    dieErrno("failed to open \"%s\" for reading", path);
+  }
+
+  return file;
+}
+
+/** Safe wrapper around fopen().
+
+  @param path The path to the file, which should be opened for writing.
+
+  @return A file stream that can be used for writing. Must be closed by the
+  caller using fclose().
+*/
+FILE *sFopenWrite(const char *path)
+{
+  FILE *file = fopen(path, "wb");
+  if(!file)
+  {
+    dieErrno("failed to open \"%s\" for writing", path);
+  }
+
+  return file;
+}
+
 /** A failsafe wrapper around stat().
 
   @param path A filepath.
