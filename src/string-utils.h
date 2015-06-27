@@ -39,6 +39,7 @@ typedef struct
 }String;
 
 extern String str(const char *string);
+extern String strCopy(String string);
 extern String strAppendPath(String path, String filename);
 
 #endif

@@ -44,6 +44,23 @@ String str(const char *string)
   return (String){ .str = string, .length = strlen(string) };
 }
 
+/** Copies the content of a String. It uses the internal memory pool for
+  allocations, so use this function only for strings which live as long as
+  the entire program.
+
+  @param string A String, which data should be copied.
+
+  @return A String, which content should not be freed by the caller.
+*/
+String strCopy(String string)
+{
+  char *new_string = mpAlloc(sSizeAdd(string.length, 1));
+  memcpy(new_string, string.str, string.length);
+  new_string[string.length] = '\0';
+
+  return (String){ .str = new_string, .length = string.length };
+}
+
 /** Appends two paths and inserts a slash in between. It uses the internal
   memory pool for allocations, so use this function only for strings which
   live as long as the entire program.
