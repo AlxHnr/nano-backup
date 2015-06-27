@@ -22,7 +22,7 @@
 */
 
 /**
-  @file string-utils.h Defines various helper functions for manipulating
+  @file string-utils.h Declares various helper functions for manipulating
   strings.
 */
 
