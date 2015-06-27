@@ -211,3 +211,26 @@ struct stat sLStat(const char *path)
 {
   return safeStat(path, lstat);
 }
+
+/** Reads an entire file into memory.
+
+  @param path The path to the file.
+
+  @return A FileContent struct, which data member must be freed by the
+  caller using free().
+*/
+FileContent sReadFile(const char *path)
+{
+  struct stat file_stats = sStat(path);
+  if(!S_ISREG(file_stats.st_mode))
+  {
+    die("\"%s\" is not a regular file", path);
+  }
+
+  FILE *stream = sFopenRead(path);
+  void *data = sMalloc(file_stats.st_size);
+  sFread(data, file_stats.st_size, stream, path);
+  fclose(stream);
+
+  return (FileContent){ .data = data, .size = file_stats.st_size };
+}
