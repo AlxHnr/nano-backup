@@ -164,6 +164,32 @@ FILE *sFopenWrite(const char *path)
   return file;
 }
 
+/** Safe wrapper around fread(). This function will terminate the program
+  on failure. If the given size is larger than the remaining bytes in the
+  file stream, it will also terminate the program.
+
+  @param ptr The location for the data that should be read.
+  @param size The amount of bytes to read.
+  @param stream A file stream.
+  @param path The path to the file corresponding to the given stream.
+  Needed for printing useful error messages.
+*/
+void sFread(void *ptr, size_t size, FILE *stream, const char *path)
+{
+  size_t bytes_read = fread(ptr, 1, size, stream);
+  if(bytes_read != size)
+  {
+    if(feof(stream))
+    {
+      die("reading \"%s\": reached end of file unexpectedly", path);
+    }
+    else
+    {
+      die("IO error while reading \"%s\"", path);
+    }
+  }
+}
+
 /** A failsafe wrapper around stat().
 
   @param path A filepath.
