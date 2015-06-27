@@ -40,6 +40,8 @@ extern size_t sSizeMul(size_t a, size_t b);
 
 extern FILE *sFopenRead(const char *path);
 extern FILE *sFopenWrite(const char *path);
+extern void sFclose(FILE *stream, const char *path);
+
 extern void sFread(void *ptr, size_t size, FILE *stream, const char *path);
 
 extern struct stat sStat(const char *path);
