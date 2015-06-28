@@ -104,10 +104,9 @@ StringMatcher *strmatchString(String expression, size_t line_nr)
 }
 
 /** This function is almost identical to strmatchString(), but with the
-  difference that it treats the given expression as a regular expression
-  and will compile it. The given expression must use valid POSIX extended
-  regular expression syntax. Otherwise the program will be terminated with
-  an error message.
+  difference that it treats the given string as a regex pattern and will
+  compile it. The given string must use valid POSIX extended regex syntax,
+  otherwise the program will be terminated with an error message.
 */
 StringMatcher *strmatchRegex(String expression, size_t line_nr)
 {
