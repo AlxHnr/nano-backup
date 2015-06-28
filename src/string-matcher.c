@@ -151,6 +151,26 @@ StringMatcher *strmatchRegex(String expression, size_t line_nr)
   return matcher;
 }
 
+/** Returns true, if the given matcher matches the specified string.
+
+  @param matcher A valid StringMatcher.
+  @param string A null terminated string.
+
+  @return True or false.
+*/
+bool strmatch(StringMatcher *matcher, const char *string)
+{
+  if(matcher->is_regex)
+  {
+    return 0 == regexec(matcher->pattern, string, 0, NULL, 0);
+  }
+  else
+  {
+    return 0 == strncmp(string, matcher->expression.str,
+                        matcher->expression.length);
+  }
+}
+
 /** Returns true, if the given StringMatcher has successfully matched a
   string in its lifetime. */
 bool strmatchHasMatched(StringMatcher *matcher)
