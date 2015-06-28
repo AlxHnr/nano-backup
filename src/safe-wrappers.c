@@ -242,7 +242,7 @@ struct stat sLStat(const char *path)
   @return A FileContent struct, which data member must be freed by the
   caller using free().
 */
-FileContent sReadFile(const char *path)
+FileContent sGetFilesContent(const char *path)
 {
   struct stat file_stats = sStat(path);
   if(!S_ISREG(file_stats.st_mode))
