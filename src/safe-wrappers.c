@@ -55,14 +55,19 @@ static struct stat safeStat(const char *path,
 
 /** A failsafe wrapper around malloc().
 
-  @param size A value larger than 0. Standard malloc() handles 0 by
-  returning NULL, but this wrapper will terminate the program instead.
+  @param size A value larger than 0. Otherwise the program will be
+  terminated.
 
   @return A pointer to the allocated memory. Must be freed by the caller
   using free().
 */
 void *sMalloc(size_t size)
 {
+  if(size == 0)
+  {
+    die("unable to allocate 0 bytes");
+  }
+
   void *data = malloc(size);
   if(!data)
   {
@@ -77,14 +82,19 @@ void *sMalloc(size_t size)
   @param ptr The pointer to the data, which should be reallocated. The data
   may be moved, so the caller shouldn't use this pointer anymore once this
   function returns.
-  @param size A value larger than 0. Standard realloc() handles 0 by
-  returning NULL, but this wrapper will terminate the program instead.
+  @param size A value larger than 0. Otherwise the program will be
+  terminated.
 
   @return A pointer to the reallocated memory. Must be freed by the caller
   using free().
 */
 void *sRealloc(void *ptr, size_t size)
 {
+  if(size == 0)
+  {
+    die("unable to reallocate 0 bytes");
+  }
+
   void *data = realloc(ptr, size);
   if(!data)
   {
