@@ -27,6 +27,8 @@
 
 #include "string-matcher.h"
 
+#include <string.h>
+
 #include <regex.h>
 
 #include "memory-pool.h"
@@ -78,7 +80,9 @@ StringMatcher *strmatchString(String expression, size_t line_nr)
 {
   StringMatcher *matcher = mpAlloc(sizeof *matcher);
 
-  matcher->expression = expression;
+  /* Workaround for allocating structs with const members (String). */
+  memcpy(&matcher->expression, &expression, sizeof(expression));
+
   matcher->is_regex = false;
   matcher->line_nr = line_nr;
   matcher->has_matched = false;
