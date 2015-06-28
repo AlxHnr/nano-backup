@@ -166,8 +166,7 @@ bool strmatch(StringMatcher *matcher, const char *string)
   }
   else
   {
-    return 0 == strncmp(string, matcher->expression.str,
-                        matcher->expression.length);
+    return 0 == strcmp(string, matcher->expression.str);
   }
 }
 
