@@ -163,14 +163,20 @@ StringMatcher *strmatchRegex(String expression, size_t line_nr)
 */
 bool strmatch(StringMatcher *matcher, const char *string)
 {
+  bool match;
+
   if(matcher->is_regex)
   {
-    return 0 == regexec(matcher->pattern, string, 0, NULL, 0);
+    match = regexec(matcher->pattern, string, 0, NULL, 0) == 0;
   }
   else
   {
-    return 0 == strcmp(string, matcher->expression.str);
+    match = strcmp(matcher->expression.str, string) == 0;
   }
+
+  matcher->has_matched |= match;
+
+  return match;
 }
 
 /** Returns true, if the given StringMatcher has successfully matched a
