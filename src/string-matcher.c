@@ -27,12 +27,14 @@
 
 #include "string-matcher.h"
 
+#include <stdlib.h>
 #include <string.h>
 
 #include <regex.h>
 
 #include "memory-pool.h"
 #include "safe-wrappers.h"
+#include "error-handling.h"
 
 struct StringMatcher
 {
@@ -45,8 +47,8 @@ struct StringMatcher
   bool is_regex;
 
   /** Contains either a compiled expression, or is undefined if is_regex is
-    false. */
-  regex_t pattern;
+    false. It points into the internal regex pool of this module. */
+  regex_t *pattern;
 
   /** The number of the line in the config file, on which this expression
     was initially defined. */
@@ -60,9 +62,20 @@ struct StringMatcher
 /** All StringMatcher are allocated inside the programs memory pool and
  live as long as the entire program. But since regex_t variables are
  allocated separately, they must be tracked and freed at exit: */
-static regex_t **regex_pool = NULL;
+static regex_t *regex_pool = NULL;
 static size_t regex_pool_used = 0;
-static size_t regex_pool_allocated = 0;
+static size_t regex_pool_length = 0;
+
+/** Frees the entire regex pool. */
+static void freeRegexPool(void)
+{
+  for(size_t index = 0; index < regex_pool_used; index++)
+  {
+    regfree(&regex_pool[index]);
+  }
+
+  free(regex_pool);
+}
 
 /** Builds a StringMatcher from a String. It will be allocated inside the
   internal memory pool.
@@ -86,6 +99,55 @@ StringMatcher *strmatchString(String expression, size_t line_nr)
   matcher->is_regex = false;
   matcher->line_nr = line_nr;
   matcher->has_matched = false;
+
+  return matcher;
+}
+
+/** This function is almost identical to strmatchString(), but with the
+  difference that it treats the given expression as a regular expression
+  and will compile it. The given expression must use valid POSIX extended
+  regular expression syntax. Otherwise the program will be terminated with
+  an error message.
+*/
+StringMatcher *strmatchRegex(String expression, size_t line_nr)
+{
+  StringMatcher *matcher = mpAlloc(sizeof *matcher);
+
+  /* Workaround for allocating structs with const members (String). */
+  memcpy(&matcher->expression, &expression, sizeof(expression));
+
+  matcher->is_regex = true;
+  matcher->line_nr = line_nr;
+  matcher->has_matched = false;
+
+  /* Ensure that there is enough space in the regex pool. */
+  if(regex_pool_used == regex_pool_length)
+  {
+    if(regex_pool == NULL) atexit(freeRegexPool);
+
+    size_t new_pool_length =
+      regex_pool_length == 0 ? 8 : sSizeMul(regex_pool_length, 2);
+    size_t new_pool_size = sSizeMul(new_pool_length, sizeof *regex_pool);
+
+    regex_pool = sRealloc(regex_pool, new_pool_size);
+    regex_pool_length = new_pool_size;
+  }
+
+  int error = regcomp(&regex_pool[regex_pool_used], expression.str,
+                      REG_EXTENDED | REG_NOSUB);
+  if(error != 0)
+  {
+    size_t error_length =
+      regerror(error, &regex_pool[regex_pool_used], NULL, 0);
+    char *error_str = mpAlloc(error_length);
+    regerror(error, &regex_pool[regex_pool_used], error_str, error_length);
+
+    die("config file: line %zu: %s: \"%s\"\n",
+        line_nr, error_str, expression.str);
+  }
+
+  matcher->pattern = &regex_pool[regex_pool_used];
+  regex_pool_used++;
 
   return matcher;
 }
