@@ -62,7 +62,7 @@ struct StringMatcher
 /** All StringMatcher are allocated inside the programs memory pool and
  live as long as the entire program. But since regex_t variables are
  allocated separately, they must be tracked and freed at exit: */
-static regex_t *regex_pool = NULL;
+static regex_t **regex_pool = NULL;
 static size_t regex_pool_used = 0;
 static size_t regex_pool_length = 0;
 
@@ -71,7 +71,8 @@ static void freeRegexPool(void)
 {
   for(size_t index = 0; index < regex_pool_used; index++)
   {
-    regfree(&regex_pool[index]);
+    regfree(regex_pool[index]);
+    free(regex_pool[index]);
   }
 
   free(regex_pool);
@@ -129,23 +130,25 @@ StringMatcher *strmatchRegex(String expression, size_t line_nr)
     size_t new_pool_size = sSizeMul(new_pool_length, sizeof *regex_pool);
 
     regex_pool = sRealloc(regex_pool, new_pool_size);
-    regex_pool_length = new_pool_size;
+    regex_pool_length = new_pool_length;
   }
 
-  int error = regcomp(&regex_pool[regex_pool_used], expression.str,
-                      REG_EXTENDED | REG_NOSUB);
+  regex_t *pattern = sMalloc(sizeof *pattern);
+  int error = regcomp(pattern, expression.str, REG_EXTENDED | REG_NOSUB);
+
   if(error != 0)
   {
-    size_t error_length =
-      regerror(error, &regex_pool[regex_pool_used], NULL, 0);
+    size_t error_length = regerror(error, pattern, NULL, 0);
     char *error_str = mpAlloc(error_length);
-    regerror(error, &regex_pool[regex_pool_used], error_str, error_length);
+    regerror(error, pattern, error_str, error_length);
+    free(pattern);
 
     die("config file: line %zu: %s: \"%s\"\n",
         line_nr, error_str, expression.str);
   }
 
-  matcher->pattern = &regex_pool[regex_pool_used];
+  regex_pool[regex_pool_used] = pattern;
+  matcher->pattern = pattern;
   regex_pool_used++;
 
   return matcher;
