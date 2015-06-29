@@ -28,12 +28,24 @@
 #ifndef _NANO_BACKUP_BACKUP_POLICIES_H_
 #define _NANO_BACKUP_BACKUP_POLICIES_H_
 
-/** Contains a backup policy. */
+/** Defines different backup policies. */
 typedef enum
 {
+  /** This policy applies only to unspecified parent directories of a
+    backed up file. They are required to restore full paths to files if
+    they don't exist already. These directories will be backed up silently
+    without the users knowledge.*/
   BPOL_none,
+
+  /** Backups only the latest version of a file. */
+  BPOL_copy,
+
+  /** Like BPOL_copy, but if a file gets removed from the system, it will
+    also be removed from the backup. */
   BPOL_mirror,
-  BPOL_collect,
+
+  /** Backup every change of a file. This includes metadata like the
+    timestamp, the files owner and its permission bits. */
   BPOL_track,
 }BackupPolicy;
 
