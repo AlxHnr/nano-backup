@@ -251,9 +251,9 @@ FileContent sGetFilesContent(const char *path)
   }
 
   FILE *stream = sFopenRead(path);
-  void *data = sMalloc(file_stats.st_size);
-  sFread(data, file_stats.st_size, stream, path);
+  char *content = sMalloc(file_stats.st_size);
+  sFread(content, file_stats.st_size, stream, path);
   sFclose(stream, path);
 
-  return (FileContent){ .data = data, .size = file_stats.st_size };
+  return (FileContent){ .content = content, .size = file_stats.st_size };
 }

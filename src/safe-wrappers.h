@@ -47,10 +47,10 @@ extern void sFread(void *ptr, size_t size, FILE *stream, const char *path);
 extern struct stat sStat(const char *path);
 extern struct stat sLStat(const char *path);
 
-/** A simple struct, representing the content of the file and its size. */
+/** A simple struct, containing the content of the file and its size. */
 typedef struct
 {
-  void *data; /**< The content of a file. */
+  char *content; /**< The content of the file. */
   size_t size; /**< The length of the content. */
 }FileContent;
 
