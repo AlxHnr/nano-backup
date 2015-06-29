@@ -182,7 +182,9 @@ StringMatcher *strmatchRegex(String expression, size_t line_nr)
     free(pattern);
 
     /* Since "expression" is a string slice which may not be terminated, a
-       terminated copy is passed to die(). */
+       terminated copy is passed to die(). The printf "%.*s" format
+       specifier accepts only plain integers, while String.length has the
+       type size_t. */
     String terminated_expression = strCopy(expression);
 
     die("config file: line %zu: %s: \"%s\"\n",
