@@ -46,7 +46,8 @@ struct StringMatcherList
 typedef struct SearchNode SearchNode;
 struct SearchNode
 {
-  /** For checking whether a filename belongs to the this node or not. */
+  /** For checking whether a filename belongs to the this node or not. It
+    is NULL, if this node is the root node of the tree. */
   StringMatcher *matcher;
 
   /** The backup policy for this node. */
