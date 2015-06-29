@@ -38,6 +38,25 @@ static String copy   = { .str = "[copy]",   .length = 6 };
 static String mirror = { .str = "[mirror]", .length = 8 };
 static String track  = { .str = "[track]",  .length = 7 };
 
+/** Returns a string slice, containing the current line in the given config
+  files data.
+
+  @param config The content of an entire config file.
+  @param start The position of the line beginning in content.
+
+  @return A string slice, which points inside the given config files data.
+  Don't modify or free the content of the config file, unless the returned
+  string is no longer used.
+*/
+static String getLine(FileContent config, size_t start)
+{
+  /* Find the index of the line ending. */
+  size_t end = start;
+  while(end < config.size && config.content[end] != '\n') end++;
+
+  return (String){ .str = &config.content[start], .length = end - start};
+}
+
 /** Loads a search tree from the specified config file.
 
   @param path The path to the config file.
@@ -61,6 +80,13 @@ SearchNode *searchTreeLoad(const char *path)
   root_node->exclude_matcher_list = common_exclude_matcher_list;
   root_node->next = NULL;
 
-  free(config.data);
+  size_t parser_position = 0;
+  while(parser_position < config.size)
+  {
+    String line = getLine(config, parser_position);
+    parser_position += line.length;
+  }
+
+  free(config.content);
   return root_node;
 }
