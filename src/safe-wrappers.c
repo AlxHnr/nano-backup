@@ -250,10 +250,19 @@ FileContent sGetFilesContent(const char *path)
     die("\"%s\" is not a regular file", path);
   }
 
-  FILE *stream = sFopenRead(path);
-  char *content = sMalloc(file_stats.st_size);
-  sFread(content, file_stats.st_size, stream, path);
-  sFclose(stream, path);
+  char *content = NULL;
+  if(file_stats.st_size == 0)
+  {
+    content = sMalloc(1);
+    content[0] = '\0';
+  }
+  else
+  {
+    FILE *stream = sFopenRead(path);
+    content = sMalloc(file_stats.st_size);
+    sFread(content, file_stats.st_size, stream, path);
+    sFclose(stream, path);
+  }
 
   return (FileContent){ .content = content, .size = file_stats.st_size };
 }
