@@ -29,12 +29,8 @@
 #ifndef _NANO_BACKUP_SEARCH_TREE_H_
 #define _NANO_BACKUP_SEARCH_TREE_H_
 
-#include <stdio.h>
 #include <stdbool.h>
 
-#include <regex.h>
-
-#include "string-utils.h"
 #include "string-matcher.h"
 #include "backup-policies.h"
 
