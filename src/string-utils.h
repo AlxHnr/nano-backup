@@ -31,11 +31,20 @@
 
 #include <stddef.h>
 
-/** A simple struct associating a string with its length. */
+/** A simple struct associating a string with its length. This struct
+  doesn't own the memory it points to and can be used for efficient string
+  slicing.
+*/
 typedef struct
 {
-  const char *const str; /**< A pointer to the beginning of the string. */
-  const size_t length; /**< The length of the string. */
+  /** A pointer to the beginning of the string. It doesn't need to be null
+    terminated, but be careful when passing it to C library functions. */
+  const char *const str;
+
+  /** The length of the string. It can be shorter than the actual string
+    stored in "str", but be careful when passing it to C library
+    functions. */
+  const size_t length;
 }String;
 
 extern String str(const char *string);
