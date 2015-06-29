@@ -78,12 +78,37 @@ static void freeRegexPool(void)
   free(regex_pool);
 }
 
+/** Surrounds the given String with '^' and '$', if it wasn't already.
+
+  @param string A String.
+
+  @return A null terminated string, which must be freed by the caller using
+  free().
+*/
+static char *wrapRegex(String string)
+{
+  bool needs_bol = string.str[0] != '^';
+  bool needs_eol =
+    (string.length == 0 || string.str[string.length - 1] != '$');
+
+  size_t new_size = sSizeAdd(string.length, needs_bol + needs_eol);
+  char *new_string = sMalloc(sSizeAdd(new_size, 1));
+
+  if(needs_bol) new_string[0] = '^';
+  if(needs_eol) new_string[new_size - 1] = '$';
+  new_string[new_size] = '\0';
+
+  memcpy(&new_string[needs_bol], string.str, string.length);
+
+  return new_string;
+}
+
 /** Builds a StringMatcher from a String. It will be allocated inside the
   internal memory pool.
 
   @param expression A string which will be used for matching. This string
-  will be referenced by the returned StringMatcher, and should not be
-  freed, unless the StringMatcher is not longer used.
+  will be referenced by the returned StringMatcher and should not be freed
+  or modified, unless the StringMatcher is not used anymore.
   @param line_nr The number of the line, on which the expression was
   defined inside the config file.
 
@@ -94,7 +119,7 @@ StringMatcher *strmatchString(String expression, size_t line_nr)
 {
   StringMatcher *matcher = mpAlloc(sizeof *matcher);
 
-  /* Workaround for allocating structs with const members (String). */
+  /* Copy the given expression into a String with const members. */
   memcpy(&matcher->expression, &expression, sizeof(expression));
 
   matcher->is_regex = false;
@@ -104,16 +129,26 @@ StringMatcher *strmatchString(String expression, size_t line_nr)
   return matcher;
 }
 
-/** This function is almost identical to strmatchString(), but with the
-  difference that it treats the given string as a regex pattern and will
-  compile it. The given string must use valid POSIX extended regex syntax,
-  otherwise the program will be terminated with an error message.
+/** Like strmatchString(), but will compile the given expression. If
+  compiling the expression fails, the program will be terminated with an
+  error message.
+
+  @param expression A String containing a valid POSIX extended regex. This
+  function will ensure, that the given string is surrounded by '^' and '$'
+  before it gets compiled. This string will be referenced by the returned
+  StringMatcher and should not be freed or modified, unless the
+  StringMatcher is not used anymore.
+  @param line_nr The number of the line, on which the expression was
+  defined inside the config file.
+
+  @return A StringMatcher, which should not be freed by the caller. It will
+  keep a reference to the given expression.
 */
 StringMatcher *strmatchRegex(String expression, size_t line_nr)
 {
   StringMatcher *matcher = mpAlloc(sizeof *matcher);
 
-  /* Workaround for allocating structs with const members (String). */
+  /* Copy the given expression into a String with const members. */
   memcpy(&matcher->expression, &expression, sizeof(expression));
 
   matcher->is_regex = true;
@@ -133,8 +168,11 @@ StringMatcher *strmatchRegex(String expression, size_t line_nr)
     regex_pool_length = new_pool_length;
   }
 
+  /* Wrap and compile regular expression. */
   regex_t *pattern = sMalloc(sizeof *pattern);
-  int error = regcomp(pattern, expression.str, REG_EXTENDED | REG_NOSUB);
+  char *wrapped_string = wrapRegex(expression);
+  int error = regcomp(pattern, wrapped_string, REG_EXTENDED | REG_NOSUB);
+  free(wrapped_string);
 
   if(error != 0)
   {
@@ -143,8 +181,12 @@ StringMatcher *strmatchRegex(String expression, size_t line_nr)
     regerror(error, pattern, error_str, error_length);
     free(pattern);
 
+    /* Since "expression" is a string slice which may not be terminated, a
+       terminated copy is passed to die(). */
+    String terminated_expression = strCopy(expression);
+
     die("config file: line %zu: %s: \"%s\"\n",
-        line_nr, error_str, expression.str);
+        line_nr, error_str, terminated_expression.str);
   }
 
   regex_pool[regex_pool_used] = pattern;
