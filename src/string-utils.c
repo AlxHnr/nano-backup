@@ -100,3 +100,16 @@ String strAppendPath(String path, String filename)
 
   return (String){ .str = new_path, .length = new_length };
 }
+
+/** Compares two strings.
+
+  @param a The first String to compare.
+  @param b The second String to compare.
+
+  @return True if both strings have the same length, and all bytes up to
+  'length' are the same. Otherwise false.
+*/
+bool strCompare(String a, String b)
+{
+  return a.length == b.length && memcmp(a.str, b.str, a.length) == 0;
+}
