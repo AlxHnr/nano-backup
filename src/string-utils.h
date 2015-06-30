@@ -49,6 +49,7 @@ typedef struct
 
 extern String str(const char *string);
 extern String strCopy(String string);
+extern String strRemoveTrailing(String string, char c);
 extern String strAppendPath(String path, String filename);
 
 #endif
