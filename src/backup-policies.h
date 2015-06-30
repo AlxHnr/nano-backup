@@ -47,6 +47,10 @@ typedef enum
   /** Backup every change of a file. This includes metadata like the
     timestamp, the files owner and its permission bits. */
   BPOL_track,
+
+  /** Ignore the file. This is only a helper policy for specific edge
+    cases. */
+  BPOL_ignore,
 }BackupPolicy;
 
 #endif
