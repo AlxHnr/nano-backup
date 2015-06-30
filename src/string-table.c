@@ -54,6 +54,41 @@ struct StringTable
   size_t associations; /**< The amount of associations in the table. */
 };
 
+/** Doubles the capacity of the given StringTable and moves all buckets to
+  their new destination.
+
+  @param table The table that should be resized.
+*/
+static void doubleTableCapaticy(StringTable *table)
+{
+  size_t new_capacity = sSizeMul(table->capacity, 2);
+  size_t new_array_size = sSizeMul(new_capacity, sizeof *table->buckets);
+
+  Bucket **new_buckets = sMalloc(new_array_size);
+
+  /* Initialize all new buckets to NULL. */
+  memset(new_buckets, 0, new_array_size);
+
+  /* Copy all associations into their new location. */
+  for(size_t index = 0; index < table->capacity; index++)
+  {
+    Bucket *bucket = table->buckets[index];
+    Bucket *bucket_to_move;
+    while(bucket)
+    {
+      bucket_to_move = bucket;
+      bucket = bucket->next;
+
+      size_t new_bucket_id = bucket_to_move->hash % new_capacity;
+      bucket_to_move->next = new_buckets[new_bucket_id];
+      new_buckets[new_bucket_id] = bucket_to_move;
+    }
+  }
+
+  free(table->buckets);
+  table->buckets = new_buckets;
+}
+
 /** Creates a new StringTable.
 
   @param item_count An approximate count of items, which the StringTable
@@ -99,7 +134,10 @@ void strtableFree(StringTable *table)
   free(table);
 }
 
-/** Associates the given key with the specified data.
+/** Associates the given key with the specified data. This function does
+  not check whether the given key was already mapped. It will simply create
+  another association with undefined order. If the StringTable has reached
+  its capacity it will be resized properly.
 
   @param table The table in which the association should be stored.
   @param key The key to which the given data should be mapped to. The table
@@ -111,6 +149,12 @@ void strtableFree(StringTable *table)
 */
 void strtableMap(StringTable *table, String key, void *data)
 {
+  /* Resize hash table, if its capacity was reached. */
+  if(table->associations == table->capacity)
+  {
+    doubleTableCapaticy(table);
+  }
+
   /* Initialize bucket. */
   Bucket *bucket = sMalloc(sizeof *bucket);
   bucket->hash = strHash(key);
@@ -123,6 +167,8 @@ void strtableMap(StringTable *table, String key, void *data)
   size_t bucket_id = bucket->hash % table->capacity;
   bucket->next = table->buckets[bucket_id];
   table->buckets[bucket_id] = bucket;
+
+  table->associations++;
 }
 
 /** Returns the value associated with the given key.
