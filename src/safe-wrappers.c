@@ -251,12 +251,7 @@ FileContent sGetFilesContent(const char *path)
   }
 
   char *content = NULL;
-  if(file_stats.st_size == 0)
-  {
-    content = sMalloc(1);
-    content[0] = '\0';
-  }
-  else
+  if(file_stats.st_size > 0)
   {
     FILE *stream = sFopenRead(path);
     content = sMalloc(file_stats.st_size);
