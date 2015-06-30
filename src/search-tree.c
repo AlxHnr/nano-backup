@@ -32,6 +32,7 @@
 
 #include "memory-pool.h"
 #include "safe-wrappers.h"
+#include "error-handling.h"
 
 /* Helper strings for parsing the config file. */
 static String copy_token   = { .str = "[copy]",   .length = 6 };
@@ -99,7 +100,11 @@ SearchNode *searchTreeLoad(const char *path)
   {
     String line = getLine(config, parser_position);
 
-    if(strCompare(line, copy_token))
+    if(strWhitespaceOnly(line))
+    {
+      /* Ignore. */
+    }
+    else if(strCompare(line, copy_token))
     {
       current_policy = BPOL_copy;
     }
@@ -114,6 +119,30 @@ SearchNode *searchTreeLoad(const char *path)
     else if(strCompare(line, ignore_token))
     {
       current_policy = BPOL_ignore;
+    }
+    else if(line.str[0] == '[' && line.str[line.length - 1] == ']')
+    {
+      /* Slice out and copy the unknown policy name. */
+      String policy =
+        strCopy((String){ .str = &line.str[1], .length = line.length - 2});
+      free(config.content);
+
+      die("config: line %zu: unknown policy: \"%s\"", line_nr, policy.str);
+    }
+    else if(current_policy == BPOL_none)
+    {
+      String pattern = strCopy(line);
+      free(config.content);
+
+      die("config: line %zu: pattern without policy: \"%s\"",
+          line_nr, pattern.str);
+    }
+    else
+    {
+      String path = strCopy(line);
+      free(config.content);
+
+      die("config: line %zu: invalid path: \"%s\"", line_nr, path.str);
     }
 
     parser_position += line.length;
