@@ -180,7 +180,9 @@ String strAppendPath(String path, String filename)
   return (String){ .str = new_path, .length = new_length };
 }
 
-/** Splits the given path at the last slash it contains.
+/** Splits the given path at the last slash it contains. If the last slash
+  is preceded by more slashes, then the first slash of them will be seen as
+  the split point. E.g. "/home/foo///bar" -> [ "/home/foo", "//bar" ].
 
   @param path The path that should be split. The returned splitting will
   keep a reference into this string, so make sure not to modify or free it
@@ -196,6 +198,10 @@ StringSplit strSplitPath(String path)
 {
   size_t last_slash = path.length;
   while(last_slash > 0 && path.str[last_slash - 1] != '/') last_slash--;
+
+  /* If the last slash is preceded by other slashes, get its position
+     instead. */
+  while(last_slash > 1 && path.str[last_slash - 2] == '/') last_slash--;
 
   return (StringSplit)
   {
