@@ -102,6 +102,7 @@ StringTable *strtableNew(size_t item_count)
 {
   StringTable *table = sMalloc(sizeof *table);
   table->capacity = item_count < 16 ? 32 : sSizeMul(item_count, 2);
+  table->associations = 0;
 
   size_t array_size = sSizeMul(table->capacity, sizeof *table->buckets);
   table->buckets = sMalloc(array_size);
