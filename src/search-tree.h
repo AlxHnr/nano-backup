@@ -64,11 +64,11 @@ struct SearchNode
     Subnodes of the subnode do not influence this value. */
   bool subnodes_contain_regex;
 
-  /** Points to the search trees common exclude matcher list, which is
+  /** Points to the search trees common ignore matcher list, which is
     shared across all of its nodes. This allows to search with every node.
-    It matches filepaths that should be ignored. The common exclude matcher
+    It matches filepaths that should be ignored. The common ignore matcher
     can point to NULL if its empty. */
-  StringMatcherList **exclude_matcher_list;
+  StringMatcherList **ignore_matcher_list;
 
   /** The next search node, or NULL. */
   SearchNode *next;

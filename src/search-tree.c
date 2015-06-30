@@ -34,9 +34,10 @@
 #include "safe-wrappers.h"
 
 /* Helper strings for parsing the config file. */
-static String copy   = { .str = "[copy]",   .length = 6 };
-static String mirror = { .str = "[mirror]", .length = 8 };
-static String track  = { .str = "[track]",  .length = 7 };
+static String copy_token   = { .str = "[copy]",   .length = 6 };
+static String mirror_token = { .str = "[mirror]", .length = 8 };
+static String track_token  = { .str = "[track]",  .length = 7 };
+static String ignore_token = { .str = "[ignore]", .length = 8 };
 
 /** Returns a string slice, containing the current line in the given config
   files data.
@@ -66,8 +67,8 @@ static String getLine(FileContent config, size_t start)
 */
 SearchNode *searchTreeLoad(const char *path)
 {
-  StringMatcherList **common_exclude_matcher_list =
-    mpAlloc(sizeof *common_exclude_matcher_list);
+  StringMatcherList **common_ignore_matcher_list =
+    mpAlloc(sizeof *common_ignore_matcher_list);
 
   /* Initialize the root node of this tree. */
   SearchNode *root_node = mpAlloc(sizeof *root_node);
@@ -76,12 +77,13 @@ SearchNode *searchTreeLoad(const char *path)
   root_node->policy_inherited = false;
   root_node->subnodes = NULL;
   root_node->subnodes_contain_regex = false;
-  root_node->exclude_matcher_list = common_exclude_matcher_list;
+  root_node->ignore_matcher_list = common_ignore_matcher_list;
   root_node->next = NULL;
 
   /* Parse the specified config file. */
   size_t line_nr = 1;
   size_t parser_position = 0;
+  BackupPolicy current_policy = BPOL_none;
   FileContent config = sGetFilesContent(path);
 
   /* Skip UTF-8 BOM. */
@@ -96,6 +98,23 @@ SearchNode *searchTreeLoad(const char *path)
   while(parser_position < config.size)
   {
     String line = getLine(config, parser_position);
+
+    if(strCompare(line, copy_token))
+    {
+      current_policy = BPOL_copy;
+    }
+    else if(strCompare(line, mirror_token))
+    {
+      current_policy = BPOL_mirror;
+    }
+    else if(strCompare(line, track_token))
+    {
+      current_policy = BPOL_track;
+    }
+    else if(strCompare(line, ignore_token))
+    {
+      current_policy = BPOL_ignore;
+    }
 
     parser_position += line.length;
     parser_position += config.content[parser_position] == '\n';
