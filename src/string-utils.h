@@ -49,12 +49,22 @@ typedef struct
   const size_t length;
 }String;
 
+/** A struct representing a string splitting. */
+typedef struct
+{
+  String head; /**< The part before the split. */
+  String tail; /**< The part after the split. */
+}StringSplit;
+
 extern String str(const char *string);
 extern String strCopy(String string);
 extern String strRemoveTrailing(String string, char c);
-extern String strAppendPath(String path, String filename);
+
 extern bool strCompare(String a, String b);
 extern bool strWhitespaceOnly(String string);
 extern uint32_t strHash(String string);
+
+extern String strAppendPath(String path, String filename);
+extern StringSplit strSplitPath(String path);
 
 #endif

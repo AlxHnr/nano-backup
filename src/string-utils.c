@@ -33,7 +33,7 @@
 #include "memory-pool.h"
 #include "safe-wrappers.h"
 
-/** A magic prime number, for calculating the murmur2 hash of a String. */
+/** A magic prime number for calculating the murmur2 hash of a String. */
 #define MURMUR2_MAGIC_NUMBER 15486883
 
 /** A magic seed for the murmur2 function. */
@@ -83,30 +83,6 @@ String strRemoveTrailing(String string, char c)
   while(new_length > 0 && string.str[new_length - 1] == c) new_length--;
 
   return (String){ .str = string.str, .length = new_length };
-}
-
-/** Appends two paths and inserts a slash in between. It uses the internal
-  memory pool for allocations, so use this function only for strings which
-  live as long as the entire program.
-
-  @param path A file path.
-  @param filename A filename.
-
-  @return A new String that should not be freed by the caller. The buffer
-  to which the returned string points to will be null-terminated.
-*/
-String strAppendPath(String path, String filename)
-{
-  size_t new_length = sSizeAdd(sSizeAdd(path.length, filename.length), 1);
-  char *new_path = mpAlloc(sSizeAdd(new_length, 1));
-
-  new_path[path.length] = '/';
-  new_path[new_length] = '\0';
-
-  memcpy(new_path, path.str, path.length);
-  memcpy(&new_path[path.length + 1], filename.str, filename.length);
-
-  return (String){ .str = new_path, .length = new_length };
 }
 
 /** Compares two strings.
@@ -178,4 +154,60 @@ uint32_t strHash(String string)
   hash ^= hash >> 15;
 
   return hash;
+}
+
+/** Appends two paths and inserts a slash in between. It uses the internal
+  memory pool for allocations, so use this function only for strings which
+  live as long as the entire program.
+
+  @param path A file path.
+  @param filename A filename.
+
+  @return A new String that should not be freed by the caller. The buffer
+  to which the returned string points to will be null-terminated.
+*/
+String strAppendPath(String path, String filename)
+{
+  size_t new_length = sSizeAdd(sSizeAdd(path.length, filename.length), 1);
+  char *new_path = mpAlloc(sSizeAdd(new_length, 1));
+
+  new_path[path.length] = '/';
+  new_path[new_length] = '\0';
+
+  memcpy(new_path, path.str, path.length);
+  memcpy(&new_path[path.length + 1], filename.str, filename.length);
+
+  return (String){ .str = new_path, .length = new_length };
+}
+
+/** Splits the given path at the last slash it contains.
+
+  @param path The path that should be split. The returned splitting will
+  keep a reference into this string, so make sure not to modify or free it
+  unless the returned split is not used anymore.
+
+  @return Two strings that share memory with the given path. If the path
+  doesn't contain a slash, the head of the returned splitting will be empty
+  and the tail will contain the entire string. If the path ends with a
+  slash, the head will contain the entire string and the tail will be
+  empty.
+*/
+StringSplit strSplitPath(String path)
+{
+  size_t last_slash = path.length;
+  while(last_slash > 0 && path.str[last_slash - 1] != '/') last_slash--;
+
+  return (StringSplit)
+  {
+    (String)
+    {
+      .str = path.str,
+      .length = last_slash > 0 ? last_slash - 1 : 0
+    },
+    (String)
+    {
+      .str = &path.str[last_slash],
+      .length = path.length - last_slash
+    }
+  };
 }
