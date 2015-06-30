@@ -183,8 +183,8 @@ StringMatcher *strmatchRegex(String expression, size_t line_nr)
 
     /* The strCpy() below is required, to guarantee that a null-terminated
        string is passed to die(). */
-    die("config file: line %zu: %s: \"%s\"\n",
-        line_nr, error_str, strCopy(expression).str);
+    die("config: line %zu: %s: \"%s\"\n", line_nr, error_str,
+        strCopy(expression).str);
   }
 
   regex_pool[regex_pool_used] = pattern;
