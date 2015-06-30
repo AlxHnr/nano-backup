@@ -57,8 +57,8 @@ struct StringTable
 /** Creates a new StringTable.
 
   @param item_count An approximate count of items, which the StringTable
-  should be able to hold at least. If the StringTable is full, it will
-  resize automatically. If unsure, pass 0 as argument.
+  should be able to hold. If the StringTable is full, it will resize
+  automatically. If unsure, pass 0 as argument.
 
   @return A new StringTable, which must be freed by the caller using
   strtableFree().
@@ -97,6 +97,32 @@ void strtableFree(StringTable *table)
 
   free(table->buckets);
   free(table);
+}
+
+/** Associates the given key with the specified data.
+
+  @param table The table in which the association should be stored.
+  @param key The key to which the given data should be mapped to. The table
+  will keep a reference to this key, so the caller should not modify or
+  free it, unless the given StringTable is not used anymore.
+  @param data The data that should be mapped to the key. The StringTable
+  will only store a reference to the data, so the caller should not move
+  its unless the table is not used anymore.
+*/
+void strtableMap(StringTable *table, String key, void *data)
+{
+  /* Initialize bucket. */
+  Bucket *bucket = sMalloc(sizeof *bucket);
+  bucket->hash = strHash(key);
+  bucket->data = data;
+
+  /* Copy the given key into a String with const members. */
+  memcpy(&bucket->key, &key, sizeof(key));
+
+  /* Prepend the bucket to the bucket slot in the bucket array. */
+  size_t bucket_id = bucket->hash % table->capacity;
+  bucket->next = table->buckets[bucket_id];
+  table->buckets[bucket_id] = bucket;
 }
 
 /** Returns the value associated with the given key.
