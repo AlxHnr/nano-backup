@@ -68,9 +68,6 @@ static String getLine(FileContent config, size_t start)
 */
 SearchNode *searchTreeLoad(const char *path)
 {
-  StringMatcherList **common_ignore_matcher_list =
-    mpAlloc(sizeof *common_ignore_matcher_list);
-
   /* Initialize the root node of this tree. */
   SearchNode *root_node = mpAlloc(sizeof *root_node);
   root_node->matcher = NULL;
@@ -78,8 +75,13 @@ SearchNode *searchTreeLoad(const char *path)
   root_node->policy_inherited = false;
   root_node->subnodes = NULL;
   root_node->subnodes_contain_regex = false;
-  root_node->ignore_matcher_list = common_ignore_matcher_list;
   root_node->next = NULL;
+
+  /* Initialized ignore matcher list, which is shared across all nodes of
+     the tree. */
+  root_node->ignore_matcher_list =
+    mpAlloc(sizeof *root_node->ignore_matcher_list);
+  *root_node->ignore_matcher_list = NULL;
 
   /* Parse the specified config file. */
   size_t line_nr = 1;
@@ -136,6 +138,19 @@ SearchNode *searchTreeLoad(const char *path)
 
       die("config: line %zu: pattern without policy: \"%s\"",
           line_nr, pattern.str);
+    }
+    else if(current_policy == BPOL_ignore)
+    {
+      /* Initialize new ignore matcher. */
+      StringMatcherList *ignore_matcher = mpAlloc(sizeof *ignore_matcher);
+      ignore_matcher->matcher = strmatchRegex(line, line_nr);
+      ignore_matcher->next = *root_node->ignore_matcher_list;
+
+      /* Prepend new matcher to the shared ignore matcher list. */
+      *root_node->ignore_matcher_list = ignore_matcher;
+    }
+    else if(line.str[0] == '/')
+    {
     }
     else
     {
