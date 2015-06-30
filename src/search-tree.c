@@ -143,7 +143,7 @@ SearchNode *searchTreeLoad(const char *path)
     {
       /* Initialize new ignore matcher. */
       StringMatcherList *ignore_matcher = mpAlloc(sizeof *ignore_matcher);
-      ignore_matcher->matcher = strmatchRegex(line, line_nr);
+      ignore_matcher->matcher = strmatchRegex(strCopy(line), line_nr);
       ignore_matcher->next = *root_node->ignore_matcher_list;
 
       /* Prepend new matcher to the shared ignore matcher list. */
