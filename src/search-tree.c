@@ -44,7 +44,7 @@ static String track  = { .str = "[track]",  .length = 7 };
   @param config The content of an entire config file.
   @param start The position of the line beginning in content.
 
-  @return A string slice, which points inside the given config files data.
+  @return A string slice, which points into the given config files data.
   Don't modify or free the content of the config file, unless the returned
   string is no longer used.
 */
@@ -66,7 +66,6 @@ static String getLine(FileContent config, size_t start)
 */
 SearchNode *searchTreeLoad(const char *path)
 {
-  FileContent config = sGetFilesContent(path);
   StringMatcherList **common_exclude_matcher_list =
     mpAlloc(sizeof *common_exclude_matcher_list);
 
@@ -80,11 +79,27 @@ SearchNode *searchTreeLoad(const char *path)
   root_node->exclude_matcher_list = common_exclude_matcher_list;
   root_node->next = NULL;
 
+  /* Parse the specified config file. */
+  size_t line_nr = 1;
   size_t parser_position = 0;
+  FileContent config = sGetFilesContent(path);
+
+  /* Skip UTF-8 BOM. */
+  if(config.size >= 3 &&
+     config.content[0] == (char)0xEF &&
+     config.content[1] == (char)0xBB &&
+     config.content[2] == (char)0xBF)
+  {
+    parser_position = 3;
+  }
+
   while(parser_position < config.size)
   {
     String line = getLine(config, parser_position);
+
     parser_position += line.length;
+    parser_position += config.content[parser_position] == '\n';
+    line_nr++;
   }
 
   free(config.content);
