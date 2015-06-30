@@ -113,3 +113,18 @@ bool strCompare(String a, String b)
 {
   return a.length == b.length && memcmp(a.str, b.str, a.length) == 0;
 }
+
+/** Return true if the given string is emtpy, or contains only whitespaces.
+*/
+bool strWhitespaceOnly(String string)
+{
+  for(size_t index = 0; index < string.length; index++)
+  {
+    if(string.str[index] != ' ' && string.str[index] != '\t')
+    {
+      return false;
+    }
+  }
+
+  return true;
+}

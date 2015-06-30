@@ -53,5 +53,6 @@ extern String strCopy(String string);
 extern String strRemoveTrailing(String string, char c);
 extern String strAppendPath(String path, String filename);
 extern bool strCompare(String a, String b);
+extern bool strWhitespaceOnly(String string);
 
 #endif
