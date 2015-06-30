@@ -31,6 +31,7 @@
 #include <stdlib.h>
 
 #include "memory-pool.h"
+#include "string-table.h"
 #include "safe-wrappers.h"
 #include "error-handling.h"
 
@@ -59,6 +60,91 @@ static String getLine(FileContent config, size_t start)
   return (String){ .str = &config.content[start], .length = end - start};
 }
 
+/** Creates a new node and adds it to its parent node. This function does
+  not check if it already exists in the parent node. All non-existing
+  parent nodes will be created.
+
+  @param root_node The root node of the tree.
+  @param existing_nodes A StringTable containing all existing nodes in the
+  entire tree.
+  @param path The path for the node that should be created.
+  @param line_nr The number of the line in the config file, on which the
+  given path was defined.
+
+  @return A new search node, which has inherited properties from its parent
+  node and the root node.
+*/
+static SearchNode *newNode(SearchNode *root_node,
+                           StringTable *existing_nodes,
+                           String path, size_t line_nr)
+{
+  StringSplit paths = strSplitPath(path);
+
+  /* Ensure that a parent node exists. */
+  SearchNode *parent_node =
+    paths.head.length == 0 ? root_node :
+    strtableGet(existing_nodes, paths.head);
+
+  if(parent_node == NULL)
+  {
+    parent_node = newNode(root_node, existing_nodes, paths.head, line_nr);
+  }
+
+  /* Initialize a new node. */
+  SearchNode *node = mpAlloc(sizeof *node);
+
+  if(paths.tail.str[0] == '/')
+  {
+    /* Slice out the part after the first slash. */
+    String expression =
+      (String)
+      { .str = &paths.tail.str[1], .length = paths.tail.length - 1 };
+    node->matcher = strmatchRegex(strCopy(expression), line_nr);
+
+    parent_node->subnodes_contain_regex = true;
+  }
+  else
+  {
+    node->matcher = strmatchString(strCopy(paths.tail), line_nr);
+  }
+
+  /* Inherit policy from parent node. */
+  node->policy = parent_node->policy;
+  node->policy_inherited = parent_node->policy != BPOL_none;
+
+  node->subnodes = NULL;
+  node->subnodes_contain_regex = false;
+  node->ignore_matcher_list = root_node->ignore_matcher_list;
+
+  /* Prepend node to the parents subnodes. */
+  node->next = parent_node->subnodes;
+  parent_node->subnodes = node;
+
+  strtableMap(existing_nodes, path, node);
+
+  return node;
+}
+
+/** Forces all subnodes of the given node to inherit its policy. Subnodes
+  that have defined their own policy will be ignored.
+
+  @param parent_node The node that should inherit its policy to its
+  subnodes.
+*/
+static void inheritPolicyToSubnodes(SearchNode *parent_node)
+{
+  for(SearchNode *node = parent_node->subnodes;
+      node != NULL; node = node->next)
+  {
+    if(node->policy == BPOL_none || node->policy_inherited == true)
+    {
+      node->policy = parent_node->policy;
+      node->policy_inherited = true;
+      inheritPolicyToSubnodes(node);
+    }
+  }
+}
+
 /** Loads a search tree from the specified config file.
 
   @param path The path to the config file.
@@ -77,11 +163,14 @@ SearchNode *searchTreeLoad(const char *path)
   root_node->subnodes_contain_regex = false;
   root_node->next = NULL;
 
-  /* Initialized ignore matcher list, which is shared across all nodes of
+  /* Initialize ignore matcher list, which is shared across all nodes of
      the tree. */
   root_node->ignore_matcher_list =
     mpAlloc(sizeof *root_node->ignore_matcher_list);
   *root_node->ignore_matcher_list = NULL;
+
+  /* This table maps paths to existing nodes, without a trailing slash. */
+  StringTable *existing_nodes = strtableNew(0);
 
   /* Parse the specified config file. */
   size_t line_nr = 1;
@@ -127,6 +216,7 @@ SearchNode *searchTreeLoad(const char *path)
       /* Slice out and copy the unknown policy name. */
       String policy =
         strCopy((String){ .str = &line.str[1], .length = line.length - 2});
+      strtableFree(existing_nodes);
       free(config.content);
 
       die("config: line %zu: unknown policy: \"%s\"", line_nr, policy.str);
@@ -134,6 +224,7 @@ SearchNode *searchTreeLoad(const char *path)
     else if(current_policy == BPOL_none)
     {
       String pattern = strCopy(line);
+      strtableFree(existing_nodes);
       free(config.content);
 
       die("config: line %zu: pattern without policy: \"%s\"",
@@ -151,10 +242,37 @@ SearchNode *searchTreeLoad(const char *path)
     }
     else if(line.str[0] == '/')
     {
+      String path = strRemoveTrailing(line, '/');
+      SearchNode *previous_definition = strtableGet(existing_nodes, path);
+
+      /* Terminate with an error if the path was already defined. */
+      if(previous_definition != NULL &&
+         previous_definition->policy != BPOL_none &&
+         previous_definition->policy_inherited == false)
+      {
+        String redefined_path = strCopy(line);
+        strtableFree(existing_nodes);
+        free(config.content);
+
+        die("config: line %zu: %sredefinition of line %zu: \"%s\"",
+            line_nr, previous_definition->policy != current_policy ?
+            "policy " : "", strmatchLineNr(previous_definition->matcher),
+            redefined_path.str);
+      }
+
+      /* Use either the existing node or create a new one. */
+      SearchNode *node =
+        previous_definition != NULL ? previous_definition :
+        newNode(root_node, existing_nodes, path, line_nr);
+
+      node->policy = current_policy;
+      node->policy_inherited = false;
+      inheritPolicyToSubnodes(node);
     }
     else
     {
       String path = strCopy(line);
+      strtableFree(existing_nodes);
       free(config.content);
 
       die("config: line %zu: invalid path: \"%s\"", line_nr, path.str);
@@ -165,6 +283,8 @@ SearchNode *searchTreeLoad(const char *path)
     line_nr++;
   }
 
+  strtableFree(existing_nodes);
   free(config.content);
+
   return root_node;
 }
