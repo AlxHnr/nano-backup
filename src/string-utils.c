@@ -35,7 +35,7 @@
 
 /** Wraps the given string in a String struct. It doesn't copy the string.
 
-  @param string The string that should be wrapped.
+  @param string A null-terminated string that should be wrapped.
 
   @return A string struct.
 */
@@ -50,7 +50,8 @@ String str(const char *string)
 
   @param string A String, which data should be copied.
 
-  @return A String, which content should not be freed by the caller.
+  @return A String, which content should not be freed by the caller. The
+  buffer to which the returned string points to will be null-terminated.
 */
 String strCopy(String string)
 {
@@ -85,7 +86,8 @@ String strRemoveTrailing(String string, char c)
   @param path A file path.
   @param filename A filename.
 
-  @return A new String that should not be freed by the caller.
+  @return A new String that should not be freed by the caller. The buffer
+  to which the returned string points to will be null-terminated.
 */
 String strAppendPath(String path, String filename)
 {
@@ -114,7 +116,7 @@ bool strCompare(String a, String b)
   return a.length == b.length && memcmp(a.str, b.str, a.length) == 0;
 }
 
-/** Return true if the given string is emtpy, or contains only whitespaces.
+/** Return true if the given string is empty, or contains only whitespaces.
 */
 bool strWhitespaceOnly(String string)
 {
