@@ -30,6 +30,7 @@
 #define _NANO_BACKUP_STRING_UTILS_H_
 
 #include <stddef.h>
+#include <stdint.h>
 #include <stdbool.h>
 
 /** A simple struct associating a string with its length. This struct
@@ -54,5 +55,6 @@ extern String strRemoveTrailing(String string, char c);
 extern String strAppendPath(String path, String filename);
 extern bool strCompare(String a, String b);
 extern bool strWhitespaceOnly(String string);
+extern uint32_t strHash(String string);
 
 #endif

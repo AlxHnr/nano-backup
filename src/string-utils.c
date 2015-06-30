@@ -33,6 +33,12 @@
 #include "memory-pool.h"
 #include "safe-wrappers.h"
 
+/** A magic prime number, for calculating the murmur2 hash of a String. */
+#define MURMUR2_MAGIC_NUMBER 15486883
+
+/** A magic seed for the murmur2 function. */
+#define MURMUR2_MAGIG_SEED 179425849
+
 /** Wraps the given string in a String struct. It doesn't copy the string.
 
   @param string A null-terminated string that should be wrapped.
@@ -129,4 +135,47 @@ bool strWhitespaceOnly(String string)
   }
 
   return true;
+}
+
+/** Calculates the 32-bit hash of the given string.
+
+  @param string The string that should be hashed.
+
+  @return An unsigned 32 bit hash value.
+*/
+uint32_t strHash(String string)
+{
+  /* This function implements the murmur2 hashing algorithm. */
+  const uint8_t *data = (const uint8_t *)string.str;
+  uint32_t hash = string.length * MURMUR2_MAGIG_SEED;
+  size_t bytes_left = string.length;
+
+  while(bytes_left >= 4)
+  {
+    uint32_t key = *(uint32_t *)data;
+
+    key *= MURMUR2_MAGIC_NUMBER;
+    key ^= key >> 24;
+    key *= MURMUR2_MAGIC_NUMBER;
+
+    hash *= MURMUR2_MAGIC_NUMBER;
+    hash ^= key;
+
+    data += 4;
+    bytes_left -= 4;
+  }
+
+  switch(bytes_left)
+  {
+    case 3: hash ^= data[2] << 16;
+    case 2: hash ^= data[1] << 8;
+    case 1: hash ^= data[0];
+            hash *= MURMUR2_MAGIC_NUMBER;
+  }
+
+  hash ^= hash >> 13;
+  hash *= MURMUR2_MAGIC_NUMBER;
+  hash ^= hash >> 15;
+
+  return hash;
 }
