@@ -38,8 +38,10 @@
 typedef struct Bucket Bucket;
 struct Bucket
 {
+  /** The hash of the key. Required to resize the string table. */
+  uint32_t hash;
+
   String key; /**< The key that was mapped. */
-  uint32_t hash; /**< The hash of the key. */
   void *data; /**< The data associated with the key. */
 
   Bucket *next; /**< The next bucked in the list, or NULL. */
@@ -95,4 +97,27 @@ void strtableFree(StringTable *table)
 
   free(table->buckets);
   free(table);
+}
+
+/** Returns the value associated with the given key.
+
+  @param table The StringTable that contains the association.
+  @param key The key for which the value should be returned.
+
+  @return The associated data, or NULL if the key was not found.
+*/
+void *strtableGet(StringTable *table, String key)
+{
+  size_t bucket_id = strHash(key) % table->capacity;
+
+  for(Bucket *bucket = table->buckets[bucket_id];
+      bucket != NULL; bucket = bucket->next)
+  {
+    if(strCompare(key, bucket->key))
+    {
+      return bucket->data;
+    }
+  }
+
+  return NULL;
 }
