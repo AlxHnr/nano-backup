@@ -108,6 +108,7 @@ static SearchNode *newNode(SearchNode *root_node,
   /* Inherit policy from parent node. */
   node->policy = parent_node->policy;
   node->policy_inherited = parent_node->policy != BPOL_none;
+  node->policy_line_nr = line_nr;
 
   node->subnodes = NULL;
   node->subnodes_contain_regex = false;
@@ -137,6 +138,7 @@ static void inheritPolicyToSubnodes(SearchNode *parent_node)
     {
       node->policy = parent_node->policy;
       node->policy_inherited = true;
+      node->policy_line_nr = parent_node->policy_line_nr;
       inheritPolicyToSubnodes(node);
     }
   }
@@ -156,6 +158,7 @@ SearchNode *searchTreeLoad(const char *path)
   root_node->matcher = NULL;
   root_node->policy = BPOL_none;
   root_node->policy_inherited = false;
+  root_node->policy_line_nr = 0;
   root_node->subnodes = NULL;
   root_node->subnodes_contain_regex = false;
   root_node->next = NULL;
@@ -165,11 +168,6 @@ SearchNode *searchTreeLoad(const char *path)
   root_node->ignore_matcher_list =
     mpAlloc(sizeof *root_node->ignore_matcher_list);
   *root_node->ignore_matcher_list = NULL;
-
-  /* Since the root node doesn't have a matcher, this variable is used to
-     capture the line number of its first definition in the config file.
-     The only purpose of this is printing a correct error message. */
-  size_t root_node_line_nr = 0;
 
   /* This table maps paths to existing nodes, without a trailing slash. */
   StringTable *existing_nodes = strtableNew(0);
@@ -216,13 +214,13 @@ SearchNode *searchTreeLoad(const char *path)
     }
     else if(line.str[0] == '[' && line.str[line.length - 1] == ']')
     {
-      /* Slice out and copy the unknown policy name. */
+      /* Slice out and copy the invalid policy name. */
       String policy =
         strCopy((String){ .str = &line.str[1], .length = line.length - 2});
       strtableFree(existing_nodes);
       free(config.content);
 
-      die("config: line %zu: unknown policy: \"%s\"", line_nr, policy.str);
+      die("config: line %zu: invalid policy: \"%s\"", line_nr, policy.str);
     }
     else if(current_policy == BPOL_none)
     {
@@ -257,15 +255,10 @@ SearchNode *searchTreeLoad(const char *path)
         strtableFree(existing_nodes);
         free(config.content);
 
-        /* Determine the line number of the initial definition of the
-           current node. */
-        size_t previous_line_nr =
-          previous_definition == root_node ? root_node_line_nr :
-          strmatchLineNr(previous_definition->matcher);
-
         die("config: line %zu: redefining %sline %zu: \"%s\"",
             line_nr, previous_definition->policy != current_policy ?
-            "policy of " : "", previous_line_nr, redefined_path.str);
+            "policy of " : "", previous_definition->policy_line_nr,
+            redefined_path.str);
       }
 
       /* Use either the existing node or create a new one. */
@@ -273,15 +266,9 @@ SearchNode *searchTreeLoad(const char *path)
         previous_definition != NULL ? previous_definition :
         newNode(root_node, existing_nodes, path, line_nr);
 
-      /* Capture the line number of the first definition of "/" in the
-         config file. */
-      if(node == root_node)
-      {
-        root_node_line_nr = line_nr;
-      }
-
       node->policy = current_policy;
       node->policy_inherited = false;
+      node->policy_line_nr = line_nr;
       inheritPolicyToSubnodes(node);
     }
     else

@@ -57,6 +57,11 @@ struct SearchNode
     node got its own policy assigned inside the config file. */
   bool policy_inherited;
 
+  /** The number of the line in the config file, on which the policy of the
+    current node was set. This value may differ from a StringMatchers line
+    number, wich only captures the first appearance of a string. */
+  size_t policy_line_nr;
+
   /** A pointer to the first subnode, or NULL. */
   SearchNode *subnodes;
 
