@@ -87,6 +87,7 @@ static void doubleTableCapaticy(StringTable *table)
 
   free(table->buckets);
   table->buckets = new_buckets;
+  table->capacity = new_capacity;
 }
 
 /** Creates a new StringTable.
