@@ -147,12 +147,12 @@ uint32_t strHash(String string)
   memory as the initial string, so make sure not to free or modify it
   unless the returned string is not used anymore.
 */
-String strRemoveTrailingSlashes(String path)
+String strRemoveTrailingSlashes(String string)
 {
-  size_t new_length = path.length;
-  while(new_length > 0 && path.str[new_length - 1] == '/') new_length--;
+  size_t new_length = string.length;
+  while(new_length > 0 && string.str[new_length - 1] == '/') new_length--;
 
-  return (String){ .str = path.str, .length = new_length };
+  return (String){ .str = string.str, .length = new_length };
 }
 
 /** Appends two paths and inserts a slash in between. It uses the internal
