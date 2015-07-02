@@ -243,7 +243,7 @@ SearchNode *searchTreeLoad(const char *path)
     }
     else if(line.str[0] == '/')
     {
-      String path = strRemoveTrailing(line, '/');
+      String path = strRemoveTrailingSlashes(line);
       SearchNode *previous_definition = strtableGet(existing_nodes, path);
 
       /* Terminate with an error if the path was already defined. */

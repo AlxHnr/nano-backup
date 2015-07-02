@@ -58,12 +58,12 @@ typedef struct
 
 extern String str(const char *string);
 extern String strCopy(String string);
-extern String strRemoveTrailing(String string, char c);
 
 extern bool strCompare(String a, String b);
 extern bool strWhitespaceOnly(String string);
 extern uint32_t strHash(String string);
 
+extern String strRemoveTrailingSlashes(String string);
 extern String strAppendPath(String path, String filename);
 extern StringSplit strSplitPath(String path);
 

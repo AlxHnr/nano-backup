@@ -68,23 +68,6 @@ String strCopy(String string)
   return (String){ .str = new_string, .length = string.length };
 }
 
-/** Removes trailing characters from a string.
-
-  @param string The string to be trimmed.
-  @param c The character that should be removed.
-
-  @return The same string with a shorter length. It points into the given
-  string so make sure not to free or modify it, unless the returned string
-  is not used anymore.
-*/
-String strRemoveTrailing(String string, char c)
-{
-  size_t new_length = string.length;
-  while(new_length > 0 && string.str[new_length - 1] == c) new_length--;
-
-  return (String){ .str = string.str, .length = new_length };
-}
-
 /** Compares two strings.
 
   @param a The first String to compare.
@@ -154,6 +137,22 @@ uint32_t strHash(String string)
   hash ^= hash >> 15;
 
   return hash;
+}
+
+/** Removes trailing slashes from a string.
+
+  @param string A string which may contain trailing slashes.
+
+  @return The same string with a shorter length. It points to the same
+  memory as the initial string, so make sure not to free or modify it
+  unless the returned string is not used anymore.
+*/
+String strRemoveTrailingSlashes(String path)
+{
+  size_t new_length = path.length;
+  while(new_length > 0 && path.str[new_length - 1] == '/') new_length--;
+
+  return (String){ .str = path.str, .length = new_length };
 }
 
 /** Appends two paths and inserts a slash in between. It uses the internal
