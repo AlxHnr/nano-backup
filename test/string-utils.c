@@ -33,6 +33,8 @@
 
 int main(void)
 {
+  String zero_length = (String){ .str = "some-data", .length = 0 };
+
   testGroupStart("str()");
   const char *raw_foo = "foo";
   String foo = str(raw_foo);
@@ -60,6 +62,10 @@ int main(void)
   assert_true(empty_copy.str != empty.str);
   assert_true(strcmp(empty_copy.str, empty.str) == 0);
   assert_true(empty_copy.str[0] == '\0');
+
+  String zero_length_copy = strCopy(zero_length);
+  assert_true(zero_length_copy.length == 0);
+  assert_true(zero_length_copy.str[0] == '\0');
   testGroupEnd();
 
   testGroupStart("strCompare()");
@@ -67,6 +73,7 @@ int main(void)
   assert_true(strCompare(foo, str("foo")));
   assert_true(strCompare(foo, foo_bar) == false);
   assert_true(strCompare(bar, bar_copy));
+  assert_true(strCompare(zero_length, str("")));
   assert_true(strCompare(empty, str("")));
   testGroupEnd();
 
