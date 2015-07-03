@@ -25,11 +25,11 @@
   @file string-utils.c Tests helper functions for string manipulation.
 */
 
-#include "test.h"
+#include "string-utils.h"
 
 #include <string.h>
 
-#include "string-utils.h"
+#include "test.h"
 
 int main(void)
 {
