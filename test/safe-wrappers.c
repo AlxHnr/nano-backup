@@ -137,6 +137,7 @@ int main(void)
 
   FileContent example_content = sGetFilesContent("example.txt");
   assert_true(example_content.size == 25);
+  assert_true(example_content.content != NULL);
   assert_true(strncmp(example_content.content,
                       "This is an example file.\n", 25) == 0);
   free(example_content.content);
