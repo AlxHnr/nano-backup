@@ -211,7 +211,9 @@ bool strmatch(StringMatcher *matcher, const char *string)
   }
   else
   {
-    match = strcmp(matcher->expression.str, string) == 0;
+    match = strncmp(matcher->expression.str, string,
+                    matcher->expression.length) == 0 &&
+      string[matcher->expression.length] == '\0';
   }
 
   matcher->has_matched |= match;
