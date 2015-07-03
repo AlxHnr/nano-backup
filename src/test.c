@@ -47,7 +47,7 @@ char *test_error_message = NULL;
 /** True, if a call to die() or dieErrno() should be handled with a longjmp
   back into the last assert statement. This variable should not be used
   directly. */
-bool expecting_error = false;
+bool test_catch_die = false;
 
 /** Frees the memory in test_error_message. */
 static void freeTestErrorMessage(void)
@@ -90,7 +90,7 @@ static void populateTestErrorMessage(const char *format, va_list arguments,
 }
 
 /* The next two functions are alternative implementations of the die() and
-   dieErrno() functions. If expecting_error is true, they will store the
+   dieErrno() functions. If test_catch_die is true, they will store the
    error message in test_error_message and jump back into the last assert
    statement. Otherwise they will terminate the program with failure.
 */
@@ -113,7 +113,7 @@ void die(const char *format, ...)
                            format_length + 1);
   va_end(arguments);
 
-  if(expecting_error)
+  if(test_catch_die)
   {
     longjmp(test_jump_buffer, 1);
   }
@@ -150,7 +150,7 @@ void dieErrno(const char *format, ...)
   test_error_message[format_length + 1] = ' ';
   strcpy(&test_error_message[format_length + 2], strerror(errno));
 
-  if(expecting_error)
+  if(test_catch_die)
   {
     longjmp(test_jump_buffer, 1);
   }
@@ -175,7 +175,7 @@ void dieTest(const char *format, ...)
 
   fprintf(stderr, "[FAILURE]\n    ");
 
-  if(!expecting_error) fprintf(stderr, "unexpected error: ");
+  if(!test_catch_die) fprintf(stderr, "unexpected error: ");
 
   vfprintf(stderr, format, arguments);
   fprintf(stderr, "\n");

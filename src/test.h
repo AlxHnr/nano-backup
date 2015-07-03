@@ -36,6 +36,7 @@
 /** Asserts that the given expression evaluates to true. It will catch
   calls to die(). */
 #define assert_true(expression) \
+  test_catch_die = true; \
   if(setjmp(test_jump_buffer) == 0) { \
     if(!(expression)) { \
       dieTest("%s: line %i: assert failed: %s", \
@@ -44,12 +45,12 @@
   } else { \
     dieTest("%s: line %i: fatal error: %s", __FILE__, \
             __LINE__, test_error_message); \
-  }
+  } test_catch_die = false;
 
 /** Asserts that the given expression causes a call to die() with the
   specified error message. */
 #define assert_error(expression, message) \
-  expecting_error = true; \
+  test_catch_die = true; \
   if(setjmp(test_jump_buffer) == 0) { \
     (void)(expression); \
     dieTest("%s: line %i: expected error: %s", \
@@ -58,11 +59,11 @@
     dieTest("%s: line %i: got wrong error message: \"%s\"\n" \
             "\t\texpected: \"%s\"", __FILE__, __LINE__, \
             test_error_message, message); \
-  } expecting_error = false;
+  } test_catch_die = false;
 
 extern jmp_buf test_jump_buffer;
 extern char *test_error_message;
-extern bool expecting_error;
+extern bool test_catch_die;
 
 extern void dieTest(const char *format, ...);
 
