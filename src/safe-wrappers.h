@@ -50,8 +50,12 @@ extern struct stat sLStat(const char *path);
 /** A simple struct, containing the content of the file and its size. */
 typedef struct
 {
-  char *content; /**< The content of the file. */
-  size_t size; /**< The length of the content. */
+  /** The content of the file. It will point to NULL if the size of the
+    file equals to zero.*/
+  char *content;
+
+  /** The size of the content in bytes. */
+  size_t size;
 }FileContent;
 
 extern FileContent sGetFilesContent(const char *path);

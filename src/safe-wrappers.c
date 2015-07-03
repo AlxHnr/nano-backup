@@ -239,8 +239,9 @@ struct stat sLStat(const char *path)
 
   @param path The path to the file.
 
-  @return A FileContent struct, which data member must be freed by the
-  caller using free().
+  @return A FileContent struct, which content must be freed by the caller
+  using free(). The content member will be NULL if the file has a size of
+  zero.
 */
 FileContent sGetFilesContent(const char *path)
 {
