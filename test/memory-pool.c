@@ -33,6 +33,7 @@ int main(void)
 {
   testGroupStart("mpAlloc()");
   void *data59    = mpAlloc(59);
+  void *data1     = mpAlloc(1);
   void *data123   = mpAlloc(123);
   void *data4096  = mpAlloc(4096);
 
@@ -41,6 +42,7 @@ int main(void)
   void *data16384 = mpAlloc(16384);
 
   assert_true(data59    != NULL);
+  assert_true(data1     != NULL);
   assert_true(data123   != NULL);
   assert_true(data4096  != NULL);
 
@@ -50,11 +52,18 @@ int main(void)
 
   /* Assert that all the pointer defined above don't point to the same
      addresses. */
+  assert_true(data59 != data1);
   assert_true(data59 != data123);
   assert_true(data59 != data4096);
   assert_true(data59 != data32);
   assert_true(data59 != data80);
   assert_true(data59 != data16384);
+
+  assert_true(data1 != data123);
+  assert_true(data1 != data4096);
+  assert_true(data1 != data32);
+  assert_true(data1 != data80);
+  assert_true(data1 != data16384);
 
   assert_true(data123 != data4096);
   assert_true(data123 != data32);
