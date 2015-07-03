@@ -30,12 +30,12 @@ test: $(TESTS)
 	  echo; \
 	  done)
 
-build/test/%.o: test/%.c
-	 mkdir -p build/test/ && $(CC) $(CFLAGS) -Isrc/ -c $< -o $@
-
 build/test/%: build/test/%.o \
   $(filter-out build/main.o build/error-handling.o,$(OBJECTS))
 	$(CC) $(LDFLAGS) $^ -o $@
+
+build/test/%.o: test/%.c
+	 mkdir -p build/test/ && $(CC) $(CFLAGS) -Isrc/ -c $< -o $@
 
 doc:
 	doxygen
