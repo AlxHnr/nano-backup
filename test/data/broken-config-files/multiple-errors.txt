@@ -1,0 +1,12 @@
+[copy]
+/home/user/
+/home
+
+[mirror]
+/
+
+[ignore]
+???*
+
+[track]
+/home/

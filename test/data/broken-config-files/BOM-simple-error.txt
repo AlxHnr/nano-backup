@@ -1,0 +1,3 @@
+﻿[track]
+/foo/bar/foo-bar.jpg
+This file contains a UTF-8 BOM.

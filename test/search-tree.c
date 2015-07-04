@@ -82,5 +82,11 @@ int main(void)
 
   assert_error(searchTreeLoad("broken-config-files/invalid-path-3.txt"),
                "config: line 7: invalid path: \".bash_history\"");
+
+  assert_error(searchTreeLoad("broken-config-files/multiple-errors.txt"),
+               "config: line 9: Invalid preceding regular expression: \"???*\"");
+
+  assert_error(searchTreeLoad("broken-config-files/BOM-simple-error.txt"),
+               "config: line 3: invalid path: \"This file contains a UTF-8 BOM.\"");
   testGroupEnd();
 }
