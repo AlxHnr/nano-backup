@@ -1,0 +1,15 @@
+[track]
+/home/user//.*(foo|bar).*/toast//.*
+/home/user/Videos
+
+[mirror]
+/home/user/foo/Packages/
+
+[copy]
+/home/user/foo/bar.txt
+
+[mirror]
+/home/user/foo/Packages
+
+[ignore]
+/home/user/foo/Packages//.*\.ebuild

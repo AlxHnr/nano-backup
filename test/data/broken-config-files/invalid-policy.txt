@@ -1,0 +1,12 @@
+[copy]
+/home/user/foo/bar.txt
+
+[mirror]
+/home/user/foo/Packages/
+
+[trak]
+/home/user/.confg/
+
+[track]
+/home/user/Pictures
+/home/user/Videos

@@ -1,0 +1,9 @@
+[copy]
+/home/user/foo/bar.txt
+
+[track]
+/home/user//(foo|bar/toast)//.*
+/home/user/Videos
+
+[mirror]
+/home/user/foo/Packages/

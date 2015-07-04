@@ -1,0 +1,15 @@
+[mirror]
+/usr/share/
+/usr/portage
+
+[copy]
+/
+
+[track]
+/etc/conf.d/
+
+[ignore]
+/usr/share//doc.*
+
+[mirror]
+/

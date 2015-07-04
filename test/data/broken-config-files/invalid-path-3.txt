@@ -1,0 +1,7 @@
+[copy]
+/home/user/.config
+
+[mirror]
+/home/user
+/home/user/.config/scripts/
+.bash_history

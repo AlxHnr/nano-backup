@@ -1,0 +1,8 @@
+   
+[copy]
+ 
+/home/user/.config
+
+[mirror]
+/home/user
+/home/user/.config/

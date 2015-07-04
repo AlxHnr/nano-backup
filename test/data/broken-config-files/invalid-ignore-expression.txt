@@ -1,0 +1,10 @@
+[copy]
+/home/user/foo/Packages/
+/home/user/.config/
+
+[ignore]
+ ([0-9A-Za-z)+///
+
+[track]
+/home/user/Pictures
+/home/user/Videos

@@ -1,0 +1,9 @@
+[copy]
+/home/user/
+/foo/bar/foo-bar.png
+
+[ignore]
+  this line will be treated like a regular expression
+
+[mirror]
+     /foo/bar

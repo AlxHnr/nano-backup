@@ -1,0 +1,16 @@
+[copy]
+/home/user/Videos
+/home/user/.bashrc
+/home/user/.cache/
+
+[mirror]
+/
+/home
+/usr/portage/packages
+/home/user
+/
+
+[track]
+/etc/bash/
+/etc/portage/
+/etc/conf.d/

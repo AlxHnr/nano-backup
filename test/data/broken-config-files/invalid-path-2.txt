@@ -1,0 +1,3 @@
+[mirror]
+/bin//.*\.sh
+~/.bashrc

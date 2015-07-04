@@ -1,0 +1,16 @@
+
+     
+
+  
+   
+
+      
+/home/user/foo/bar.txt
+
+[copy]
+/home/user/foo/Packages/
+/home/user/.config/
+
+[track]
+/home/user/Pictures
+/home/user/Videos
