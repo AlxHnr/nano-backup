@@ -45,7 +45,8 @@ static String ignore_token = { .str = "[ignore]", .length = 8 };
   files data.
 
   @param config The content of an entire config file.
-  @param start The position of the line beginning in content.
+  @param start The position of the line beginning in content. Must be
+  smaller than the size of the config files content.
 
   @return A string slice, which points into the given config files data.
   Don't modify or free the content of the config file, unless the returned
@@ -281,7 +282,7 @@ SearchNode *searchTreeLoad(const char *path)
     }
 
     parser_position += line.length;
-    parser_position += config.content[parser_position] == '\n';
+    parser_position += parser_position < config.size;
     line_nr++;
   }
 
