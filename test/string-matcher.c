@@ -222,7 +222,7 @@ int main(void)
   assert_true(strCompare(strmatchGetExpression(all_re),   str(".*")));
   assert_true(strCompare(strmatchGetExpression(all_re_f), str("^.*$")));
 
-  /* Assert that the excpression gets captured, but not copied. */
+  /* Assert that the expression gets captured, but not copied. */
   assert_true(strmatchGetExpression(zero_length_str).str == zero_length.str);
   assert_true(strmatchGetExpression(zero_length_re).str == zero_length.str);
   testGroupEnd();
