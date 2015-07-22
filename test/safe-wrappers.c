@@ -49,6 +49,7 @@ int main(void)
 
   /* Assert that ptr does not change if sRealloc() fails. */
   assert_true(ptr == ptr_backup);
+  free(ptr);
   testGroupEnd();
 
   testGroupStart("sSizeAdd()");
