@@ -120,6 +120,8 @@ int main(void)
   assert_true(strCompare(strAppendPath(foo,   empty), str("foo/")));
   assert_true(strCompare(strAppendPath(empty, bar),   str("/bar")));
   assert_true(strCompare(strAppendPath(foo,   bar),   str("foo/bar")));
+  assert_true(strCompare(strAppendPath(str("/foo/bar//"), str("/foo")),
+                         str("/foo/bar////foo")));
   testGroupEnd();
 
   testGroupStart("strSplitPath()");
@@ -147,6 +149,10 @@ int main(void)
   StringSplit pending_slashes = strSplitPath(str("/////"));
   assert_true(strCompare(pending_slashes.head, str("")));
   assert_true(strCompare(pending_slashes.tail, str("////")));
+
+  StringSplit trailing_slash = strSplitPath(str("a//"));
+  assert_true(strCompare(trailing_slash.head, str("a")));
+  assert_true(strCompare(trailing_slash.tail, str("/")));
 
   StringSplit many_slashes = strSplitPath(str("/many/////slashes"));
   assert_true(strCompare(many_slashes.head, str("/many")));
