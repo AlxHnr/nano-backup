@@ -1,0 +1,10 @@
+[copy]
+/
+/foo/bar
+/foo//.(jpg|png)
+
+[foo
+
+[track]
+
+/home/user/.config/

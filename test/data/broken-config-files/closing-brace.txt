@@ -1,0 +1,7 @@
+[mirror]
+/foo//.(jpg|png)
+/foo/bar
+
+[copy]
+/home/user/.config/
+foo]

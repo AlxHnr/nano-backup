@@ -38,6 +38,21 @@ int main(void)
   assert_error(searchTreeLoad("broken-config-files/invalid-policy.txt"),
                "config: line 7: invalid policy: \"trak\"");
 
+  assert_error(searchTreeLoad("broken-config-files/empty-policy-name.txt"),
+               "config: line 9: invalid policy: \"\"");
+
+  assert_error(searchTreeLoad("broken-config-files/opening-brace.txt"),
+               "config: line 6: invalid path: \"[foo\"");
+
+  assert_error(searchTreeLoad("broken-config-files/opening-brace-empty.txt"),
+               "config: line 9: invalid path: \"[\"");
+
+  assert_error(searchTreeLoad("broken-config-files/closing-brace.txt"),
+               "config: line 7: invalid path: \"foo]\"");
+
+  assert_error(searchTreeLoad("broken-config-files/closing-brace-empty.txt"),
+               "config: line 3: invalid path: \"]\"");
+
   assert_error(searchTreeLoad("broken-config-files/invalid-regex.txt"),
                "config: line 5: Unmatched ( or \\(: \"(foo|bar\"");
 

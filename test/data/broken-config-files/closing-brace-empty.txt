@@ -1,0 +1,8 @@
+[mirror]
+/foo/bar
+]
+/foo//.(jpg|png)
+
+
+[track]
+/home/user/.config/
