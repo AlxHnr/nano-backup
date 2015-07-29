@@ -82,6 +82,7 @@ int main(void)
   String zero_length_copy = strCopy(zero_length);
   assert_true(zero_length_copy.length == 0);
   assert_true(zero_length_copy.str[0] == '\0');
+  assert_true(zero_length_copy.str != zero_length.str);
   testGroupEnd();
 
   testGroupStart("strCompare()");
@@ -101,6 +102,7 @@ int main(void)
   assert_true(strWhitespaceOnly(str("	o ")) == false);
   assert_true(strWhitespaceOnly(str(".   ")) == false);
   assert_true(strWhitespaceOnly(str("foo")) == false);
+  assert_true(strWhitespaceOnly(zero_length));
   testGroupEnd();
 
   testGroupStart("strRemoveTrailingSlashes()");
