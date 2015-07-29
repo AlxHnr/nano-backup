@@ -43,7 +43,7 @@
               __FILE__, __LINE__, #expression); \
     } \
   } else { \
-    dieTest("%s: line %i: fatal error: %s", __FILE__, \
+    dieTest("%s: line %i: unexpected error: %s", __FILE__, \
             __LINE__, test_error_message); \
   } test_catch_die = false;
 
