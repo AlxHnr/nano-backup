@@ -31,6 +31,22 @@
 
 #include "test.h"
 
+/** Applies strRemoveTrailingSlashes() to the given string and checks its
+  output.
+
+  @param original The string that should be trimmed.
+  @param expected The expected result.
+*/
+static void testRemoveTrailingSlashes(String original, String expected)
+{
+  String trimmed = strRemoveTrailingSlashes(original);
+  assert_true(trimmed.length == expected.length);
+  assert_true(strCompare(trimmed, expected));
+
+  /* Assert that the string doesn't get reallocated. */
+  assert_true(trimmed.str == original.str);
+}
+
 int main(void)
 {
   String zero_length = (String){ .str = "some-data", .length = 0 };
@@ -88,17 +104,15 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("strRemoveTrailingSlashes()");
-  String trimmed_foo = strRemoveTrailingSlashes(foo);
-  assert_true(trimmed_foo.length == foo.length);
-  assert_true(trimmed_foo.str == foo.str);
-
-  String path1 = str("/home/arch/foo-bar/");
-  String path2 = str("/home/arch/foo-bar//////");
-  assert_true(strCompare(strRemoveTrailingSlashes(path1),
-                         strRemoveTrailingSlashes(path2)));
-
-  assert_true(strCompare(strRemoveTrailingSlashes(empty), empty));
-  assert_true(strRemoveTrailingSlashes(empty).str == empty.str);
+  testRemoveTrailingSlashes(str(""),     str(""));
+  testRemoveTrailingSlashes(zero_length, str(""));
+  testRemoveTrailingSlashes(str("foo"),  str("foo"));
+  testRemoveTrailingSlashes(str("/home/arch/foo-bar"),
+                            str("/home/arch/foo-bar"));
+  testRemoveTrailingSlashes(str("/home/arch/foo-bar/"),
+                            str("/home/arch/foo-bar"));
+  testRemoveTrailingSlashes(str("/home/arch/foo-bar//////"),
+                            str("/home/arch/foo-bar"));
   testGroupEnd();
 
   testGroupStart("strAppendPath()");
