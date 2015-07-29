@@ -65,7 +65,6 @@ static String getLine(FileContent config, size_t start)
   not check if it already exists in the parent node. All parent nodes will
   be created if they do not exist.
 
-  @param root_node The root node of the tree.
   @param existing_nodes A StringTable containing all existing nodes in the
   entire tree.
   @param path The full filepath of the node which should be created. It
@@ -77,8 +76,7 @@ static String getLine(FileContent config, size_t start)
   @return A new search node, which has inherited properties from its parent
   node and the root node.
 */
-static SearchNode *newNode(SearchNode *root_node,
-                           StringTable *existing_nodes,
+static SearchNode *newNode(StringTable *existing_nodes,
                            String path, size_t line_nr)
 {
   StringSplit paths = strSplitPath(path);
@@ -87,7 +85,7 @@ static SearchNode *newNode(SearchNode *root_node,
   SearchNode *parent_node = strtableGet(existing_nodes, paths.head);
   if(parent_node == NULL)
   {
-    parent_node = newNode(root_node, existing_nodes, paths.head, line_nr);
+    parent_node = newNode(existing_nodes, paths.head, line_nr);
   }
 
   /* Initialize a new node. */
@@ -116,7 +114,7 @@ static SearchNode *newNode(SearchNode *root_node,
 
   node->subnodes = NULL;
   node->subnodes_contain_regex = false;
-  node->ignore_matcher_list = root_node->ignore_matcher_list;
+  node->ignore_matcher_list = parent_node->ignore_matcher_list;
 
   /* Prepend node to the parents subnodes. */
   node->next = parent_node->subnodes;
@@ -267,8 +265,8 @@ SearchNode *searchTreeLoad(const char *path)
 
       /* Use either the existing node or create a new one. */
       SearchNode *node =
-        previous_definition != NULL ? previous_definition :
-        newNode(root_node, existing_nodes, path, line_nr);
+        previous_definition != NULL ?
+        previous_definition : newNode(existing_nodes, path, line_nr);
 
       node->policy = current_policy;
       node->policy_inherited = false;
