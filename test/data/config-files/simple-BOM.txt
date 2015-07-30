@@ -1,0 +1,9 @@
+﻿[copy]
+/home/user/Pictures
+
+[mirror]
+/home/foo
+
+[track]
+/etc
+/home/user/.config
