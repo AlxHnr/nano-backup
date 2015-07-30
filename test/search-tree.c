@@ -57,6 +57,73 @@ static SearchNode *findNode(const char *string, SearchNode *starting_node)
   return NULL;
 }
 
+static size_t countSubnodes(SearchNode *parent_node)
+{
+  size_t counter = 0;
+
+  for(SearchNode *node = parent_node->subnodes;
+      node != NULL; node = node->next)
+  {
+    counter++;
+  }
+
+  return counter;
+}
+
+static void checkBasicNode(SearchNode *node, size_t subnode_count,
+                           bool subnodes_contain_regex,
+                           BackupPolicy policy, bool policy_inherited,
+                           size_t policy_line_nr)
+{
+  assert_true(node != NULL);
+
+  assert_true(node->policy == policy);
+  assert_true(node->policy_inherited == policy_inherited);
+  assert_true(node->policy_line_nr == policy_line_nr);
+
+  assert_true(countSubnodes(node) == subnode_count);
+  if(node->subnodes == NULL)
+  {
+    assert_true(subnode_count == 0);
+    assert_true(subnodes_contain_regex == false);
+    assert_true(node->subnodes_contain_regex == false);
+  }
+  else
+  {
+    assert_true(node->subnodes_contain_regex == subnodes_contain_regex);
+  }
+}
+
+static void checkRootNode(SearchNode *node, size_t subnode_count,
+                          bool subnodes_contain_regex, BackupPolicy policy,
+                          bool policy_inherited, size_t policy_line_nr)
+{
+  checkBasicNode(node, subnode_count, subnodes_contain_regex,
+                 policy, policy_inherited, policy_line_nr);
+
+  assert_true(node->matcher == NULL);
+  assert_true(node->ignore_matcher_list != NULL);
+  assert_true(node->next == NULL);
+}
+
+static void checkNode(SearchNode *node, SearchNode *root_node,
+                      size_t subnode_count, bool subnodes_contain_regex,
+                      BackupPolicy policy, bool policy_inherited,
+                      size_t policy_line_nr, size_t matcher_line_nr,
+                      const char *matcher_string)
+{
+  checkBasicNode(node, subnode_count, subnodes_contain_regex,
+                 policy, policy_inherited, policy_line_nr);
+
+  assert_true(node->matcher != NULL);
+  assert_true(strmatchHasMatched(node->matcher) == false);
+  assert_true(strmatchLineNr(node->matcher) == matcher_line_nr);
+  assert_true(strCompare(strmatchGetExpression(node->matcher),
+                         str(matcher_string)));
+
+  assert_true(node->ignore_matcher_list == root_node->ignore_matcher_list);
+}
+
 /** Loads a search tree from a simple config file and checks it.
 
   @param path A null-terminated string, containing a path to a valid config
@@ -67,62 +134,16 @@ static void testSimpleConfigFile(const char *path)
   SearchNode *root_node = searchTreeLoad(path);
 
   /* Check root node. */
-  assert_true(root_node != NULL);
-  assert_true(root_node->matcher == NULL);
-
-  assert_true(root_node->policy == BPOL_none);
-  assert_true(root_node->policy_inherited == false);
-  assert_true(root_node->policy_line_nr == 0);
-
-  assert_true(root_node->subnodes != NULL);
-  assert_true(root_node->subnodes->next != NULL);
-  assert_true(root_node->subnodes->next->next == NULL);
-  assert_true(root_node->subnodes_contain_regex == false);
-
-  assert_true(root_node->ignore_matcher_list != NULL);
+  checkRootNode(root_node, 2, false, BPOL_none, false, 0);
   assert_true(*root_node->ignore_matcher_list == NULL);
-
-  assert_true(root_node->next == NULL);
 
   /* Check etc subnode. */
   SearchNode *etc_node = findNode("etc", root_node->subnodes);
-
-  assert_true(etc_node->matcher != NULL);
-  assert_true(strmatchHasMatched(etc_node->matcher) == false);
-  assert_true(strmatchLineNr(etc_node->matcher) == 8);
-  assert_true(strCompare(strmatchGetExpression(etc_node->matcher),
-                         str("etc")));
-
-  assert_true(etc_node->policy == BPOL_track);
-  assert_true(etc_node->policy_inherited == false);
-  assert_true(etc_node->policy_line_nr == 8);
-
-  assert_true(etc_node->subnodes == NULL);
-  assert_true(etc_node->subnodes_contain_regex == false);
-
-  assert_true(etc_node->ignore_matcher_list ==
-              root_node->ignore_matcher_list);
+  checkNode(etc_node, root_node, 0, false, BPOL_track, false, 8, 8, "etc");
 
   /* Check home subnode. */
   SearchNode *home_node = findNode("home", root_node->subnodes);
-
-  assert_true(home_node->matcher != NULL);
-  assert_true(strmatchHasMatched(home_node->matcher) == false);
-  assert_true(strmatchLineNr(home_node->matcher) == 2);
-  assert_true(strCompare(strmatchGetExpression(home_node->matcher),
-                         str("home")));
-
-  assert_true(home_node->policy == BPOL_none);
-  assert_true(home_node->policy_inherited == false);
-  assert_true(home_node->policy_line_nr == 2);
-
-  assert_true(home_node->subnodes != NULL);
-  assert_true(home_node->subnodes->next != NULL);
-  assert_true(home_node->subnodes->next->next == NULL);
-  assert_true(home_node->subnodes_contain_regex == false);
-
-  assert_true(home_node->ignore_matcher_list ==
-              root_node->ignore_matcher_list);
+  checkNode(home_node, root_node, 2, false, BPOL_none, false, 2, 2, "home");
 }
 
 int main(void)
