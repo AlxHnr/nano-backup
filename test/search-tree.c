@@ -31,19 +31,20 @@
 #include "string-utils.h"
 #include "error-handling.h"
 
-/** Returns the node with the given string as its matcher expression. It
-  will terminate the test suite with failure, if the node couldn't be
-  found.
+/** Returns the subnode with the given string as its matcher expression. It
+  will terminate the test suite with failure if the node does not exist.
 
+  @param parent_node The node containing the subnodes which should be
+  searched.
   @param string The matcher expression string to search for.
-  @param starting_node The first node in the list which should be searched.
 
   @return A valid search node.
 */
-static SearchNode *findNode(const char *string, SearchNode *starting_node)
+static SearchNode *findSubnode(SearchNode *parent_node, const char *string)
 {
   String node_name = str(string);
-  for(SearchNode *node = starting_node; node != NULL; node = node->next)
+  for(SearchNode *node = parent_node->subnodes;
+      node != NULL; node = node->next)
   {
     if(strCompare(node_name, strmatchGetExpression(node->matcher)))
     {
@@ -168,11 +169,11 @@ static void testSimpleConfigFile(const char *path)
   assert_true(*root->ignore_matcher_list == NULL);
 
   /* Check etc node. */
-  SearchNode *etc = findNode("etc", root->subnodes);
+  SearchNode *etc = findSubnode(root, "etc");
   checkNode(etc, root, 0, false, BPOL_track, false, 8, 8, "etc");
 
   /* Check home node. */
-  SearchNode *home = findNode("home", root->subnodes);
+  SearchNode *home = findSubnode(root, "home");
   checkNode(home, root, 2, false, BPOL_none, false, 2, 2, "home");
 }
 
