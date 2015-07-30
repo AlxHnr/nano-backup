@@ -170,23 +170,19 @@ static void testSimpleConfigFile(const char *path)
   checkNode(home, root, 2, false, BPOL_none, false, 2, 2, "home");
 
   checkNode(findSubnode(home, "foo"),
-            root, 0, false, BPOL_mirror, false,
-            5, 5, "foo");
+            root, 0, false, BPOL_mirror, false, 5, 5, "foo");
 
   SearchNode *user = findSubnode(home, "user");
   checkNode(user, root, 2, false, BPOL_none, false, 2, 2, "user");
 
   checkNode(findSubnode(user, "Pictures"),
-            root, 0, false, BPOL_copy, false,
-            2, 2, "Pictures");
+            root, 0, false, BPOL_copy, false, 2, 2, "Pictures");
 
   checkNode(findSubnode(user, ".config"),
-            root, 0, false, BPOL_track, false,
-            9, 9, ".config");
+            root, 0, false, BPOL_track, false, 9, 9, ".config");
 
   checkNode(findSubnode(root, "etc"),
-            root, 0, false, BPOL_track,
-            false, 8, 8, "etc");
+            root, 0, false, BPOL_track, false, 8, 8, "etc");
 }
 
 int main(void)
