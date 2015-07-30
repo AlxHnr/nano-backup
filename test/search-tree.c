@@ -57,6 +57,12 @@ static SearchNode *findNode(const char *string, SearchNode *starting_node)
   return NULL;
 }
 
+/** Counts the subnodes of the given node.
+
+  @param parent_node The node containing the subnodes.
+
+  @return The amount of subnodes in the given node.
+*/
 static size_t countSubnodes(SearchNode *parent_node)
 {
   size_t counter = 0;
@@ -131,19 +137,19 @@ static void checkNode(SearchNode *node, SearchNode *root_node,
 */
 static void testSimpleConfigFile(const char *path)
 {
-  SearchNode *root_node = searchTreeLoad(path);
+  SearchNode *root = searchTreeLoad(path);
 
   /* Check root node. */
-  checkRootNode(root_node, 2, false, BPOL_none, false, 0);
-  assert_true(*root_node->ignore_matcher_list == NULL);
+  checkRootNode(root, 2, false, BPOL_none, false, 0);
+  assert_true(*root->ignore_matcher_list == NULL);
 
-  /* Check etc subnode. */
-  SearchNode *etc_node = findNode("etc", root_node->subnodes);
-  checkNode(etc_node, root_node, 0, false, BPOL_track, false, 8, 8, "etc");
+  /* Check etc node. */
+  SearchNode *etc = findNode("etc", root->subnodes);
+  checkNode(etc, root, 0, false, BPOL_track, false, 8, 8, "etc");
 
-  /* Check home subnode. */
-  SearchNode *home_node = findNode("home", root_node->subnodes);
-  checkNode(home_node, root_node, 2, false, BPOL_none, false, 2, 2, "home");
+  /* Check home node. */
+  SearchNode *home = findNode("home", root->subnodes);
+  checkNode(home, root, 2, false, BPOL_none, false, 2, 2, "home");
 }
 
 int main(void)
