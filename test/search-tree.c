@@ -76,6 +76,17 @@ static size_t countSubnodes(SearchNode *parent_node)
   return counter;
 }
 
+/** Checks whether the given node contains the expected values, or not.
+
+  @param node The node which should be checked.
+  @param subnode_count The amount of subnodes which the node must have.
+  @param subnodes_contain_regex True, if at least one of the subnodes must
+  contain a regular expression.
+  @param policy The policy which the node must have.
+  @param policy_inherited True, if the policy was inherited from the parent
+  node.
+  @param policy_line_nr The line number on which the policy was defined.
+*/
 static void checkBasicNode(SearchNode *node, size_t subnode_count,
                            bool subnodes_contain_regex,
                            BackupPolicy policy, bool policy_inherited,
@@ -98,8 +109,12 @@ static void checkBasicNode(SearchNode *node, size_t subnode_count,
   {
     assert_true(node->subnodes_contain_regex == subnodes_contain_regex);
   }
+
+  assert_true(node->ignore_matcher_list != NULL);
 }
 
+/** Extends checkBasicNode() with root node specific checks by wrapping it.
+*/
 static void checkRootNode(SearchNode *node, size_t subnode_count,
                           bool subnodes_contain_regex, BackupPolicy policy,
                           bool policy_inherited, size_t policy_line_nr)
@@ -108,10 +123,19 @@ static void checkRootNode(SearchNode *node, size_t subnode_count,
                  policy, policy_inherited, policy_line_nr);
 
   assert_true(node->matcher == NULL);
-  assert_true(node->ignore_matcher_list != NULL);
+  assert_true(node->policy_inherited == false);
   assert_true(node->next == NULL);
 }
 
+/** Extends checkBasicNode() with more values to check for. This function
+  takes the following additional arguments:
+
+  @param root_node The root node of the tree to which the given node
+  belongs to.
+  @param matcher_line_nr The number of the line in the config file on which
+  the nodes matcher expression was initially defined.
+  @param matcher_string The matcher expression as a string.
+*/
 static void checkNode(SearchNode *node, SearchNode *root_node,
                       size_t subnode_count, bool subnodes_contain_regex,
                       BackupPolicy policy, bool policy_inherited,
