@@ -163,18 +163,30 @@ static void checkNode(SearchNode *node, SearchNode *root_node,
 static void testSimpleConfigFile(const char *path)
 {
   SearchNode *root = searchTreeLoad(path);
-
-  /* Check root node. */
   checkRootNode(root, 2, false, BPOL_none, false, 0);
   assert_true(*root->ignore_matcher_list == NULL);
 
-  /* Check etc node. */
-  SearchNode *etc = findSubnode(root, "etc");
-  checkNode(etc, root, 0, false, BPOL_track, false, 8, 8, "etc");
-
-  /* Check home node. */
   SearchNode *home = findSubnode(root, "home");
   checkNode(home, root, 2, false, BPOL_none, false, 2, 2, "home");
+
+  checkNode(findSubnode(home, "foo"),
+            root, 0, false, BPOL_mirror, false,
+            5, 5, "foo");
+
+  SearchNode *user = findSubnode(home, "user");
+  checkNode(user, root, 2, false, BPOL_none, false, 2, 2, "user");
+
+  checkNode(findSubnode(user, "Pictures"),
+            root, 0, false, BPOL_copy, false,
+            2, 2, "Pictures");
+
+  checkNode(findSubnode(user, ".config"),
+            root, 0, false, BPOL_track, false,
+            9, 9, ".config");
+
+  checkNode(findSubnode(root, "etc"),
+            root, 0, false, BPOL_track,
+            false, 8, 8, "etc");
 }
 
 int main(void)
