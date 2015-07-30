@@ -28,9 +28,112 @@
 #include "search-tree.h"
 
 #include "test.h"
+#include "string-utils.h"
+#include "error-handling.h"
+
+/** Returns the node with the given string as its matcher expression. It
+  will terminate the test suite with failure, if the node couldn't be
+  found.
+
+  @param string The matcher expression string to search for.
+  @param starting_node The first node in the list which should be searched.
+
+  @return A valid search node.
+*/
+static SearchNode *findNode(const char *string, SearchNode *starting_node)
+{
+  String node_name = str(string);
+  for(SearchNode *node = starting_node; node != NULL; node = node->next)
+  {
+    if(strCompare(node_name, strmatchGetExpression(node->matcher)))
+    {
+      return node;
+    }
+  }
+
+  die("failed to find node with name \"%s\"", string);
+
+  /* Some compilers are not aware that die() never returns. */
+  return NULL;
+}
+
+/** Loads a search tree from a simple config file and checks it.
+
+  @param path A null-terminated string, containing a path to a valid config
+  file.
+*/
+static void testSimpleConfigFile(const char *path)
+{
+  SearchNode *root_node = searchTreeLoad(path);
+
+  /* Check root node. */
+  assert_true(root_node != NULL);
+  assert_true(root_node->matcher == NULL);
+
+  assert_true(root_node->policy == BPOL_none);
+  assert_true(root_node->policy_inherited == false);
+  assert_true(root_node->policy_line_nr == 0);
+
+  assert_true(root_node->subnodes != NULL);
+  assert_true(root_node->subnodes->next != NULL);
+  assert_true(root_node->subnodes->next->next == NULL);
+  assert_true(root_node->subnodes_contain_regex == false);
+
+  assert_true(root_node->ignore_matcher_list != NULL);
+  assert_true(*root_node->ignore_matcher_list == NULL);
+
+  assert_true(root_node->next == NULL);
+
+  /* Check etc subnode. */
+  SearchNode *etc_node = findNode("etc", root_node->subnodes);
+
+  assert_true(etc_node->matcher != NULL);
+  assert_true(strmatchHasMatched(etc_node->matcher) == false);
+  assert_true(strmatchLineNr(etc_node->matcher) == 8);
+  assert_true(strCompare(strmatchGetExpression(etc_node->matcher),
+                         str("etc")));
+
+  assert_true(etc_node->policy == BPOL_track);
+  assert_true(etc_node->policy_inherited == false);
+  assert_true(etc_node->policy_line_nr == 8);
+
+  assert_true(etc_node->subnodes == NULL);
+  assert_true(etc_node->subnodes_contain_regex == false);
+
+  assert_true(etc_node->ignore_matcher_list ==
+              root_node->ignore_matcher_list);
+
+  /* Check home subnode. */
+  SearchNode *home_node = findNode("home", root_node->subnodes);
+
+  assert_true(home_node->matcher != NULL);
+  assert_true(strmatchHasMatched(home_node->matcher) == false);
+  assert_true(strmatchLineNr(home_node->matcher) == 2);
+  assert_true(strCompare(strmatchGetExpression(home_node->matcher),
+                         str("home")));
+
+  assert_true(home_node->policy == BPOL_none);
+  assert_true(home_node->policy_inherited == false);
+  assert_true(home_node->policy_line_nr == 2);
+
+  assert_true(home_node->subnodes != NULL);
+  assert_true(home_node->subnodes->next != NULL);
+  assert_true(home_node->subnodes->next->next == NULL);
+  assert_true(home_node->subnodes_contain_regex == false);
+
+  assert_true(home_node->ignore_matcher_list ==
+              root_node->ignore_matcher_list);
+}
 
 int main(void)
 {
+  testGroupStart("BOM and EOL variations");
+  testSimpleConfigFile("config-files/simple.txt");
+  testSimpleConfigFile("config-files/simple-BOM.txt");
+  testSimpleConfigFile("config-files/simple-noeol.txt");
+  testSimpleConfigFile("config-files/simple-BOM-noeol.txt");
+  testGroupEnd();
+
   testGroupStart("broken config files");
   assert_error(searchTreeLoad("non-existing-file.txt"), "failed to access "
                "\"non-existing-file.txt\": No such file or directory");
