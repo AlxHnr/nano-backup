@@ -105,6 +105,10 @@ int main(void)
   assert_true(strWhitespaceOnly(zero_length));
   testGroupEnd();
 
+  testGroupStart("strHash()");
+  assert_true(strHash(str("")) == strHash(zero_length));
+  testGroupEnd();
+
   testGroupStart("strRemoveTrailingSlashes()");
   testRemoveTrailingSlashes(str(""),     str(""));
   testRemoveTrailingSlashes(zero_length, str(""));
