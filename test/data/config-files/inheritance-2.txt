@@ -2,8 +2,8 @@
 [copy]
 /
 
-[mirror]
-/usr
+
+
 
 [ignore]
 foo

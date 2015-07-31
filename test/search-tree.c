@@ -259,7 +259,7 @@ static void testInheritance_2(void)
   assert_true(ignoreMatcherExists(root, "bar"));
 
   SearchNode *usr = findSubnode(root, "usr");
-  checkNode(usr, root, 1, false, BPOL_mirror, false, 6, 6, "usr");
+  checkNode(usr, root, 1, false, BPOL_copy, true, 15, 15, "usr");
 
   SearchNode *portage = findSubnode(usr, "portage");
   checkNode(portage, root, 1, false, BPOL_track, false, 15, 15, "portage");
