@@ -251,10 +251,10 @@ static void testInheritance_1(void)
             root, 0, false, BPOL_copy, false, 2, 2, ".*\\.ebuild");
 }
 
-/** Tests parsing the fine "regex-inheritance.txt". */
-static void testRegexInheritance(void)
+/** Tests parsing the fine "inheritance-3.txt". */
+static void testInheritance_3(void)
 {
-  SearchNode *root = searchTreeLoad("config-files/regex-inheritance.txt");
+  SearchNode *root = searchTreeLoad("config-files/inheritance-3.txt");
   checkRootNode(root, 2, false, BPOL_none, false, 0, 2);
   assert_true(ignoreMatcherExists(root, ".*\\.png"));
   assert_true(ignoreMatcherExists(root, ".*\\.jpg"));
@@ -297,7 +297,7 @@ int main(void)
 {
   testGroupStart("various config files");
   testInheritance_1();
-  testRegexInheritance();
+  testInheritance_3();
   testGroupEnd();
 
   testGroupStart("BOM and EOL variations");
