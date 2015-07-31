@@ -1,0 +1,14 @@
+[copy]
+/usr/portage/app-crypt/seahorse//.*\.ebuild
+
+[mirror]
+/usr/portage/app-crypt/seahorse//////
+
+[copy]
+/usr/portage/
+
+[mirror]
+/usr///
+
+[track]
+/

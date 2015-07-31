@@ -229,6 +229,28 @@ static void testSimpleConfigFile(const char *path)
             root, 0, false, BPOL_track, false, 8, 8, "etc");
 }
 
+/** Test parsing the config file "inheritance-1.txt". */
+static void testInheritance_1(void)
+{
+  SearchNode *root = searchTreeLoad("config-files/inheritance-1.txt");
+  checkRootNode(root, 1, false, BPOL_track, false, 14, 0);
+
+  SearchNode *usr = findSubnode(root, "usr");
+  checkNode(usr, root, 1, false, BPOL_mirror, false, 11, 2, "usr");
+
+  SearchNode *portage = findSubnode(usr, "portage");
+  checkNode(portage, root, 1, false, BPOL_copy, false, 8, 2, "portage");
+
+  SearchNode *app_crypt = findSubnode(portage, "app-crypt");
+  checkNode(app_crypt, root, 1, false, BPOL_copy, true, 8, 2, "app-crypt");
+
+  SearchNode *seahorse = findSubnode(app_crypt, "seahorse");
+  checkNode(seahorse, root, 1, true, BPOL_mirror, false, 5, 2, "seahorse");
+
+  checkNode(findSubnode(seahorse, ".*\\.ebuild"),
+            root, 0, false, BPOL_copy, false, 2, 2, ".*\\.ebuild");
+}
+
 /** Tests parsing the fine "regex-inheritance.txt". */
 static void testRegexInheritance(void)
 {
@@ -274,6 +296,7 @@ static void testRegexInheritance(void)
 int main(void)
 {
   testGroupStart("various config files");
+  testInheritance_1();
   testRegexInheritance();
   testGroupEnd();
 
