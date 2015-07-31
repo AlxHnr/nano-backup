@@ -161,14 +161,12 @@ static void checkBasicNode(SearchNode *node, size_t subnode_count,
 */
 static void checkRootNode(SearchNode *node, size_t subnode_count,
                           bool subnodes_contain_regex, BackupPolicy policy,
-                          bool policy_inherited, size_t policy_line_nr,
-                          size_t ignore_matcher_count)
+                          size_t policy_line_nr, size_t ignore_matcher_count)
 {
   checkBasicNode(node, subnode_count, subnodes_contain_regex,
-                 policy, policy_inherited, policy_line_nr);
+                 policy, false, policy_line_nr);
 
   assert_true(node->matcher == NULL);
-  assert_true(node->policy_inherited == false);
   assert_true(countIgnoreMatcher(node) == ignore_matcher_count);
   assert_true(node->next == NULL);
 }
@@ -208,7 +206,7 @@ static void checkNode(SearchNode *node, SearchNode *root_node,
 static void testSimpleConfigFile(const char *path)
 {
   SearchNode *root = searchTreeLoad(path);
-  checkRootNode(root, 2, false, BPOL_none, false, 0, 0);
+  checkRootNode(root, 2, BPOL_none, false, 0, 0);
 
   SearchNode *home = findSubnode(root, "home");
   checkNode(home, root, 2, false, BPOL_none, false, 2, 2, "home");
@@ -233,7 +231,7 @@ static void testSimpleConfigFile(const char *path)
 static void testInheritance_1(void)
 {
   SearchNode *root = searchTreeLoad("config-files/inheritance-1.txt");
-  checkRootNode(root, 1, false, BPOL_track, false, 14, 0);
+  checkRootNode(root, 1, BPOL_track, false, 14, 0);
 
   SearchNode *usr = findSubnode(root, "usr");
   checkNode(usr, root, 1, false, BPOL_mirror, false, 11, 2, "usr");
@@ -255,7 +253,7 @@ static void testInheritance_1(void)
 static void testInheritance_3(void)
 {
   SearchNode *root = searchTreeLoad("config-files/inheritance-3.txt");
-  checkRootNode(root, 2, false, BPOL_none, false, 0, 2);
+  checkRootNode(root, 2, BPOL_none, false, 0, 2);
   assert_true(ignoreMatcherExists(root, ".*\\.png"));
   assert_true(ignoreMatcherExists(root, ".*\\.jpg"));
 
