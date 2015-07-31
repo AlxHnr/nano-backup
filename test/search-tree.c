@@ -185,8 +185,53 @@ static void testSimpleConfigFile(const char *path)
             root, 0, false, BPOL_track, false, 8, 8, "etc");
 }
 
+/** Tests parsing the fine "regex-inheritance.txt". */
+static void testRegexInheritance(void)
+{
+  SearchNode *root = searchTreeLoad("config-files/regex-inheritance.txt");
+  checkRootNode(root, 2, false, BPOL_none, false, 0);
+  assert_true(*root->ignore_matcher_list != NULL);
+
+  SearchNode *home_1 = findSubnode(root, "home");
+  checkNode(home_1, root, 1, false, BPOL_mirror, false, 28, 22, "home");
+
+  SearchNode *user_1 = findSubnode(home_1, "user");
+  checkNode(user_1, root, 1, false, BPOL_mirror, true, 28, 22, "user");
+
+  SearchNode *config_1 = findSubnode(user_1, ".config");
+  checkNode(config_1, root, 3, true, BPOL_mirror, true, 28, 22, ".config");
+
+  SearchNode *dlaunch_1 = findSubnode(config_1, "dlaunch");
+  checkNode(dlaunch_1, root, 1, false, BPOL_mirror, true, 28, 22, "dlaunch");
+
+  checkNode(findSubnode(dlaunch_1, "ignore-files.txt"),
+            root, 0, false, BPOL_track, false, 22, 22, "ignore-files.txt");
+
+  SearchNode *htop_1 = findSubnode(config_1, "htop");
+  checkNode(htop_1, root, 1, false, BPOL_mirror, true, 28, 23, "htop");
+
+  checkNode(findSubnode(htop_1, "htoprc"),
+            root, 0, false, BPOL_track, false, 23, 23, "htoprc");
+
+  checkNode(findSubnode(config_1, ".*\\.conf"),
+            root, 0, false, BPOL_track, false, 24, 24, ".*\\.conf");
+
+  SearchNode *usr_1 = findSubnode(root, "usr");
+  checkNode(usr_1, root, 1, false, BPOL_none, false, 27, 27, "usr");
+
+  SearchNode *portage_1 = findSubnode(usr_1, "portage");
+  checkNode(portage_1, root, 1, true, BPOL_none, false, 27, 27, "portage");
+
+  checkNode(findSubnode(portage_1, "(distfiles|packages)"),
+            root, 0, false, BPOL_mirror, false, 27, 27, "(distfiles|packages)");
+}
+
 int main(void)
 {
+  testGroupStart("various config files");
+  testRegexInheritance();
+  testGroupEnd();
+
   testGroupStart("BOM and EOL variations");
   testSimpleConfigFile("config-files/simple.txt");
   testSimpleConfigFile("config-files/simple-BOM.txt");
