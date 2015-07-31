@@ -31,6 +31,25 @@
 #include "string-utils.h"
 #include "error-handling.h"
 
+/** Counts the subnodes of the given node.
+
+  @param parent_node The node containing the subnodes.
+
+  @return The amount of subnodes in the given node.
+*/
+static size_t countSubnodes(SearchNode *parent_node)
+{
+  size_t counter = 0;
+
+  for(SearchNode *node = parent_node->subnodes;
+      node != NULL; node = node->next)
+  {
+    counter++;
+  }
+
+  return counter;
+}
+
 /** Returns the subnode with the given string as its matcher expression. It
   will terminate the test suite with failure if the node does not exist.
 
@@ -58,23 +77,47 @@ static SearchNode *findSubnode(SearchNode *parent_node, const char *string)
   return NULL;
 }
 
-/** Counts the subnodes of the given node.
+/** Counts all ignore matcher that the given SearchNode contains.
 
-  @param parent_node The node containing the subnodes.
+  @param node The SearchNode containing the ignore matcher list.
 
-  @return The amount of subnodes in the given node.
+  @return The amount of ignore matcher in the given nodes ignore matcher
+  list.
 */
-static size_t countSubnodes(SearchNode *parent_node)
+static size_t countIgnoreMatcher(SearchNode *node)
 {
   size_t counter = 0;
 
-  for(SearchNode *node = parent_node->subnodes;
-      node != NULL; node = node->next)
+  for(StringMatcherList *element = *node->ignore_matcher_list;
+      element != NULL; element = element->next)
   {
     counter++;
   }
 
   return counter;
+}
+
+/** Checks if a ignore matcher with the given ignore pattern exists in the
+  given SearchNode.
+
+  @param node The node containing the ignore matcher list.
+  @param pattern The pattern which should be searched for.
+
+  @return True if the pattern exists in the ignore matcher list. False
+  otherwise.
+*/
+static bool ignoreMatcherExists(SearchNode *node, const char *pattern)
+{
+  for(StringMatcherList *element = *node->ignore_matcher_list;
+      element != NULL; element = element->next)
+  {
+    if(strCompare(strmatchGetExpression(element->matcher), str(pattern)))
+    {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 /** Checks whether the given node contains the expected values, or not.
@@ -118,13 +161,15 @@ static void checkBasicNode(SearchNode *node, size_t subnode_count,
 */
 static void checkRootNode(SearchNode *node, size_t subnode_count,
                           bool subnodes_contain_regex, BackupPolicy policy,
-                          bool policy_inherited, size_t policy_line_nr)
+                          bool policy_inherited, size_t policy_line_nr,
+                          size_t ignore_matcher_count)
 {
   checkBasicNode(node, subnode_count, subnodes_contain_regex,
                  policy, policy_inherited, policy_line_nr);
 
   assert_true(node->matcher == NULL);
   assert_true(node->policy_inherited == false);
+  assert_true(countIgnoreMatcher(node) == ignore_matcher_count);
   assert_true(node->next == NULL);
 }
 
@@ -163,8 +208,7 @@ static void checkNode(SearchNode *node, SearchNode *root_node,
 static void testSimpleConfigFile(const char *path)
 {
   SearchNode *root = searchTreeLoad(path);
-  checkRootNode(root, 2, false, BPOL_none, false, 0);
-  assert_true(*root->ignore_matcher_list == NULL);
+  checkRootNode(root, 2, false, BPOL_none, false, 0, 0);
 
   SearchNode *home = findSubnode(root, "home");
   checkNode(home, root, 2, false, BPOL_none, false, 2, 2, "home");
@@ -189,8 +233,9 @@ static void testSimpleConfigFile(const char *path)
 static void testRegexInheritance(void)
 {
   SearchNode *root = searchTreeLoad("config-files/regex-inheritance.txt");
-  checkRootNode(root, 2, false, BPOL_none, false, 0);
-  assert_true(*root->ignore_matcher_list != NULL);
+  checkRootNode(root, 2, false, BPOL_none, false, 0, 2);
+  assert_true(ignoreMatcherExists(root, ".*\\.png"));
+  assert_true(ignoreMatcherExists(root, ".*\\.jpg"));
 
   SearchNode *home_1 = findSubnode(root, "home");
   checkNode(home_1, root, 1, false, BPOL_mirror, false, 28, 22, "home");
