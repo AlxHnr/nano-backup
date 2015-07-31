@@ -249,7 +249,32 @@ static void testInheritance_1(void)
             root, 0, false, BPOL_copy, false, 2, 2, ".*\\.ebuild");
 }
 
-/** Tests parsing the fine "inheritance-3.txt". */
+/** Test parsing the config file "inheritance-2.txt". */
+static void testInheritance_2(void)
+{
+  SearchNode *root = searchTreeLoad("config-files/inheritance-2.txt");
+  checkRootNode(root, 1, false, BPOL_copy, 3, 3);
+  assert_true(ignoreMatcherExists(root, "foo"));
+  assert_true(ignoreMatcherExists(root, "^ "));
+  assert_true(ignoreMatcherExists(root, "bar"));
+
+  SearchNode *usr = findSubnode(root, "usr");
+  checkNode(usr, root, 1, false, BPOL_mirror, false, 6, 6, "usr");
+
+  SearchNode *portage = findSubnode(usr, "portage");
+  checkNode(portage, root, 1, false, BPOL_track, false, 15, 15, "portage");
+
+  SearchNode *app_crypt = findSubnode(portage, "app-crypt");
+  checkNode(app_crypt, root, 1, false, BPOL_track, true, 18, 18, "app-crypt");
+
+  SearchNode *seahorse = findSubnode(app_crypt, "seahorse");
+  checkNode(seahorse, root, 1, true, BPOL_copy, false, 18, 18, "seahorse");
+
+  SearchNode *ebuild = findSubnode(seahorse, ".*\\.ebuild");
+  checkNode(ebuild, root, 0, false, BPOL_mirror, false, 21, 21, ".*\\.ebuild");
+}
+
+/** Tests parsing the config file "inheritance-3.txt". */
 static void testInheritance_3(void)
 {
   SearchNode *root = searchTreeLoad("config-files/inheritance-3.txt");
@@ -295,6 +320,7 @@ int main(void)
 {
   testGroupStart("various config files");
   testInheritance_1();
+  testInheritance_2();
   testInheritance_3();
   testGroupEnd();
 
