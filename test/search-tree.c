@@ -324,6 +324,10 @@ static void testInheritance_3(void)
 int main(void)
 {
   testGroupStart("various config files");
+  testInheritance_1();
+  testInheritance_2();
+  testInheritance_3();
+
   checkRootNode(searchTreeLoad("empty.txt"), 0, false, BPOL_none, 0, 0);
 
   SearchNode *ignore_1 = searchTreeLoad("config-files/ignore-patterns-only-1.txt");
@@ -337,10 +341,6 @@ int main(void)
   assert_true(ignoreMatcherExists(ignore_2, "bar",      9));
   assert_true(ignoreMatcherExists(ignore_2, "foo-bar",  12));
   assert_true(ignoreMatcherExists(ignore_2, ".*\\.png", 17));
-
-  testInheritance_1();
-  testInheritance_2();
-  testInheritance_3();
   testGroupEnd();
 
   testGroupStart("BOM and EOL variations");
