@@ -331,6 +331,13 @@ int main(void)
   assert_true(ignoreMatcherExists(ignore_1, ".*\\.(png|jpg|pdf)", 2));
   assert_true(ignoreMatcherExists(ignore_1, "foo", 3));
 
+  SearchNode *ignore_2 = searchTreeLoad("config-files/ignore-patterns-only-2.txt");
+  checkRootNode(ignore_2, 0, false, BPOL_none, 0, 4);
+  assert_true(ignoreMatcherExists(ignore_2, "foo",      7));
+  assert_true(ignoreMatcherExists(ignore_2, "bar",      9));
+  assert_true(ignoreMatcherExists(ignore_2, "foo-bar",  12));
+  assert_true(ignoreMatcherExists(ignore_2, ".*\\.png", 17));
+
   testInheritance_1();
   testInheritance_2();
   testInheritance_3();
