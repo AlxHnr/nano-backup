@@ -329,6 +329,8 @@ int main(void)
   testInheritance_3();
 
   checkRootNode(searchTreeLoad("empty.txt"), 0, false, BPOL_none, 0, 0);
+  checkRootNode(searchTreeLoad("config-files/no-paths-and-no-ignores.txt"),
+                0, false, BPOL_none, 0, 0);
 
   SearchNode *ignore_1 = searchTreeLoad("config-files/ignore-patterns-only-1.txt");
   checkRootNode(ignore_1, 0, false, BPOL_none, 0, 2);
