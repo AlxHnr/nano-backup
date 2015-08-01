@@ -319,6 +319,13 @@ static void testInheritance_3(void)
 int main(void)
 {
   testGroupStart("various config files");
+  checkRootNode(searchTreeLoad("empty.txt"), 0, false, BPOL_none, 0, 0);
+
+  SearchNode *ignore_1 = searchTreeLoad("config-files/ignore-patterns-only-1.txt");
+  checkRootNode(ignore_1, 0, false, BPOL_none, 0, 2);
+  assert_true(ignoreMatcherExists(ignore_1, ".*\\.(png|jpg|pdf)"));
+  assert_true(ignoreMatcherExists(ignore_1, "foo"));
+
   testInheritance_1();
   testInheritance_2();
   testInheritance_3();
