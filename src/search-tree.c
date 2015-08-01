@@ -62,19 +62,20 @@ static String getLine(FileContent config, size_t start)
 }
 
 /** Creates a new node and adds it to its parent node. This function does
-  not check if it already exists in the parent node. All parent nodes will
-  be created if they do not exist.
+  not check whether the node is already a subnode of its parent. All parent
+  nodes will be created if they do not exist. The only node, which must
+  exist in advance is the root node.
 
   @param existing_nodes A StringTable containing all existing nodes in the
-  entire tree.
-  @param path The full filepath of the node which should be created. It
+  entire tree. The root node must be mapped to an empty string like "".
+  @param path The full filepath of the node that should be created. It
   should not be empty or end with a slash, otherwise it will lead to
   undefined behaviour.
   @param line_nr The number of the line in the config file, on which the
   given path was defined.
 
   @return A new search node, which has inherited properties from its parent
-  node and the root node.
+  node.
 */
 static SearchNode *newNode(StringTable *existing_nodes,
                            String path, size_t line_nr)
