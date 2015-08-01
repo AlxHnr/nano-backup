@@ -97,21 +97,26 @@ static size_t countIgnoreMatcher(SearchNode *node)
   return counter;
 }
 
-/** Checks if a ignore matcher with the given ignore pattern exists in the
-  given SearchNode.
+/** Checks if a valid ignore matcher with the given properties exists in
+  the given SearchNode.
 
   @param node The node containing the ignore matcher list.
   @param pattern The pattern which should be searched for.
+  @param line_nr The number of the line in the config file, on which the
+  given pattern was defined initially.
 
-  @return True if the pattern exists in the ignore matcher list. False
-  otherwise.
+  @return True, if a pattern with the specified properties exists in the
+  ignore matcher list.
 */
-static bool ignoreMatcherExists(SearchNode *node, const char *pattern)
+static bool ignoreMatcherExists(SearchNode *node, const char *pattern,
+                                size_t line_nr)
 {
   for(StringMatcherList *element = *node->ignore_matcher_list;
       element != NULL; element = element->next)
   {
-    if(strCompare(strmatchGetExpression(element->matcher), str(pattern)))
+    if(strmatchHasMatched(element->matcher) == false &&
+       strmatchLineNr(element->matcher) == line_nr &&
+       strCompare(strmatchGetExpression(element->matcher), str(pattern)))
     {
       return true;
     }
@@ -254,9 +259,9 @@ static void testInheritance_2(void)
 {
   SearchNode *root = searchTreeLoad("config-files/inheritance-2.txt");
   checkRootNode(root, 1, false, BPOL_copy, 3, 3);
-  assert_true(ignoreMatcherExists(root, "foo"));
-  assert_true(ignoreMatcherExists(root, "^ "));
-  assert_true(ignoreMatcherExists(root, "bar"));
+  assert_true(ignoreMatcherExists(root, "foo", 9));
+  assert_true(ignoreMatcherExists(root, "^ ",  10));
+  assert_true(ignoreMatcherExists(root, "bar", 11));
 
   SearchNode *usr = findSubnode(root, "usr");
   checkNode(usr, root, 1, false, BPOL_copy, true, 15, 15, "usr");
@@ -279,8 +284,8 @@ static void testInheritance_3(void)
 {
   SearchNode *root = searchTreeLoad("config-files/inheritance-3.txt");
   checkRootNode(root, 2, false, BPOL_none, 0, 2);
-  assert_true(ignoreMatcherExists(root, ".*\\.png"));
-  assert_true(ignoreMatcherExists(root, ".*\\.jpg"));
+  assert_true(ignoreMatcherExists(root, ".*\\.png", 14));
+  assert_true(ignoreMatcherExists(root, ".*\\.jpg", 16));
 
   SearchNode *home_1 = findSubnode(root, "home");
   checkNode(home_1, root, 1, false, BPOL_mirror, false, 28, 22, "home");
@@ -323,8 +328,8 @@ int main(void)
 
   SearchNode *ignore_1 = searchTreeLoad("config-files/ignore-patterns-only-1.txt");
   checkRootNode(ignore_1, 0, false, BPOL_none, 0, 2);
-  assert_true(ignoreMatcherExists(ignore_1, ".*\\.(png|jpg|pdf)"));
-  assert_true(ignoreMatcherExists(ignore_1, "foo"));
+  assert_true(ignoreMatcherExists(ignore_1, ".*\\.(png|jpg|pdf)", 2));
+  assert_true(ignoreMatcherExists(ignore_1, "foo", 3));
 
   testInheritance_1();
   testInheritance_2();
