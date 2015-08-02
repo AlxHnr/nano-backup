@@ -174,19 +174,6 @@ FILE *sFopenWrite(const char *path)
   return file;
 }
 
-/** Safe wrapper around fclose().
-
-  @param stream The stream that should be closed.
-  @param path The filepath for which the error message should be shown.
-*/
-void sFclose(FILE *stream, const char *path)
-{
-  if(fclose(stream) != 0)
-  {
-    dieErrno("failed to close \"%s\"", path);
-  }
-}
-
 /** Safe wrapper around fread(). This function will terminate the program
   on failure. If the given size is larger than the remaining bytes in the
   file stream, it will also terminate the program.
@@ -210,6 +197,19 @@ void sFread(void *ptr, size_t size, FILE *stream, const char *path)
     {
       die("IO error while reading \"%s\"", path);
     }
+  }
+}
+
+/** Safe wrapper around fclose().
+
+  @param stream The stream that should be closed.
+  @param path The filepath for which the error message should be shown.
+*/
+void sFclose(FILE *stream, const char *path)
+{
+  if(fclose(stream) != 0)
+  {
+    dieErrno("failed to close \"%s\"", path);
   }
 }
 
