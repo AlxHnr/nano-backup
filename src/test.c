@@ -175,7 +175,10 @@ void dieTest(const char *format, ...)
 
   fprintf(stderr, "[FAILURE]\n    ");
 
-  if(!test_catch_die) fprintf(stderr, "unexpected error: ");
+  if(test_catch_die == false)
+  {
+    fprintf(stderr, "unexpected error: ");
+  }
 
   vfprintf(stderr, format, arguments);
   fprintf(stderr, "\n");

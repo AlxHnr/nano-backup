@@ -69,7 +69,7 @@ void *sMalloc(size_t size)
   }
 
   void *data = malloc(size);
-  if(!data)
+  if(data == NULL)
   {
     die("out of memory: failed to allocate %zu bytes", size);
   }
@@ -96,7 +96,7 @@ void *sRealloc(void *ptr, size_t size)
   }
 
   void *data = realloc(ptr, size);
-  if(!data)
+  if(data == NULL)
   {
     die("out of memory: failed to reallocate %zu bytes", size);
   }
@@ -148,7 +148,7 @@ size_t sSizeMul(size_t a, size_t b)
 FILE *sFopenRead(const char *path)
 {
   FILE *file = fopen(path, "rb");
-  if(!file)
+  if(file == NULL)
   {
     dieErrno("failed to open \"%s\" for reading", path);
   }
@@ -166,7 +166,7 @@ FILE *sFopenRead(const char *path)
 FILE *sFopenWrite(const char *path)
 {
   FILE *file = fopen(path, "wb");
-  if(!file)
+  if(file == NULL)
   {
     dieErrno("failed to open \"%s\" for writing", path);
   }
@@ -222,7 +222,7 @@ void sFclose(FILE *stream, const char *path)
 DIR *sOpenDir(const char *path)
 {
   DIR *dir = opendir(path);
-  if(!dir)
+  if(dir == NULL)
   {
     dieErrno("failed to open directory \"%s\"", path);
   }
