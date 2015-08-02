@@ -74,39 +74,40 @@ int main(void)
 
   testGroupStart("sFopenRead()");
   assert_error(sFopenRead("non-existing-file.txt"),
-               "failed to open \"non-existing-file.txt\" for reading: "
-               "No such file or directory");
-  FILE *file = sFopenRead("example.txt");
-  assert_true(file != NULL);
-  sFclose(file, "example.txt");
+               "failed to open \"non-existing-file.txt\" for reading: No such file or directory");
+  FILE *example_txt_1 = sFopenRead("example.txt");
+  assert_true(example_txt_1 != NULL);
   testGroupEnd();
 
   testGroupStart("sFopenWrite()");
   assert_error(sFopenWrite("non-existing-dir/file.txt"),
-               "failed to open \"non-existing-dir/file.txt\" for writing: "
-               "No such file or directory");
-  file = sFopenWrite("/dev/null");
-  assert_true(file != NULL);
-  sFclose(file, "/dev/null");
+               "failed to open \"non-existing-dir/file.txt\" for writing: No such file or directory");
+  FILE *dev_null = sFopenWrite("/dev/null");
+  assert_true(dev_null != NULL);
   testGroupEnd();
 
   testGroupStart("sFread()");
   char *example = sMalloc(25);
 
-  file = sFopenRead("example.txt");
-  sFread(example, 25, file, "example.txt");
-  sFclose(file, "example.txt");
+  FILE *example_txt_2 = sFopenRead("example.txt");
+  sFread(example, 25, example_txt_2, "example.txt");
 
   assert_true(strncmp(example, "This is an example file.\n", 25) == 0);
   free(example);
 
   /* Try reading 50 bytes from a 25 byte long file. */
   example = sMalloc(50);
-  file = sFopenRead("example.txt");
-  assert_error(sFread(example, 50, file, "example.txt"), "reading "
-               "\"example.txt\": reached end of file unexpectedly");
-  sFclose(file, "example.txt");
+  FILE *example_txt_3 = sFopenRead("example.txt");
+  assert_error(sFread(example, 50, example_txt_3, "example.txt"),
+               "reading \"example.txt\": reached end of file unexpectedly");
   free(example);
+  testGroupEnd();
+
+  testGroupStart("sFclose()");
+  sFclose(example_txt_1, "example.txt");
+  sFclose(example_txt_2, "example.txt");
+  sFclose(example_txt_3, "example.txt");
+  sFclose(dev_null, "/dev/null");
   testGroupEnd();
 
   testGroupStart("sStat()");
