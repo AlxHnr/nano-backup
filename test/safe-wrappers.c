@@ -73,23 +73,29 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("sFopenRead()");
-  assert_error(sFopenRead("non-existing-file.txt"),
-               "failed to open \"non-existing-file.txt\" for reading: No such file or directory");
   FILE *example_txt_1 = sFopenRead("example.txt");
   assert_true(example_txt_1 != NULL);
+
+  FILE *example_txt_2 = sFopenRead("example.txt");
+  assert_true(example_txt_2 != NULL);
+
+  FILE *example_txt_3 = sFopenRead("example.txt");
+  assert_true(example_txt_3 != NULL);
+
+  assert_error(sFopenRead("non-existing-file.txt"),
+               "failed to open \"non-existing-file.txt\" for reading: No such file or directory");
   testGroupEnd();
 
   testGroupStart("sFopenWrite()");
-  assert_error(sFopenWrite("non-existing-dir/file.txt"),
-               "failed to open \"non-existing-dir/file.txt\" for writing: No such file or directory");
   FILE *dev_null = sFopenWrite("/dev/null");
   assert_true(dev_null != NULL);
+
+  assert_error(sFopenWrite("non-existing-dir/file.txt"),
+               "failed to open \"non-existing-dir/file.txt\" for writing: No such file or directory");
   testGroupEnd();
 
   testGroupStart("sFread()");
   char *example = sMalloc(25);
-
-  FILE *example_txt_2 = sFopenRead("example.txt");
   sFread(example, 25, example_txt_2, "example.txt");
 
   assert_true(strncmp(example, "This is an example file.\n", 25) == 0);
@@ -97,7 +103,6 @@ int main(void)
 
   /* Try reading 50 bytes from a 25 byte long file. */
   example = sMalloc(50);
-  FILE *example_txt_3 = sFopenRead("example.txt");
   assert_error(sFread(example, 50, example_txt_3, "example.txt"),
                "reading \"example.txt\": reached end of file unexpectedly");
   free(example);
