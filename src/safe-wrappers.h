@@ -45,6 +45,9 @@ extern void sFread(void *ptr, size_t size, FILE *stream, const char *path);
 extern void sFclose(FILE *stream, const char *path);
 
 extern DIR *sOpenDir(const char *path);
+extern struct dirent *sReadDir(DIR *dir, const char *path);
+extern void sCloseDir(DIR *dir, const char *path);
+
 extern struct stat sStat(const char *path);
 extern struct stat sLStat(const char *path);
 

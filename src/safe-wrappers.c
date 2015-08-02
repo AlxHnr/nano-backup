@@ -28,6 +28,7 @@
 
 #include "safe-wrappers.h"
 
+#include <errno.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -228,6 +229,42 @@ DIR *sOpenDir(const char *path)
   }
 
   return dir;
+}
+
+/** Safe wrapper around readdir().
+
+  @param dir A valid directory stream.
+  @param path The directory streams filepath. Needed for printing useful
+  error messages.
+
+  @return A pointer to the next entry in the given directory, or NULL if
+  the stream reached its end.
+*/
+struct dirent *sReadDir(DIR *dir, const char *path)
+{
+  int old_errno = errno;
+  struct dirent *dir_entry = readdir(dir);
+
+  if(dir_entry == NULL && errno != old_errno)
+  {
+    dieErrno("failed to read directory \"%s\"", path);
+  }
+
+  return dir_entry;
+}
+
+/** Safe wrapper around closedir().
+
+  @param dir The directory stream that should be closed.
+  @param path The directory path of the given stream. Needed for printing
+  useful error messages.
+*/
+void sCloseDir(DIR *dir, const char *path)
+{
+  if(closedir(dir) != 0)
+  {
+    dieErrno("failed to close directory \"%s\"", path);
+  }
 }
 
 /** A failsafe wrapper around stat().
