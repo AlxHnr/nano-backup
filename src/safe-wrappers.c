@@ -213,6 +213,23 @@ void sFclose(FILE *stream, const char *path)
   }
 }
 
+/** Safe wrapper around opendir().
+
+  @param path The directories filepath.
+
+  @return A pointer to a valid directory stream.
+*/
+DIR *sOpenDir(const char *path)
+{
+  DIR *dir = opendir(path);
+  if(!dir)
+  {
+    dieErrno("failed to open directory \"%s\"", path);
+  }
+
+  return dir;
+}
+
 /** A failsafe wrapper around stat().
 
   @param path A filepath.
