@@ -115,6 +115,38 @@ int main(void)
   sFclose(dev_null, "/dev/null");
   testGroupEnd();
 
+  testGroupStart("sOpenDir()");
+  DIR *config_files = sOpenDir("config-files");
+  assert_true(config_files != NULL);
+
+  DIR *broken_config_files = sOpenDir("./broken-config-files/");
+  assert_true(broken_config_files != NULL);
+
+  assert_error(sOpenDir("non-existing-directory"),
+               "failed to open directory \"non-existing-directory\": No such file or directory");
+  testGroupEnd();
+
+  testGroupStart("sReadDir()");
+  /* Count example config files. */
+  for(size_t counter = 0; counter < 12; counter++)
+  {
+    assert_true(sReadDir(config_files, "config-files") != NULL);
+  }
+  assert_true(sReadDir(config_files, "config-files") == NULL);
+
+  /* Count broken config files. */
+  for(size_t counter = 0; counter < 25; counter++)
+  {
+    assert_true(sReadDir(broken_config_files, "broken-config-files") != NULL);
+  }
+  assert_true(sReadDir(broken_config_files, "broken-config-files") == NULL);
+  testGroupEnd();
+
+  testGroupStart("sCloseDir()");
+  sCloseDir(config_files, "config-files");
+  sCloseDir(broken_config_files, "broken-config-files");
+  testGroupEnd();
+
   testGroupStart("sStat()");
   assert_error(sStat("non-existing-file.txt"), "failed to access "
                "\"non-existing-file.txt\": No such file or directory");
