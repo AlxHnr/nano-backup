@@ -360,7 +360,7 @@ static SearchResult finishSearchStep(SearchContext *context)
                         context->state.access.search.fallback_policy);
 }
 
-/** Completes a search step, by directly accessing next node available in
+/** Completes a search step by directly accessing next node available in
   the search context. Counterpart to finishSearchStep().
 
   @param context A valid context which current state represents direct
@@ -386,13 +386,54 @@ static SearchResult finishCurrentNode(SearchContext *context)
   return finishNodeStep(context, node, node->policy);
 }
 
+/** Creates a new SearchContext.
+
+  @param root The path to the directory that should be the root of the
+  search.
+  @param node A search tree used to search the given root path. The
+  returned SearchContext will keep references into this search tree, so
+  make sure not to modify it unless the search has reached its end.
+
+  @return A new search context from which files and directories can be
+  queried by using searchGetNext().
+*/
+SearchContext *searchNew(String root, SearchNode *node)
+{
+  SearchContext *context = sMalloc(sizeof *context);
+
+  /* Initialize string buffer. */
+  context->buffer.capacity =
+    root.length < 128 ? 128 : sSizeAdd(root.length, 1);
+
+  context->buffer.str = sMalloc(context->buffer.capacity);
+  memcpy(context->buffer.str, root.str, root.length);
+  context->buffer.str[root.length] = '\0';
+
+  context->buffer.length = root.length;
+
+  /* Store reference to ignore matcher list. */
+  context->ignore_matcher_list = *node->ignore_matcher_list;
+
+  /* Initialize the current search state. */
+  recursionStepRaw(context, node, node->policy);
+
+  /* Initialise the state stack. */
+  context->state_stack.used = 0;
+  context->state_stack.capacity = 16;
+  context->state_stack.state_array =
+    sMalloc(sSizeMul(sizeof *context->state_stack.state_array,
+                     context->state_stack.capacity));
+
+  return context;
+}
+
 /** Queries the next file from the given search context.
 
   @param context A valid search context. If the search has reached its end,
   the context will be destroyed and the returned SearchResult will have the
   type SRT_end_of_search.
 
-  @return The next result of the search.
+  @return The next search result.
 */
 SearchResult searchGetNext(SearchContext *context)
 {
