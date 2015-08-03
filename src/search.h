@@ -39,14 +39,28 @@
 /** An opaque struct representing a search. */
 typedef struct SearchContext SearchContext;
 
+/** The type of a search result. */
 typedef enum
 {
+  /** A regular file. */
   SRT_regular,
+
+  /** A symbolic link. */
   SRT_symlink,
+
+  /** A directory. */
   SRT_directory,
+
+  /** Any other file, like block devices. */
   SRT_other,
 
+  /** The currently traversed directory has reached its end. In this case
+    all values in a SearchResult are undefined. */
   SRT_end_of_directory,
+
+  /** The search has reached its end. All the values in the SearchResult
+    are undefined and the associated context destroyed. This context can
+    not be used anymore, otherwise it will lead to undefined behaviour. */
   SRT_end_of_search,
 }SearchResultType;
 
