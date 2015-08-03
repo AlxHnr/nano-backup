@@ -29,8 +29,18 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "test.h"
+
+/** Calls sReadDir() with the given arguments and checks its result. */
+static void checkReadDir(DIR *dir, const char *dir_path)
+{
+  struct dirent *dir_entry = sReadDir(dir,dir_path);
+  assert_true(dir_entry != NULL);
+  assert_true(strcmp(dir_entry->d_name, ".")  != 0);
+  assert_true(strcmp(dir_entry->d_name, "..") != 0);
+}
 
 int main(void)
 {
@@ -130,14 +140,14 @@ int main(void)
   /* Count example config files. */
   for(size_t counter = 0; counter < 10; counter++)
   {
-    assert_true(sReadDir(config_files, "config-files") != NULL);
+    checkReadDir(config_files, "config-files");
   }
   assert_true(sReadDir(config_files, "config-files") == NULL);
 
   /* Count broken config files. */
   for(size_t counter = 0; counter < 23; counter++)
   {
-    assert_true(sReadDir(broken_config_files, "broken-config-files") != NULL);
+    checkReadDir(broken_config_files, "broken-config-files");
   }
   assert_true(sReadDir(broken_config_files, "broken-config-files") == NULL);
   testGroupEnd();
