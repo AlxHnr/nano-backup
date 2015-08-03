@@ -116,12 +116,13 @@ struct SearchContext
   DirSearchStateStack state_stack;
 };
 
-/** Pushes the current context state into its stack and resize it if
-  required. It will not modify the contexts current state.
+/** Backups the contexts search state into its state stack. The stack will
+  be reallocated if required. It will not modify the current search state
+  of the given context.
 
   @param context A valid context with a stack capacity greater than 0.
 */
-static void pushState(SearchContext *context)
+static void pushCurrentState(SearchContext *context)
 {
   /* Grow state array if needed. */
   if(context->state_stack.used == context->state_stack.capacity)
@@ -240,6 +241,6 @@ static void recursionStepRaw(SearchContext *context, SearchNode *node,
 static void recursionStep(SearchContext *context, SearchNode *node,
                           BackupPolicy policy)
 {
-  pushState(context);
+  pushCurrentState(context);
   recursionStepRaw(context, node, policy);
 }
