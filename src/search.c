@@ -205,7 +205,8 @@ static SearchResult buildSearchResult(SearchContext *context,
   };
 }
 
-/** Starts a recursion step and overwrites the contexts current state.
+/** Starts a recursion step and stores it in the contexts current state. It
+  will not backup the search state and will simply overwrite it.
 
   @param context A valid context with a valid directory path in its buffer.
   This is the directory for which the recursion will be initialised.
@@ -233,8 +234,8 @@ static void recursionStepRaw(SearchContext *context, SearchNode *node,
   }
 }
 
-/** A wrapper around recursionStepRaw(), which pushes the current contexts
-  state into its state stack.
+/** A wrapper around recursionStepRaw() that backups the contexts search
+  state.
 */
 static void recursionStep(SearchContext *context, SearchNode *node,
                           BackupPolicy policy)
