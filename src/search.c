@@ -300,3 +300,108 @@ static SearchResult finishDirectory(SearchContext *context)
     return (SearchResult){ .type = SRT_end_of_search };
   }
 }
+
+/** Completes a search step by querying the next file from the currently
+  active directory stream. If this file is a directory, a recursion step
+  into it will be initialized.
+
+  @param context A valid context which current state represents a directory
+  search. It will be destroyed if the search reaches its end trough this
+  search step. In this case the returned SearchResult will have the type
+  SRT_end_of_search.
+
+  @return A SearchResult.
+*/
+static SearchResult finishSearchStep(SearchContext *context)
+{
+  /* Cut path in buffer down to the search states path length. */
+  context->buffer.length = context->state.path_length;
+  context->buffer.str[context->buffer.length] = '\0';
+
+  struct dirent *dir_entry =
+    sReadDir(context->state.access.search.dir, context->buffer.str);
+
+  if(dir_entry == NULL)
+  {
+    sCloseDir(context->state.access.search.dir, context->buffer.str);
+    return finishDirectory(context);
+  }
+
+  /* Create new path for matching. */
+  appendFilenameToBuffer(context, str(dir_entry->d_name));
+
+  /* Match subnodes against dir_entry. */
+  for(SearchNode *node = context->state.access.search.subnodes;
+      node != NULL; node = node->next)
+  {
+    if(strmatch(node->matcher, dir_entry->d_name))
+    {
+      return finishNodeStep(context, node, node->policy);
+    }
+  }
+
+  /* Match against ignore matcher. */
+  for(StringMatcherList *element = context->ignore_matcher_list;
+      element != NULL; element = element->next)
+  {
+    if(strmatch(element->matcher, context->buffer.str))
+    {
+      return finishSearchStep(context);
+    }
+  }
+
+  /* Skip current path, if no fallback policy was defined. */
+  if(context->state.access.search.fallback_policy == BPOL_none)
+  {
+    return finishSearchStep(context);
+  }
+
+  return finishNodeStep(context, NULL,
+                        context->state.access.search.fallback_policy);
+}
+
+/** Completes a search step, by directly accessing next node available in
+  the search context. Counterpart to finishSearchStep().
+
+  @param context A valid context which current state represents direct
+  access. It will be destroyed, if this search step is the last step. In
+  this case the returned SearchResult will have the type SRT_end_of_search.
+
+  @return A SearchResult.
+*/
+static SearchResult finishCurrentNode(SearchContext *context)
+{
+  if(context->state.access.current_node == NULL)
+  {
+    return finishDirectory(context);
+  }
+
+  /* Save node and move current_node one by step. */
+  SearchNode *node = context->state.access.current_node;
+  context->state.access.current_node = node->next;
+
+  String filename = strmatchGetExpression(node->matcher);
+  appendFilenameToBuffer(context, filename);
+
+  return finishNodeStep(context, node, node->policy);
+}
+
+/** Queries the next file from the given search context.
+
+  @param context A valid search context. If the search has reached its end,
+  the context will be destroyed and the returned SearchResult will have the
+  type SRT_end_of_search.
+
+  @return The next result of the search.
+*/
+SearchResult searchGetNext(SearchContext *context)
+{
+  if(context->state.is_dir_search)
+  {
+    return finishSearchStep(context);
+  }
+  else
+  {
+    return finishCurrentNode(context);
+  }
+}
