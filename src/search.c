@@ -166,3 +166,79 @@ static void appendFilenameToBuffer(SearchContext *context, String filename)
   context->buffer.str[new_length] = '\0';
   context->buffer.length = new_length;
 }
+
+/** Constructs a SearchResult with informations from its arguments.
+
+  @param context A valid SearchContext with a filepath in its buffer.
+  @param node The node associated with the path in the contexts buffer. Can
+  be NULL.
+  @param policy The policy of the file in the contexts buffer.
+
+  @return A SearchResult.
+*/
+static SearchResult buildSearchResult(SearchContext *context,
+                                      SearchNode *node,
+                                      BackupPolicy policy)
+{
+  struct stat stats =
+    node != NULL && node->subnodes != NULL?
+    sStat(context->buffer.str):
+    sLStat(context->buffer.str);
+
+  return (SearchResult)
+  {
+    .type =
+      S_ISREG(stats.st_mode)? SRT_regular:
+      S_ISLNK(stats.st_mode)? SRT_symlink:
+      S_ISDIR(stats.st_mode)? SRT_directory:
+      SRT_other,
+
+    .path =
+      (String)
+      {
+        .str = context->buffer.str,
+        .length = context->buffer.length
+      },
+
+    .policy = policy,
+    .stats = stats
+  };
+}
+
+/** Starts a recursion step and overwrites the contexts current state.
+
+  @param context A valid context with a valid directory path in its buffer.
+  This is the directory for which the recursion will be initialised.
+  @param node The node associated with the directory. Can be NULL.
+  @param policy The directories policy.
+*/
+static void recursionStepRaw(SearchContext *context, SearchNode *node,
+                             BackupPolicy policy)
+{
+  context->state.path_length = context->buffer.length;
+
+  if(node != NULL &&
+     node->policy == BPOL_none &&
+     node->subnodes_contain_regex == false)
+  {
+    context->state.is_dir_search = false;
+    context->state.access.current_node = node->subnodes;
+  }
+  else
+  {
+    context->state.is_dir_search = true;
+    context->state.access.search.dir = sOpenDir(context->buffer.str);
+    context->state.access.search.subnodes = node? node->subnodes : NULL;
+    context->state.access.search.fallback_policy = policy;
+  }
+}
+
+/** A wrapper around recursionStepRaw(), which pushes the current contexts
+  state into its state stack.
+*/
+static void recursionStep(SearchContext *context, SearchNode *node,
+                          BackupPolicy policy)
+{
+  pushState(context);
+  recursionStepRaw(context, node, policy);
+}
