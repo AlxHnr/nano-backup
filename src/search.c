@@ -115,3 +115,54 @@ struct SearchContext
   /** The search states of all parent directories during recursion. */
   DirSearchStateStack state_stack;
 };
+
+/** Pushes the current context state into its stack and resize it if
+  required. It will not modify the contexts current state.
+
+  @param context A valid context with a stack capacity greater than 0.
+*/
+static void pushState(SearchContext *context)
+{
+  /* Grow state array if needed. */
+  if(context->state_stack.used == context->state_stack.capacity)
+  {
+    context->state_stack.capacity =
+      sSizeMul(context->state_stack.capacity, 2);
+    context->state_stack.state_array =
+      sRealloc(context->state_stack.state_array,
+               sSizeMul(sizeof *context->state_stack.state_array,
+                        context->state_stack.capacity));
+  }
+
+  context->state_stack.state_array[context->state_stack.used] =
+    context->state;
+  context->state_stack.used++;
+}
+
+/** Appends a slash and the given filename to the buffer of the given
+  context. The buffer will be resized if required.
+
+  @param context The context containing a valid buffer.
+  @param filename The filename that should be appended.
+*/
+static void appendFilenameToBuffer(SearchContext *context, String filename)
+{
+  /* Add 2 extra bytes for the slash and '\0'. */
+  size_t required_capacity =
+    sSizeAdd(2, sSizeAdd(context->buffer.length, filename.length));
+  size_t new_length = required_capacity - 1;
+
+  /* Ensure that the new path fits into the buffer. */
+  if(required_capacity > context->buffer.capacity)
+  {
+    context->buffer.str = sRealloc(context->buffer.str, required_capacity);
+    context->buffer.capacity = required_capacity;
+  }
+
+  /* Construct the path to the file described by the current node. */
+  memcpy(&context->buffer.str[context->buffer.length + 1],
+         filename.str, filename.length);
+  context->buffer.str[context->buffer.length] = '/';
+  context->buffer.str[new_length] = '\0';
+  context->buffer.length = new_length;
+}
