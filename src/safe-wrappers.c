@@ -231,7 +231,8 @@ DIR *sOpenDir(const char *path)
   return dir;
 }
 
-/** Safe wrapper around readdir().
+/** A safe and simplified wrapper around readdir(). It will skip "." and
+  "..".
 
   @param dir A valid directory stream.
   @param path The directory streams filepath. Needed for printing useful
@@ -242,13 +243,22 @@ DIR *sOpenDir(const char *path)
 */
 struct dirent *sReadDir(DIR *dir, const char *path)
 {
-  int old_errno = errno;
-  struct dirent *dir_entry = readdir(dir);
+  struct dirent *dir_entry;
 
-  if(dir_entry == NULL && errno != old_errno)
+  do
   {
-    dieErrno("failed to read directory \"%s\"", path);
+    int old_errno = errno;
+    dir_entry = readdir(dir);
+
+    if(dir_entry == NULL && errno != old_errno)
+    {
+      dieErrno("failed to read directory \"%s\"", path);
+    }
   }
+  while(dir_entry != NULL &&
+        dir_entry->d_name[0] == '.' &&
+        (dir_entry->d_name[1] == '\0' ||
+         (dir_entry->d_name[1] == '.' && dir_entry->d_name[2] == '\0')));
 
   return dir_entry;
 }

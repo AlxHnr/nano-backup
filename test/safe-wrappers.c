@@ -128,14 +128,14 @@ int main(void)
 
   testGroupStart("sReadDir()");
   /* Count example config files. */
-  for(size_t counter = 0; counter < 12; counter++)
+  for(size_t counter = 0; counter < 10; counter++)
   {
     assert_true(sReadDir(config_files, "config-files") != NULL);
   }
   assert_true(sReadDir(config_files, "config-files") == NULL);
 
   /* Count broken config files. */
-  for(size_t counter = 0; counter < 25; counter++)
+  for(size_t counter = 0; counter < 23; counter++)
   {
     assert_true(sReadDir(broken_config_files, "broken-config-files") != NULL);
   }
