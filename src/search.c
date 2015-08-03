@@ -392,10 +392,11 @@ static SearchResult finishCurrentNode(SearchContext *context)
   search.
   @param node A search tree used to search the given root path. The
   returned SearchContext will keep references into this search tree, so
-  make sure not to modify it unless the search has reached its end.
+  make sure not to modify it as long as the context is in use.
 
   @return A new search context from which files and directories can be
-  queried by using searchGetNext().
+  queried by using searchGetNext(). It will be automatically destroyed if
+  the search has reached its end.
 */
 SearchContext *searchNew(String root, SearchNode *node)
 {
