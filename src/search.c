@@ -244,3 +244,59 @@ static void recursionStep(SearchContext *context, SearchNode *node,
   pushCurrentState(context);
   recursionStepRaw(context, node, policy);
 }
+
+/** Completes a search step and returns a SearchResult with informations
+  from its argument. This function will not prepare the search step. It
+  will only make sure, that if this search step hits a directory, a
+  recursion step will be initialized.
+
+  @param context A valid search context, with a filepath in its buffer.
+  This is the filepath, for which the search step will be completed.
+  @param node The node corresponding to the file in the context buffers
+  filepath. Can be NULL.
+  @param policy The policy for the context buffers filepath.
+
+  @return A SearchResult.
+*/
+static SearchResult finishNodeStep(SearchContext *context,
+                                   SearchNode *node, BackupPolicy policy)
+{
+  SearchResult found_file = buildSearchResult(context, node, policy);
+
+  if(found_file.type == SRT_directory)
+  {
+    recursionStep(context, node, policy);
+  }
+
+  return found_file;
+}
+
+/** Pops a search state from the given contexts stack and sets it as its
+  current search state. If the stack is empty, it will destroy the given
+  context and end the search.
+
+  @param context A valid SearchContext which may be destroyed by this
+  function.
+
+  @return A SearchResult with either the type SRT_end_of_directory or
+  SRT_end_of_search.
+*/
+static SearchResult finishDirectory(SearchContext *context)
+{
+  if(context->state_stack.used > 0)
+  {
+    context->state_stack.used--;
+    context->state =
+      context->state_stack.state_array[context->state_stack.used];
+
+    return (SearchResult){ .type = SRT_end_of_directory };
+  }
+  else
+  {
+    free(context->state_stack.state_array);
+    free(context->buffer.str);
+    free(context);
+
+    return (SearchResult){ .type = SRT_end_of_search };
+  }
+}
