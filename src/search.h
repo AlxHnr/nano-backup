@@ -42,25 +42,18 @@ typedef struct SearchContext SearchContext;
 /** The type of a search result. */
 typedef enum
 {
-  /** A regular file. */
-  SRT_regular,
-
-  /** A symbolic link. */
-  SRT_symlink,
-
-  /** A directory. */
-  SRT_directory,
-
-  /** Any other file, like block devices. */
-  SRT_other,
+  SRT_regular,   /**< A regular file. */
+  SRT_symlink,   /**< A symbolic link. */
+  SRT_directory, /**< A directory. */
+  SRT_other,     /**< Any other filetype, like a block device. */
 
   /** The currently traversed directory has reached its end. In this case
     all values in a SearchResult are undefined. */
   SRT_end_of_directory,
 
-  /** The search has reached its end. All the values in the SearchResult
-    are undefined and the associated context destroyed. This context can
-    not be used anymore, otherwise it will lead to undefined behaviour. */
+  /** The search has reached its end. All values in the SearchResult are
+    undefined and the associated context was destroyed. This context should
+    not be used anymore or it will lead to undefined behaviour. */
   SRT_end_of_search,
 }SearchResultType;
 
