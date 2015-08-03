@@ -1,0 +1,117 @@
+/*
+  Copyright (c) 2015 Alexander Heinrich <alxhnr@nudelpost.de>
+
+  This software is provided 'as-is', without any express or implied
+  warranty. In no event will the authors be held liable for any damages
+  arising from the use of this software.
+
+  Permission is granted to anyone to use this software for any purpose,
+  including commercial applications, and to alter it and redistribute it
+  freely, subject to the following restrictions:
+
+     1. The origin of this software must not be misrepresented; you must
+        not claim that you wrote the original software. If you use this
+        software in a product, an acknowledgment in the product
+        documentation would be appreciated but is not required.
+
+     2. Altered source versions must be plainly marked as such, and must
+        not be misrepresented as being the original software.
+
+     3. This notice may not be removed or altered from any source
+        distribution.
+*/
+
+/**
+  @file search.c Implements filesystem searching via search trees.
+*/
+
+#include "search.h"
+
+#include <stdlib.h>
+#include <string.h>
+
+#include "safe-wrappers.h"
+
+/** A simple string buffer. */
+typedef struct
+{
+  /** The buffer containing the string. */
+  char *str;
+
+  /** The amount of bytes used in the string. */
+  size_t length;
+
+  /** The total capacity of the allocated buffer. */
+  size_t capacity;
+}StringBuffer;
+
+/** Represents a directory search state. */
+typedef struct
+{
+  /** The stream of the current directory. */
+  DIR *dir;
+
+  /** The subnodes of the current directories node. Can be NULL. */
+  SearchNode *subnodes;
+
+  /** If a file doesn't belong to any search node and should not be
+    ignored, it will be treated like a node with the policy stored in this
+    variable. */
+  BackupPolicy fallback_policy;
+}DirSearch;
+
+/** Represents a generic search state. */
+typedef struct
+{
+  /** If this value is true, this state represents a DirSearch. Otherwise
+    it represents a search node, that can be accessed directly without
+    traversing any directory. */
+  bool is_dir_search;
+
+  /** The string length of the path of the directory to which this search
+    state belongs to. Useful for restoring the buffer length, when changing
+    from a directory into its parent directory. */
+  size_t path_length;
+
+  /** Unifies different ways to access files in the current directory. */
+  union
+  {
+    /** The current node that can be accessed directly without traversing
+      directories. Can be NULL, e.g. if a subnode list has reached its end.
+      */
+    SearchNode *current_node;
+
+    /** The state variables of the current directories search state. */
+    DirSearch search;
+  }access;
+}DirSearchState;
+
+/** A stack of search states, used for storing and restoring states when
+  recursing into directories. */
+typedef struct
+{
+  /** The state array. */
+  DirSearchState *state_array;
+
+  /** The amount of used elements in the state array. */
+  size_t used;
+
+  /** The total count of allocated states. */
+  size_t capacity;
+}DirSearchStateStack;
+
+struct SearchContext
+{
+  /** A buffer for constructing paths. */
+  StringBuffer buffer;
+
+  /* The ignore matcher list of the tree, to which the current context
+     belongs to. Can be NULL. */
+  StringMatcherList *ignore_matcher_list;
+
+  /** The current search state. */
+  DirSearchState state;
+
+  /** The search states of all parent directories during recursion. */
+  DirSearchStateStack state_stack;
+};
