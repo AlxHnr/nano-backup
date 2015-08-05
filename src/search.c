@@ -105,9 +105,9 @@ struct SearchContext
   /** A buffer for constructing paths. */
   StringBuffer buffer;
 
-  /* The ignore matcher list of the tree, to which the current context
+  /* The ignore expression list of the tree, to which the current context
      belongs to. Can be NULL. */
-  StringMatcherList *ignore_matcher_list;
+  RegexList *ignore_expressions;
 
   /** The current search state. */
   DirSearchState state;
@@ -328,24 +328,33 @@ static SearchResult finishSearchStep(SearchContext *context)
   }
 
   /* Create new path for matching. */
-  appendFilenameToBuffer(context, str(dir_entry->d_name));
+  String dir_entry_name = str(dir_entry->d_name);
+  appendFilenameToBuffer(context, dir_entry_name);
 
   /* Match subnodes against dir_entry. */
   for(SearchNode *node = context->state.access.search.subnodes;
       node != NULL; node = node->next)
   {
-    if(strmatch(node->matcher, dir_entry->d_name))
+    if(node->regex)
+    {
+      if(regexec(node->regex, dir_entry_name.str, 0, NULL, 0))
+      {
+        return finishNodeStep(context, node, node->policy);
+      }
+    }
+    else if(strCompare(node->name, dir_entry_name))
     {
       return finishNodeStep(context, node, node->policy);
     }
   }
 
-  /* Match against ignore matcher. */
-  for(StringMatcherList *element = context->ignore_matcher_list;
+  /* Match against ignore expressions. */
+  for(RegexList *element = context->ignore_expressions;
       element != NULL; element = element->next)
   {
-    if(strmatch(element->matcher, context->buffer.str))
+    if(regexec(element->regex, dir_entry_name.str, 0, NULL, 0))
     {
+      element->has_matched = true;
       return finishSearchStep(context);
     }
   }
@@ -380,8 +389,7 @@ static SearchResult finishCurrentNode(SearchContext *context)
   SearchNode *node = context->state.access.current_node;
   context->state.access.current_node = node->next;
 
-  String filename = strmatchGetExpression(node->matcher);
-  appendFilenameToBuffer(context, filename);
+  appendFilenameToBuffer(context, node->name);
 
   return finishNodeStep(context, node, node->policy);
 }
@@ -412,8 +420,8 @@ SearchContext *searchNew(String root, SearchNode *node)
 
   context->buffer.length = root.length;
 
-  /* Store reference to ignore matcher list. */
-  context->ignore_matcher_list = *node->ignore_matcher_list;
+  /* Store reference to ignore expression list. */
+  context->ignore_expressions = *node->ignore_expressions;
 
   /* Initialize the current search state. */
   recursionStepRaw(context, node, node->policy);
