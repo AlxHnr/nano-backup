@@ -247,7 +247,7 @@ SearchNode *searchTreeLoad(const char *path)
   root_node->subnodes_contain_regex = false;
   root_node->next = NULL;
 
-  /* Initialize ignore matcher list, which is shared across all nodes of
+  /* Initialize ignore expression list, which is shared across all nodes of
      the tree. */
   root_node->ignore_expressions =
     mpAlloc(sizeof *root_node->ignore_expressions);
@@ -319,7 +319,7 @@ SearchNode *searchTreeLoad(const char *path)
     }
     else if(current_policy == BPOL_ignore)
     {
-      /* Initialize new ignore matcher. */
+      /* Initialize new ignore expression. */
       RegexList *ignore_expression = mpAlloc(sizeof *ignore_expression);
 
       String copy = strCopy(line);
@@ -335,7 +335,7 @@ SearchNode *searchTreeLoad(const char *path)
 
       ignore_expression->has_matched = false;
 
-      /* Prepend new matcher to the shared ignore matcher list. */
+      /* Prepend new expression to the shared ignore expression list. */
       ignore_expression->next = *root_node->ignore_expressions;
       *root_node->ignore_expressions = ignore_expression;
     }
