@@ -199,7 +199,7 @@ static void checkNode(SearchNode *node, SearchNode *root_node,
 static void testSimpleConfigFile(const char *path)
 {
   SearchNode *root = searchTreeLoad(path);
-  checkRootNode(root, 2, false, BPOL_none, 0, 0);
+  checkRootNode(root, BPOL_none, 0, 2, false, 0);
 
   SearchNode *home = findSubnode(root, "home");
   checkNode(home, root, 2, false, BPOL_none, false, 2, 2, "home");
@@ -224,7 +224,7 @@ static void testSimpleConfigFile(const char *path)
 static void testInheritance_1(void)
 {
   SearchNode *root = searchTreeLoad("valid-config-files/inheritance-1.txt");
-  checkRootNode(root, 1, false, BPOL_track, 14, 0);
+  checkRootNode(root, BPOL_track, 14, 1, false, 0);
 
   SearchNode *usr = findSubnode(root, "usr");
   checkNode(usr, root, 1, false, BPOL_mirror, false, 11, 2, "usr");
@@ -246,7 +246,7 @@ static void testInheritance_1(void)
 static void testInheritance_2(void)
 {
   SearchNode *root = searchTreeLoad("valid-config-files/inheritance-2.txt");
-  checkRootNode(root, 1, false, BPOL_copy, 3, 3);
+  checkRootNode(root, BPOL_copy, 3, 1, false, 3);
   assert_true(ignoreMatcherExists(root, "foo", 9));
   assert_true(ignoreMatcherExists(root, "^ ",  10));
   assert_true(ignoreMatcherExists(root, "bar", 11));
@@ -271,7 +271,7 @@ static void testInheritance_2(void)
 static void testInheritance_3(void)
 {
   SearchNode *root = searchTreeLoad("valid-config-files/inheritance-3.txt");
-  checkRootNode(root, 2, false, BPOL_none, 0, 2);
+  checkRootNode(root, BPOL_none, 0, 2, false, 2);
   assert_true(ignoreMatcherExists(root, ".*\\.png", 14));
   assert_true(ignoreMatcherExists(root, ".*\\.jpg", 16));
 
@@ -316,17 +316,17 @@ int main(void)
   testInheritance_2();
   testInheritance_3();
 
-  checkRootNode(searchTreeLoad("empty.txt"), 0, false, BPOL_none, 0, 0);
+  checkRootNode(searchTreeLoad("empty.txt"), BPOL_none, 0, 0, false, 0);
   checkRootNode(searchTreeLoad("valid-config-files/no-paths-and-no-ignores.txt"),
-                0, false, BPOL_none, 0, 0);
+                BPOL_none, 0, 0, false, 0);
 
   SearchNode *ignore_1 = searchTreeLoad("valid-config-files/ignore-patterns-only-1.txt");
-  checkRootNode(ignore_1, 0, false, BPOL_none, 0, 2);
+  checkRootNode(ignore_1, BPOL_none, 0, 0, false, 2);
   assert_true(ignoreMatcherExists(ignore_1, ".*\\.(png|jpg|pdf)", 2));
   assert_true(ignoreMatcherExists(ignore_1, "foo", 3));
 
   SearchNode *ignore_2 = searchTreeLoad("valid-config-files/ignore-patterns-only-2.txt");
-  checkRootNode(ignore_2, 0, false, BPOL_none, 0, 4);
+  checkRootNode(ignore_2, BPOL_none, 0, 0, false, 4);
   assert_true(ignoreMatcherExists(ignore_2, "foo",      7));
   assert_true(ignoreMatcherExists(ignore_2, "bar",      9));
   assert_true(ignoreMatcherExists(ignore_2, "foo-bar",  12));
