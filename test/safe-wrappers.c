@@ -138,7 +138,7 @@ int main(void)
 
   testGroupStart("sReadDir()");
   /* Count example config files. */
-  for(size_t counter = 0; counter < 10; counter++)
+  for(size_t counter = 0; counter < 11; counter++)
   {
     checkReadDir(valid_config_files, "valid-config-files");
   }

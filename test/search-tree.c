@@ -343,12 +343,27 @@ static void testInheritance_3(void)
             root, "(distfiles|packages)", 27, true, BPOL_mirror, false, 27, 0, false);
 }
 
+/** Tests parsing the config file "root-with-regex-subnodes.txt". */
+static void testRootWithRegexSubnodes(void)
+{
+  SearchNode *root = searchTreeLoad("valid-config-files/root-with-regex-subnodes.txt");
+  checkRootNode(root, BPOL_none, 0, 3, true, 0);
+
+  checkNode(findSubnode(root, "\\.txt$"),
+            root, "\\.txt$", 2, true, BPOL_copy, false, 2, 0, false);
+  checkNode(findSubnode(root, "foo"),
+            root, "foo", 5, false, BPOL_mirror, false, 5, 0, false);
+  checkNode(findSubnode(root, "(foo-)?bar$"),
+            root, "(foo-)?bar$", 6, true, BPOL_mirror, false, 6, 0, false);
+}
+
 int main(void)
 {
   testGroupStart("various config files");
   testInheritance_1();
   testInheritance_2();
   testInheritance_3();
+  testRootWithRegexSubnodes();
 
   checkRootNode(searchTreeLoad("empty.txt"), BPOL_none, 0, 0, false, 0);
   checkRootNode(searchTreeLoad("valid-config-files/no-paths-and-no-ignores.txt"),

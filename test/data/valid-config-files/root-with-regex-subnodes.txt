@@ -1,0 +1,6 @@
+[copy]
+//\.txt$
+
+[mirror]
+/foo
+//(foo-)?bar$
