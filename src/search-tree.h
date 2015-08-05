@@ -30,50 +30,71 @@
 #define _NANO_BACKUP_SEARCH_TREE_H_
 
 #include <stdbool.h>
+#include <regex.h>
 
-#include "string-matcher.h"
+#include "string-utils.h"
 #include "backup-policies.h"
 
-/** A list of StringMatcher. */
-typedef struct StringMatcherList StringMatcherList;
-struct StringMatcherList
+/** A list of compiled regular expressions. */
+typedef struct RegexList RegexList;
+struct RegexList
 {
-  StringMatcher *matcher; /**< The string matcher. */
-  StringMatcherList *next; /**< The next element, or NULL. */
+  /** The regular expression as a string. */
+  String expression;
+
+  /** The number of the line in the config file on which this expression
+    was defined. */
+  size_t line_nr;
+
+  /** The expression in compiled form. */
+  regex_t *regex;
+
+  /** True, if this expression matched anything in its lifetime. */
+  bool has_matched;
+
+  /** The next element, or NULL. */
+  RegexList *next;
 };
 
 /** Represents a node in the search tree. */
 typedef struct SearchNode SearchNode;
 struct SearchNode
 {
-  /** For checking whether a filename belongs to the this node or not. It
-    is NULL, if this node is the root node of the tree. */
-  StringMatcher *matcher;
+  /** The name or expression of the node. */
+  String name;
+
+  /** The number of the line in the config file on which this node appeared
+    initially. This may not be the line on which this node got a policy
+    assigned to it. */
+  size_t line_nr;
+
+  /** If this value is not NULL, it contains a compiled regex and will be
+    used for matching files. */
+  const regex_t *regex;
 
   /** The backup policy for this node. */
   BackupPolicy policy;
 
   /** True, if the policy was inherited by the parent node. Otherwise this
-    node got its own policy assigned inside the config file. */
+    node got its own policy assigned to it in the config file. */
   bool policy_inherited;
 
-  /** The number of the line in the config file, on which the policy of the
-    current node was set. This value may differ from a StringMatchers line
-    number, wich only captures the first appearance of a string. */
+  /** The number of the line in the config file, on which the policy for
+    the current node was set. */
   size_t policy_line_nr;
 
   /** A pointer to the first subnode, or NULL. */
   SearchNode *subnodes;
 
-  /** True, if at least one subnode contains a regular expression.
-    Subnodes of the subnode do not influence this value. */
+  /** True, if at least one subnode contains a regular expression. Subnodes
+    of the subnode do not influence this variable. */
   bool subnodes_contain_regex;
 
-  /** Points to the search trees common ignore matcher list, which is
-    shared across all of its nodes. This allows to search with every node.
-    It matches filepaths that should be ignored. The common ignore matcher
-    can point to NULL if its empty. */
-  StringMatcherList **ignore_matcher_list;
+  /** Points to the search trees common ignore expression list, which is
+    shared across all of its nodes. This allows starting a search with
+    every node. It matches filepaths that should be ignored. The common
+    ignore expression list can point to NULL if its empty. */
+  RegexList **ignore_expressions;
 
   /** The next search node, or NULL. */
   SearchNode *next;
