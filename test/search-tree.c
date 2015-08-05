@@ -186,14 +186,10 @@ static void checkBasicNode(SearchNode *node, const char *name,
   {
     assert_true(subnode_count == 0);
     assert_true(subnodes_contain_regex == false);
-    assert_true(subnodesContainRegex(node) == false);
-  }
-  else
-  {
-    assert_true(subnodesContainRegex(node) == subnodes_contain_regex);
   }
 
   assert_true(node->subnodes_contain_regex == subnodes_contain_regex);
+  assert_true(node->subnodes_contain_regex == subnodesContainRegex(node));
   assert_true(node->ignore_expressions != NULL);
 }
 
