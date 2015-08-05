@@ -47,7 +47,7 @@ struct RegexList
   size_t line_nr;
 
   /** The expression in compiled form. */
-  regex_t *regex;
+  const regex_t *regex;
 
   /** True, if this expression matched anything in its lifetime. */
   bool has_matched;
