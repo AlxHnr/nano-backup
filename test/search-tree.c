@@ -50,12 +50,12 @@ static size_t countSubnodes(SearchNode *parent_node)
   return counter;
 }
 
-/** Returns the subnode with the given string as its matcher expression. It
-  will terminate the test suite with failure if the node does not exist.
+/** Returns the subnode with the given string as its name. It will
+  terminate the test suite with failure if the node does not exist.
 
   @param parent_node The node containing the subnodes which should be
   searched.
-  @param string The matcher expression string to search for.
+  @param string The name of the node to search for.
 
   @return A valid search node.
 */
@@ -65,7 +65,7 @@ static SearchNode *findSubnode(SearchNode *parent_node, const char *string)
   for(SearchNode *node = parent_node->subnodes;
       node != NULL; node = node->next)
   {
-    if(strCompare(node_name, strmatchGetExpression(node->matcher)))
+    if(strCompare(node->name, node_name))
     {
       return node;
     }
@@ -77,19 +77,19 @@ static SearchNode *findSubnode(SearchNode *parent_node, const char *string)
   return NULL;
 }
 
-/** Counts all ignore matcher that the given SearchNode contains.
+/** Counts all ignore expressions that the given SearchNode contains.
 
-  @param node The SearchNode containing the ignore matcher list.
+  @param node The SearchNode containing the ignore expression list.
 
-  @return The amount of ignore matcher in the given nodes ignore matcher
-  list.
+  @return The amount of ignore expressions in the given nodes ignore
+  expression list.
 */
-static size_t countIgnoreMatcher(SearchNode *node)
+static size_t countIgnoreExpressions(SearchNode *node)
 {
   size_t counter = 0;
 
-  for(StringMatcherList *element = *node->ignore_matcher_list;
-      element != NULL; element = element->next)
+  for(RegexList *expression = *node->ignore_expressions;
+      expression != NULL; expression = expression->next)
   {
     counter++;
   }
@@ -97,26 +97,27 @@ static size_t countIgnoreMatcher(SearchNode *node)
   return counter;
 }
 
-/** Checks if a valid ignore matcher with the given properties exists in
+/** Checks if a valid ignore expression with the given properties exists in
   the given SearchNode.
 
-  @param node The node containing the ignore matcher list.
+  @param node The node containing the ignore expression list.
   @param pattern The pattern which should be searched for.
   @param line_nr The number of the line in the config file, on which the
   given pattern was defined initially.
 
   @return True, if a pattern with the specified properties exists in the
-  ignore matcher list.
+  ignore expression list.
 */
-static bool ignoreMatcherExists(SearchNode *node, const char *pattern,
-                                size_t line_nr)
+static bool ignoreExpressionExists(SearchNode *node, const char *pattern,
+                                   size_t line_nr)
 {
-  for(StringMatcherList *element = *node->ignore_matcher_list;
-      element != NULL; element = element->next)
+  String expression_string = str(pattern);
+  for(RegexList *expression = *node->ignore_expressions;
+      expression != NULL; expression = expression->next)
   {
-    if(strmatchHasMatched(element->matcher) == false &&
-       strmatchLineNr(element->matcher) == line_nr &&
-       strCompare(strmatchGetExpression(element->matcher), str(pattern)))
+    if(expression->has_matched == false &&
+       expression->line_nr == line_nr &&
+       strCompare(expression->expression, expression_string))
     {
       return true;
     }
@@ -125,23 +126,25 @@ static bool ignoreMatcherExists(SearchNode *node, const char *pattern,
   return false;
 }
 
-/** Checks whether the given node contains the expected values, or not.
-
-  @param node The node which should be checked.
-  @param subnode_count The amount of subnodes which the node must have.
-  @param subnodes_contain_regex True, if at least one of the subnodes must
-  contain a regular expression.
-  @param policy The policy which the node must have.
-  @param policy_inherited True, if the policy was inherited from the parent
-  node.
-  @param policy_line_nr The line number on which the policy was defined.
-*/
-static void checkBasicNode(SearchNode *node, size_t subnode_count,
-                           bool subnodes_contain_regex,
+static void checkBasicNode(SearchNode *node, const char *name,
+                           size_t line_nr, bool has_regex,
                            BackupPolicy policy, bool policy_inherited,
-                           size_t policy_line_nr)
+                           size_t policy_line_nr, size_t subnode_count,
+                           bool subnodes_contain_regex)
 {
   assert_true(node != NULL);
+
+  assert_true(strCompare(node->name, str(name)));
+  assert_true(node->line_nr == line_nr);
+
+  if(has_regex)
+  {
+    assert_true(node->regex != NULL);
+  }
+  else
+  {
+    assert_true(node->regex == NULL);
+  }
 
   assert_true(node->policy == policy);
   assert_true(node->policy_inherited == policy_inherited);
@@ -159,48 +162,34 @@ static void checkBasicNode(SearchNode *node, size_t subnode_count,
     assert_true(node->subnodes_contain_regex == subnodes_contain_regex);
   }
 
-  assert_true(node->ignore_matcher_list != NULL);
+  assert_true(node->ignore_expressions != NULL);
 }
 
 /** Extends checkBasicNode() with root node specific checks by wrapping it.
 */
-static void checkRootNode(SearchNode *node, size_t subnode_count,
-                          bool subnodes_contain_regex, BackupPolicy policy,
-                          size_t policy_line_nr, size_t ignore_matcher_count)
+static void checkRootNode(SearchNode *node, const char *name,
+                          size_t line_nr, BackupPolicy policy,
+                          size_t policy_line_nr, size_t subnode_count,
+                          bool subnodes_contain_regex,
+                          size_t ignore_expression_count)
 {
-  checkBasicNode(node, subnode_count, subnodes_contain_regex,
-                 policy, false, policy_line_nr);
+  checkBasicNode(node, name, line_nr, false, policy, false, policy_line_nr,
+                 subnode_count, subnodes_contain_regex);
 
-  assert_true(node->matcher == NULL);
-  assert_true(countIgnoreMatcher(node) == ignore_matcher_count);
+  assert_true(countIgnoreExpressions(node) == ignore_expression_count);
   assert_true(node->next == NULL);
 }
 
-/** Extends checkBasicNode() with more values to check for. This function
-  takes the following additional arguments:
-
-  @param root_node The root node of the tree to which the given node
-  belongs to.
-  @param matcher_line_nr The number of the line in the config file on which
-  the nodes matcher expression was initially defined.
-  @param matcher_string The matcher expression as a string.
-*/
 static void checkNode(SearchNode *node, SearchNode *root_node,
-                      size_t subnode_count, bool subnodes_contain_regex,
+                      const char *name, size_t line_nr, bool has_regex,
                       BackupPolicy policy, bool policy_inherited,
-                      size_t policy_line_nr, size_t matcher_line_nr,
-                      const char *matcher_string)
+                      size_t policy_line_nr, size_t subnode_count,
+                      bool subnodes_contain_regex)
 {
-  checkBasicNode(node, subnode_count, subnodes_contain_regex,
-                 policy, policy_inherited, policy_line_nr);
+  checkBasicNode(node, name, line_nr, has_regex, policy, policy_inherited,
+                 policy_line_nr, subnode_count, subnodes_contain_regex);
 
-  assert_true(node->matcher != NULL);
-  assert_true(strmatchHasMatched(node->matcher) == false);
-  assert_true(strmatchLineNr(node->matcher) == matcher_line_nr);
-  assert_true(strCompare(strmatchGetExpression(node->matcher),
-                         str(matcher_string)));
-
-  assert_true(node->ignore_matcher_list == root_node->ignore_matcher_list);
+  assert_true(node->ignore_expressions == root_node->ignore_expressions);
 }
 
 /** Loads a search tree from a simple config file and checks it.
