@@ -126,6 +126,22 @@ static bool ignoreExpressionExists(SearchNode *node, const char *pattern,
   return false;
 }
 
+/** Returns true, if the given node contains at least one subnode with a
+  regex. */
+static bool subnodesContainRegex(SearchNode *parent_node)
+{
+  for(SearchNode *node = parent_node->subnodes;
+      node != NULL; node = node->next)
+  {
+    if(node->regex != NULL)
+    {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 /** Checks if the given node contains the given values.
 
   @param node The node that should be checked.
@@ -170,13 +186,14 @@ static void checkBasicNode(SearchNode *node, const char *name,
   {
     assert_true(subnode_count == 0);
     assert_true(subnodes_contain_regex == false);
-    assert_true(node->subnodes_contain_regex == false);
+    assert_true(subnodesContainRegex(node) == false);
   }
   else
   {
-    assert_true(node->subnodes_contain_regex == subnodes_contain_regex);
+    assert_true(subnodesContainRegex(node) == subnodes_contain_regex);
   }
 
+  assert_true(node->subnodes_contain_regex == subnodes_contain_regex);
   assert_true(node->ignore_expressions != NULL);
 }
 
