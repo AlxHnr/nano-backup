@@ -126,6 +126,21 @@ static bool ignoreExpressionExists(SearchNode *node, const char *pattern,
   return false;
 }
 
+/** Checks if the given node contains the given values.
+
+  @param node The node that should be checked.
+  @param name The name of the node.
+  @param line_nr The number of the line, on which the node was initially
+  defined in the config file.
+  @param has_regex True, if the node must have a compiled regex.
+  @param policy The policy of the node.
+  @param policy_inherited True, if the node has inherited its policy.
+  @param policy_line_nr The number of the line in the config file on which
+  the node has got its policy assigned to it.
+  @param subnode_count The amount of subnodes in the node.
+  @param subnodes_contain_regex True, if at least one subnode contains a
+  regex.
+*/
 static void checkBasicNode(SearchNode *node, const char *name,
                            size_t line_nr, bool has_regex,
                            BackupPolicy policy, bool policy_inherited,
@@ -179,6 +194,12 @@ static void checkRootNode(SearchNode *node, BackupPolicy policy,
   assert_true(node->next == NULL);
 }
 
+/** Extends checkBasicNode() with some additional checks by wrapping it.
+  Here are the added parameters:
+
+  @param root_node The root node of the tree, to which the given node
+  belongs.
+*/
 static void checkNode(SearchNode *node, SearchNode *root_node,
                       const char *name, size_t line_nr, bool has_regex,
                       BackupPolicy policy, bool policy_inherited,
