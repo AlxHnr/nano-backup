@@ -227,19 +227,19 @@ static void testInheritance_1(void)
   checkRootNode(root, BPOL_track, 14, 1, false, 0);
 
   SearchNode *usr = findSubnode(root, "usr");
-  checkNode(usr, root, "usr", 1, false, BPOL_mirror, false, 11, 1, false);
+  checkNode(usr, root, "usr", 2, false, BPOL_mirror, false, 11, 1, false);
 
   SearchNode *portage = findSubnode(usr, "portage");
-  checkNode(portage, root, "portage", 8, false, BPOL_copy, false, 8, 1, false);
+  checkNode(portage, root, "portage", 2, false, BPOL_copy, false, 8, 1, false);
 
   SearchNode *app_crypt = findSubnode(portage, "app-crypt");
-  checkNode(app_crypt, root, "app-crypt", 8, false, BPOL_copy, true, 8, 1, false);
+  checkNode(app_crypt, root, "app-crypt", 2, false, BPOL_copy, true, 8, 1, false);
 
   SearchNode *seahorse = findSubnode(app_crypt, "seahorse");
-  checkNode(seahorse, root, "seahorse", 5, false, BPOL_mirror, false, 5, 1, true);
+  checkNode(seahorse, root, "seahorse", 2, false, BPOL_mirror, false, 5, 1, true);
 
   checkNode(findSubnode(seahorse, ".*\\.ebuild"),
-            root, ".*\\.ebuild", 2, false, BPOL_copy, false, 2, 0, false);
+            root, ".*\\.ebuild", 2, true, BPOL_copy, false, 2, 0, false);
 }
 
 /** Test parsing the config file "inheritance-2.txt". */
@@ -252,19 +252,19 @@ static void testInheritance_2(void)
   assert_true(ignoreExpressionExists(root, "bar", 11));
 
   SearchNode *usr = findSubnode(root, "usr");
-  checkNode(usr, root, "usr", 1, false, BPOL_copy, true, 15, 1, false);
+  checkNode(usr, root, "usr", 15, false, BPOL_copy, true, 15, 1, false);
 
   SearchNode *portage = findSubnode(usr, "portage");
-  checkNode(portage, root, "portage", 1, false, BPOL_track, false, 15, 1, false);
+  checkNode(portage, root, "portage", 15, false, BPOL_track, false, 15, 1, false);
 
   SearchNode *app_crypt = findSubnode(portage, "app-crypt");
-  checkNode(app_crypt, root, "app-crypt", 1, false, BPOL_track, true, 18, 1, false);
+  checkNode(app_crypt, root, "app-crypt", 18, false, BPOL_track, true, 18, 1, false);
 
   SearchNode *seahorse = findSubnode(app_crypt, "seahorse");
-  checkNode(seahorse, root, "seahorse", 1, false, BPOL_copy, false, 18, 1, true);
+  checkNode(seahorse, root, "seahorse", 18, false, BPOL_copy, false, 18, 1, true);
 
   SearchNode *ebuild = findSubnode(seahorse, ".*\\.ebuild");
-  checkNode(ebuild, root, ".*\\.ebuild", 2, false, BPOL_mirror, false, 21, 0, false);
+  checkNode(ebuild, root, ".*\\.ebuild", 21, true, BPOL_mirror, false, 21, 0, false);
 }
 
 /** Tests parsing the config file "inheritance-3.txt". */
@@ -276,37 +276,37 @@ static void testInheritance_3(void)
   assert_true(ignoreExpressionExists(root, ".*\\.jpg", 16));
 
   SearchNode *home_1 = findSubnode(root, "home");
-  checkNode(home_1, root, "home", 2, false, BPOL_mirror, false, 28, 1, false);
+  checkNode(home_1, root, "home", 22, false, BPOL_mirror, false, 28, 1, false);
 
   SearchNode *user_1 = findSubnode(home_1, "user");
-  checkNode(user_1, root, "user", 2, false, BPOL_mirror, true, 28, 1, false);
+  checkNode(user_1, root, "user", 22, false, BPOL_mirror, true, 28, 1, false);
 
   SearchNode *config_1 = findSubnode(user_1, ".config");
-  checkNode(config_1, root, ".config", 2, false, BPOL_mirror, true, 28, 3, true);
+  checkNode(config_1, root, ".config", 22, false, BPOL_mirror, true, 28, 3, true);
 
   SearchNode *dlaunch_1 = findSubnode(config_1, "dlaunch");
-  checkNode(dlaunch_1, root, "dlaunch", 2, false, BPOL_mirror, true, 28, 1, false);
+  checkNode(dlaunch_1, root, "dlaunch", 22, false, BPOL_mirror, true, 28, 1, false);
 
   checkNode(findSubnode(dlaunch_1, "ignore-files.txt"),
-            root, "ignore-files.txt", 2, false, BPOL_track, false, 22, 0, false);
+            root, "ignore-files.txt", 22, false, BPOL_track, false, 22, 0, false);
 
   SearchNode *htop_1 = findSubnode(config_1, "htop");
-  checkNode(htop_1, root, "htop", 2, false, BPOL_mirror, true, 28, 1, false);
+  checkNode(htop_1, root, "htop", 23, false, BPOL_mirror, true, 28, 1, false);
 
   checkNode(findSubnode(htop_1, "htoprc"),
-            root, "htoprc", 2, false, BPOL_track, false, 23, 0, false);
+            root, "htoprc", 23, false, BPOL_track, false, 23, 0, false);
 
   checkNode(findSubnode(config_1, ".*\\.conf"),
-            root, ".*\\.conf", 2, false, BPOL_track, false, 24, 0, false);
+            root, ".*\\.conf", 24, true, BPOL_track, false, 24, 0, false);
 
   SearchNode *usr_1 = findSubnode(root, "usr");
-  checkNode(usr_1, root, "usr", 2, false, BPOL_none, false, 27, 1, false);
+  checkNode(usr_1, root, "usr", 27, false, BPOL_none, false, 27, 1, false);
 
   SearchNode *portage_1 = findSubnode(usr_1, "portage");
-  checkNode(portage_1, root, "portage", 2, false, BPOL_none, false, 27, 1, true);
+  checkNode(portage_1, root, "portage", 27, false, BPOL_none, false, 27, 1, true);
 
   checkNode(findSubnode(portage_1, "(distfiles|packages)"),
-            root, "(distfiles|packages)", 2, false, BPOL_mirror, false, 27, 0, false);
+            root, "(distfiles|packages)", 27, true, BPOL_mirror, false, 27, 0, false);
 }
 
 int main(void)
