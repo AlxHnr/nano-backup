@@ -167,13 +167,13 @@ static void checkBasicNode(SearchNode *node, const char *name,
 
 /** Extends checkBasicNode() with root node specific checks by wrapping it.
 */
-static void checkRootNode(SearchNode *node, const char *name,
-                          size_t line_nr, BackupPolicy policy,
-                          size_t policy_line_nr, size_t subnode_count,
+static void checkRootNode(SearchNode *node, size_t line_nr,
+                          BackupPolicy policy, size_t policy_line_nr,
+                          size_t subnode_count,
                           bool subnodes_contain_regex,
                           size_t ignore_expression_count)
 {
-  checkBasicNode(node, name, line_nr, false, policy, false, policy_line_nr,
+  checkBasicNode(node, "/", line_nr, false, policy, false, policy_line_nr,
                  subnode_count, subnodes_contain_regex);
 
   assert_true(countIgnoreExpressions(node) == ignore_expression_count);
