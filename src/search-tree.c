@@ -29,6 +29,7 @@
 #include "search-tree.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "memory-pool.h"
 #include "string-table.h"
@@ -158,21 +159,29 @@ static SearchNode *newNode(StringTable *existing_nodes,
 
   /* Initialize a new node. */
   SearchNode *node = mpAlloc(sizeof *node);
+  node->line_nr = line_nr;
 
-  /* Build StringMatcher. */
+  /* Build regular expression. */
   if(paths.tail.length >= 2 && paths.tail.str[0] == '/')
   {
     /* Slice out the part after the first slash. */
     String expression =
       (String)
       { .str = &paths.tail.str[1], .length = paths.tail.length - 1 };
-    node->matcher = strmatchRegex(strCopy(expression), line_nr);
+
+    String copy = strCopy(expression);
+    memcpy(&node->name, &copy, sizeof(node->name));
+
+    node->regex = compileRegex(node->name.str, line_nr);
 
     parent_node->subnodes_contain_regex = true;
   }
   else
   {
-    node->matcher = strmatchString(strCopy(paths.tail), line_nr);
+    String copy = strCopy(paths.tail);
+    memcpy(&node->name, &copy, sizeof(node->name));
+
+    node->regex = NULL;
   }
 
   /* Inherit policy from parent node. */
@@ -182,7 +191,7 @@ static SearchNode *newNode(StringTable *existing_nodes,
 
   node->subnodes = NULL;
   node->subnodes_contain_regex = false;
-  node->ignore_matcher_list = parent_node->ignore_matcher_list;
+  node->ignore_expressions = parent_node->ignore_expressions;
 
   /* Prepend node to the parents subnodes. */
   node->next = parent_node->subnodes;
@@ -225,7 +234,12 @@ SearchNode *searchTreeLoad(const char *path)
 {
   /* Initialize the root node of this tree. */
   SearchNode *root_node = mpAlloc(sizeof *root_node);
-  root_node->matcher = NULL;
+
+  String copy = str("/");
+  memcpy(&root_node->name, &copy, sizeof(root_node->name));
+
+  root_node->line_nr = 0;
+  root_node->regex = NULL;
   root_node->policy = BPOL_none;
   root_node->policy_inherited = false;
   root_node->policy_line_nr = 0;
@@ -235,12 +249,14 @@ SearchNode *searchTreeLoad(const char *path)
 
   /* Initialize ignore matcher list, which is shared across all nodes of
      the tree. */
-  root_node->ignore_matcher_list =
-    mpAlloc(sizeof *root_node->ignore_matcher_list);
-  *root_node->ignore_matcher_list = NULL;
+  root_node->ignore_expressions =
+    mpAlloc(sizeof *root_node->ignore_expressions);
+  *root_node->ignore_expressions = NULL;
 
   /* This table maps paths to existing nodes, without a trailing slash. */
   StringTable *existing_nodes = strtableNew(0);
+
+  /* Associate an empty string with the root node. */
   strtableMap(existing_nodes, str(""), root_node);
 
   /* Parse the specified config file. */
@@ -304,12 +320,24 @@ SearchNode *searchTreeLoad(const char *path)
     else if(current_policy == BPOL_ignore)
     {
       /* Initialize new ignore matcher. */
-      StringMatcherList *ignore_matcher = mpAlloc(sizeof *ignore_matcher);
-      ignore_matcher->matcher = strmatchRegex(strCopy(line), line_nr);
-      ignore_matcher->next = *root_node->ignore_matcher_list;
+      RegexList *ignore_expression = mpAlloc(sizeof *ignore_expression);
+
+      String copy = strCopy(line);
+      memcpy(&ignore_expression->expression, &copy,
+             sizeof(ignore_expression->expression));
+
+      ignore_expression->line_nr = line_nr;
+
+      /* Pass the copy of the current line, to ensure that the string is
+         null-terminated. */
+      ignore_expression->regex =
+        compileRegex(ignore_expression->expression.str, line_nr);
+
+      ignore_expression->has_matched = false;
 
       /* Prepend new matcher to the shared ignore matcher list. */
-      *root_node->ignore_matcher_list = ignore_matcher;
+      ignore_expression->next = *root_node->ignore_expressions;
+      *root_node->ignore_expressions = ignore_expression;
     }
     else if(line.str[0] == '/')
     {
