@@ -247,9 +247,9 @@ static void testInheritance_2(void)
 {
   SearchNode *root = searchTreeLoad("valid-config-files/inheritance-2.txt");
   checkRootNode(root, BPOL_copy, 3, 1, false, 3);
-  assert_true(ignoreMatcherExists(root, "foo", 9));
-  assert_true(ignoreMatcherExists(root, "^ ",  10));
-  assert_true(ignoreMatcherExists(root, "bar", 11));
+  assert_true(ignoreExpressionExists(root, "foo", 9));
+  assert_true(ignoreExpressionExists(root, "^ ",  10));
+  assert_true(ignoreExpressionExists(root, "bar", 11));
 
   SearchNode *usr = findSubnode(root, "usr");
   checkNode(usr, root, "usr", 1, false, BPOL_copy, true, 15, 1, false);
@@ -272,8 +272,8 @@ static void testInheritance_3(void)
 {
   SearchNode *root = searchTreeLoad("valid-config-files/inheritance-3.txt");
   checkRootNode(root, BPOL_none, 0, 2, false, 2);
-  assert_true(ignoreMatcherExists(root, ".*\\.png", 14));
-  assert_true(ignoreMatcherExists(root, ".*\\.jpg", 16));
+  assert_true(ignoreExpressionExists(root, ".*\\.png", 14));
+  assert_true(ignoreExpressionExists(root, ".*\\.jpg", 16));
 
   SearchNode *home_1 = findSubnode(root, "home");
   checkNode(home_1, root, "home", 2, false, BPOL_mirror, false, 28, 1, false);
@@ -322,15 +322,15 @@ int main(void)
 
   SearchNode *ignore_1 = searchTreeLoad("valid-config-files/ignore-patterns-only-1.txt");
   checkRootNode(ignore_1, BPOL_none, 0, 0, false, 2);
-  assert_true(ignoreMatcherExists(ignore_1, ".*\\.(png|jpg|pdf)", 2));
-  assert_true(ignoreMatcherExists(ignore_1, "foo", 3));
+  assert_true(ignoreExpressionExists(ignore_1, ".*\\.(png|jpg|pdf)", 2));
+  assert_true(ignoreExpressionExists(ignore_1, "foo", 3));
 
   SearchNode *ignore_2 = searchTreeLoad("valid-config-files/ignore-patterns-only-2.txt");
   checkRootNode(ignore_2, BPOL_none, 0, 0, false, 4);
-  assert_true(ignoreMatcherExists(ignore_2, "foo",      7));
-  assert_true(ignoreMatcherExists(ignore_2, "bar",      9));
-  assert_true(ignoreMatcherExists(ignore_2, "foo-bar",  12));
-  assert_true(ignoreMatcherExists(ignore_2, ".*\\.png", 17));
+  assert_true(ignoreExpressionExists(ignore_2, "foo",      7));
+  assert_true(ignoreExpressionExists(ignore_2, "bar",      9));
+  assert_true(ignoreExpressionExists(ignore_2, "foo-bar",  12));
+  assert_true(ignoreExpressionExists(ignore_2, ".*\\.png", 17));
   testGroupEnd();
 
   testGroupStart("BOM and EOL variations");
