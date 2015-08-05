@@ -126,8 +126,8 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("sOpenDir()");
-  DIR *config_files = sOpenDir("config-files");
-  assert_true(config_files != NULL);
+  DIR *valid_config_files = sOpenDir( "valid-config-files");
+  assert_true(valid_config_files != NULL);
 
   DIR *broken_config_files = sOpenDir("./broken-config-files/");
   assert_true(broken_config_files != NULL);
@@ -140,9 +140,9 @@ int main(void)
   /* Count example config files. */
   for(size_t counter = 0; counter < 10; counter++)
   {
-    checkReadDir(config_files, "config-files");
+    checkReadDir(valid_config_files, "valid-config-files");
   }
-  assert_true(sReadDir(config_files, "config-files") == NULL);
+  assert_true(sReadDir(valid_config_files, "valid-config-files") == NULL);
 
   /* Count broken config files. */
   for(size_t counter = 0; counter < 23; counter++)
@@ -153,7 +153,7 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("sCloseDir()");
-  sCloseDir(config_files, "config-files");
+  sCloseDir(valid_config_files, "valid-config-files");
   sCloseDir(broken_config_files, "broken-config-files");
   testGroupEnd();
 

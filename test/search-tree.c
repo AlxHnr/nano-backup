@@ -235,7 +235,7 @@ static void testSimpleConfigFile(const char *path)
 /** Test parsing the config file "inheritance-1.txt". */
 static void testInheritance_1(void)
 {
-  SearchNode *root = searchTreeLoad("config-files/inheritance-1.txt");
+  SearchNode *root = searchTreeLoad("valid-config-files/inheritance-1.txt");
   checkRootNode(root, 1, false, BPOL_track, 14, 0);
 
   SearchNode *usr = findSubnode(root, "usr");
@@ -257,7 +257,7 @@ static void testInheritance_1(void)
 /** Test parsing the config file "inheritance-2.txt". */
 static void testInheritance_2(void)
 {
-  SearchNode *root = searchTreeLoad("config-files/inheritance-2.txt");
+  SearchNode *root = searchTreeLoad("valid-config-files/inheritance-2.txt");
   checkRootNode(root, 1, false, BPOL_copy, 3, 3);
   assert_true(ignoreMatcherExists(root, "foo", 9));
   assert_true(ignoreMatcherExists(root, "^ ",  10));
@@ -282,7 +282,7 @@ static void testInheritance_2(void)
 /** Tests parsing the config file "inheritance-3.txt". */
 static void testInheritance_3(void)
 {
-  SearchNode *root = searchTreeLoad("config-files/inheritance-3.txt");
+  SearchNode *root = searchTreeLoad("valid-config-files/inheritance-3.txt");
   checkRootNode(root, 2, false, BPOL_none, 0, 2);
   assert_true(ignoreMatcherExists(root, ".*\\.png", 14));
   assert_true(ignoreMatcherExists(root, ".*\\.jpg", 16));
@@ -329,15 +329,15 @@ int main(void)
   testInheritance_3();
 
   checkRootNode(searchTreeLoad("empty.txt"), 0, false, BPOL_none, 0, 0);
-  checkRootNode(searchTreeLoad("config-files/no-paths-and-no-ignores.txt"),
+  checkRootNode(searchTreeLoad("valid-config-files/no-paths-and-no-ignores.txt"),
                 0, false, BPOL_none, 0, 0);
 
-  SearchNode *ignore_1 = searchTreeLoad("config-files/ignore-patterns-only-1.txt");
+  SearchNode *ignore_1 = searchTreeLoad("valid-config-files/ignore-patterns-only-1.txt");
   checkRootNode(ignore_1, 0, false, BPOL_none, 0, 2);
   assert_true(ignoreMatcherExists(ignore_1, ".*\\.(png|jpg|pdf)", 2));
   assert_true(ignoreMatcherExists(ignore_1, "foo", 3));
 
-  SearchNode *ignore_2 = searchTreeLoad("config-files/ignore-patterns-only-2.txt");
+  SearchNode *ignore_2 = searchTreeLoad("valid-config-files/ignore-patterns-only-2.txt");
   checkRootNode(ignore_2, 0, false, BPOL_none, 0, 4);
   assert_true(ignoreMatcherExists(ignore_2, "foo",      7));
   assert_true(ignoreMatcherExists(ignore_2, "bar",      9));
@@ -346,10 +346,10 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("BOM and EOL variations");
-  testSimpleConfigFile("config-files/simple.txt");
-  testSimpleConfigFile("config-files/simple-BOM.txt");
-  testSimpleConfigFile("config-files/simple-noeol.txt");
-  testSimpleConfigFile("config-files/simple-BOM-noeol.txt");
+  testSimpleConfigFile("valid-config-files/simple.txt");
+  testSimpleConfigFile("valid-config-files/simple-BOM.txt");
+  testSimpleConfigFile("valid-config-files/simple-noeol.txt");
+  testSimpleConfigFile("valid-config-files/simple-BOM-noeol.txt");
   testGroupEnd();
 
   testGroupStart("broken config files");
