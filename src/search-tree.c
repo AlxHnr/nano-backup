@@ -184,7 +184,7 @@ static SearchNode *newNode(StringTable *existing_nodes,
   }
 
   node->line_nr = line_nr;
-  node->matched_file = false;
+  node->search_match = false;
 
   /* Inherit policy from parent node. */
   node->policy = parent_node->policy;
@@ -242,7 +242,7 @@ SearchNode *searchTreeLoad(const char *path)
 
   root_node->line_nr = 0;
   root_node->regex = NULL;
-  root_node->matched_file = false;
+  root_node->search_match = false;
   root_node->policy = BPOL_none;
   root_node->policy_inherited = false;
   root_node->policy_line_nr = 0;

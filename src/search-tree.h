@@ -75,7 +75,7 @@ struct SearchNode
 
   /** Contains the type of the file that this node has matched during a
     search. */
-  SearchResultType matched_file;
+  SearchResultType search_match;
 
   /** The backup policy for this node. */
   BackupPolicy policy;

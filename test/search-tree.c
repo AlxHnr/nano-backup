@@ -177,7 +177,7 @@ static void checkBasicNode(SearchNode *node, const char *name,
     assert_true(node->regex == NULL);
   }
 
-  assert_true(node->matched_file == false);
+  assert_true(node->search_match == false);
   assert_true(node->policy == policy);
   assert_true(node->policy_inherited == policy_inherited);
   assert_true(node->policy_line_nr == policy_line_nr);
