@@ -140,14 +140,18 @@ static void pushCurrentState(SearchContext *context)
   context->state_stack.used++;
 }
 
-/** Appends a slash and the given filename to the buffer of the given
-  context. The buffer will be resized if required.
+/** Appends the given filename to the currently traversed path. The
+  contexts buffer will be resized if required.
 
-  @param context The context containing a valid buffer.
+  @param context The context with the buffer that should be updated.
   @param filename The filename that should be appended.
 */
-static void appendFilenameToBuffer(SearchContext *context, String filename)
+static void setPathToFile(SearchContext *context, String filename)
 {
+  /* Restore the buffers length to the current paths length. */
+  context->buffer.length = context->state.path_length;
+  context->buffer.str[context->buffer.length] = '\0';
+
   /* Add 2 extra bytes for the slash and '\0'. */
   size_t required_capacity =
     sSizeAdd(2, sSizeAdd(context->buffer.length, filename.length));
@@ -217,6 +221,7 @@ static SearchResult buildSearchResult(SearchContext *context,
 static void recursionStepRaw(SearchContext *context, SearchNode *node,
                              BackupPolicy policy)
 {
+  /* Store the directories path length before recursing into it. */
   context->state.path_length = context->buffer.length;
 
   if(node != NULL &&
@@ -319,10 +324,6 @@ static SearchResult finishDirectory(SearchContext *context)
 */
 static SearchResult finishSearchStep(SearchContext *context)
 {
-  /* Cut path in buffer down to the search states path length. */
-  context->buffer.length = context->state.path_length;
-  context->buffer.str[context->buffer.length] = '\0';
-
   struct dirent *dir_entry =
     sReadDir(context->state.access.search.dir, context->buffer.str);
 
@@ -334,7 +335,7 @@ static SearchResult finishSearchStep(SearchContext *context)
 
   /* Create new path for matching. */
   String dir_entry_name = str(dir_entry->d_name);
-  appendFilenameToBuffer(context, dir_entry_name);
+  setPathToFile(context, dir_entry_name);
 
   /* Match subnodes against dir_entry. */
   for(SearchNode *node = context->state.access.search.subnodes;
@@ -342,7 +343,7 @@ static SearchResult finishSearchStep(SearchContext *context)
   {
     if(node->regex)
     {
-      if(regexec(node->regex, dir_entry_name.str, 0, NULL, 0))
+      if(regexec(node->regex, dir_entry_name.str, 0, NULL, 0) == 0)
       {
         return finishNodeStep(context, node, node->policy);
       }
@@ -357,7 +358,7 @@ static SearchResult finishSearchStep(SearchContext *context)
   for(RegexList *element = context->ignore_expressions;
       element != NULL; element = element->next)
   {
-    if(regexec(element->regex, dir_entry_name.str, 0, NULL, 0))
+    if(regexec(element->regex, dir_entry_name.str, 0, NULL, 0) == 0)
     {
       element->has_matched = true;
       return finishSearchStep(context);
@@ -394,7 +395,7 @@ static SearchResult finishCurrentNode(SearchContext *context)
   SearchNode *node = context->state.access.current_node;
   context->state.access.current_node = node->next;
 
-  appendFilenameToBuffer(context, node->name);
+  setPathToFile(context, node->name);
 
   return finishNodeStep(context, node, node->policy);
 }
@@ -435,8 +436,6 @@ SearchContext *searchNew(String root, SearchNode *node)
      from starting with multiple slashes. */
   if(strRemoveTrailingSlashes(root).length == 0)
   {
-    context->buffer.str[0] = '\0';
-    context->buffer.length = 0;
     context->state.path_length = 0;
   }
 
