@@ -431,6 +431,15 @@ SearchContext *searchNew(String root, SearchNode *node)
   /* Initialize the current search state. */
   recursionStepRaw(context, node, node->policy);
 
+  /* If the given root path contains only slashes, prevent all found paths
+     from starting with multiple slashes. */
+  if(strRemoveTrailingSlashes(root).length == 0)
+  {
+    context->buffer.str[0] = '\0';
+    context->buffer.length = 0;
+    context->state.path_length = 0;
+  }
+
   /* Initialise the state stack. */
   context->state_stack.used = 0;
   context->state_stack.capacity = 16;
