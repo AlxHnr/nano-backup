@@ -22,7 +22,7 @@
 */
 
 /**
-  @file search-result.h Defines the result of a serach query.
+  @file search-result.h Defines the result of a search query.
 */
 
 #ifndef _NANO_BACKUP_SEARCH_RESULT_H_
@@ -36,6 +36,11 @@
 /** The type of a search result. */
 typedef enum
 {
+  /** No search result. This type exists only for initializing SearchNodes
+    that haven't matched anything. It will never be returned by a call to
+    searchGetNext(). */
+  SRT_none,
+
   SRT_regular,   /**< A regular file. */
   SRT_symlink,   /**< A symbolic link. */
   SRT_directory, /**< A directory. */
