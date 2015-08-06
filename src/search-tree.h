@@ -33,6 +33,7 @@
 #include <regex.h>
 
 #include "string-utils.h"
+#include "search-result.h"
 #include "backup-policies.h"
 
 /** A list of compiled regular expressions. */
@@ -71,6 +72,10 @@ struct SearchNode
   /** If this value is not NULL, it contains a compiled regex and will be
     used for matching files. */
   const regex_t *regex;
+
+  /** Contains the type of the file that this node has matched during a
+    search. */
+  SearchResultType matched_file;
 
   /** The backup policy for this node. */
   BackupPolicy policy;

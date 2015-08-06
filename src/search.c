@@ -263,6 +263,11 @@ static SearchResult finishNodeStep(SearchContext *context,
 {
   SearchResult found_file = buildSearchResult(context, node, policy);
 
+  if(node != NULL)
+  {
+    node->matched_file = found_file.type;
+  }
+
   if(found_file.type == SRT_directory)
   {
     recursionStep(context, node, policy);
