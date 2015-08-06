@@ -28,53 +28,12 @@
 #ifndef _NANO_BACKUP_SEARCH_H_
 #define _NANO_BACKUP_SEARCH_H_
 
-#include <stdbool.h>
-
-#include <sys/stat.h>
-
 #include "search-tree.h"
 #include "string-utils.h"
-#include "backup-policies.h"
+#include "search-result.h"
 
 /** An opaque struct representing a search. */
 typedef struct SearchContext SearchContext;
-
-/** The type of a search result. */
-typedef enum
-{
-  SRT_regular,   /**< A regular file. */
-  SRT_symlink,   /**< A symbolic link. */
-  SRT_directory, /**< A directory. */
-  SRT_other,     /**< Any other filetype, like a block device. */
-
-  /** The currently traversed directory has reached its end. In this case
-    all values in a SearchResult are undefined. */
-  SRT_end_of_directory,
-
-  /** The search has reached its end. All values in the SearchResult are
-    undefined and the associated context was destroyed. This context should
-    not be used anymore or it will lead to undefined behaviour. */
-  SRT_end_of_search,
-}SearchResultType;
-
-/**Contains the result of a search query. */
-typedef struct
-{
-  /** The type of the result. */
-  SearchResultType type;
-
-  /** The path to the found file, relative to the root path of the
-    associated SearchContext. The buffer of this variable shares memory
-    with the SearchContext to which it belongs. It will be invalidated with
-    the next call to searchGetNext(). */
-  String path;
-
-  /** The policy of the file. */
-  BackupPolicy policy;
-
-  /** Further informations about the file. */
-  struct stat stats;
-}SearchResult;
 
 extern SearchContext *searchNew(String root, SearchNode *node);
 extern SearchResult searchGetNext(SearchContext *context);
