@@ -29,13 +29,12 @@
 #define _NANO_BACKUP_SEARCH_H_
 
 #include "search-tree.h"
-#include "string-utils.h"
 #include "search-result.h"
 
 /** An opaque struct representing a search. */
 typedef struct SearchContext SearchContext;
 
-extern SearchContext *searchNew(String root, SearchNode *node);
+extern SearchContext *searchNew(SearchNode *root_node);
 extern SearchResult searchGetNext(SearchContext *context);
 
 #endif

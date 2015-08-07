@@ -400,44 +400,36 @@ static SearchResult finishCurrentNode(SearchContext *context)
   return finishNodeStep(context, node, node->policy);
 }
 
-/** Creates a new SearchContext.
+/** Creates a new SearchContext for searching the filesystem.
 
-  @param root The path to the directory that should be the root of the
-  search.
-  @param node A search tree used to search the given root path. The
-  returned SearchContext will keep references into this search tree, so
-  make sure not to modify it as long as the context is in use.
+  @param node A search tree used for searching the filesystem. The returned
+  SearchContext will keep references into this search tree, so make sure
+  not to modify it as long as the context is in use.
 
   @return A new search context from which files and directories can be
   queried by using searchGetNext(). It will be automatically destroyed if
   the search has reached its end.
 */
-SearchContext *searchNew(String root, SearchNode *node)
+SearchContext *searchNew(SearchNode *root_node)
 {
   SearchContext *context = sMalloc(sizeof *context);
 
   /* Initialize string buffer. */
-  context->buffer.capacity =
-    root.length < 128 ? 128 : sSizeAdd(root.length, 1);
-
+  context->buffer.capacity = 128;
   context->buffer.str = sMalloc(context->buffer.capacity);
-  memcpy(context->buffer.str, root.str, root.length);
-  context->buffer.str[root.length] = '\0';
 
-  context->buffer.length = root.length;
+  /* Initialize a search step into "/". */
+  context->buffer.str[0] = '/';
+  context->buffer.str[1] = '\0';
+  context->buffer.length = 1;
+
+  recursionStepRaw(context, root_node, root_node->policy);
+
+  /* Prevent found paths from starting with two slashes. */
+  context->state.path_length = 0;
 
   /* Store reference to ignore expression list. */
-  context->ignore_expressions = *node->ignore_expressions;
-
-  /* Initialize the current search state. */
-  recursionStepRaw(context, node, node->policy);
-
-  /* If the given root path contains only slashes, prevent all found paths
-     from starting with multiple slashes. */
-  if(strRemoveTrailingSlashes(root).length == 0)
-  {
-    context->state.path_length = 0;
-  }
+  context->ignore_expressions = *root_node->ignore_expressions;
 
   /* Initialise the state stack. */
   context->state_stack.used = 0;
