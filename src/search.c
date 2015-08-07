@@ -148,13 +148,9 @@ static void pushCurrentState(SearchContext *context)
 */
 static void setPathToFile(SearchContext *context, String filename)
 {
-  /* Restore the buffers length to the current paths length. */
-  context->buffer.length = context->state.path_length;
-  context->buffer.str[context->buffer.length] = '\0';
-
   /* Add 2 extra bytes for the slash and '\0'. */
   size_t required_capacity =
-    sSizeAdd(2, sSizeAdd(context->buffer.length, filename.length));
+    sSizeAdd(2, sSizeAdd(context->state.path_length, filename.length));
   size_t new_length = required_capacity - 1;
 
   /* Ensure that the new path fits into the buffer. */
@@ -165,9 +161,9 @@ static void setPathToFile(SearchContext *context, String filename)
   }
 
   /* Construct the path to the file described by the current node. */
-  memcpy(&context->buffer.str[context->buffer.length + 1],
+  memcpy(&context->buffer.str[context->state.path_length + 1],
          filename.str, filename.length);
-  context->buffer.str[context->buffer.length] = '/';
+  context->buffer.str[context->state.path_length] = '/';
   context->buffer.str[new_length] = '\0';
   context->buffer.length = new_length;
 }
