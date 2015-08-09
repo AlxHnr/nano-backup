@@ -157,6 +157,19 @@ int main(void)
   sCloseDir(broken_config_files, "broken-config-files");
   testGroupEnd();
 
+  testGroupStart("sPathExists()");
+  assert_true(sPathExists("empty.txt"));
+  assert_true(sPathExists("example.txt"));
+  assert_true(sPathExists("symlink.txt"));
+  assert_true(sPathExists("valid-config-files"));
+  assert_true(sPathExists("./valid-config-files"));
+  assert_true(sPathExists("./valid-config-files/"));
+  assert_true(sPathExists("broken-config-files"));
+  assert_true(sPathExists("broken-config-files/"));
+  assert_true(sPathExists("non-existing-file.txt") == false);
+  assert_true(sPathExists("non-existing-directory/") == false);
+  testGroupEnd();
+
   testGroupStart("sStat()");
   assert_error(sStat("non-existing-file.txt"), "failed to access "
                "\"non-existing-file.txt\": No such file or directory");

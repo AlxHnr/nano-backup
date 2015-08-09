@@ -31,6 +31,7 @@
 #include <errno.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "error-handling.h"
 
@@ -275,6 +276,29 @@ void sCloseDir(DIR *dir, const char *path)
   {
     dieErrno("failed to close directory \"%s\"", path);
   }
+}
+
+/** Returns true if the given filepath exists and terminates the program
+  on any unexpected errors.
+
+  @param path The path to the file which existence should be checked.
+
+  @return True if the path exists, false if not.
+*/
+bool sPathExists(const char *path)
+{
+  int old_errno = errno;
+  if(access(path, F_OK) != 0)
+  {
+    if(errno != old_errno)
+    {
+      dieErrno("failed to check existence of \"%s\"", path);
+    }
+
+    return false;
+  }
+
+  return true;
 }
 
 /** A failsafe wrapper around stat().

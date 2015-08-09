@@ -30,6 +30,8 @@
 #define _NANO_BACKUP_SAFE_WRAPPERS_H_
 
 #include <stdio.h>
+#include <stdbool.h>
+
 #include <dirent.h>
 #include <sys/stat.h>
 
@@ -48,6 +50,7 @@ extern DIR *sOpenDir(const char *path);
 extern struct dirent *sReadDir(DIR *dir, const char *path);
 extern void sCloseDir(DIR *dir, const char *path);
 
+extern bool sPathExists(const char *path);
 extern struct stat sStat(const char *path);
 extern struct stat sLStat(const char *path);
 
