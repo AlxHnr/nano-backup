@@ -3,6 +3,13 @@
 
 [mirror]
 /broken-config-files
+//^valid-config-files$/simple-BOM.txt
 
 [track]
 //\.txt$
+/broken-config-files/closing-brace.txt
+//^valid-config-files$//-3\.txt
+
+[copy]
+/broken-config-files//^invalid
+/broken-config-files//^redefine-policy-[0-9]\.txt$
