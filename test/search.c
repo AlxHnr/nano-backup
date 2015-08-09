@@ -236,6 +236,9 @@ static void testSimpleSearch(String cwd)
   checkHasPolicy(found_files, "broken-config-files/redefine-root-policy-1.txt",    BPOL_mirror);
   checkHasPolicy(found_files, "broken-config-files/redefine-root-policy-2.txt",    BPOL_mirror);
 
+  assert_true(strtableGet(found_files, str("template-config-files"))  == NULL);
+  assert_true(strtableGet(found_files, str("generated-config-files")) == NULL);
+
   strtableFree(found_files);
 }
 
