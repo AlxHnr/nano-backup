@@ -393,7 +393,14 @@ static SearchResult finishCurrentNode(SearchContext *context)
 
   setPathToFile(context, node->name);
 
-  return finishNodeStep(context, node, node->policy);
+  if(sPathExists(context->buffer.str))
+  {
+    return finishNodeStep(context, node, node->policy);
+  }
+  else
+  {
+    return finishCurrentNode(context);
+  }
 }
 
 /** Creates a new SearchContext for searching the filesystem.
