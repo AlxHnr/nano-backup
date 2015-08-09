@@ -1,0 +1,8 @@
+[copy]
+//^valid-config-files$
+
+[mirror]
+/broken-config-files
+
+[track]
+//\.txt$
