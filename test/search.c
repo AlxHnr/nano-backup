@@ -147,10 +147,13 @@ static String trimCwd(String string, String cwd)
   policy. The paths will only contain the part after the given cwd.
   @param cwd A string used for trimming the strings that will be mapped in
   the given StringTable.
+
+  @return The amount of files found during search.
 */
-static void populateDirectoryTable(SearchContext *context,
-                                   StringTable *table, String cwd)
+static size_t populateDirectoryTable(SearchContext *context,
+                                     StringTable *table, String cwd)
 {
+  size_t file_count = 0;
   size_t recursion_depth = 1;
   while(recursion_depth > 0)
   {
@@ -165,10 +168,14 @@ static void populateDirectoryTable(SearchContext *context,
     }
     else
     {
+      file_count += (result.type == SRT_regular ||
+                     result.type == SRT_symlink);
       recursion_depth += result.type == SRT_directory;
       strtableMap(table, trimCwd(result.path, cwd), (void *)result.policy);
     }
   }
+
+  return file_count;
 }
 
 /** Asserts that the given table contains a mapping of the given path to
@@ -189,9 +196,9 @@ static void testSimpleSearch(String cwd)
   SearchContext *context = searchNew(root);
   assert_true(context != NULL);
 
-  size_t cwd_depth = skipCwd(context, cwd);
+  volatile size_t cwd_depth = skipCwd(context, cwd);
   StringTable *found_files = strtableNew(0);
-  populateDirectoryTable(context, found_files, cwd);
+  assert_true(populateDirectoryTable(context, found_files, cwd) == 37);
   finishSearch(context, cwd_depth);
 
   checkHasPolicy(found_files, "empty.txt",   BPOL_track);
