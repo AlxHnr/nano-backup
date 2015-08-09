@@ -8,6 +8,9 @@ OBJECTS := $(patsubst src/%.c,build/%.o,$(wildcard src/*.c))
 TESTS   := $(patsubst test/%.c,build/test/%,$(wildcard test/*.c))
 .SECONDARY: $(TESTS:%=%.o)
 
+GENERATED_CONFIGS := $(patsubst test/data/template%,test/data/generated%,\
+  $(wildcard test/data/template-config-files/*))
+
 .PHONY: all test doc clean
 all: build/nb
 
@@ -22,7 +25,7 @@ build/nb: $(filter-out build/test.o,$(OBJECTS))
 build/%.o:
 	$(CC) $(CFLAGS) -c $< -o $@
 
-test: $(TESTS)
+test: $(TESTS) $(GENERATED_CONFIGS)
 	@(cd test/data/ && \
 	  for test in $(TESTS); do \
 	  echo "Running $$(tput setf 6)$$test$$(tput sgr0):"; \
@@ -37,8 +40,11 @@ build/test/%: build/test/%.o \
 build/test/%.o: test/%.c
 	 mkdir -p build/test/ && $(CC) $(CFLAGS) -Isrc/ -c $< -o $@
 
+test/data/generated-config-files/%: test/data/template-config-files/%
+	mkdir -p "$(dir $@)" && sed -r "s,^/,$$PWD/test/data/,g" "$<" > "$@"
+
 doc:
 	doxygen
 
 clean:
-	- rm -rf build/ doc/
+	- rm -rf build/ doc/ test/data/generated-config-files/

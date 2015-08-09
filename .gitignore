@@ -1,3 +1,4 @@
+test/data/generated-config-files/
 .ycm_extra_conf.pyc
 build/
 doc/
