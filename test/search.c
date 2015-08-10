@@ -323,6 +323,10 @@ static void testSimpleSearch(String cwd)
   checkSubnode(broken_configs, "non-existing-file.txt", SRT_none);
 }
 
+/** Tests a search by using the generated config "ignore-expressions.txt".
+
+  @param cwd The path to the current working directory.
+*/
 static void testIgnoreExpressions(String cwd)
 {
   SearchNode *root = searchTreeLoad("generated-config-files/ignore-expressions.txt");
