@@ -104,6 +104,46 @@ static size_t skipCwd(SearchContext *context, String cwd)
   return recursion_depth;
 }
 
+/** Returns a copy of the given string without the given cwd. This function
+  is unsafe and doesn't perform any checks.
+
+  @param string The string that starts with the given cwd.
+  @param cwd The cwd path.
+
+  @return The copy of the trimmed string containing a null-terminated
+  buffer.
+*/
+static String trimCwd(String string, String cwd)
+{
+  return strCopy(str(&string.str[cwd.length + 1]));
+}
+
+/** Checks all nodes in the given search tree to be correctly set and
+  updated by the search.
+
+  @param root_node The search tree which should be checked.
+  @param cwd_depth The recursion depth of the current working directory.
+
+  @return The parent node of the first directory inside the cwd, or NULL if
+  the check failed.
+*/
+static SearchNode *checkCwdTree(SearchNode *root_node, size_t cwd_depth)
+{
+  SearchNode *node = root_node;
+  for(size_t counter = 0; counter < cwd_depth; counter++)
+  {
+    if(node->subnodes == NULL || node->subnodes->next != NULL ||
+       (node != root_node && node->search_match != SRT_directory))
+    {
+      return NULL;
+    }
+
+    node = node->subnodes;
+  }
+
+  return node;
+}
+
 /** Finishes the search for the given context by leaving all the
   directories which lead to the current working directory. Counterpart to
   skipCwd().
@@ -123,20 +163,6 @@ static void finishSearch(SearchContext *context, size_t recursion_depth)
   }
 
   assert_true(searchGetNext(context).type == SRT_end_of_search);
-}
-
-/** Returns a copy of the given string without the given cwd. This function
-  is unsafe and doesn't perform any checks.
-
-  @param string The string that starts with the given cwd.
-  @param cwd The cwd path.
-
-  @return The copy of the trimmed string containing a null-terminated
-  buffer.
-*/
-static String trimCwd(String string, String cwd)
-{
-  return strCopy(str(&string.str[cwd.length + 1]));
 }
 
 /** Performs a search with the given context until its current directory
@@ -245,8 +271,10 @@ static void testSimpleSearch(String cwd)
 
   assert_true(strtableGet(found_files, str("template-config-files"))  == NULL);
   assert_true(strtableGet(found_files, str("generated-config-files")) == NULL);
-
   strtableFree(found_files);
+
+  SearchNode *node = checkCwdTree(root, cwd_depth);
+  assert_true(node != NULL);
 }
 
 int main(void)
