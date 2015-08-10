@@ -1,9 +1,12 @@
 [copy]
 //^valid-config-files$
+/non-existing-directory/
+/broken-config-files/non-existing-file.txt
 
 [mirror]
 /broken-config-files
 //^valid-config-files$/simple-BOM.txt
+//^valid-config-files$//non-existing-regex\.txt
 
 [track]
 //^e.*\.txt$

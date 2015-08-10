@@ -309,15 +309,18 @@ static void testSimpleSearch(String cwd)
   assert_true(node != NULL);
   checkSubnode(node, "^e.*\\.txt$", SRT_regular);
   checkSubnode(node, "symlink.txt", SRT_symlink);
+  checkSubnode(node, "non-existing-directory", SRT_none);
 
   SearchNode *valid_configs = checkSubnode(node, "^valid-config-files$", SRT_directory);
   checkSubnode(valid_configs, "simple-BOM.txt", SRT_regular);
   checkSubnode(valid_configs, "-3\\.txt", SRT_regular);
+  checkSubnode(valid_configs, "non-existing-regex\\.txt", SRT_none);
 
   SearchNode *broken_configs = checkSubnode(node, "broken-config-files", SRT_directory);
   checkSubnode(broken_configs, "closing-brace.txt", SRT_regular);
   checkSubnode(broken_configs, "^invalid", SRT_regular);
   checkSubnode(broken_configs, "^redefine-policy-[0-9]\\.txt$", SRT_regular);
+  checkSubnode(broken_configs, "non-existing-file.txt", SRT_none);
 }
 
 int main(void)
