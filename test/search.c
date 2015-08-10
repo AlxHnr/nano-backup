@@ -129,11 +129,16 @@ static String trimCwd(String string, String cwd)
 */
 static SearchNode *checkCwdTree(SearchNode *root_node, size_t cwd_depth)
 {
-  SearchNode *node = root_node;
+  if(root_node->subnodes == NULL)
+  {
+    return NULL;
+  }
+
+  SearchNode *node = root_node->subnodes;
   for(size_t counter = 0; counter < cwd_depth; counter++)
   {
     if(node->subnodes == NULL || node->subnodes->next != NULL ||
-       (node != root_node && node->search_match != SRT_directory))
+       node->search_match != SRT_directory)
     {
       return NULL;
     }
