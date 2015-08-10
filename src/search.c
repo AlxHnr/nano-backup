@@ -354,7 +354,7 @@ static SearchResult finishSearchStep(SearchContext *context)
   for(RegexList *element = context->ignore_expressions;
       element != NULL; element = element->next)
   {
-    if(regexec(element->regex, dir_entry_name.str, 0, NULL, 0) == 0)
+    if(regexec(element->regex, context->buffer.str, 0, NULL, 0) == 0)
     {
       element->has_matched = true;
       return finishSearchStep(context);
