@@ -244,6 +244,27 @@ static SearchNode *checkSubnode(SearchNode *parent_node,
   return NULL;
 }
 
+/** Asserts that the given ignore expression exists in the given node with
+  the specified match status.
+*/
+static void checkIgnoreExpression(SearchNode *node, const char *expression,
+                                  bool has_matched)
+{
+  String name = str(expression);
+  for(RegexList *element = *node->ignore_expressions;
+      element != NULL; element = element->next)
+  {
+    if(strCompare(element->expression, name) &&
+       element->has_matched == has_matched)
+    {
+      return;
+    }
+  }
+
+  die("failed to find %smatched ignore expression \"%s\"",
+      has_matched? "" : "un", expression);
+}
+
 /** Tests a search by using the generated config "simple-search.txt".
 
   @param cwd The path to the current working directory.
@@ -337,6 +358,14 @@ static void testIgnoreExpressions(String cwd)
   StringTable *found_files = strtableNew(0);
   assert_true(populateDirectoryTable(context, found_files, cwd) == 27);
   finishSearch(context, cwd_depth);
+
+  checkIgnoreExpression(root, "test/data/.+-config-files$",                  true);
+  checkIgnoreExpression(root, "test/data/e.+\\.txt$",                        true);
+  checkIgnoreExpression(root, "simple-(BOM|noeol)\\.txt$",                   true);
+  checkIgnoreExpression(root, "test/data/.*/closing-brace\\.txt$",           true);
+  checkIgnoreExpression(root, "test/data/.*/[^/]+-(root|path)-[^/]+\\.txt$", true);
+  checkIgnoreExpression(root, "^will-never-match-anything$",                 false);
+  checkIgnoreExpression(root, "^will-never-match-any-file$",                 false);
 
   assert_true(strtableGet(found_files, str("empty.txt"))   == NULL);
   assert_true(strtableGet(found_files, str("example.txt")) == NULL);

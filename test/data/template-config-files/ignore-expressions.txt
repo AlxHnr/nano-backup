@@ -1,6 +1,7 @@
 [ignore]
 test/data/.+-config-files$
 test/data/e.+\.txt$
+^will-never-match-anything$
 simple-(BOM|noeol)\.txt$
 test/data/.*/closing-brace\.txt$
 
@@ -18,5 +19,4 @@ test/data/.*/closing-brace\.txt$
 
 [ignore]
 test/data/.*/[^/]+-(root|path)-[^/]+\.txt$
-^will-never-match-anything$
 ^will-never-match-any-file$
