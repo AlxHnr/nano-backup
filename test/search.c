@@ -217,18 +217,18 @@ static void checkHasPolicy(StringTable *table, const char *path,
   assert_true(strtableGet(table, str(path)) == (void *)policy);
 }
 
-/** Finds a subnode with the given properties.
+/** Asserts that a subnode with the given properties exists or terminate
+  the program with an error message.
 
-  @param parent_node The parent node which subnodes should be searched.
-  @param name_str The name of the node that should be found.
-  @param search_match The SearchResultType of the node that should be
-  found.
+  @param parent_node The parent node which subnode should be checked.
+  @param name_str The name of the node that must exist.
+  @param search_match The SearchResultType of the node that must exist.
 
-  @return The found node or NULL.
+  @return The node with the given properties.
 */
-static SearchNode *findSubnode(SearchNode *parent_node,
-                               const char *name_str,
-                               SearchResultType search_match)
+static SearchNode *checkSubnode(SearchNode *parent_node,
+                                const char *name_str,
+                                SearchResultType search_match)
 {
   String name = str(name_str);
   for(SearchNode *node = parent_node->subnodes;
@@ -240,6 +240,7 @@ static SearchNode *findSubnode(SearchNode *parent_node,
     }
   }
 
+  die("subnode couldn't be found: \"%s\"", name_str);
   return NULL;
 }
 
@@ -306,21 +307,17 @@ static void testSimpleSearch(String cwd)
 
   SearchNode *node = checkCwdTree(root, cwd_depth);
   assert_true(node != NULL);
-  assert_true(findSubnode(node, "^e.*\\.txt$", SRT_regular) != NULL);
-  assert_true(findSubnode(node, "symlink.txt", SRT_symlink) != NULL);
+  checkSubnode(node, "^e.*\\.txt$", SRT_regular);
+  checkSubnode(node, "symlink.txt", SRT_symlink);
 
-  SearchNode *valid_configs = findSubnode(node, "^valid-config-files$", SRT_directory);
-  assert_true(valid_configs != NULL);
+  SearchNode *valid_configs = checkSubnode(node, "^valid-config-files$", SRT_directory);
+  checkSubnode(valid_configs, "simple-BOM.txt", SRT_regular);
+  checkSubnode(valid_configs, "-3\\.txt", SRT_regular);
 
-  assert_true(findSubnode(valid_configs, "simple-BOM.txt", SRT_regular) != NULL);
-  assert_true(findSubnode(valid_configs, "-3\\.txt", SRT_regular) != NULL);
-
-  SearchNode *broken_configs = findSubnode(node, "broken-config-files", SRT_directory);
-  assert_true(broken_configs != NULL);
-
-  assert_true(findSubnode(broken_configs, "closing-brace.txt", SRT_regular) != NULL);
-  assert_true(findSubnode(broken_configs, "^invalid", SRT_regular) != NULL);
-  assert_true(findSubnode(broken_configs, "^redefine-policy-[0-9]\\.txt$", SRT_regular) != NULL);
+  SearchNode *broken_configs = checkSubnode(node, "broken-config-files", SRT_directory);
+  checkSubnode(broken_configs, "closing-brace.txt", SRT_regular);
+  checkSubnode(broken_configs, "^invalid", SRT_regular);
+  checkSubnode(broken_configs, "^redefine-policy-[0-9]\\.txt$", SRT_regular);
 }
 
 int main(void)
