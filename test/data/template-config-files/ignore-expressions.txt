@@ -1,5 +1,5 @@
 [ignore]
-test/data/(generated|template)-config-files$
+test/data/.+-config-files$
 test/data/e.+\.txt$
 simple-(BOM|noeol)\.txt$
 test/data/.*/closing-brace\.txt$

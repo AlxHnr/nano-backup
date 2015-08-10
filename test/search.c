@@ -386,8 +386,12 @@ static void testIgnoreExpressions(String cwd)
 
   SearchNode *node = checkCwdTree(root, cwd_depth);
   assert_true(node != NULL);
-  checkSubnode(node, "valid-config-files", SRT_directory);
-  checkSubnode(node, "broken-config-files", SRT_directory);
+  SearchNode *valid_configs = checkSubnode(node, "valid-config-files", SRT_directory);
+  checkSubnode(valid_configs, "^i", SRT_regular);
+
+  SearchNode *broken_configs = checkSubnode(node, "broken-config-files", SRT_directory);
+  checkSubnode(broken_configs, "invalid-path-2.txt", SRT_regular);
+  checkSubnode(broken_configs, "^invalid-path-3.txt$", SRT_regular);
 }
 
 int main(void)
