@@ -70,6 +70,31 @@ static String getCwd(void)
   return cwd;
 }
 
+/** Performs some checks on the given SearchResult.
+
+  @param result A valid search result, which must have the type
+  SRT_regular, SRT_symlink, SRT_directory or SRT_other.
+*/
+static void checkSearchResult(SearchResult result)
+{
+  switch(result.type)
+  {
+    case SRT_regular:
+      assert_true(S_ISREG(result.stats.st_mode));
+      break;
+    case SRT_symlink:
+      assert_true(S_ISLNK(result.stats.st_mode));
+      break;
+    case SRT_directory:
+      assert_true(S_ISDIR(result.stats.st_mode));
+      break;
+    case SRT_other:
+      break;
+    default:
+      die("unexpected search result type: %i", result.type);
+  }
+}
+
 /** Skips all search results in the given context, which belong to the
   given path. It will terminate the program with failure if any error was
   encountered.
@@ -93,7 +118,9 @@ static size_t skipCwd(SearchContext *context, String cwd)
     {
       die("failed to find \"%s\" in the given context", cwd.str);
     }
-    else if(strCompare(result.path, cwd))
+
+    checkSearchResult(result);
+    if(strCompare(result.path, cwd))
     {
       break;
     }
@@ -199,6 +226,7 @@ static size_t populateDirectoryTable(SearchContext *context,
     }
     else
     {
+      checkSearchResult(result);
       file_count += (result.type == SRT_regular ||
                      result.type == SRT_symlink);
       recursion_depth += result.type == SRT_directory;
