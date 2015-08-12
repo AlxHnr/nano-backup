@@ -25,7 +25,7 @@ build/nb: $(filter-out build/test.o,$(OBJECTS))
 build/%.o:
 	$(CC) $(CFLAGS) -c $< -o $@
 
-test: $(TESTS) $(GENERATED_CONFIGS)
+test: $(TESTS) $(GENERATED_CONFIGS) test/data/test\ directory/.empty/
 	@(cd test/data/ && \
 	  for test in $(TESTS); do \
 	  echo "Running $$(tput setf 6)$$test$$(tput sgr0):"; \
@@ -42,6 +42,9 @@ build/test/%.o: test/%.c
 
 test/data/generated-config-files/%: test/data/template-config-files/%
 	mkdir -p "$(dir $@)" && sed -r "s,^/,$$PWD/test/data/,g" "$<" > "$@"
+
+test/data/test\ directory/.empty/:
+	mkdir -p "$@"
 
 doc:
 	doxygen
