@@ -126,35 +126,35 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("sOpenDir()");
-  DIR *valid_config_files = sOpenDir( "valid-config-files");
-  assert_true(valid_config_files != NULL);
+  DIR *test_directory = sOpenDir("test directory");
+  assert_true(test_directory != NULL);
 
-  DIR *broken_config_files = sOpenDir("./broken-config-files/");
-  assert_true(broken_config_files != NULL);
+  DIR *test_foo_1 = sOpenDir("./test directory/foo 1/");
+  assert_true(test_foo_1 != NULL);
 
   assert_error(sOpenDir("non-existing-directory"),
                "failed to open directory \"non-existing-directory\": No such file or directory");
   testGroupEnd();
 
   testGroupStart("sReadDir()");
-  /* Count example config files. */
-  for(size_t counter = 0; counter < 11; counter++)
+  /* Count example files in "test directory". */
+  for(size_t counter = 0; counter < 17; counter++)
   {
-    checkReadDir(valid_config_files, "valid-config-files");
+    checkReadDir(test_directory, "test directory");
   }
-  assert_true(sReadDir(valid_config_files, "valid-config-files") == NULL);
+  assert_true(sReadDir(test_directory, "test directory") == NULL);
 
-  /* Count broken config files. */
-  for(size_t counter = 0; counter < 23; counter++)
+  /* Count example files in "test directory/foo 1". */
+  for(size_t counter = 0; counter < 5; counter++)
   {
-    checkReadDir(broken_config_files, "broken-config-files");
+    checkReadDir(test_foo_1, "test directory/foo 1");
   }
-  assert_true(sReadDir(broken_config_files, "broken-config-files") == NULL);
+  assert_true(sReadDir(test_foo_1, "test directory/foo 1") == NULL);
   testGroupEnd();
 
   testGroupStart("sCloseDir()");
-  sCloseDir(valid_config_files, "valid-config-files");
-  sCloseDir(broken_config_files, "broken-config-files");
+  sCloseDir(test_directory, "test directory");
+  sCloseDir(test_foo_1, "test directory/foo 1");
   testGroupEnd();
 
   testGroupStart("sPathExists()");
