@@ -1,21 +1,20 @@
 [copy]
-//^valid-config-files$
 /non-existing-directory/
-/broken-config-files/non-existing-file.txt
+/test directory
 
 [mirror]
-/broken-config-files
-//^valid-config-files$/simple-BOM.txt
-//^valid-config-files$//non-existing-regex\.txt
+/test directory/non-existing-file.txt
+/test directory//^non-existing-regex$
+/test directory/.empty
 
 [track]
 //^e.*\.txt$
-/broken-config-files/closing-brace.txt
-//^valid-config-files$//-3\.txt
-
-[copy]
-/broken-config-files//^invalid
-/broken-config-files//^redefine-policy-[0-9]\.txt$
+/test directory/.hidden/.hidden
+/test directory// 3$
+/test directory/foo 1/bar
 
 [mirror]
 /symlink.txt
+/test directory/.hidden//\.txt$
+/test directory//symlink
+/test directory/foo 1/test-file-c.txt
