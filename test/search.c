@@ -367,9 +367,25 @@ static void testSimpleSearch(String cwd)
 
   SearchNode *node = checkCwdTree(root, cwd_depth);
   assert_true(node != NULL);
+
+  checkSubnode(node, "non-existing-directory", SRT_none);
   checkSubnode(node, "^e.*\\.txt$", SRT_regular);
   checkSubnode(node, "symlink.txt", SRT_symlink);
-  checkSubnode(node, "non-existing-directory", SRT_none);
+
+  SearchNode *test_dir = checkSubnode(node, "test directory", SRT_directory);
+  checkSubnode(test_dir, "non-existing-file.txt", SRT_none);
+  checkSubnode(test_dir, "^non-existing-regex$",  SRT_none);
+  checkSubnode(test_dir, ".empty",                SRT_directory);
+  checkSubnode(test_dir, " 3$",                   SRT_regular);
+  checkSubnode(test_dir, "symlink",               SRT_symlink);
+
+  SearchNode *hidden = checkSubnode(test_dir, ".hidden", SRT_directory);
+  checkSubnode(hidden, ".hidden", SRT_directory);
+  checkSubnode(hidden, "\\.txt$", SRT_regular);
+
+  SearchNode *foo_1 = checkSubnode(test_dir, "foo 1", SRT_directory);
+  checkSubnode(foo_1, "bar",             SRT_directory);
+  checkSubnode(foo_1, "test-file-c.txt", SRT_regular);
 }
 
 /** Tests a search by using the generated config "ignore-expressions.txt".
