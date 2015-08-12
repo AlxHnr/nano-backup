@@ -202,7 +202,8 @@ static void finishSearch(SearchContext *context, size_t recursion_depth)
 
   @param context The context used for searching.
   @param table The table, in which the found paths will be mapped to their
-  policy. The paths will only contain the part after the given cwd.
+  policy. The paths will only contain the part after the given cwd and the
+  policy will be incremented by 1.
   @param cwd A string used for trimming the strings that will be mapped in
   the given StringTable.
 
@@ -230,7 +231,8 @@ static size_t populateDirectoryTable(SearchContext *context,
       file_count += (result.type == SRT_regular ||
                      result.type == SRT_symlink);
       recursion_depth += result.type == SRT_directory;
-      strtableMap(table, trimCwd(result.path, cwd), (void *)result.policy);
+      strtableMap(table, trimCwd(result.path, cwd),
+                  (void *)((size_t)result.policy + 1));
     }
   }
 
@@ -238,11 +240,19 @@ static size_t populateDirectoryTable(SearchContext *context,
 }
 
 /** Asserts that the given table contains a mapping of the given path to
-  the given policy. */
+  the given policy plus 1. */
 static void checkHasPolicy(StringTable *table, const char *path,
                            BackupPolicy policy)
 {
-  assert_true(strtableGet(table, str(path)) == (void *)policy);
+  void *address = strtableGet(table, str(path));
+
+  if(address == NULL)
+  {
+    die("\"%s\" with policy %i does not exist in the given table",
+        path, policy);
+  }
+
+  assert_true(address == (void *)((size_t)policy + 1));
 }
 
 /** Asserts that a subnode with the given properties exists or terminate
