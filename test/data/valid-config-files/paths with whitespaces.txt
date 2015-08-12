@@ -1,0 +1,6 @@
+[copy]
+/usr/foo 
+/usr// ^foobar 
+
+[mirror]
+/usr/foo / bar /foo bar 

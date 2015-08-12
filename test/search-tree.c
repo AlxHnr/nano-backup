@@ -358,6 +358,26 @@ static void testRootWithRegexSubnodes(void)
             root, "(foo-)?bar$", 6, true, BPOL_mirror, false, 6, 0, false);
 }
 
+/** Tests parsing the config file "paths with whitespaces.txt" */
+static void testPathsWithWhitespaces(void)
+{
+  SearchNode *root = searchTreeLoad("valid-config-files/paths with whitespaces.txt");
+  checkRootNode(root, BPOL_none, 0, 1, false, 0);
+
+  SearchNode *usr = findSubnode(root, "usr");
+  checkNode(usr, root, "usr", 2, false, BPOL_none, false, 2, 2, true);
+  checkNode(findSubnode(usr, " ^foobar "),
+            root, " ^foobar ", 3, true, BPOL_copy, false, 3, 0, false);
+
+  SearchNode *foo = findSubnode(usr, "foo ");
+  checkNode(foo, root, "foo ", 2, false, BPOL_copy, false, 2, 1, false);
+
+  SearchNode *bar = findSubnode(foo, " bar ");
+  checkNode(bar, root, " bar ", 6, false, BPOL_copy, true, 6, 1, false);
+  checkNode(findSubnode(bar, "foo bar "),
+            root, "foo bar ", 6, false, BPOL_mirror, false, 6, 0, false);
+}
+
 int main(void)
 {
   testGroupStart("various config files");
@@ -365,6 +385,7 @@ int main(void)
   testInheritance_2();
   testInheritance_3();
   testRootWithRegexSubnodes();
+  testPathsWithWhitespaces();
 
   checkRootNode(searchTreeLoad("empty.txt"), BPOL_none, 0, 0, false, 0);
   checkRootNode(searchTreeLoad("valid-config-files/no-paths-and-no-ignores.txt"),
@@ -372,7 +393,7 @@ int main(void)
 
   SearchNode *ignore_1 = searchTreeLoad("valid-config-files/ignore-patterns-only-1.txt");
   checkRootNode(ignore_1, BPOL_none, 0, 0, false, 2);
-  assert_true(ignoreExpressionExists(ignore_1, ".*\\.(png|jpg|pdf)", 2));
+  assert_true(ignoreExpressionExists(ignore_1, " .*\\.(png|jpg|pdf) ", 2));
   assert_true(ignoreExpressionExists(ignore_1, "foo", 3));
 
   SearchNode *ignore_2 = searchTreeLoad("valid-config-files/ignore-patterns-only-2.txt");
@@ -422,7 +443,7 @@ int main(void)
                "config: line 6: Unmatched [ or [^: \" ([0-9A-Za-z)+///\"");
 
   assert_error(searchTreeLoad("broken-config-files/redefine-1.txt"),
-               "config: line 6: redefining line 4: \"/home/user/foo/Packages/\"");
+               "config: line 6: redefining line 4: \"/home/user/foo/Gentoo Packages/\"");
 
   assert_error(searchTreeLoad("broken-config-files/redefine-2.txt"),
                "config: line 12: redefining line 6: \"/home/user/foo/Packages\"");
@@ -437,7 +458,7 @@ int main(void)
                "config: line 17: redefining line 9: \"/\"");
 
   assert_error(searchTreeLoad("broken-config-files/redefine-policy-1.txt"),
-               "config: line 8: redefining policy of line 4: \"/home/user/.config/\"");
+               "config: line 8: redefining policy of line 4: \"/home/user/.config /\"");
 
   assert_error(searchTreeLoad("broken-config-files/redefine-policy-2.txt"),
                "config: line 21: redefining policy of line 12: \"/home/user/\"");

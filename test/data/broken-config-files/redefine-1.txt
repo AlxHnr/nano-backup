@@ -1,7 +1,7 @@
 [track]
 /home/user//.*(foo|bar).*/toast//.*
 /home/user/Videos
-/home/user/foo/Packages/
+/home/user/foo/Gentoo Packages
 /home/user/foo/bar.txt
-/home/user/foo/Packages/
-/home/user/foo/Packages//.*\.ebuild
+/home/user/foo/Gentoo Packages/
+/home/user/foo/Gentoo Packages//.*\.ebuild
