@@ -473,6 +473,73 @@ static void testIgnoreExpressions(String cwd)
   checkSubnode(test_dir, "^bar-a\\.txt$", SRT_regular);
 }
 
+/** Tests a search by using the generated config "symlink-following.txt".
+
+  @param cwd The path to the current working directory.
+*/
+static void testSymlinkFollowing(String cwd)
+{
+  SearchNode *root = searchTreeLoad("generated-config-files/symlink-following.txt");
+  SearchContext *context = searchNew(root);
+  assert_true(context != NULL);
+
+  volatile size_t cwd_depth = skipCwd(context, cwd);
+  StringTable *found_files = strtableNew(0);
+  assert_true(populateDirectoryTable(context, found_files, cwd) == 20);
+  finishSearch(context, cwd_depth);
+
+  checkIgnoreExpression(root, "test/data/[^/]+$", true);
+  checkIgnoreExpression(root, "foo 1$", true);
+
+  assert_true(strtableGet(found_files, str("empty.txt"))   == NULL);
+  assert_true(strtableGet(found_files, str("example.txt")) == NULL);
+  assert_true(strtableGet(found_files, str("symlink.txt")) == NULL);
+  assert_true(strtableGet(found_files, str("valid-config-files"))     == NULL);
+  assert_true(strtableGet(found_files, str("broken-config-files"))    == NULL);
+  assert_true(strtableGet(found_files, str("template-config-files"))  == NULL);
+  assert_true(strtableGet(found_files, str("generated-config-files")) == NULL);
+
+  checkHasPolicy(found_files, "test directory",                            BPOL_track);
+  checkHasPolicy(found_files, "test directory/.empty",                     BPOL_track);
+  checkHasPolicy(found_files, "test directory/.hidden",                    BPOL_track);
+  checkHasPolicy(found_files, "test directory/.hidden/.hidden",            BPOL_track);
+  checkHasPolicy(found_files, "test directory/.hidden/.hidden/test-A.txt", BPOL_track);
+  checkHasPolicy(found_files, "test directory/.hidden/.hidden/test-B.txt", BPOL_track);
+  checkHasPolicy(found_files, "test directory/.hidden/.hidden/test-C.txt", BPOL_track);
+  checkHasPolicy(found_files, "test directory/.hidden/test file.☢",        BPOL_track);
+  checkHasPolicy(found_files, "test directory/.hidden/❤❤❤.txt",            BPOL_track);
+  checkHasPolicy(found_files, "test directory/.hidden 1",                  BPOL_track);
+  checkHasPolicy(found_files, "test directory/.hidden 2",                  BPOL_track);
+  checkHasPolicy(found_files, "test directory/.hidden 3",                  BPOL_track);
+  checkHasPolicy(found_files, "test directory/.hidden symlink",            BPOL_track);
+  checkHasPolicy(found_files, "test directory/.hidden symlink/1.txt",      BPOL_track);
+  checkHasPolicy(found_files, "test directory/.hidden symlink/2.txt",      BPOL_copy);
+  checkHasPolicy(found_files, "test directory/.hidden symlink/3.txt",      BPOL_track);
+  checkHasPolicy(found_files, "test directory/bar-a.txt",                  BPOL_track);
+  checkHasPolicy(found_files, "test directory/bar-b.txt",                  BPOL_track);
+  checkHasPolicy(found_files, "test directory/empty-directory",            BPOL_track);
+  assert_true(strtableGet(found_files, str("test directory/foo 1")) == NULL);
+  checkHasPolicy(found_files, "test directory/foobar a1.txt",              BPOL_track);
+  checkHasPolicy(found_files, "test directory/foobar a2.txt",              BPOL_track);
+  checkHasPolicy(found_files, "test directory/foobar b1.txt",              BPOL_track);
+  checkHasPolicy(found_files, "test directory/foobar b2.txt",              BPOL_track);
+  checkHasPolicy(found_files, "test directory/symlink",                    BPOL_track);
+  checkHasPolicy(found_files, "test directory/φ.txt",                      BPOL_track);
+  checkHasPolicy(found_files, "test directory/€.txt",                      BPOL_track);
+  strtableFree(found_files);
+
+  SearchNode *node = checkCwdTree(root, cwd_depth);
+  assert_true(node != NULL);
+
+  SearchNode *test_dir = checkSubnode(node, "test directory", SRT_directory);
+
+  SearchNode *hidden_symlink = checkSubnode(test_dir, ".hidden symlink", SRT_directory);
+  checkSubnode(hidden_symlink, "2.txt", SRT_regular);
+
+  SearchNode *empty_dir = checkSubnode(test_dir, "empty-directory", SRT_directory);
+  checkSubnode(empty_dir, ".*", SRT_none);
+}
+
 int main(void)
 {
   testGroupStart("simple file search");
@@ -482,5 +549,9 @@ int main(void)
 
   testGroupStart("ignore expressions");
   testIgnoreExpressions(cwd);
+  testGroupEnd();
+
+  testGroupStart("symlink following rules");
+  testSymlinkFollowing(cwd);
   testGroupEnd();
 }

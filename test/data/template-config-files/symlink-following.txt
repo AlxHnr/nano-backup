@@ -1,0 +1,12 @@
+[ignore]
+test/data/[^/]+$
+foo 1$
+
+[track]
+/
+
+[copy]
+/test directory/.hidden symlink/2.txt
+
+[mirror]
+/test directory/empty-directory//.*
