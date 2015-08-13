@@ -1,22 +1,24 @@
 [ignore]
-test/data/.+-config-files$
 test/data/e.+\.txt$
+test/data/.+-config-files$
 ^will-never-match-anything$
-simple-(BOM|noeol)\.txt$
-test/data/.*/closing-brace\.txt$
+symlink
 
 [copy]
 /
-/valid-config-files//^i
-
-[mirror]
-/broken-config-files/
-
-[track]
-/valid-config-files
-/broken-config-files/invalid-path-2.txt
-/broken-config-files//^invalid-path-3.txt$
 
 [ignore]
-test/data/.*/[^/]+-(root|path)-[^/]+\.txt$
+[b1]\.txt$
+bar-a\.txt$
+€\.txt$
+
+[mirror]
+//symlink
+/test directory/.hidden symlink
+
+[track]
+/test directory//^bar-a\.txt$
+
+[ignore]
 ^will-never-match-any-file$
+directory$

@@ -400,71 +400,70 @@ static void testIgnoreExpressions(String cwd)
 
   volatile size_t cwd_depth = skipCwd(context, cwd);
   StringTable *found_files = strtableNew(0);
-  assert_true(populateDirectoryTable(context, found_files, cwd) == 27);
+  assert_true(populateDirectoryTable(context, found_files, cwd) == 19);
   finishSearch(context, cwd_depth);
 
-  checkIgnoreExpression(root, "test/data/.+-config-files$",                  true);
-  checkIgnoreExpression(root, "test/data/e.+\\.txt$",                        true);
-  checkIgnoreExpression(root, "simple-(BOM|noeol)\\.txt$",                   true);
-  checkIgnoreExpression(root, "test/data/.*/closing-brace\\.txt$",           true);
-  checkIgnoreExpression(root, "test/data/.*/[^/]+-(root|path)-[^/]+\\.txt$", true);
-  checkIgnoreExpression(root, "^will-never-match-anything$",                 false);
-  checkIgnoreExpression(root, "^will-never-match-any-file$",                 false);
+  checkIgnoreExpression(root, "test/data/e.+\\.txt$",        true);
+  checkIgnoreExpression(root, "test/data/.+-config-files$",  true);
+  checkIgnoreExpression(root, "^will-never-match-anything$", false);
+  checkIgnoreExpression(root, "symlink",                     true);
+  checkIgnoreExpression(root, "[b1]\\.txt$",                 true);
+  checkIgnoreExpression(root, "bar-a\\.txt$",                false);
+  checkIgnoreExpression(root, "€\\.txt$",                    true);
+  checkIgnoreExpression(root, "^will-never-match-any-file$", false);
+  checkIgnoreExpression(root, "directory$",                  true);
 
   assert_true(strtableGet(found_files, str("empty.txt"))   == NULL);
   assert_true(strtableGet(found_files, str("example.txt")) == NULL);
-  checkHasPolicy(found_files, "symlink.txt", BPOL_copy);
+  checkHasPolicy(found_files, "symlink.txt", BPOL_mirror);
 
-  checkHasPolicy(found_files, "valid-config-files",                              BPOL_track);
-  checkHasPolicy(found_files, "valid-config-files/ignore-patterns-only-1.txt",   BPOL_copy);
-  checkHasPolicy(found_files, "valid-config-files/ignore-patterns-only-2.txt",   BPOL_copy);
-  checkHasPolicy(found_files, "valid-config-files/inheritance-1.txt",            BPOL_copy);
-  checkHasPolicy(found_files, "valid-config-files/inheritance-2.txt",            BPOL_copy);
-  checkHasPolicy(found_files, "valid-config-files/inheritance-3.txt",            BPOL_copy);
-  checkHasPolicy(found_files, "valid-config-files/no-paths-and-no-ignores.txt",  BPOL_track);
-  checkHasPolicy(found_files, "valid-config-files/root-with-regex-subnodes.txt", BPOL_track);
-  checkHasPolicy(found_files, "valid-config-files/simple-BOM-noeol.txt",         BPOL_track);
-  assert_true(strtableGet(found_files, str("valid-config-files/simple-BOM.txt"))   == NULL);
-  assert_true(strtableGet(found_files, str("valid-config-files/simple-noeol.txt")) == NULL);
-  checkHasPolicy(found_files, "valid-config-files/simple.txt",                   BPOL_track);
-
-  checkHasPolicy(found_files, "broken-config-files",                               BPOL_mirror);
-  checkHasPolicy(found_files, "broken-config-files/BOM-simple-error.txt",          BPOL_mirror);
-  checkHasPolicy(found_files, "broken-config-files/closing-brace-empty.txt",       BPOL_mirror);
-  assert_true(strtableGet(found_files, str("broken-config-files/closing-brace.txt")) == NULL);
-  checkHasPolicy(found_files, "broken-config-files/empty-policy-name.txt",         BPOL_mirror);
-  checkHasPolicy(found_files, "broken-config-files/invalid-ignore-expression.txt", BPOL_mirror);
-  assert_true(strtableGet(found_files, str("broken-config-files/invalid-path-1.txt")) == NULL);
-  checkHasPolicy(found_files, "broken-config-files/invalid-path-2.txt",            BPOL_track);
-  checkHasPolicy(found_files, "broken-config-files/invalid-path-3.txt",            BPOL_track);
-  checkHasPolicy(found_files, "broken-config-files/invalid-policy.txt",            BPOL_mirror);
-  checkHasPolicy(found_files, "broken-config-files/invalid-regex.txt",             BPOL_mirror);
-  checkHasPolicy(found_files, "broken-config-files/multiple-errors.txt",           BPOL_mirror);
-  checkHasPolicy(found_files, "broken-config-files/opening-brace-empty.txt",       BPOL_mirror);
-  checkHasPolicy(found_files, "broken-config-files/opening-brace.txt",             BPOL_mirror);
-  checkHasPolicy(found_files, "broken-config-files/pattern-without-policy.txt",    BPOL_mirror);
-  checkHasPolicy(found_files, "broken-config-files/redefine-1.txt",                BPOL_mirror);
-  checkHasPolicy(found_files, "broken-config-files/redefine-2.txt",                BPOL_mirror);
-  checkHasPolicy(found_files, "broken-config-files/redefine-3.txt",                BPOL_mirror);
-  checkHasPolicy(found_files, "broken-config-files/redefine-policy-1.txt",         BPOL_mirror);
-  checkHasPolicy(found_files, "broken-config-files/redefine-policy-2.txt",         BPOL_mirror);
-  assert_true(strtableGet(found_files, str("broken-config-files/redefine-root-1.txt")) == NULL);
-  assert_true(strtableGet(found_files, str("broken-config-files/redefine-root-2.txt")) == NULL);
-  assert_true(strtableGet(found_files, str("broken-config-files/redefine-root-policy-1.txt")) == NULL);
-  assert_true(strtableGet(found_files, str("broken-config-files/redefine-root-policy-2.txt")) == NULL);
-
+  assert_true(strtableGet(found_files, str("valid-config-files"))     == NULL);
+  assert_true(strtableGet(found_files, str("broken-config-files"))    == NULL);
   assert_true(strtableGet(found_files, str("template-config-files"))  == NULL);
   assert_true(strtableGet(found_files, str("generated-config-files")) == NULL);
+
+  checkHasPolicy(found_files, "test directory",                            BPOL_copy);
+  checkHasPolicy(found_files, "test directory/.empty",                     BPOL_copy);
+  checkHasPolicy(found_files, "test directory/.hidden",                    BPOL_copy);
+  checkHasPolicy(found_files, "test directory/.hidden/.hidden",            BPOL_copy);
+  checkHasPolicy(found_files, "test directory/.hidden/.hidden/test-A.txt", BPOL_copy);
+  checkHasPolicy(found_files, "test directory/.hidden/.hidden/test-B.txt", BPOL_copy);
+  checkHasPolicy(found_files, "test directory/.hidden/.hidden/test-C.txt", BPOL_copy);
+  checkHasPolicy(found_files, "test directory/.hidden/test file.☢",        BPOL_copy);
+  checkHasPolicy(found_files, "test directory/.hidden/❤❤❤.txt",            BPOL_copy);
+  checkHasPolicy(found_files, "test directory/.hidden 1",                  BPOL_copy);
+  checkHasPolicy(found_files, "test directory/.hidden 2",                  BPOL_copy);
+  checkHasPolicy(found_files, "test directory/.hidden 3",                  BPOL_copy);
+  checkHasPolicy(found_files, "test directory/.hidden symlink",            BPOL_mirror);
+  checkHasPolicy(found_files, "test directory/bar-a.txt",                  BPOL_track);
+  assert_true(strtableGet(found_files, str("test directory/bar-b.txt"))       == NULL);
+  assert_true(strtableGet(found_files, str("test directory/empty-directory")) == NULL);
+  checkHasPolicy(found_files, "test directory/foo 1",                      BPOL_copy);
+  checkHasPolicy(found_files, "test directory/foo 1/bar",                  BPOL_copy);
+  assert_true(strtableGet(found_files, str("test directory/foo 1/bar/1.txt")) == NULL);
+  checkHasPolicy(found_files, "test directory/foo 1/bar/2.txt",            BPOL_copy);
+  checkHasPolicy(found_files, "test directory/foo 1/bar/3.txt",            BPOL_copy);
+  checkHasPolicy(found_files, "test directory/foo 1/test-file-a.txt",      BPOL_copy);
+  assert_true(strtableGet(found_files, str("test directory/foo 1/test-file-b.txt")) == NULL);
+  checkHasPolicy(found_files, "test directory/foo 1/test-file-c.txt",      BPOL_copy);
+  checkHasPolicy(found_files, "test directory/foo 1/♞.☂",                  BPOL_copy);
+  assert_true(strtableGet(found_files, str("test directory/foobar a1.txt")) == NULL);
+  checkHasPolicy(found_files, "test directory/foobar a2.txt",              BPOL_copy);
+  assert_true(strtableGet(found_files, str("test directory/foobar b1.txt")) == NULL);
+  checkHasPolicy(found_files, "test directory/foobar b2.txt",              BPOL_copy);
+  assert_true(strtableGet(found_files, str("test directory/symlink")) == NULL);
+  checkHasPolicy(found_files, "test directory/φ.txt",                      BPOL_copy);
+  assert_true(strtableGet(found_files, str("test directory/€.txt")) == NULL);
   strtableFree(found_files);
 
   SearchNode *node = checkCwdTree(root, cwd_depth);
   assert_true(node != NULL);
-  SearchNode *valid_configs = checkSubnode(node, "valid-config-files", SRT_directory);
-  checkSubnode(valid_configs, "^i", SRT_regular);
 
-  SearchNode *broken_configs = checkSubnode(node, "broken-config-files", SRT_directory);
-  checkSubnode(broken_configs, "invalid-path-2.txt", SRT_regular);
-  checkSubnode(broken_configs, "^invalid-path-3.txt$", SRT_regular);
+  checkSubnode(node, "symlink", SRT_symlink);
+
+  SearchNode *test_dir = checkSubnode(node, "test directory", SRT_directory);
+  checkSubnode(test_dir, ".hidden symlink", SRT_symlink);
+  checkSubnode(test_dir, "^bar-a\\.txt$", SRT_regular);
 }
 
 int main(void)
