@@ -544,6 +544,69 @@ static void testSymlinkFollowing(String cwd)
   checkSubnode(empty_dir, ".*", SRT_none);
 }
 
+/** Performs a search using the generated config file
+  "mismatched-paths.txt" and asserts that the search results behave like
+  expected.
+
+  @param cwd The path to the current working directory.
+*/
+static void testMismatchedPaths(String cwd)
+{
+  SearchNode *root = searchTreeLoad("generated-config-files/mismatched-paths.txt");
+  SearchContext *context = searchNew(root);
+  assert_true(context != NULL);
+
+  volatile size_t cwd_depth = skipCwd(context, cwd);
+  StringTable *found_files = strtableNew(0);
+  assert_true(populateDirectoryTable(context, found_files, cwd) == 2);
+  finishSearch(context, cwd_depth);
+
+  checkHasPolicy(found_files, "empty.txt", BPOL_none);
+  assert_true(strtableGet(found_files, str("empty.txt/file 1.txt")) == NULL);
+
+  checkHasPolicy(found_files, "symlink.txt", BPOL_none);
+  assert_true(strtableGet(found_files, str("symlink.txt/foo-bar.txt")) == NULL);
+
+  assert_true(strtableGet(found_files, str("example.txt"))            == NULL);
+  assert_true(strtableGet(found_files, str("valid-config-files"))     == NULL);
+  assert_true(strtableGet(found_files, str("broken-config-files"))    == NULL);
+  assert_true(strtableGet(found_files, str("template-config-files"))  == NULL);
+  assert_true(strtableGet(found_files, str("generated-config-files")) == NULL);
+
+  checkHasPolicy(found_files, "test directory", BPOL_none);
+  assert_true(strtableGet(found_files, str("test directory/super-file.txt"))  == NULL);
+  assert_true(strtableGet(found_files, str("test directory/.empty"))          == NULL);
+  assert_true(strtableGet(found_files, str("test directory/.hidden"))         == NULL);
+  assert_true(strtableGet(found_files, str("test directory/.hidden 1"))       == NULL);
+  assert_true(strtableGet(found_files, str("test directory/.hidden 2"))       == NULL);
+  assert_true(strtableGet(found_files, str("test directory/.hidden 3"))       == NULL);
+  assert_true(strtableGet(found_files, str("test directory/.hidden symlink")) == NULL);
+  assert_true(strtableGet(found_files, str("test directory/bar-a.txt"))       == NULL);
+  assert_true(strtableGet(found_files, str("test directory/bar-b.txt"))       == NULL);
+  assert_true(strtableGet(found_files, str("test directory/empty-directory")) == NULL);
+  assert_true(strtableGet(found_files, str("test directory/foo 1"))           == NULL);
+  assert_true(strtableGet(found_files, str("test directory/foobar a1.txt"))   == NULL);
+  assert_true(strtableGet(found_files, str("test directory/foobar a2.txt"))   == NULL);
+  assert_true(strtableGet(found_files, str("test directory/foobar b1.txt"))   == NULL);
+  assert_true(strtableGet(found_files, str("test directory/foobar b2.txt"))   == NULL);
+  assert_true(strtableGet(found_files, str("test directory/symlink"))         == NULL);
+  assert_true(strtableGet(found_files, str("test directory/φ.txt"))           == NULL);
+  assert_true(strtableGet(found_files, str("test directory/€.txt"))           == NULL);
+  strtableFree(found_files);
+
+  SearchNode *node = checkCwdTree(root, cwd_depth);
+  assert_true(node != NULL);
+
+  SearchNode *empty_txt = checkSubnode(node, "empty.txt", SRT_regular);
+  checkSubnode(empty_txt, "file 1.txt", SRT_none);
+
+  SearchNode *symlink = checkSubnode(node, "symlink.txt", SRT_regular);
+  checkSubnode(symlink, "foo-bar.txt", SRT_none);
+
+  SearchNode *test_dir = checkSubnode(node, "test directory", SRT_directory);
+  checkSubnode(test_dir, "super-file.txt", SRT_none);
+}
+
 int main(void)
 {
   testGroupStart("simple file search");
@@ -557,5 +620,9 @@ int main(void)
 
   testGroupStart("symlink following rules");
   testSymlinkFollowing(cwd);
+  testGroupEnd();
+
+  testGroupStart("mismatched paths");
+  testMismatchedPaths(cwd);
   testGroupEnd();
 }

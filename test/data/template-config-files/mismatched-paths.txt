@@ -1,0 +1,4 @@
+[mirror]
+/empty.txt/file 1.txt
+/symlink.txt/foo-bar.txt
+/test directory/super-file.txt
