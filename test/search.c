@@ -124,6 +124,10 @@ static size_t skipCwd(SearchContext *context, String cwd)
     {
       break;
     }
+    else if(result.policy != BPOL_none)
+    {
+      die("unexpected policy in \"%s\"", result.path.str);
+    }
 
     recursion_depth++;
   }
