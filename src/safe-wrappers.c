@@ -290,11 +290,12 @@ bool sPathExists(const char *path)
   int old_errno = errno;
   if(access(path, F_OK) != 0)
   {
-    if(errno != old_errno)
+    if(errno != old_errno && errno != ENOENT)
     {
       dieErrno("failed to check existence of \"%s\"", path);
     }
 
+    errno = old_errno;
     return false;
   }
 
