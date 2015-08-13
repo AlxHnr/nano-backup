@@ -228,10 +228,17 @@ static size_t populateDirectoryTable(SearchContext *context,
     else
     {
       checkSearchResult(result);
+      String relative_path = trimCwd(result.path, cwd);
+      if(strtableGet(table, relative_path) != NULL)
+      {
+        die("path \"%s\" was found twice during search",
+            relative_path.str);
+      }
+
       file_count += (result.type == SRT_regular ||
                      result.type == SRT_symlink);
       recursion_depth += result.type == SRT_directory;
-      strtableMap(table, trimCwd(result.path, cwd),
+      strtableMap(table, relative_path,
                   (void *)((size_t)result.policy + 1));
     }
   }
