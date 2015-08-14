@@ -21,9 +21,8 @@
         distribution.
 */
 
-/**
-  @file string-table.h Declares functions for mapping strings to arbitrary
-  data.
+/** @file
+  Declares functions for mapping strings to arbitrary data.
 */
 
 #ifndef _NANO_BACKUP_STRING_TABLE_H_

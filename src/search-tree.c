@@ -21,9 +21,8 @@
         distribution.
 */
 
-/**
-  @file search-tree.c Implements a struct that can be used for searching
-  the file system.
+/** @file
+  Implements a struct that can be used for searching the file system.
 */
 
 #include "search-tree.h"

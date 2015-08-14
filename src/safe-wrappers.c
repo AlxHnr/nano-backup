@@ -21,9 +21,9 @@
         distribution.
 */
 
-/**
-  @file safe-wrappers.c Implements various wrapper functions, which handle
-  errors by terminating with an error message.
+/** @file
+  Implements various wrapper functions, which handle errors by terminating
+  with an error message.
 */
 
 #include "safe-wrappers.h"

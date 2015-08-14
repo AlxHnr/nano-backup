@@ -21,8 +21,8 @@
         distribution.
 */
 
-/**
-  @file search-tree.c Tests loading search trees from config files.
+/** @file
+  Tests loading search trees from config files.
 */
 
 #include "search-tree.h"

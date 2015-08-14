@@ -21,9 +21,8 @@
         distribution.
 */
 
-/**
-  @file search-tree.h Declares a struct that can be used for searching the
-  file system.
+/** @file
+  Declares a struct that can be used for searching the file system.
 */
 
 #ifndef _NANO_BACKUP_SEARCH_TREE_H_

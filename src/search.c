@@ -21,8 +21,8 @@
         distribution.
 */
 
-/**
-  @file search.c Implements filesystem searching via search trees.
+/** @file
+  Implements filesystem searching via search trees.
 */
 
 #include "search.h"

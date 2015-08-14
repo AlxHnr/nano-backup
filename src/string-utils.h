@@ -21,9 +21,8 @@
         distribution.
 */
 
-/**
-  @file string-utils.h Declares various helper functions for manipulating
-  strings.
+/** @file
+  Declares various helper functions for manipulating strings.
 */
 
 #ifndef _NANO_BACKUP_STRING_UTILS_H_

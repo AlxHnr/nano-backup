@@ -21,10 +21,10 @@
         distribution.
 */
 
-/**
-  @file memory-pool.h Declares functions for allocating memory from an
-  internal memory pool. This pool should only be used for data that lives
-  as long as the entire program.
+/** @file
+  Declares functions for allocating memory from an internal memory pool.
+  This pool should only be used for data that lives as long as the entire
+  program.
 */
 
 #ifndef _NANO_BACKUP_MEMORY_POOL_H_

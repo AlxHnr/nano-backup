@@ -21,8 +21,8 @@
         distribution.
 */
 
-/**
-  @file string-table.c Tests the string table implementation.
+/** @file
+  Tests the string table implementation.
 */
 
 #include "string-table.h"

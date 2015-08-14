@@ -21,9 +21,9 @@
         distribution.
 */
 
-/**
-  @file test.h Declares functions for testing code. This header should only
-  be included by tests.
+/** @file
+  Declares functions for testing code. This header should only be included
+  by tests.
 */
 
 #ifndef _NANO_BACKUP_TEST_H_

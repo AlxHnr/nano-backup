@@ -21,8 +21,8 @@
         distribution.
 */
 
-/**
-  @file string-utils.c Tests helper functions for string manipulation.
+/** @file
+  Tests helper functions for string manipulation.
 */
 
 #include "string-utils.h"

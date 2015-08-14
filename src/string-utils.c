@@ -21,9 +21,8 @@
         distribution.
 */
 
-/**
-  @file string-utils.c Implements various helper functions for manipulating
-  strings.
+/** @file
+  Implements various helper functions for manipulating strings.
 */
 
 #include "string-utils.h"

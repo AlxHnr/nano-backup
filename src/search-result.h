@@ -21,8 +21,8 @@
         distribution.
 */
 
-/**
-  @file search-result.h Defines the result of a search query.
+/** @file
+  Defines the result of a search query.
 */
 
 #ifndef _NANO_BACKUP_SEARCH_RESULT_H_
@@ -62,10 +62,9 @@ typedef struct
   /** The type of the result. */
   SearchResultType type;
 
-  /** The path to the found file, relative to the root path of the
-    associated SearchContext. The buffer of this variable shares memory
-    with the SearchContext to which it belongs. It will be invalidated with
-    the next call to searchGetNext(). */
+  /** The full path to the found file. The buffer of this variable shares
+    memory with the SearchContext to which it belongs. It will be
+    invalidated with the next call to searchGetNext(). */
   String path;
 
   /** The policy of the file. */

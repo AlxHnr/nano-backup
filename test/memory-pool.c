@@ -21,8 +21,8 @@
         distribution.
 */
 
-/**
-  @file memory-pool.c Tests the internal memory pool.
+/** @file
+  Tests the internal memory pool.
 */
 
 #include "memory-pool.h"

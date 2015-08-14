@@ -21,8 +21,8 @@
         distribution.
 */
 
-/**
-  @file safe-wrappers.c Tests safe wrapper functions.
+/** @file
+  Tests safe wrapper functions.
 */
 
 #include "safe-wrappers.h"

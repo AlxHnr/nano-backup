@@ -21,8 +21,8 @@
         distribution.
 */
 
-/**
-  @file search.h Declares functions for searching the filesystem.
+/** @file
+  Declares functions for searching the filesystem.
 */
 
 #ifndef _NANO_BACKUP_SEARCH_H_

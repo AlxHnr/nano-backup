@@ -21,8 +21,8 @@
         distribution.
 */
 
-/**
-  @file search.c Tests the filesystem search implementation.
+/** @file
+  Tests the filesystem search implementation.
 */
 
 #include "search.h"

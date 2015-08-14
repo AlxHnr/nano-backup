@@ -21,8 +21,8 @@
         distribution.
 */
 
-/**
-  @file backup-policies.h Defines various policies for tracking files.
+/** @file
+  Defines various policies for tracking files.
 */
 
 #ifndef _NANO_BACKUP_BACKUP_POLICIES_H_

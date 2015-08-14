@@ -21,8 +21,8 @@
         distribution.
 */
 
-/**
-  @file error-handling.h Declares various functions for error handling.
+/** @file
+  Declares various functions for error handling.
 */
 
 #ifndef _NANO_BACKUP_ERROR_HANDLING_H_

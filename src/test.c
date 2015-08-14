@@ -21,10 +21,10 @@
         distribution.
 */
 
-/**
-  @file test.c Implements various functions required for testing. This
-  module conflicts with error-handling.c, since it implements the same
-  functions in a different way.
+/** @file
+  Implements various functions required for testing. This module conflicts
+  with error-handling.c, since it implements the same functions in a
+  different way.
 */
 
 #include "test.h"

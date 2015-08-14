@@ -21,9 +21,8 @@
         distribution.
 */
 
-/**
-  @file string-table.c Implements a struct for mapping strings to arbitrary
-  data.
+/** @file
+  Implements a struct for mapping strings to arbitrary data.
 */
 
 #include "string-table.h"

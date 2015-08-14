@@ -21,9 +21,9 @@
         distribution.
 */
 
-/**
-  @file safe-wrappers.h Declares safe wrapper functions, which handle
-  errors by terminating the program with an error message.
+/** @file
+  Declares safe wrapper functions, which handle errors by terminating the
+  program with an error message.
 */
 
 #ifndef _NANO_BACKUP_SAFE_WRAPPERS_H_

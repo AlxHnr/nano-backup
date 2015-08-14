@@ -21,8 +21,8 @@
         distribution.
 */
 
-/**
-  @file error-handling.c Implements various functions for error handling.
+/** @file
+  Implements various functions for error handling.
 */
 
 #include "error-handling.h"
