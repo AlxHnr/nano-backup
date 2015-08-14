@@ -607,6 +607,89 @@ static void testMismatchedPaths(String cwd)
   checkSubnode(test_dir, "super-file.txt", SRT_none);
 }
 
+/** Performs a search by using the generated config file
+  "complex-search.txt" and asserts that the search behaves like expected.
+
+  @param cwd The full path to the current working directory.
+*/
+static void testComplexSearch(String cwd)
+{
+  SearchNode *root = searchTreeLoad("generated-config-files/complex-search.txt");
+  SearchContext *context = searchNew(root);
+  assert_true(context != NULL);
+
+  volatile size_t cwd_depth = skipCwd(context, cwd);
+  StringTable *found_files = strtableNew(0);
+  assert_true(populateDirectoryTable(context, found_files, cwd) == 26);
+  finishSearch(context, cwd_depth);
+
+  checkIgnoreExpression(root, "test/data/.+-config-files$", true);
+  checkIgnoreExpression(root, "^never-matches-anything$",   false);
+  checkIgnoreExpression(root, "\\.hidden symlink/2\\.txt$", false);
+  checkIgnoreExpression(root, "1\\.txt$",                   true);
+  checkIgnoreExpression(root, "foobar",                     true);
+
+  checkHasPolicy(found_files, "empty.txt",   BPOL_copy);
+  checkHasPolicy(found_files, "example.txt", BPOL_copy);
+  checkHasPolicy(found_files, "symlink.txt", BPOL_copy);
+
+  assert_true(strtableGet(found_files, str("valid-config-files"))     == NULL);
+  assert_true(strtableGet(found_files, str("broken-config-files"))    == NULL);
+  assert_true(strtableGet(found_files, str("template-config-files"))  == NULL);
+  assert_true(strtableGet(found_files, str("generated-config-files")) == NULL);
+
+  checkHasPolicy(found_files, "test directory",                            BPOL_mirror);
+  checkHasPolicy(found_files, "test directory/.empty",                     BPOL_mirror);
+  checkHasPolicy(found_files, "test directory/.hidden",                    BPOL_mirror);
+  checkHasPolicy(found_files, "test directory/.hidden/.hidden",            BPOL_mirror);
+  checkHasPolicy(found_files, "test directory/.hidden/.hidden/test-A.txt", BPOL_mirror);
+  checkHasPolicy(found_files, "test directory/.hidden/.hidden/test-B.txt", BPOL_mirror);
+  checkHasPolicy(found_files, "test directory/.hidden/.hidden/test-C.txt", BPOL_mirror);
+  checkHasPolicy(found_files, "test directory/.hidden/test file.☢",        BPOL_mirror);
+  checkHasPolicy(found_files, "test directory/.hidden/❤❤❤.txt",            BPOL_mirror);
+  checkHasPolicy(found_files, "test directory/.hidden 1",                  BPOL_mirror);
+  checkHasPolicy(found_files, "test directory/.hidden 2",                  BPOL_mirror);
+  checkHasPolicy(found_files, "test directory/.hidden 3",                  BPOL_mirror);
+  checkHasPolicy(found_files, "test directory/.hidden symlink",            BPOL_mirror);
+  checkHasPolicy(found_files, "test directory/.hidden symlink/1.txt",      BPOL_mirror);
+  checkHasPolicy(found_files, "test directory/.hidden symlink/2.txt",      BPOL_mirror);
+  checkHasPolicy(found_files, "test directory/.hidden symlink/3.txt",      BPOL_mirror);
+  checkHasPolicy(found_files, "test directory/bar-a.txt",                  BPOL_mirror);
+  checkHasPolicy(found_files, "test directory/bar-b.txt",                  BPOL_mirror);
+  checkHasPolicy(found_files, "test directory/empty-directory",            BPOL_mirror);
+  checkHasPolicy(found_files, "test directory/foo 1",                      BPOL_mirror);
+  checkHasPolicy(found_files, "test directory/foo 1/bar",                  BPOL_mirror);
+  assert_true(strtableGet(found_files, str("test directory/foo 1/bar/1.txt")) == NULL);
+  checkHasPolicy(found_files, "test directory/foo 1/bar/2.txt",            BPOL_mirror);
+  checkHasPolicy(found_files, "test directory/foo 1/bar/3.txt",            BPOL_mirror);
+  checkHasPolicy(found_files, "test directory/foo 1/test-file-a.txt",      BPOL_mirror);
+  checkHasPolicy(found_files, "test directory/foo 1/test-file-b.txt",      BPOL_mirror);
+  checkHasPolicy(found_files, "test directory/foo 1/test-file-c.txt",      BPOL_mirror);
+  checkHasPolicy(found_files, "test directory/foo 1/♞.☂",                  BPOL_mirror);
+  assert_true(strtableGet(found_files, str("test directory/foobar a1.txt")) == NULL);
+  assert_true(strtableGet(found_files, str("test directory/foobar a2.txt")) == NULL);
+  assert_true(strtableGet(found_files, str("test directory/foobar b1.txt")) == NULL);
+  assert_true(strtableGet(found_files, str("test directory/foobar b2.txt")) == NULL);
+  checkHasPolicy(found_files, "test directory/symlink",                    BPOL_mirror);
+  checkHasPolicy(found_files, "test directory/φ.txt",                      BPOL_mirror);
+  checkHasPolicy(found_files, "test directory/€.txt",                      BPOL_mirror);
+  strtableFree(found_files);
+
+  SearchNode *node = checkCwdTree(root, cwd_depth);
+  assert_true(node != NULL);
+
+  checkSubnode(node, "^[es]", SRT_regular);
+
+  SearchNode *test_dir = checkSubnode(node, "^tes", SRT_directory);
+
+  SearchNode *symlink = checkSubnode(test_dir, " symlink", SRT_directory);
+  checkSubnode(symlink, ".*", SRT_regular);
+
+  SearchNode *hidden = checkSubnode(test_dir, "^.hidden [1-3]$", SRT_regular);
+  checkSubnode(hidden, ".*", SRT_none);
+  checkSubnode(hidden, "2.txt", SRT_none);
+}
+
 int main(void)
 {
   testGroupStart("simple file search");
@@ -624,5 +707,9 @@ int main(void)
 
   testGroupStart("mismatched paths");
   testMismatchedPaths(cwd);
+  testGroupEnd();
+
+  testGroupStart("complex file search");
+  testComplexSearch(cwd);
   testGroupEnd();
 }
