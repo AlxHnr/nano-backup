@@ -55,3 +55,50 @@ To do a backup, simply pass the repository path to nano-backup:
 ```sh
 nb repo/
 ```
+
+## Policies
+
+Nano-backup can backup various files in different ways. Policies apply only
+to the last element of a path:
+
+```
+/home/user/Pictures/last-element
+```
+
+All the parent directories of the last element will be backed up silently
+without the users knowledge and will not have a history. Paths can inherit
+policies from their parents:
+
+```
+[mirror]
+/home
+
+[track]
+/home/user/.config/
+```
+
+In the example above, the files in `user` will be mirrored, while the files
+in `.config` will be tracked.
+
+### copy
+
+This is the simplest policy. Every file/directory will be backed up
+recursively without having a change history. If a file gets changed in the
+filesystem, its backup gets overwritten.
+
+### mirror
+
+This policy is almost identical to [copy](#copy), but with the difference
+that if a file gets removed from the filesystem, it will also be removed
+from the backup.
+
+### track
+
+This policy will create a history of every change in a file or directory.
+This includes metadata, like modification timestamps, owner, group and
+permission bits.
+
+### ignore
+
+This is not really a policy, but allows specifying POSIX extended regular
+expressions from excluding full paths from being backed up.
