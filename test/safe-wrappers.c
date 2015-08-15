@@ -27,6 +27,7 @@
 
 #include "safe-wrappers.h"
 
+#include <errno.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
@@ -40,6 +41,18 @@ static void checkReadDir(DIR *dir, const char *dir_path)
   assert_true(dir_entry != NULL);
   assert_true(strcmp(dir_entry->d_name, ".")  != 0);
   assert_true(strcmp(dir_entry->d_name, "..") != 0);
+}
+
+/** A wrapper around sPathExists() which asserts that errno doesn't get
+  trashed. Errno must be 0 when this function gets called.
+*/
+static bool checkPathExists(const char *path)
+{
+  assert_true(errno == 0);
+  bool path_exists = sPathExists(path);
+  assert_true(errno == 0);
+
+  return path_exists;
 }
 
 int main(void)
@@ -158,16 +171,17 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("sPathExists()");
-  assert_true(sPathExists("empty.txt"));
-  assert_true(sPathExists("example.txt"));
-  assert_true(sPathExists("symlink.txt"));
-  assert_true(sPathExists("valid-config-files"));
-  assert_true(sPathExists("./valid-config-files"));
-  assert_true(sPathExists("./valid-config-files/"));
-  assert_true(sPathExists("broken-config-files"));
-  assert_true(sPathExists("broken-config-files/"));
-  assert_true(sPathExists("non-existing-file.txt") == false);
-  assert_true(sPathExists("non-existing-directory/") == false);
+  errno = 0;
+  assert_true(checkPathExists("empty.txt"));
+  assert_true(checkPathExists("example.txt"));
+  assert_true(checkPathExists("symlink.txt"));
+  assert_true(checkPathExists("valid-config-files"));
+  assert_true(checkPathExists("./valid-config-files"));
+  assert_true(checkPathExists("./valid-config-files/"));
+  assert_true(checkPathExists("broken-config-files"));
+  assert_true(checkPathExists("broken-config-files/"));
+  assert_true(checkPathExists("non-existing-file.txt") == false);
+  assert_true(checkPathExists("non-existing-directory/") == false);
   testGroupEnd();
 
   testGroupStart("sStat()");
