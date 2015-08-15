@@ -93,6 +93,8 @@ static void checkSearchResult(SearchResult result)
     default:
       die("unexpected search result type: %i", result.type);
   }
+
+  assert_true(result.path.str[result.path.length] == '\0');
 }
 
 /** Skips all search results in the given context, which belong to the

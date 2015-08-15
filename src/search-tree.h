@@ -39,7 +39,8 @@
 typedef struct RegexList RegexList;
 struct RegexList
 {
-  /** The regular expression as a string. */
+  /** The regular expression as a string. The buffer inside this string is
+    guaranteed to be null-terminated. */
   String expression;
 
   /** The number of the line in the config file on which this expression
@@ -60,7 +61,8 @@ struct RegexList
 typedef struct SearchNode SearchNode;
 struct SearchNode
 {
-  /** The name or expression of the node. */
+  /** The name or expression of the node. The buffer inside this string is
+    guaranteed to be null-terminated. */
   String name;
 
   /** The number of the line in the config file on which this node appeared

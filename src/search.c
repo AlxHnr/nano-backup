@@ -35,7 +35,7 @@
 /** A simple string buffer. */
 typedef struct
 {
-  /** The buffer containing the string. */
+  /** A null-terminated buffer, containing the string. */
   char *str;
 
   /** The amount of bytes used in the string. */

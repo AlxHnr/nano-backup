@@ -62,8 +62,8 @@ typedef struct
   /** The type of the result. */
   SearchResultType type;
 
-  /** The full path to the found file. The buffer of this variable shares
-    memory with the SearchContext to which it belongs. It will be
+  /** The full path to the found file, containing a null-terminated buffer.
+    It shares memory with the SearchContext to which it belongs and will be
     invalidated with the next call to searchGetNext(). */
   String path;
 

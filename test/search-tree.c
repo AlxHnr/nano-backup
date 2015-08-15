@@ -97,8 +97,8 @@ static size_t countIgnoreExpressions(SearchNode *node)
   return counter;
 }
 
-/** Checks if a valid ignore expression with the given properties exists in
-  the given SearchNode.
+/** Returns true, if a valid ignore expression with the specified
+  properties exists in the given SearchNode.
 
   @param node The node containing the ignore expression list.
   @param pattern The pattern which should be searched for.
@@ -108,8 +108,8 @@ static size_t countIgnoreExpressions(SearchNode *node)
   @return True, if a pattern with the specified properties exists in the
   ignore expression list.
 */
-static bool ignoreExpressionExists(SearchNode *node, const char *pattern,
-                                   size_t line_nr)
+static bool checkIgnoreExpression(SearchNode *node, const char *pattern,
+                                  size_t line_nr)
 {
   String expression_string = str(pattern);
   for(RegexList *expression = *node->ignore_expressions;
@@ -117,7 +117,8 @@ static bool ignoreExpressionExists(SearchNode *node, const char *pattern,
   {
     if(expression->has_matched == false &&
        expression->line_nr == line_nr &&
-       strCompare(expression->expression, expression_string))
+       strCompare(expression->expression, expression_string) &&
+       expression->expression.str[expression->expression.length] == '\0')
     {
       return true;
     }
@@ -166,6 +167,7 @@ static void checkBasicNode(SearchNode *node, const char *name,
   assert_true(node != NULL);
 
   assert_true(strCompare(node->name, str(name)));
+  assert_true(node->name.str[node->name.length] == '\0');
   assert_true(node->line_nr == line_nr);
 
   if(has_regex)
@@ -282,9 +284,9 @@ static void testInheritance_2(void)
 {
   SearchNode *root = searchTreeLoad("valid-config-files/inheritance-2.txt");
   checkRootNode(root, BPOL_copy, 3, 1, false, 3);
-  assert_true(ignoreExpressionExists(root, "foo", 9));
-  assert_true(ignoreExpressionExists(root, "^ ",  10));
-  assert_true(ignoreExpressionExists(root, "bar", 11));
+  assert_true(checkIgnoreExpression(root, "foo", 9));
+  assert_true(checkIgnoreExpression(root, "^ ",  10));
+  assert_true(checkIgnoreExpression(root, "bar", 11));
 
   SearchNode *usr = findSubnode(root, "usr");
   checkNode(usr, root, "usr", 15, false, BPOL_copy, true, 15, 1, false);
@@ -307,8 +309,8 @@ static void testInheritance_3(void)
 {
   SearchNode *root = searchTreeLoad("valid-config-files/inheritance-3.txt");
   checkRootNode(root, BPOL_none, 0, 2, false, 2);
-  assert_true(ignoreExpressionExists(root, ".*\\.png", 14));
-  assert_true(ignoreExpressionExists(root, ".*\\.jpg", 16));
+  assert_true(checkIgnoreExpression(root, ".*\\.png", 14));
+  assert_true(checkIgnoreExpression(root, ".*\\.jpg", 16));
 
   SearchNode *home_1 = findSubnode(root, "home");
   checkNode(home_1, root, "home", 22, false, BPOL_mirror, false, 28, 1, false);
@@ -393,15 +395,15 @@ int main(void)
 
   SearchNode *ignore_1 = searchTreeLoad("valid-config-files/ignore-patterns-only-1.txt");
   checkRootNode(ignore_1, BPOL_none, 0, 0, false, 2);
-  assert_true(ignoreExpressionExists(ignore_1, " .*\\.(png|jpg|pdf) ", 2));
-  assert_true(ignoreExpressionExists(ignore_1, "foo", 3));
+  assert_true(checkIgnoreExpression(ignore_1, " .*\\.(png|jpg|pdf) ", 2));
+  assert_true(checkIgnoreExpression(ignore_1, "foo", 3));
 
   SearchNode *ignore_2 = searchTreeLoad("valid-config-files/ignore-patterns-only-2.txt");
   checkRootNode(ignore_2, BPOL_none, 0, 0, false, 4);
-  assert_true(ignoreExpressionExists(ignore_2, "foo",      7));
-  assert_true(ignoreExpressionExists(ignore_2, "bar",      9));
-  assert_true(ignoreExpressionExists(ignore_2, "foo-bar",  12));
-  assert_true(ignoreExpressionExists(ignore_2, ".*\\.png", 17));
+  assert_true(checkIgnoreExpression(ignore_2, "foo",      7));
+  assert_true(checkIgnoreExpression(ignore_2, "bar",      9));
+  assert_true(checkIgnoreExpression(ignore_2, "foo-bar",  12));
+  assert_true(checkIgnoreExpression(ignore_2, ".*\\.png", 17));
   testGroupEnd();
 
   testGroupStart("BOM and EOL variations");
