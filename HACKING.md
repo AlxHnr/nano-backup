@@ -67,3 +67,10 @@ function, make sure that the documentation guarantees that it is
 null-terminated.
 
 ## Testing
+
+Handling errors by terminating the program is not helpful when testing
+code. Sometimes a test must assert that errors get raised properly. For
+this purpose nano-backup ships its own testing functions. Test programs are
+linked against a special implementation of die() and dieErrno(), which
+longjump back into the current assert statement. See the documentation of
+test.h.
