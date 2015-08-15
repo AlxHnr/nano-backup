@@ -5,7 +5,7 @@ considered when working with the source code:
 * [Error handling](#errorhandling)
 * [Memory management](#memorymanagement)
 * [NULL](#null)
-* [String handling](#stringhandling)
+* [Handling strings](#handlingstrings)
 * [Testing](#testing)
 
 ## Error handling
@@ -50,7 +50,7 @@ This data is denoted appropriately in the documentation and may not be
 freed if the program terminates with an error. In this case its up to the
 OS to reclaim the programs memory.
 
-## String handling
+## Handling strings
 
 Strings in C are broken and expected to be null-terminated. Even a simple
 split operation may require allocating a new string, or mutating the actual
