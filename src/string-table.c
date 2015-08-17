@@ -125,7 +125,8 @@ StringTable *strtableNew(void)
   pool.
 
   @param item_count The amount of associations that the StringTable must be
-  able to hold.
+  able to hold. Must be greater than 0, or the program will be terminated
+  with an error.
 
   @return A new StringTable allocated inside the internal memory pool
   which should not be freed by the caller. Passing it to strtableFree() is
