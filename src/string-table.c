@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "memory-pool.h"
 #include "safe-wrappers.h"
 
 /** A string table bucket. */
@@ -51,15 +52,25 @@ struct StringTable
   Bucket **buckets; /**< An array of buckets. */
   size_t capacity; /**< The amount of buckets in the String table. */
   size_t associations; /**< The amount of associations in the table. */
+
+  /** A pointer to the function used for allocating the table and its
+    buckets. */
+  void *(*alloc_function)(size_t);
 };
 
 /** Doubles the capacity of the given StringTable and moves all buckets to
-  their new destination.
+  their new destination. If the given table is a fixed size table, this
+  function will do nothing.
 
   @param table The table that should be resized.
 */
 static void doubleTableCapaticy(StringTable *table)
 {
+  if(table->alloc_function != sMalloc)
+  {
+    return;
+  }
+
   size_t new_capacity = sSizeMul(table->capacity, 2);
   size_t new_array_size = sSizeMul(new_capacity, sizeof *table->buckets);
 
@@ -89,23 +100,46 @@ static void doubleTableCapaticy(StringTable *table)
   table->capacity = new_capacity;
 }
 
-/** Creates a new StringTable.
+/** Creates a new, dynamically growing StringTable.
 
-  @param item_count An approximate count of items, which the StringTable
-  should be able to hold. If the StringTable is full, it will resize
-  automatically. If unsure, pass 0 as argument.
-
-  @return A new StringTable, which must be freed by the caller using
+  @return A StringTable which must be freed by the caller using
   strtableFree().
 */
-StringTable *strtableNew(size_t item_count)
+StringTable *strtableNew(void)
 {
   StringTable *table = sMalloc(sizeof *table);
-  table->capacity = item_count < 16 ? 32 : sSizeMul(item_count, 2);
+  table->alloc_function = sMalloc;
   table->associations = 0;
+  table->capacity = 32;
 
   size_t array_size = sSizeMul(table->capacity, sizeof *table->buckets);
   table->buckets = sMalloc(array_size);
+
+  /* Initialize all buckets to NULL. */
+  memset(table->buckets, 0, array_size);
+
+  return table;
+}
+
+/** Creates a fixed size StringTable allocated inside the internal memory
+  pool.
+
+  @param item_count The amount of associations that the StringTable must be
+  able to hold.
+
+  @return A new StringTable allocated inside the internal memory pool
+  which should not be freed by the caller. Passing it to strtableFree() is
+  safe and will do nothing.
+*/
+StringTable *strtableNewFixed(size_t item_count)
+{
+  StringTable *table = mpAlloc(sizeof *table);
+  table->capacity = sSizeMul(item_count, 2);
+  table->alloc_function = mpAlloc;
+  table->associations = 0;
+
+  size_t array_size = sSizeMul(table->capacity, sizeof *table->buckets);
+  table->buckets = mpAlloc(array_size);
 
   /* Initialize all buckets to NULL. */
   memset(table->buckets, 0, array_size);
@@ -119,6 +153,11 @@ StringTable *strtableNew(size_t item_count)
 */
 void strtableFree(StringTable *table)
 {
+  if(table->alloc_function != sMalloc)
+  {
+    return;
+  }
+
   for(size_t index = 0; index < table->capacity; index++)
   {
     Bucket *bucket = table->buckets[index];
@@ -137,8 +176,7 @@ void strtableFree(StringTable *table)
 
 /** Associates the given key with the specified data. This function does
   not check whether the given key was already mapped. It will simply create
-  another association with undefined order. If the StringTable has reached
-  its capacity it will be resized properly.
+  another association with undefined order.
 
   @param table The table in which the association should be stored.
   @param key The key to which the given data should be mapped to. The table
@@ -146,18 +184,18 @@ void strtableFree(StringTable *table)
   free it, unless the given StringTable is not used anymore.
   @param data The data that should be mapped to the key. The StringTable
   will only store a reference to the data, so the caller should not move
-  its unless the table is not used anymore.
+  it unless the table is not used anymore.
 */
 void strtableMap(StringTable *table, String key, void *data)
 {
-  /* Resize hash table, if its capacity was reached. */
+  /* Try to resize hash table, if its capacity was reached. */
   if(table->associations == table->capacity)
   {
     doubleTableCapaticy(table);
   }
 
   /* Initialize bucket. */
-  Bucket *bucket = sMalloc(sizeof *bucket);
+  Bucket *bucket = table->alloc_function(sizeof *bucket);
   bucket->hash = strHash(key);
   bucket->data = data;
 

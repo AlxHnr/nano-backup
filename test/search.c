@@ -327,7 +327,7 @@ static void testSimpleSearch(String cwd)
   assert_true(context != NULL);
 
   volatile size_t cwd_depth = skipCwd(context, cwd);
-  StringTable *found_files = strtableNew(0);
+  StringTable *found_files = strtableNew();
   assert_true(populateDirectoryTable(context, found_files, cwd) == 29);
   finishSearch(context, cwd_depth);
 
@@ -412,7 +412,7 @@ static void testIgnoreExpressions(String cwd)
   assert_true(context != NULL);
 
   volatile size_t cwd_depth = skipCwd(context, cwd);
-  StringTable *found_files = strtableNew(0);
+  StringTable *found_files = strtableNew();
   assert_true(populateDirectoryTable(context, found_files, cwd) == 19);
   finishSearch(context, cwd_depth);
 
@@ -490,7 +490,7 @@ static void testSymlinkFollowing(String cwd)
   assert_true(context != NULL);
 
   volatile size_t cwd_depth = skipCwd(context, cwd);
-  StringTable *found_files = strtableNew(0);
+  StringTable *found_files = strtableNew();
   assert_true(populateDirectoryTable(context, found_files, cwd) == 20);
   finishSearch(context, cwd_depth);
 
@@ -559,7 +559,7 @@ static void testMismatchedPaths(String cwd)
   assert_true(context != NULL);
 
   volatile size_t cwd_depth = skipCwd(context, cwd);
-  StringTable *found_files = strtableNew(0);
+  StringTable *found_files = strtableNew();
   assert_true(populateDirectoryTable(context, found_files, cwd) == 2);
   finishSearch(context, cwd_depth);
 
@@ -621,7 +621,7 @@ static void testComplexSearch(String cwd)
   assert_true(context != NULL);
 
   volatile size_t cwd_depth = skipCwd(context, cwd);
-  StringTable *found_files = strtableNew(0);
+  StringTable *found_files = strtableNew();
   assert_true(populateDirectoryTable(context, found_files, cwd) == 26);
   finishSearch(context, cwd_depth);
 

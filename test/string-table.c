@@ -69,7 +69,7 @@ int main(void)
   testGroupStart("map various strings");
   assert_true(zlib_count == lorem_count);
 
-  StringTable *table = strtableNew(0);
+  StringTable *table = strtableNew();
   assert_true(strtableGet(table, str("")) == NULL);
 
   /* Map the lorem-ipsum chunks to the zlib chunks. */

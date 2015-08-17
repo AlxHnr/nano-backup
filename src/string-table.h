@@ -37,7 +37,8 @@
 */
 typedef struct StringTable StringTable;
 
-extern StringTable *strtableNew(size_t item_count);
+extern StringTable *strtableNew(void);
+extern StringTable *strtableNewFixed(size_t item_count);
 extern void strtableFree(StringTable *table);
 
 extern void strtableMap(StringTable *table, String key, void *data);

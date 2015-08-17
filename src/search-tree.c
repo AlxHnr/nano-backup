@@ -256,7 +256,7 @@ SearchNode *searchTreeLoad(const char *path)
   *root_node->ignore_expressions = NULL;
 
   /* This table maps paths to existing nodes, without a trailing slash. */
-  StringTable *existing_nodes = strtableNew(0);
+  StringTable *existing_nodes = strtableNew();
 
   /* Associate an empty string with the root node. */
   strtableMap(existing_nodes, str(""), root_node);
