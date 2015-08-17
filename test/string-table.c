@@ -44,6 +44,7 @@ static const char *zlib_license_chunks[] =
   "warranty.", "acknowledgment", "following", "restrictions:", "origin",
   "damages", "freely,", "3.", "including", "but", "would", "without",
 };
+static const size_t zlib_count = sizeof(zlib_license_chunks)/sizeof(void*);
 
 static const char *lorem_ipsum_chunks[] =
 {
@@ -60,25 +61,29 @@ static const char *lorem_ipsum_chunks[] =
   "penatibus", "arcu", "eros.", "nascetur", "foo", "sit", "pharetra",
   "Nam", "semper", "enim", "mi", "malesuada", "",
 };
+static const size_t lorem_count = sizeof(lorem_ipsum_chunks)/sizeof(void*);
 
-int main(void)
+/** Tests the given StringTable.
+
+  @param table The table which should be tested.
+  @param spam_strtable_free True, if the table should be passed to
+  strtableFree() permanently. This can be used to test that strtableFree()
+  ignores fixed-size string tables.
+*/
+static void testStringTable(StringTable *table, bool spam_strtable_free)
 {
-  const size_t zlib_count = sizeof(zlib_license_chunks)/sizeof(void *);
-  const size_t lorem_count = sizeof(lorem_ipsum_chunks)/sizeof(void *);
-
-  testGroupStart("map various strings");
-  assert_true(zlib_count == lorem_count);
-
-  StringTable *table = strtableNew();
+  if(spam_strtable_free) strtableFree(table);
   assert_true(strtableGet(table, str("")) == NULL);
 
   /* Map the lorem-ipsum chunks to the zlib chunks. */
   for(size_t index = 0; index < zlib_count; index++)
   {
+    if(spam_strtable_free) strtableFree(table);
     String string = str(zlib_license_chunks[index]);
     assert_true(strtableGet(table, string) == NULL);
 
     strtableMap(table, string, &lorem_ipsum_chunks[index]);
+    if(spam_strtable_free) strtableFree(table);
 
     assert_true(strtableGet(table, string) == &lorem_ipsum_chunks[index]);
   }
@@ -87,13 +92,48 @@ int main(void)
   for(size_t index = 0; index < zlib_count; index++)
   {
     String string = str(zlib_license_chunks[index]);
+
+    if(spam_strtable_free) strtableFree(table);
     assert_true(strtableGet(table, string) == &lorem_ipsum_chunks[index]);
   }
 
+  if(spam_strtable_free) strtableFree(table);
   assert_true(strtableGet(table, str("lingula")) == NULL);
   assert_true(strtableGet(table, str("origina")) == NULL);
   assert_true(strtableGet(table, str("originall")) == NULL);
+}
 
+int main(void)
+{
+  testGroupStart("dynamic string table");
+  assert_true(zlib_count == lorem_count);
+
+  StringTable *table = strtableNew();
+  testStringTable(table, false);
   strtableFree(table);
+  testGroupEnd();
+
+  testGroupStart("fixed table with size 0");
+  assert_error(strtableNewFixed(0), "memory pool: unable to allocate 0 bytes");
+  testGroupEnd();
+
+  testGroupStart("fixed table with size 1");
+  testStringTable(strtableNewFixed(1), true);
+  testStringTable(strtableNewFixed(1), false);
+  testGroupEnd();
+
+  testGroupStart("fixed table with size 8");
+  testStringTable(strtableNewFixed(8), true);
+  testStringTable(strtableNewFixed(8), false);
+  testGroupEnd();
+
+  testGroupStart("fixed table with size 64");
+  testStringTable(strtableNewFixed(64), true);
+  testStringTable(strtableNewFixed(64), false);
+  testGroupEnd();
+
+  testGroupStart("fixed table with size 4096");
+  testStringTable(strtableNewFixed(4096), true);
+  testStringTable(strtableNewFixed(4096), false);
   testGroupEnd();
 }
