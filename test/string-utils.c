@@ -122,12 +122,23 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("strAppendPath()");
-  assert_true(strCompare(strAppendPath(empty, empty), str("/")));
-  assert_true(strCompare(strAppendPath(foo,   empty), str("foo/")));
-  assert_true(strCompare(strAppendPath(empty, bar),   str("/bar")));
-  assert_true(strCompare(strAppendPath(foo,   bar),   str("foo/bar")));
-  assert_true(strCompare(strAppendPath(str("/foo/bar//"), str("/foo")),
-                         str("/foo/bar////foo")));
+  String empty_empty    = strAppendPath(empty, empty);
+  String foo_empty      = strAppendPath(foo,   empty);
+  String empty_bar      = strAppendPath(empty, bar);
+  String foo_bar_append = strAppendPath(foo,   bar);
+  String foo_bar_foo    = strAppendPath(str("/foo/bar//"), str("/foo"));
+
+  assert_true(strCompare(empty_empty,    str("/")));
+  assert_true(strCompare(foo_empty,      str("foo/")));
+  assert_true(strCompare(empty_bar,      str("/bar")));
+  assert_true(strCompare(foo_bar_append, str("foo/bar")));
+  assert_true(strCompare(foo_bar_foo,    str("/foo/bar////foo")));
+
+  assert_true(empty_empty.str[empty_empty.length]       == '\0');
+  assert_true(foo_empty.str[foo_empty.length]           == '\0');
+  assert_true(empty_bar.str[empty_bar.length]           == '\0');
+  assert_true(foo_bar_append.str[foo_bar_append.length] == '\0');
+  assert_true(foo_bar_foo.str[foo_bar_foo.length]       == '\0');
   testGroupEnd();
 
   testGroupStart("strSplitPath()");
