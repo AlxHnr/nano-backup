@@ -155,15 +155,15 @@ typedef struct
   String repo_path;
 
   /** The current backup. Its id will always be 0 and its timestamp will be
-    undefined. This variable allows newly created backup states to access
-    the same backup id and reference count. */
+    undefined. This variable is shared across all newly created backup
+    states. */
   Backup current_backup;
-
-  /** An array of backups. It will be NULL if its empty. */
-  Backup *backup_history;
 
   /** The amount of elements in the backup history. */
   size_t backup_history_length;
+
+  /** An array of backups. It will be NULL if its length is zero. */
+  Backup *backup_history;
 
   /** The history of the repositories config file. Its path states will
     have always the type PST_regular. Its RegularMetadata contains only the
@@ -173,6 +173,9 @@ typedef struct
 
   /** A list of backed up files in the filesystem. */
   PathNode *paths;
+
+  /** The amount of paths in the tree. */
+  size_t total_path_count;
 
   /** A StringTable associating a full, absolute filepath with its
     PathNode. This table contains only paths that exist in the metadata
