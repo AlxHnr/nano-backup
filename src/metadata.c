@@ -219,6 +219,18 @@ static void readHash(FileContent content, size_t *reader_position,
   *reader_position += SHA_DIGEST_LENGTH;
 }
 
+/** Reads a PathHistory struct from the content of the given file.
+
+  @param content The content containing the PathHistory.
+  @param reader_position The position of the path history. It will be moved
+  to the next unread byte.
+  @param metadata_path The path to the file to which the given content
+  belongs to.
+  @param backup_history An array containing the backup history.
+
+  @return A new path history allocated inside the internal memory pool,
+  which should not be freed by the caller.
+*/
 static PathHistory *readPathHistory(FileContent content,
                                     size_t *reader_position,
                                     const char *metadata_path,
@@ -235,7 +247,6 @@ static PathHistory *readPathHistory(FileContent content,
   point->state.gid = read32(content, reader_position, metadata_path);
   point->state.timestamp =
     readTime(content, reader_position, metadata_path);
-
 
   if(point->state.type == PST_regular)
   {
@@ -279,6 +290,17 @@ static PathHistory *readPathHistory(FileContent content,
   return point;
 }
 
+/** Reads a full path history from the given files content.
+
+  @param content The content containing the path history.
+  @param reader_position The position from which should be read. It will be
+  moved to the next unread byte.
+  @param metadata_path The path to the metadata file.
+  @param backup_history An array containing the backup history.
+
+  @return A complete path history allocated inside the internal memory
+  pool. It should not be freed by the caller.
+*/
 static PathHistory *readFullPathHistory(FileContent content,
                                         size_t *reader_position,
                                         const char *metadata_path,
@@ -306,6 +328,14 @@ static PathHistory *readFullPathHistory(FileContent content,
   return first_point;
 }
 
+/** Loads the metadata of a repository.
+
+  @param repo_path The full or relative path to the repository containing
+  the metadata file.
+
+  @return The metadata, allocated inside the internal memory pool, which
+  should not be freed by the caller.
+*/
 Metadata *loadRepoMetadata(String repo_path)
 {
   String metadata_path = strAppendPath(repo_path, str("metadata"));
