@@ -207,7 +207,7 @@ static time_t readTime(FileContent content, size_t *reader_position,
   will be moved to the next unread byte.
   @param metadata_path The path to the file of the content, for printing
   the error message.
-  @param hash The address of an array, into which the hash will be copied.
+  @param hash The address of the array, into which the hash will be copied.
 */
 static void readHash(FileContent content, size_t *reader_position,
                      const char *metadata_path, uint8_t *hash)
@@ -231,17 +231,14 @@ static PathHistory *readPathHistory(FileContent content,
 
   point->state.type = read8(content, reader_position, metadata_path);
 
+  point->state.uid = read32(content, reader_position, metadata_path);
+  point->state.gid = read32(content, reader_position, metadata_path);
+  point->state.timestamp =
+    readTime(content, reader_position, metadata_path);
+
+
   if(point->state.type == PST_regular)
   {
-    point->state.metadata.reg.uid =
-      read32(content, reader_position, metadata_path);
-
-    point->state.metadata.reg.gid =
-      read32(content, reader_position, metadata_path);
-
-    point->state.metadata.reg.timestamp =
-      readTime(content, reader_position, metadata_path);
-
     point->state.metadata.reg.mode =
       read32(content, reader_position, metadata_path);
 
@@ -253,15 +250,6 @@ static PathHistory *readPathHistory(FileContent content,
   }
   else if(point->state.type == PST_symlink)
   {
-    point->state.metadata.sym.uid =
-      read32(content, reader_position, metadata_path);
-
-    point->state.metadata.sym.gid =
-      read32(content, reader_position, metadata_path);
-
-    point->state.metadata.sym.timestamp =
-      readTime(content, reader_position, metadata_path);
-
     size_t target_length =
       readSize(content, reader_position, metadata_path);
 
@@ -279,15 +267,6 @@ static PathHistory *readPathHistory(FileContent content,
   }
   else if(point->state.type == PST_directory)
   {
-    point->state.metadata.dir.uid =
-      read32(content, reader_position, metadata_path);
-
-    point->state.metadata.dir.gid =
-      read32(content, reader_position, metadata_path);
-
-    point->state.metadata.dir.timestamp =
-      readTime(content, reader_position, metadata_path);
-
     point->state.metadata.dir.mode =
       read32(content, reader_position, metadata_path);
   }

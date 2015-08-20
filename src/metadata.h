@@ -40,10 +40,6 @@
 /** Stores the metadata of a regular file. */
 typedef struct
 {
-  uid_t uid; /**< The user id of the files owner. */
-  gid_t gid; /**< The group id of the files owner. */
-  time_t timestamp; /**< The files last modification time. */
-
   mode_t mode; /**< The permission bits of the file. */
   size_t size; /**< The file size. */
   uint8_t hash[SHA_DIGEST_LENGTH]; /**< The hash of the file. */
@@ -52,10 +48,6 @@ typedef struct
 /** Stores the metadata of a symbolic link. */
 typedef struct
 {
-  uid_t uid; /**< The user id of the symbolic links owner. */
-  gid_t gid; /**< The group id of the symbolic links owner. */
-  time_t timestamp; /**< The symlinks last modification time. */
-
   /** A null-terminated string storing the symlinks target. */
   const char *target;
 }SymlinkMetadata;
@@ -63,10 +55,6 @@ typedef struct
 /** Stores the metadata of a directory. */
 typedef struct
 {
-  uid_t uid; /**< The user id of the directories owner. */
-  gid_t gid; /**< The group id of the directories owner. */
-  time_t timestamp; /**< The directories last modification time. */
-
   mode_t mode; /**< The permission bits of the directory. */
 }DirectoryMetadata;
 
@@ -82,11 +70,15 @@ typedef enum
 /** Represents the state a path can have at a specific backup. */
 typedef struct
 {
-  /** The type of the PathState. */
+  /** The type of the PathState. If the path state is PST_non_existing, all
+    other values in this struct are undefined. */
   PathStateType type;
 
-  /** If the path exists during this state, it will contain the metadata
-    for its filetype. */
+  uid_t uid; /**< The user id of the paths owner. */
+  gid_t gid; /**< The group id of the paths owner. */
+  time_t timestamp; /**< The paths last modification time. */
+
+  /** Additional metadata, depending on the PathStateType. */
   union
   {
     RegularMetadata reg;   /**< The metadata of a regular file. */
