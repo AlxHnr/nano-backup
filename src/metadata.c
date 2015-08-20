@@ -44,12 +44,25 @@
 #error system can address more than 64 bits
 #endif
 
+/** An union used for determining the current systems endianness. */
 static const union
 {
   uint32_t value;
   uint8_t array[4];
+
+  /* Assert that the size of time_t is either 4 or 8. */
+  char assert[(sizeof(time_t) == 4) || (sizeof(time_t) == 8)];
 }endian_test = { .value = 1 };
 
+/** Assert that enough unread bytes are remaining in the given file
+  content.
+
+  @param reader_position The position of the reader.
+  @param bytes The amount of bytes which should be unread.
+  @param content The content of a file.
+  @param metadata_path The path to the metadata file, for printing error
+  messages.
+*/
 static void assertBytesLeft(size_t reader_position, size_t bytes,
                             FileContent content, const char *metadata_path)
 {
@@ -59,6 +72,14 @@ static void assertBytesLeft(size_t reader_position, size_t bytes,
   }
 }
 
+/** Converts the endianness of the given value. If the current system is
+  little endian, no conversion will happen. Otherwise the bytes will be
+  swapped.
+
+  @param value The value that should be converted.
+
+  @return The converted value.
+*/
 static uint32_t convertEndian32(uint32_t value)
 {
   if(endian_test.array[0] == 1)
@@ -77,6 +98,7 @@ static uint32_t convertEndian32(uint32_t value)
   }
 }
 
+/** The 64 bit version of convertEndian32(). */
 static uint64_t convertEndian64(uint64_t value)
 {
   if(endian_test.array[0] == 1)
@@ -98,6 +120,17 @@ static uint64_t convertEndian64(uint64_t value)
   }
 }
 
+/** Reads a byte from the given FileContent.
+
+  @param content The content of the file from which should be read.
+  @param reader_position The position of the reader, which will be moved to
+  the next unread byte.
+  @param metadata_path The path to the metadata file, for printing error
+  messages.
+
+  @return The current byte at the given reader position in the given
+  FileContent.
+*/
 static uint8_t read8(FileContent content, size_t *reader_position,
                      const char *metadata_path)
 {
@@ -110,44 +143,49 @@ static uint8_t read8(FileContent content, size_t *reader_position,
   return byte;
 }
 
+/** The 4 byte version of read8() which takes care of endian conversion. */
 static uint32_t read32(FileContent content, size_t *reader_position,
                        const char *metadata_path)
 {
   assertBytesLeft(*reader_position, sizeof(uint32_t),
                   content, metadata_path);
 
-  uint32_t size = (uint32_t)content.content[*reader_position];
+  uint32_t size = *((uint32_t *)&content.content[*reader_position]);
   *reader_position += sizeof(size);
 
   return convertEndian32(size);
 }
 
+/** The 8 byte version of read8() which takes care of endian conversion. */
 static uint64_t read64(FileContent content, size_t *reader_position,
                        const char *metadata_path)
 {
   assertBytesLeft(*reader_position, sizeof(uint64_t),
                   content, metadata_path);
 
-  uint64_t size = (uint64_t)content.content[*reader_position];
+  uint64_t size = *((uint64_t *)&content.content[*reader_position]);
   *reader_position += sizeof(size);
 
   return convertEndian64(size);
 }
 
+/** A wrapper around read64(), which ensures that the read value fits into
+  size_t. */
 static size_t readSize(FileContent content, size_t *reader_position,
                        const char *metadata_path)
 {
   uint64_t size = read64(content, reader_position, metadata_path);
 
-  /** Assert that a 64 bit value fits into size_t. */
   if(size > SIZE_MAX)
   {
-    die("failed to read 64 bit integer from \"%s\"", metadata_path);
+    die("failed to read 64 bit size value from \"%s\"", metadata_path);
   }
 
   return (size_t)size;
 }
 
+/** A wrapper around read64(), which ensures that the read value fits into
+  time_t. */
 static time_t readTime(FileContent content, size_t *reader_position,
                        const char *metadata_path)
 {
@@ -156,12 +194,21 @@ static time_t readTime(FileContent content, size_t *reader_position,
   if((sizeof(time_t) == 8 && time > INT64_MAX) ||
      (sizeof(time_t) == 4 && time > INT32_MAX))
   {
-    die("failed to read timestamp from \"%s\"", metadata_path);
+    die("overflow reading timestamp from \"%s\"", metadata_path);
   }
 
   return (time_t)time;
 }
 
+/** Reads the hash from a files content.
+
+  @param content The content of the file containing the hash.
+  @param reader_position The reader position at which the hash starts. It
+  will be moved to the next unread byte.
+  @param metadata_path The path to the file of the content, for printing
+  the error message.
+  @param hash The address of an array, into which the hash will be copied.
+*/
 static void readHash(FileContent content, size_t *reader_position,
                      const char *metadata_path, uint8_t *hash)
 {
