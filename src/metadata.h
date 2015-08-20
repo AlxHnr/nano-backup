@@ -45,19 +45,6 @@ typedef struct
   uint8_t hash[SHA_DIGEST_LENGTH]; /**< The hash of the file. */
 }RegularMetadata;
 
-/** Stores the metadata of a symbolic link. */
-typedef struct
-{
-  /** A null-terminated string storing the symlinks target. */
-  const char *target;
-}SymlinkMetadata;
-
-/** Stores the metadata of a directory. */
-typedef struct
-{
-  mode_t mode; /**< The permission bits of the directory. */
-}DirectoryMetadata;
-
 /** The different states a filepath can represent at a specific backup. */
 typedef enum
 {
@@ -78,12 +65,12 @@ typedef struct
   gid_t gid; /**< The group id of the paths owner. */
   time_t timestamp; /**< The paths last modification time. */
 
-  /** Additional metadata, depending on the PathStateType. */
+  /** Optional metadata, depending on the PathStateType. */
   union
   {
-    RegularMetadata reg;   /**< The metadata of a regular file. */
-    SymlinkMetadata sym;   /**< The metadata of a symbolic link. */
-    DirectoryMetadata dir; /**< The metadata of a directory. */
+    RegularMetadata reg;    /**< The metadata of a regular file. */
+    const char *sym_target; /**< The target path of a symlink. */
+    mode_t dir_mode;        /**< The permission bits of a directory. */
   }metadata;
 }PathState;
 

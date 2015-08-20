@@ -274,11 +274,11 @@ static PathHistory *readPathHistory(FileContent content,
 
     target[target_length] = '\0';
 
-    point->state.metadata.sym.target = target;
+    point->state.metadata.sym_target = target;
   }
   else if(point->state.type == PST_directory)
   {
-    point->state.metadata.dir.mode =
+    point->state.metadata.dir_mode =
       read32(content, reader_position, metadata_path);
   }
   else if(point->state.type != PST_non_existing)
