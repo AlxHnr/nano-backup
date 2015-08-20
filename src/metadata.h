@@ -171,9 +171,6 @@ typedef struct
     be undefined. */
   PathHistory *config_history;
 
-  /** A list of backed up files in the filesystem. */
-  PathNode *paths;
-
   /** The amount of paths in the tree. */
   size_t total_path_count;
 
@@ -182,6 +179,11 @@ typedef struct
     file. New files discovered during a backup will not be added to this
     table. */
   StringTable *path_table;
+
+  /** A list of backed up files in the filesystem. */
+  PathNode *paths;
 }Metadata;
+
+extern Metadata *loadRepoMetadata(String repo_path);
 
 #endif
