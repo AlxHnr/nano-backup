@@ -328,6 +328,74 @@ static PathHistory *readFullPathHistory(FileContent content,
   return first_point;
 }
 
+/** Reads the subnodes of the given parent node recursively.
+
+  @param content The content of the file from which the subnodes should be
+  read.
+  @param reader_position The position of the reader at which the subnodes
+  start. It will be moved to the next unread byte once this function
+  completes.
+  @param metadata_path The path to the metadata file. Only needed to print
+  error messages.
+  @param parent_node The parent node to which the read subnodes belong to.
+  It will not be modified. If the parent node does not exist, NULL can be
+  passed instead.
+  @param metadata The metadata of the repository to which the nodes belong
+  to. Its path table will be used for mapping full paths to nodes.
+
+  @return A node list allocated inside the internal memory pool, which
+  should not be freed by the caller. It can be NULL, if the given parent
+  node has no subnodes.
+*/
+static PathNode *readPathSubnodes(FileContent content,
+                                  size_t *reader_position,
+                                  const char *metadata_path,
+                                  PathNode *parent_node,
+                                  Metadata *metadata)
+{
+  size_t node_count = readSize(content, reader_position, metadata_path);
+  PathNode *node_tree = NULL;
+
+  for(size_t counter = 0; counter < node_count; counter++)
+  {
+    PathNode *node = mpAlloc(sizeof *node);
+
+    /* Prepend current node to node tree. */
+    node->next = node_tree;
+    node_tree = node;
+
+    /* Read the name and append it to the parent nodes path. */
+    size_t name_length = readSize(content, reader_position, metadata_path);
+    assertBytesLeft(*reader_position, name_length, content, metadata_path);
+
+    String name =
+      (String)
+      {
+        .str = &content.content[*reader_position],
+        .length = name_length
+      };
+    *reader_position += name_length;
+
+    String full_path = strAppendPath(parent_node == NULL? str(""):
+                                     parent_node->path, name);
+
+    memcpy(&node->path, &full_path, sizeof(node->path));
+
+    /* Read other node variables. */
+    strtableMap(metadata->path_table, node->path, node);
+
+    node->policy = read8(content, reader_position, metadata_path);
+    node->history =
+      readFullPathHistory(content, reader_position, metadata_path,
+                          metadata->backup_history);
+
+    node->subnodes = readPathSubnodes(content, reader_position,
+                                      metadata_path, node, metadata);
+  }
+
+  return node_tree;
+}
+
 /** Loads the metadata of a repository.
 
   @param repo_path The full or relative path to the repository containing
@@ -378,6 +446,13 @@ Metadata *loadRepoMetadata(String repo_path)
     readSize(content, &reader_position, metadata_path.str);
 
   metadata->path_table = strtableNewFixed(metadata->total_path_count);
+  metadata->paths = readPathSubnodes(content, &reader_position,
+                                     metadata_path.str, NULL, metadata);
+
+  if(reader_position != content.size)
+  {
+    die("inconsistent byte count in \"%s\"", metadata_path.str);
+  }
 
   free(content.content);
   return metadata;
