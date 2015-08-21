@@ -399,7 +399,9 @@ static PathNode *readPathSubnodes(FileContent content,
 /** Loads the metadata of a repository.
 
   @param repo_path The full or relative path to the repository containing
-  the metadata file.
+  the metadata file. The returned metadata will keep a reference to the
+  strings buffer, so it should not be freed or modified as long as the
+  metadata is in use.
 
   @return The metadata, allocated inside the internal memory pool, which
   should not be freed by the caller.
