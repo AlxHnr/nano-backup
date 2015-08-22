@@ -82,9 +82,12 @@ static void appendHist(PathNode *node, size_t backup_id,
     last_node->next = history_point;
   }
 
-  history_point->backup = &metadata->backup_history[backup_id];
-  metadata->backup_history[backup_id].ref_count =
-    sSizeAdd(metadata->backup_history[backup_id].ref_count, 1);
+  Backup *backup = backup_id == 0 ?
+    &metadata->current_backup:
+    &metadata->backup_history[backup_id - 1];
+
+  history_point->backup = backup;
+  backup->ref_count = sSizeAdd(backup->ref_count, 1);
 
   history_point->state = state;
   history_point->next = NULL;
@@ -166,19 +169,19 @@ static Metadata *genTestData1(void)
     mpAlloc(sSizeMul(sizeof *metadata->backup_history,
                      metadata->backup_history_length));
 
-  metadata->backup_history[0].id = 0;
+  metadata->backup_history[0].id = 1;
   metadata->backup_history[0].timestamp = 1234;
   metadata->backup_history[0].ref_count = 0;
 
-  metadata->backup_history[1].id = 1;
+  metadata->backup_history[1].id = 2;
   metadata->backup_history[1].timestamp = 4321;
   metadata->backup_history[1].ref_count = 0;
 
-  metadata->backup_history[2].id = 2;
+  metadata->backup_history[2].id = 3;
   metadata->backup_history[2].timestamp = 7890;
   metadata->backup_history[2].ref_count = 0;
 
-  metadata->backup_history[3].id = 3;
+  metadata->backup_history[3].id = 4;
   metadata->backup_history[3].timestamp = 9876;
   metadata->backup_history[3].ref_count = 0;
 
@@ -186,15 +189,32 @@ static Metadata *genTestData1(void)
   metadata->path_table = strtableNew();
 
   PathNode *etc = createPathNode("etc", BPOL_none, NULL, metadata);
+  appendHistDirectory(etc, 4, metadata, 12, 8,  2389478, 0777);
   metadata->paths = etc;
 
-  appendHistDirectory(etc, 3, metadata, 12, 8,  2389478, 0777);
-  appendHistDirectory(etc, 2, metadata, 7,  19, 12837,   0666);
+  PathNode *conf_d = createPathNode("conf.d", BPOL_none, etc, metadata);
+  appendHistDirectory(conf_d, 4, metadata, 3, 5, 102934, 0123);
 
-  PathNode *conf = createPathNode("conf", BPOL_none, etc, metadata);
-  appendHistDirectory(conf, 3, metadata, 3, 5, 102934, 0123);
+  appendHistRegular(createPathNode("foo", BPOL_mirror, conf_d, metadata),
+                    4, metadata, 91, 47, 680123, 0223, 90,
+                    (uint8_t *)"66f69cd1998e54ae5533");
+
+  appendHistRegular(createPathNode("bar", BPOL_mirror, conf_d, metadata),
+                    3, metadata, 89, 20, 310487, 0523, 48,
+                    (uint8_t *)"fffffcd1998e54ae5a70");
 
   PathNode *portage = createPathNode("portage", BPOL_track, etc, metadata);
+  appendHistDirectory(portage, 4, metadata, 7,  19, 12837, 0666);
+  appendHistDirectory(portage, 3, metadata, 89, 98, 91234, 0321);
+
+  PathNode *make_conf =
+    createPathNode("make.conf", BPOL_track, portage, metadata);
+
+  appendHistSymlink(make_conf, 4, metadata, 59, 23, 1248,
+                    "make.conf.backup");
+  appendHistNonExisting(make_conf, 3, metadata);
+  appendHistRegular(make_conf, 1, metadata, 3, 4, 53238, 0713, 192,
+                    (uint8_t *)"e78863d5e021dd60c1a2");
 
   return metadata;
 }
@@ -211,23 +231,23 @@ static void checkTestData1(Metadata *metadata)
   assert_true(metadata->backup_history_length == 4);
   assert_true(metadata->backup_history != NULL);
 
-  assert_true(metadata->backup_history[0].id == 0);
+  assert_true(metadata->backup_history[0].id == 1);
   assert_true(metadata->backup_history[0].timestamp == 1234);
-  assert_true(metadata->backup_history[0].ref_count == 0);
+  assert_true(metadata->backup_history[0].ref_count == 1);
 
-  assert_true(metadata->backup_history[1].id == 1);
+  assert_true(metadata->backup_history[1].id == 2);
   assert_true(metadata->backup_history[1].timestamp == 4321);
   assert_true(metadata->backup_history[1].ref_count == 0);
 
-  assert_true(metadata->backup_history[2].id == 2);
+  assert_true(metadata->backup_history[2].id == 3);
   assert_true(metadata->backup_history[2].timestamp == 7890);
-  assert_true(metadata->backup_history[2].ref_count == 0);
+  assert_true(metadata->backup_history[2].ref_count == 3);
 
-  assert_true(metadata->backup_history[3].id == 3);
+  assert_true(metadata->backup_history[3].id == 4);
   assert_true(metadata->backup_history[3].timestamp == 9876);
-  assert_true(metadata->backup_history[3].ref_count == 0);
+  assert_true(metadata->backup_history[3].ref_count == 5);
 
-  assert_true(metadata->total_path_count == 2);
+  assert_true(metadata->total_path_count == 6);
   assert_true(metadata->paths != NULL);
 }
 
