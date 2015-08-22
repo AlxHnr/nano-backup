@@ -62,8 +62,8 @@ static PathNode *createPathNode(const char *path_str, BackupPolicy policy,
   return node;
 }
 
-static void appendHistory(PathNode *node, size_t backup_id,
-                          Metadata *metadata, PathState state)
+static void appendHist(PathNode *node, size_t backup_id,
+                       Metadata *metadata, PathState state)
 {
   PathHistory *history_point = mpAlloc(sizeof *history_point);
 
@@ -94,7 +94,7 @@ static void appendHistNonExisting(PathNode *node, size_t backup_id,
                                   Metadata *metadata)
 {
   PathState state = { .type = PST_non_existing };
-  appendHistory(node, backup_id, metadata, state);
+  appendHist(node, backup_id, metadata, state);
 }
 
 static void appendHistRegular(PathNode *node, size_t backup_id,
@@ -116,7 +116,7 @@ static void appendHistRegular(PathNode *node, size_t backup_id,
   };
 
   memcpy(&state.metadata.reg.hash, hash, SHA_DIGEST_LENGTH);
-  appendHistory(node, backup_id, metadata, state);
+  appendHist(node, backup_id, metadata, state);
 }
 
 static void appendHistSymlink(PathNode *node, size_t backup_id,
@@ -132,7 +132,7 @@ static void appendHistSymlink(PathNode *node, size_t backup_id,
     .metadata.sym_target = sym_target
   };
 
-  appendHistory(node, backup_id, metadata, state);
+  appendHist(node, backup_id, metadata, state);
 }
 
 static void appendHistDirectory(PathNode *node, size_t backup_id,
@@ -148,7 +148,7 @@ static void appendHistDirectory(PathNode *node, size_t backup_id,
     .metadata.dir_mode = mode
   };
 
-  appendHistory(node, backup_id, metadata, state);
+  appendHist(node, backup_id, metadata, state);
 }
 
 static Metadata *genTestData1(void)
@@ -192,6 +192,8 @@ static Metadata *genTestData1(void)
   appendHistDirectory(etc, 2, metadata, 7,  19, 12837,   0666);
 
   PathNode *conf = createPathNode("conf", BPOL_none, etc, metadata);
+  appendHistDirectory(conf, 3, metadata, 3, 5, 102934, 0123);
+
   PathNode *portage = createPathNode("portage", BPOL_track, etc, metadata);
 
   return metadata;
