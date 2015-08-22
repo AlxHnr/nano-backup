@@ -62,6 +62,95 @@ static PathNode *createPathNode(const char *path_str, BackupPolicy policy,
   return node;
 }
 
+static void appendHistory(PathNode *node, size_t backup_id,
+                          Metadata *metadata, PathState state)
+{
+  PathHistory *history_point = mpAlloc(sizeof *history_point);
+
+  if(node->history == NULL)
+  {
+    node->history = history_point;
+  }
+  else
+  {
+    PathHistory *last_node = node->history;
+    while(last_node->next != NULL)
+    {
+      last_node = last_node->next;
+    }
+
+    last_node->next = history_point;
+  }
+
+  history_point->backup = &metadata->backup_history[backup_id];
+  metadata->backup_history[backup_id].ref_count =
+    sSizeAdd(metadata->backup_history[backup_id].ref_count, 1);
+
+  history_point->state = state;
+  history_point->next = NULL;
+}
+
+static void appendHistNonExisting(PathNode *node, size_t backup_id,
+                                  Metadata *metadata)
+{
+  PathState state = { .type = PST_non_existing };
+  appendHistory(node, backup_id, metadata, state);
+}
+
+static void appendHistRegular(PathNode *node, size_t backup_id,
+                              Metadata *metadata, uid_t uid, gid_t gid,
+                              time_t timestamp, mode_t mode, size_t size,
+                              uint8_t *hash)
+{
+  PathState state =
+  {
+    .type = PST_regular,
+    .uid = uid,
+    .gid = gid,
+    .timestamp = timestamp,
+    .metadata.reg =
+    {
+      .mode = mode,
+      .size = size
+    }
+  };
+
+  memcpy(&state.metadata.reg.hash, hash, SHA_DIGEST_LENGTH);
+  appendHistory(node, backup_id, metadata, state);
+}
+
+static void appendHistSymlink(PathNode *node, size_t backup_id,
+                              Metadata *metadata, uid_t uid, gid_t gid,
+                              time_t timestamp, const char *sym_target)
+{
+  PathState state =
+  {
+    .type = PST_symlink,
+    .uid = uid,
+    .gid = gid,
+    .timestamp = timestamp,
+    .metadata.sym_target = sym_target
+  };
+
+  appendHistory(node, backup_id, metadata, state);
+}
+
+static void appendHistDirectory(PathNode *node, size_t backup_id,
+                                Metadata *metadata, uid_t uid, gid_t gid,
+                                time_t timestamp, mode_t mode)
+{
+  PathState state =
+  {
+    .type = PST_regular,
+    .uid = uid,
+    .gid = gid,
+    .timestamp = timestamp,
+    .metadata.dir_mode = mode
+  };
+
+  appendHistory(node, backup_id, metadata, state);
+}
+
 static Metadata *genTestData1(void)
 {
   Metadata *metadata = mpAlloc(sizeof *metadata);
@@ -98,6 +187,9 @@ static Metadata *genTestData1(void)
 
   PathNode *etc = createPathNode("etc", BPOL_none, NULL, metadata);
   metadata->paths = etc;
+
+  appendHistDirectory(etc, 3, metadata, 12, 8,  2389478, 0777);
+  appendHistDirectory(etc, 2, metadata, 7,  19, 12837,   0666);
 
   PathNode *conf = createPathNode("conf", BPOL_none, etc, metadata);
   PathNode *portage = createPathNode("portage", BPOL_track, etc, metadata);
