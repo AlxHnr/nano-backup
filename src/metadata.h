@@ -118,9 +118,9 @@ struct PathNode
   PathHistory *history;
 
   /** The subnodes of this node. A path can change its type from a regular
-    file to a symlink or directory, and vice versa during its lifetime.
-    To simplify the implementation, the subnodes are stored independently
-    of the pathtype. Can be NULL if the path never was a directory. */
+    file to a symlink or directory and vice versa during its lifetime. To
+    simplify the implementation, the subnodes are stored independently of
+    the pathtype. Can be NULL if the path never was a directory. */
   PathNode *subnodes;
 
   /** The next path in the list, or NULL. */
