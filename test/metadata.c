@@ -197,6 +197,14 @@ static void appendHistDirectory(PathNode *node, size_t backup_id,
   appendHist(node, backup_id, metadata, state);
 }
 
+/** Checks a path tree recursively and terminates the program on errors.
+
+  @param parent_node The first node in the list, which should be checked
+  recursively.
+  @param metadata The metadata to which the tree belongs.
+
+  @return The amount of path nodes in the entire tree.
+*/
 static size_t checkPathTree(PathNode *parent_node, Metadata *metadata)
 {
   size_t count = 0;
@@ -220,6 +228,11 @@ static size_t checkPathTree(PathNode *parent_node, Metadata *metadata)
   return count;
 }
 
+/** Performs some basic checks on a metadata struct.
+
+  @param metadata The metadata struct to be checked.
+  @param repo_path The repository path, which the metadata must contain.
+*/
 static void checkMetadata(Metadata *metadata, const char *repo_path)
 {
   assert_true(metadata != NULL);
