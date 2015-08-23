@@ -220,6 +220,10 @@ static size_t checkPathTree(PathNode *parent_node, Metadata *metadata)
     {
       die("path was not mapped in metadata: \"%s\"", node->path.str);
     }
+    else if(node->history == NULL)
+    {
+      die("path has no history: \"%s\"", node->path.str);
+    }
 
     count += checkPathTree(node->subnodes, metadata);
     count++;
