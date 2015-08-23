@@ -197,6 +197,60 @@ static void appendHistDirectory(PathNode *node, size_t backup_id,
   appendHist(node, backup_id, metadata, state);
 }
 
+/** Appends the history point of a config file to the metadatas config
+  history.
+
+  @param metadata The metadata struct containing the history.
+  @param backup_id The id of the Backup, to which the history point belongs
+  to.
+  @param file_size The size of the config file at the backup point.
+  @param hash The hash of the config file during the backup point.
+*/
+static void appendConfHist(Metadata *metadata, size_t backup_id,
+                           size_t file_size, uint8_t *hash)
+{
+  PathHistory *history_point = mpAlloc(sizeof *history_point);
+
+  if(metadata->config_history == NULL)
+  {
+    metadata->config_history = history_point;
+  }
+  else
+  {
+    PathHistory *last_node = metadata->config_history;
+    while(last_node->next != NULL)
+    {
+      last_node = last_node->next;
+    }
+
+    last_node->next = history_point;
+  }
+
+  Backup *backup = backup_id == 0 ?
+    &metadata->current_backup:
+    &metadata->backup_history[backup_id - 1];
+
+  history_point->backup = backup;
+  backup->ref_count = sSizeAdd(backup->ref_count, 1);
+
+  history_point->state =
+    (PathState)
+    {
+      .type = PST_regular,
+      .uid = 0,
+      .gid = 0,
+      .timestamp = 0,
+      .metadata.reg =
+      {
+        .mode = 0,
+        .size = file_size
+      }
+    };
+
+  memcpy(&history_point->state.metadata.reg.hash, hash, SHA_DIGEST_LENGTH);
+  history_point->next = NULL;
+}
+
 /** Checks a path tree recursively and terminates the program on errors.
 
   @param parent_node The first node in the list, which should be checked
