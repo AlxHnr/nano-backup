@@ -30,6 +30,7 @@
 #include "test.h"
 #include "memory-pool.h"
 #include "safe-wrappers.h"
+#include "error-handling.h"
 
 /** Creates a new path node.
 
@@ -196,6 +197,59 @@ static void appendHistDirectory(PathNode *node, size_t backup_id,
   appendHist(node, backup_id, metadata, state);
 }
 
+static size_t checkPathTree(PathNode *parent_node, Metadata *metadata)
+{
+  size_t count = 0;
+
+  for(PathNode *node = parent_node; node != NULL; node = node->next)
+  {
+    if(node->path.str[node->path.length] != '\0')
+    {
+      die("unterminated path string in metadata: \"%s\"",
+          strCopy(node->path).str);
+    }
+    else if(strtableGet(metadata->path_table, node->path) == NULL)
+    {
+      die("path was not mapped in metadata: \"%s\"", node->path.str);
+    }
+
+    count += checkPathTree(node->subnodes, metadata);
+    count++;
+  }
+
+  return count;
+}
+
+static void checkMetadata(Metadata *metadata, const char *repo_path)
+{
+  assert_true(metadata != NULL);
+  assert_true(metadata->current_backup.id == 0);
+  assert_true(metadata->current_backup.timestamp == 0);
+  assert_true(strCompare(metadata->repo_path, str(repo_path)));
+
+  if(metadata->backup_history_length == 0)
+  {
+    assert_true(metadata->backup_history == NULL);
+  }
+  else
+  {
+    assert_true(metadata->backup_history != NULL);
+  }
+
+  assert_true(metadata->path_table != NULL);
+  assert_true(metadata->total_path_count ==
+              checkPathTree(metadata->paths, metadata));
+
+  if(metadata->total_path_count == 0)
+  {
+    assert_true(metadata->paths == NULL);
+  }
+  else
+  {
+    assert_true(metadata->paths != NULL);
+  }
+}
+
 /** Generates test metadata, that can be tested with checkTestData1().
 
   @return A Metadata struct that should not be freed by the caller.
@@ -271,15 +325,9 @@ static Metadata *genTestData1(void)
 */
 static void checkTestData1(Metadata *metadata)
 {
-  assert_true(metadata != NULL);
-  assert_true(strCompare(metadata->repo_path, str("foo")));
-
-  assert_true(metadata->current_backup.id == 0);
-  assert_true(metadata->current_backup.timestamp == 0);
+  checkMetadata(metadata, "foo");
   assert_true(metadata->current_backup.ref_count == 0);
-
   assert_true(metadata->backup_history_length == 4);
-  assert_true(metadata->backup_history != NULL);
 
   assert_true(metadata->backup_history[0].id == 1);
   assert_true(metadata->backup_history[0].timestamp == 1234);
@@ -298,7 +346,6 @@ static void checkTestData1(Metadata *metadata)
   assert_true(metadata->backup_history[3].ref_count == 5);
 
   assert_true(metadata->total_path_count == 6);
-  assert_true(metadata->paths != NULL);
 }
 
 int main(void)
