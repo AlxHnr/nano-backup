@@ -307,6 +307,11 @@ static size_t checkConfHist(Metadata *metadata)
     {
       die("config history point doesn't represent a regular file");
     }
+    else if(point->next != NULL &&
+            point->backup->id >= point->next->backup->id)
+    {
+      die("config history has an invalid order");
+    }
 
     history_length++;
   }
@@ -377,8 +382,8 @@ static Metadata *genTestData1(void)
   metadata->backup_history[3].timestamp = 9876;
   metadata->backup_history[3].ref_count = 0;
 
-  appendConfHist(metadata, 4, 96,  (uint8_t *)"f8130eb0cdef2019a2c1");
   appendConfHist(metadata, 3, 131, (uint8_t *)"9a2c1f8130eb0cdef201");
+  appendConfHist(metadata, 4, 96,  (uint8_t *)"f8130eb0cdef2019a2c1");
 
   metadata->total_path_count = 0;
   metadata->path_table = strtableNew();
@@ -399,16 +404,16 @@ static Metadata *genTestData1(void)
                     (uint8_t *)"fffffcd1998e54ae5a70");
 
   PathNode *portage = createPathNode("portage", BPOL_track, etc, metadata);
-  appendHistDirectory(portage, 4, metadata, 7,  19, 12837, 0666);
   appendHistDirectory(portage, 3, metadata, 89, 98, 91234, 0321);
+  appendHistDirectory(portage, 4, metadata, 7,  19, 12837, 0666);
 
   PathNode *make_conf =
     createPathNode("make.conf", BPOL_track, portage, metadata);
 
-  appendHistSymlink(make_conf, 4, metadata, 59, 23, 1248,
+  appendHistSymlink(make_conf, 1, metadata, 59, 23, 1248,
                     "make.conf.backup");
   appendHistNonExisting(make_conf, 3, metadata);
-  appendHistRegular(make_conf, 1, metadata, 3, 4, 53238, 0713, 192,
+  appendHistRegular(make_conf, 4, metadata, 3, 4, 53238, 0713, 192,
                     (uint8_t *)"e78863d5e021dd60c1a2");
 
   return metadata;
