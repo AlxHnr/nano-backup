@@ -356,6 +356,9 @@ static Metadata *genTestData1(void)
   metadata->backup_history[3].timestamp = 9876;
   metadata->backup_history[3].ref_count = 0;
 
+  appendConfHist(metadata, 4, 96,  (uint8_t *)"f8130eb0cdef2019a2c1");
+  appendConfHist(metadata, 3, 131, (uint8_t *)"9a2c1f8130eb0cdef201");
+
   metadata->total_path_count = 0;
   metadata->path_table = strtableNew();
 
@@ -410,11 +413,11 @@ static void checkTestData1(Metadata *metadata)
 
   assert_true(metadata->backup_history[2].id == 3);
   assert_true(metadata->backup_history[2].timestamp == 7890);
-  assert_true(metadata->backup_history[2].ref_count == 3);
+  assert_true(metadata->backup_history[2].ref_count == 4);
 
   assert_true(metadata->backup_history[3].id == 4);
   assert_true(metadata->backup_history[3].timestamp == 9876);
-  assert_true(metadata->backup_history[3].ref_count == 5);
+  assert_true(metadata->backup_history[3].ref_count == 6);
 
   assert_true(metadata->total_path_count == 6);
 }
