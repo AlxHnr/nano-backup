@@ -206,7 +206,7 @@ static void appendHistDirectory(PathNode *node, size_t backup_id,
 {
   PathState state =
   {
-    .type = PST_regular,
+    .type = PST_directory,
     .uid = uid,
     .gid = gid,
     .timestamp = timestamp,
@@ -444,7 +444,7 @@ static void mustHaveSymlink(PathNode *node, size_t backup_id,
        point->state.type == PST_symlink &&
        point->state.uid == uid && point->state.gid == gid &&
        point->state.timestamp == timestamp &&
-       strcmp(point->state.metadata.sym_target, sym_target))
+       strcmp(point->state.metadata.sym_target, sym_target) == 0)
     {
       return;
     }
@@ -640,11 +640,34 @@ static void checkTestData1(Metadata *metadata)
   assert_true(metadata->total_path_count == 6);
 
   PathNode *etc = findNode(metadata->paths, "/etc", BPOL_none, 1, 2);
+  mustHaveDirectory(etc, 4, 12, 8, 2389478, 0777);
 
   PathNode *conf_d =
     findNode(etc->subnodes, "/etc/conf.d", BPOL_none, 1, 2);
+  mustHaveDirectory(conf_d, 4, 3, 5, 102934, 0123);
 
-  findNode(conf_d->subnodes, "/etc/conf.d/foo", BPOL_mirror, 1, 0);
+  PathNode *foo =
+    findNode(conf_d->subnodes, "/etc/conf.d/foo", BPOL_mirror, 1, 0);
+  mustHaveRegular(foo, 4, 91, 47, 680123, 0223, 90,
+                  (uint8_t *)"66f69cd1998e54ae5533");
+
+  PathNode *bar =
+    findNode(conf_d->subnodes, "/etc/conf.d/bar", BPOL_mirror, 1, 0);
+  mustHaveRegular(bar, 3, 89, 20, 310487, 0523, 48,
+                  (uint8_t *)"fffffcd1998e54ae5a70");
+
+  PathNode *portage =
+    findNode(etc->subnodes, "/etc/portage", BPOL_track, 2, 1);
+  mustHaveDirectory(portage, 3, 89, 98, 91234, 0321);
+  mustHaveDirectory(portage, 4, 7,  19, 12837, 0666);
+
+  PathNode *make_conf =
+    findNode(portage->subnodes, "/etc/portage/make.conf",
+             BPOL_track, 3, 0);
+  mustHaveSymlink(make_conf, 1,  59, 23, 1248, "make.conf.backup");
+  mustHaveNonExisting(make_conf, 3);
+  mustHaveRegular(make_conf, 4, 3, 4, 53238, 0713, 192,
+                  (uint8_t *)"e78863d5e021dd60c1a2");
 }
 
 int main(void)
