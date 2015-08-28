@@ -339,13 +339,7 @@ static size_t checkConfHist(Metadata *metadata)
 }
 
 /** Assert that the given metadata contains a config history point with the
-  specified properties. Counterpart to appendConfHist().
-
-  @param metadata The metadata struct which should be checked.
-  @param backup_id The backup id of the backup history point.
-  @param file_size The file size at the backup point.
-  @param hash The hash of the config file.
-*/
+  specified properties. Counterpart to appendConfHist(). */
 static void mustHaveConf(Metadata *metadata, size_t backup_id,
                          size_t file_size, uint8_t *hash)
 {
@@ -392,6 +386,49 @@ static size_t checkNodeHist(PathNode *node)
   }
 
   return history_length;
+}
+
+/** Assert that the given node has a non-existing path state at the given
+  backup point. Counterpart to appendHistNonExisting(). */
+static void mustHaveNonExisting(PathNode *node, size_t backup_id)
+{
+  for(PathHistory *point = node->history;
+      point != NULL; point = point->next)
+  {
+    if(point->backup->id == backup_id &&
+       point->state.type == PST_non_existing)
+    {
+      return;
+    }
+  }
+
+  die("node \"%s\" has no non-existing history point at backup %zu",
+      node->path.str, backup_id);
+}
+
+/** Assert that the given node contains a history point with the specified
+  properties. Counterpart to appendHistRegular(). */
+static void mustHaveRegular(PathNode *node, size_t backup_id,
+                            uid_t uid, gid_t gid, time_t timestamp,
+                            mode_t mode, size_t size, uint8_t *hash)
+{
+  for(PathHistory *point = node->history;
+      point != NULL; point = point->next)
+  {
+    if(point->backup->id == backup_id &&
+       point->state.type == PST_regular &&
+       point->state.uid == uid && point->state.gid == gid &&
+       point->state.timestamp == timestamp &&
+       point->state.metadata.reg.mode == mode &&
+       point->state.metadata.reg.size == size &&
+       memcmp(point->state.metadata.reg.hash, hash, SHA_DIGEST_LENGTH) == 0)
+    {
+      return;
+    }
+  }
+
+  die("path node \"%s\" has no regular path state in its history",
+      node->path.str);
 }
 
 /** Performs some basic checks on a metadata struct.
@@ -556,7 +593,12 @@ static void checkTestData1(Metadata *metadata)
 
   assert_true(metadata->total_path_count == 6);
 
-  findNode(metadata->paths, "/etc", BPOL_none, 1, 2);
+  PathNode *etc = findNode(metadata->paths, "/etc", BPOL_none, 1, 2);
+
+  PathNode *conf_d =
+    findNode(etc->subnodes, "/etc/conf.d", BPOL_none, 1, 2);
+
+  findNode(conf_d->subnodes, "/etc/conf.d/foo", BPOL_mirror, 1, 0);
 }
 
 int main(void)
