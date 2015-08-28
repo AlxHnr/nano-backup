@@ -32,6 +32,25 @@
 #include "safe-wrappers.h"
 #include "error-handling.h"
 
+/** Counts the subnodes of the given node.
+
+  @param parent_node The node containing the subnodes.
+
+  @return The subnode count.
+*/
+static size_t countSubnodes(PathNode *parent_node)
+{
+  size_t subnode_count = 0;
+
+  for(PathNode *node = parent_node->subnodes;
+      node != NULL; node = node->next)
+  {
+    subnode_count++;
+  }
+
+  return subnode_count;
+}
+
 /** Creates a new path node.
 
   @param path_str The node name, which will be appended to the parent nodes
@@ -319,6 +338,36 @@ static size_t checkConfHist(Metadata *metadata)
   return history_length;
 }
 
+/** Performs some basic checks on a path nodes history.
+
+  @param node The node containing the history.
+
+  @return The length of the nodes history.
+*/
+static size_t checkNodeHist(PathNode *node)
+{
+  size_t history_length = 0;
+
+  for(PathHistory *point = node->history;
+      point != NULL; point = point->next)
+  {
+    if(point->backup == NULL)
+    {
+      die("node history point doesn't belong to a backup: \"%s\"",
+          node->path.str);
+    }
+    else if(point->state.type > PST_directory)
+    {
+      die("node history point has an invalid state type: \"%s\"",
+          node->path.str);
+    }
+
+    history_length++;
+  }
+
+  return history_length;
+}
+
 /** Performs some basic checks on a metadata struct.
 
   @param metadata The metadata struct to be checked.
@@ -345,6 +394,37 @@ static void checkMetadata(Metadata *metadata, const char *repo_path,
   assert_true(metadata->path_table != NULL);
   assert_true(metadata->total_path_count ==
               checkPathTree(metadata->paths, metadata));
+}
+
+/** Finds a specific node in the given PathNode list. If the node couldn't
+  be found, the program will be terminated with failure.
+
+  @param start_node The beginning of the list.
+  @param path_str The name of the node which should be found.
+  @param policy The policy of the node.
+  @param history_length The history length of the node.
+  @param subnode_count The amount of subnodes.
+
+  @return The node with the specified properties.
+*/
+static PathNode *findNode(PathNode *start_node, const char *path_str,
+                          BackupPolicy policy, size_t history_length,
+                          size_t subnode_count)
+{
+  String path = str(path_str);
+  for(PathNode *node = start_node; node != NULL; node = node->next)
+  {
+    if(strCompare(node->path, path) && node->policy == policy &&
+       checkNodeHist(node) == history_length &&
+       countSubnodes(node) == subnode_count)
+    {
+      return node;
+    }
+  }
+
+  die("node \"%s\" with the specified properties does not exist",
+      path_str);
+  return NULL;
 }
 
 /** Generates test metadata, that can be tested with checkTestData1().
@@ -446,6 +526,8 @@ static void checkTestData1(Metadata *metadata)
   assert_true(metadata->backup_history[3].ref_count == 6);
 
   assert_true(metadata->total_path_count == 6);
+
+  findNode(metadata->paths, "/etc", BPOL_none, 1, 2);
 }
 
 int main(void)
