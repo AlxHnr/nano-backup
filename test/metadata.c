@@ -338,6 +338,32 @@ static size_t checkConfHist(Metadata *metadata)
   return history_length;
 }
 
+/** Assert that the given metadata contains a config history point with the
+  specified properties. Counterpart to appendConfHist().
+
+  @param metadata The metadata struct which should be checked.
+  @param backup_id The backup id of the backup history point.
+  @param file_size The file size at the backup point.
+  @param hash The hash of the config file.
+*/
+static void mustHaveConf(Metadata *metadata, size_t backup_id,
+                         size_t file_size, uint8_t *hash)
+{
+  for(PathHistory *point = metadata->config_history;
+      point != NULL; point = point->next)
+  {
+    if(point->backup->id == backup_id &&
+       point->state.metadata.reg.size == file_size &&
+       memcmp(point->state.metadata.reg.hash, hash, SHA_DIGEST_LENGTH) == 0)
+    {
+      return;
+    }
+  }
+
+  die("config history point doesn't exist in \"%s\"",
+      strCopy(metadata->repo_path).str);
+}
+
 /** Performs some basic checks on a path nodes history.
 
   @param node The node containing the history.
@@ -524,6 +550,9 @@ static void checkTestData1(Metadata *metadata)
   assert_true(metadata->backup_history[3].id == 4);
   assert_true(metadata->backup_history[3].timestamp == 9876);
   assert_true(metadata->backup_history[3].ref_count == 6);
+
+  mustHaveConf(metadata, 3, 131, (uint8_t *)"9a2c1f8130eb0cdef201");
+  mustHaveConf(metadata, 4, 96,  (uint8_t *)"f8130eb0cdef2019a2c1");
 
   assert_true(metadata->total_path_count == 6);
 
