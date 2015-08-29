@@ -390,6 +390,12 @@ static size_t checkNodeHist(PathNode *node, Metadata *metadata)
     {
       die("nodes history points to wrong backup: \"%s\"", node->path.str);
     }
+    else if(point->next != NULL &&
+            point->backup->id >= point->next->backup->id)
+    {
+      die("path node history has an invalid order: \"%s\"",
+          node->path.str);
+    }
     else if(point->state.type > PST_directory)
     {
       die("node history point has an invalid state type: \"%s\"",
@@ -729,11 +735,11 @@ static Metadata *genTestData2(void)
   appendHistDirectory(user, 0, metadata, 1000, 75, 120948, 0600);
 
   PathNode *bashrc = createPathNode(".bashrc", BPOL_track, user, metadata);
-  appendHistRegular(bashrc, 3, metadata, 1000, 75, 9348, 0755, 252,
-                    (uint8_t *)"cdef2019a2c1f8130eb0");
-  appendHistNonExisting(bashrc, 1, metadata);
   appendHistRegular(bashrc, 0, metadata, 983, 57, 1920, 0655, 579,
                     (uint8_t *)"8130eb0cdef2019a2c1f");
+  appendHistNonExisting(bashrc, 1, metadata);
+  appendHistRegular(bashrc, 3, metadata, 1000, 75, 9348, 0755, 252,
+                    (uint8_t *)"cdef2019a2c1f8130eb0");
 
   PathNode *config = createPathNode(".config", BPOL_track, user, metadata);
   appendHistDirectory(config, 1, metadata, 783, 192, 3487901, 0575);
