@@ -322,6 +322,13 @@ static size_t checkConfHist(Metadata *metadata)
     {
       die("config history point doesn't belong to a backup");
     }
+    else if((point->backup->id == 0 &&
+             point->backup != &metadata->current_backup) ||
+            (point->backup->id > 0 &&
+             point->backup != &metadata->backup_history[point->backup->id - 1]))
+    {
+      die("config history points to wrong backup");
+    }
     else if(point->state.type != PST_regular)
     {
       die("config history point doesn't represent a regular file");
@@ -364,7 +371,7 @@ static void mustHaveConf(Metadata *metadata, size_t backup_id,
 
   @return The length of the nodes history.
 */
-static size_t checkNodeHist(PathNode *node)
+static size_t checkNodeHist(PathNode *node, Metadata *metadata)
 {
   size_t history_length = 0;
 
@@ -375,6 +382,13 @@ static size_t checkNodeHist(PathNode *node)
     {
       die("node history point doesn't belong to a backup: \"%s\"",
           node->path.str);
+    }
+    else if((point->backup->id == 0 &&
+             point->backup != &metadata->current_backup) ||
+            (point->backup->id > 0 &&
+             point->backup != &metadata->backup_history[point->backup->id - 1]))
+    {
+      die("nodes history points to wrong backup: \"%s\"", node->path.str);
     }
     else if(point->state.type > PST_directory)
     {
@@ -516,15 +530,15 @@ static void checkMetadata(Metadata *metadata, const char *repo_path,
 
   @return The node with the specified properties.
 */
-static PathNode *findNode(PathNode *start_node, const char *path_str,
-                          BackupPolicy policy, size_t history_length,
-                          size_t subnode_count)
+static PathNode *findNode(Metadata *metadata, PathNode *start_node,
+                          const char *path_str, BackupPolicy policy,
+                          size_t history_length, size_t subnode_count)
 {
   String path = str(path_str);
   for(PathNode *node = start_node; node != NULL; node = node->next)
   {
     if(strCompare(node->path, path) && node->policy == policy &&
-       checkNodeHist(node) == history_length &&
+       checkNodeHist(node, metadata) == history_length &&
        countSubnodes(node) == subnode_count)
     {
       return node;
@@ -639,30 +653,31 @@ static void checkTestData1(Metadata *metadata)
 
   assert_true(metadata->total_path_count == 6);
 
-  PathNode *etc = findNode(metadata->paths, "/etc", BPOL_none, 1, 2);
+  PathNode *etc =
+    findNode(metadata, metadata->paths, "/etc", BPOL_none, 1, 2);
   mustHaveDirectory(etc, 4, 12, 8, 2389478, 0777);
 
-  PathNode *conf_d =
-    findNode(etc->subnodes, "/etc/conf.d", BPOL_none, 1, 2);
+  PathNode *conf_d = findNode(metadata, etc->subnodes, "/etc/conf.d",
+                              BPOL_none, 1, 2);
   mustHaveDirectory(conf_d, 4, 3, 5, 102934, 0123);
 
-  PathNode *foo =
-    findNode(conf_d->subnodes, "/etc/conf.d/foo", BPOL_mirror, 1, 0);
+  PathNode *foo = findNode(metadata, conf_d->subnodes, "/etc/conf.d/foo",
+                           BPOL_mirror, 1, 0);
   mustHaveRegular(foo, 4, 91, 47, 680123, 0223, 90,
                   (uint8_t *)"66f69cd1998e54ae5533");
 
-  PathNode *bar =
-    findNode(conf_d->subnodes, "/etc/conf.d/bar", BPOL_mirror, 1, 0);
+  PathNode *bar = findNode(metadata, conf_d->subnodes, "/etc/conf.d/bar",
+                           BPOL_mirror, 1, 0);
   mustHaveRegular(bar, 3, 89, 20, 310487, 0523, 48,
                   (uint8_t *)"fffffcd1998e54ae5a70");
 
-  PathNode *portage =
-    findNode(etc->subnodes, "/etc/portage", BPOL_track, 2, 1);
+  PathNode *portage = findNode(metadata, etc->subnodes, "/etc/portage",
+                               BPOL_track, 2, 1);
   mustHaveDirectory(portage, 3, 89, 98, 91234, 0321);
   mustHaveDirectory(portage, 4, 7,  19, 12837, 0666);
 
   PathNode *make_conf =
-    findNode(portage->subnodes, "/etc/portage/make.conf",
+    findNode(metadata, portage->subnodes, "/etc/portage/make.conf",
              BPOL_track, 3, 0);
   mustHaveSymlink(make_conf, 1,  59, 23, 1248, "make.conf.backup");
   mustHaveNonExisting(make_conf, 3);
