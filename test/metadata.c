@@ -744,6 +744,12 @@ static Metadata *genTestData2(void)
   PathNode *config = createPathNode(".config", BPOL_track, user, metadata);
   appendHistDirectory(config, 1, metadata, 783, 192, 3487901, 0575);
 
+  PathNode *usr = createPathNode("usr", BPOL_copy, NULL, metadata);
+  appendHistDirectory(usr, 0, metadata, 3497, 2389, 183640, 0655);
+  appendHistDirectory(usr, 2, metadata, 3497, 2389, 816034, 0565);
+
+  metadata->paths->next = usr;
+
   return metadata;
 }
 
@@ -754,7 +760,7 @@ static Metadata *genTestData2(void)
 static void checkTestData2(Metadata *metadata)
 {
   checkMetadata(metadata, "bar", 1);
-  assert_true(metadata->current_backup.ref_count == 2);
+  assert_true(metadata->current_backup.ref_count == 3);
   assert_true(metadata->backup_history_length == 3);
 
   assert_true(metadata->backup_history[0].id == 1);
@@ -763,7 +769,7 @@ static void checkTestData2(Metadata *metadata)
 
   assert_true(metadata->backup_history[1].id == 2);
   assert_true(metadata->backup_history[1].timestamp == 2645);
-  assert_true(metadata->backup_history[1].ref_count == 0);
+  assert_true(metadata->backup_history[1].ref_count == 1);
 
   assert_true(metadata->backup_history[2].id == 3);
   assert_true(metadata->backup_history[2].timestamp == 9742);
@@ -771,7 +777,7 @@ static void checkTestData2(Metadata *metadata)
 
   mustHaveConf(metadata, 3, 210, (uint8_t *)"0cdef2019a2c1f8130eb");
 
-  assert_true(metadata->total_path_count == 4);
+  assert_true(metadata->total_path_count == 5);
 
   PathNode *home =
     findNode(metadata, metadata->paths, "/home", BPOL_none, 1, 1);
@@ -792,6 +798,11 @@ static void checkTestData2(Metadata *metadata)
   PathNode *config = findNode(metadata, user->subnodes,
                               "/home/user/.config", BPOL_track, 1, 0);
   mustHaveDirectory(config, 1, 783, 192, 3487901, 0575);
+
+  PathNode *usr =
+    findNode(metadata, metadata->paths, "/usr", BPOL_copy, 2, 0);
+  mustHaveDirectory(usr, 0, 3497, 2389, 183640, 0655);
+  mustHaveDirectory(usr, 2, 3497, 2389, 816034, 0565);
 }
 
 int main(void)
