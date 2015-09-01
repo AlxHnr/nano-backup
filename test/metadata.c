@@ -361,8 +361,7 @@ static void mustHaveConf(Metadata *metadata, size_t backup_id,
     }
   }
 
-  die("config history point doesn't exist in \"%s\"",
-      strCopy(metadata->repo_path).str);
+  die("config history point with id %zu doesn't exist", backup_id);
 }
 
 /** Performs some basic checks on a path nodes history.
@@ -500,15 +499,12 @@ static void mustHaveDirectory(PathNode *node, size_t backup_id,
 /** Performs some basic checks on a metadata struct.
 
   @param metadata The metadata struct to be checked.
-  @param repo_path The repository path, which the metadata must contain.
 */
-static void checkMetadata(Metadata *metadata, const char *repo_path,
-                          size_t config_history_length)
+static void checkMetadata(Metadata *metadata, size_t config_history_length)
 {
   assert_true(metadata != NULL);
   assert_true(metadata->current_backup.id == 0);
   assert_true(metadata->current_backup.timestamp == 0);
-  assert_true(strCompare(metadata->repo_path, str(repo_path)));
 
   if(metadata->backup_history_length == 0)
   {
@@ -563,8 +559,6 @@ static PathNode *findNode(Metadata *metadata, PathNode *start_node,
 static Metadata *genTestData1(void)
 {
   Metadata *metadata = mpAlloc(sizeof *metadata);
-  String repo_path = str("foo");
-  memcpy(&metadata->repo_path, &repo_path, sizeof(metadata->repo_path));
 
   metadata->current_backup.id = 0;
   metadata->current_backup.timestamp = 0;
@@ -634,7 +628,7 @@ static Metadata *genTestData1(void)
 */
 static void checkTestData1(Metadata *metadata)
 {
-  checkMetadata(metadata, "foo", 2);
+  checkMetadata(metadata, 2);
   assert_true(metadata->current_backup.ref_count == 0);
   assert_true(metadata->backup_history_length == 4);
 
@@ -698,8 +692,6 @@ static void checkTestData1(Metadata *metadata)
 static Metadata *genTestData2(void)
 {
   Metadata *metadata = mpAlloc(sizeof *metadata);
-  String repo_path = str("bar");
-  memcpy(&metadata->repo_path, &repo_path, sizeof(metadata->repo_path));
 
   metadata->current_backup.id = 0;
   metadata->current_backup.timestamp = 0;
@@ -759,7 +751,7 @@ static Metadata *genTestData2(void)
 */
 static void checkTestData2(Metadata *metadata)
 {
-  checkMetadata(metadata, "bar", 1);
+  checkMetadata(metadata, 1);
   assert_true(metadata->current_backup.ref_count == 3);
   assert_true(metadata->backup_history_length == 3);
 

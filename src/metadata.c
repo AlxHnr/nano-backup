@@ -398,22 +398,17 @@ static PathNode *readPathSubnodes(FileContent content,
 
 /** Loads the metadata of a repository.
 
-  @param repo_path The full or relative path to the repository containing
-  the metadata file. The returned metadata will keep a reference to the
-  strings buffer, so it should not be freed or modified as long as the
-  metadata is in use.
+  @param path The full or relative path to the metadata file.
 
   @return The metadata, allocated inside the internal memory pool, which
   should not be freed by the caller.
 */
-Metadata *loadRepoMetadata(String repo_path)
+Metadata *loadMetadata(const char *path)
 {
-  String metadata_path = strAppendPath(repo_path, str("metadata"));
-  FileContent content = sGetFilesContent(metadata_path.str);
+  FileContent content = sGetFilesContent(path);
 
   /* Allocate and initialize metadata. */
   Metadata *metadata = mpAlloc(sizeof *metadata);
-  memcpy(&metadata->repo_path, &repo_path, sizeof(metadata->repo_path));
 
   metadata->current_backup.id = 0;
   metadata->current_backup.timestamp = 0;
@@ -423,7 +418,7 @@ Metadata *loadRepoMetadata(String repo_path)
   size_t reader_position = 0;
 
   metadata->backup_history_length =
-    readSize(content, &reader_position, metadata_path.str);
+    readSize(content, &reader_position, path);
 
   metadata->backup_history =
     mpAlloc(sSizeMul(sizeof *metadata->backup_history,
@@ -434,26 +429,25 @@ Metadata *loadRepoMetadata(String repo_path)
     metadata->backup_history[id].id = id;
 
     metadata->backup_history[id].timestamp =
-      readTime(content, &reader_position, metadata_path.str);
+      readTime(content, &reader_position, path);
 
     metadata->backup_history[id].ref_count =
-      readSize(content, &reader_position, metadata_path.str);
+      readSize(content, &reader_position, path);
   }
 
   metadata->config_history =
     readFullPathHistory(content, &reader_position,
-                        metadata_path.str, metadata->backup_history);
+                        path, metadata->backup_history);
 
-  metadata->total_path_count =
-    readSize(content, &reader_position, metadata_path.str);
+  metadata->total_path_count = readSize(content, &reader_position, path);
 
   metadata->path_table = strtableNewFixed(metadata->total_path_count);
   metadata->paths = readPathSubnodes(content, &reader_position,
-                                     metadata_path.str, NULL, metadata);
+                                     path, NULL, metadata);
 
   if(reader_position != content.size)
   {
-    die("inconsistent byte count in \"%s\"", metadata_path.str);
+    die("inconsistent byte count in \"%s\"", path);
   }
 
   free(content.content);

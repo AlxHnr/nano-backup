@@ -130,9 +130,6 @@ struct PathNode
 /** Represents the metadata of a repository. */
 typedef struct
 {
-  /** The relative path to the repository containing this metadata. */
-  String repo_path;
-
   /** The current backup. Its id will always be 0 and its timestamp will be
     undefined. This variable is shared across all newly created backup
     states. */
@@ -163,6 +160,6 @@ typedef struct
   PathNode *paths;
 }Metadata;
 
-extern Metadata *loadRepoMetadata(String repo_path);
+extern Metadata *loadMetadata(const char *path);
 
 #endif
