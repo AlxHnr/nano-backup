@@ -188,8 +188,7 @@ FILE *sFopenWrite(const char *path)
 */
 void sFread(void *ptr, size_t size, FILE *stream, const char *path)
 {
-  size_t bytes_read = fread(ptr, 1, size, stream);
-  if(bytes_read != size)
+  if(fread(ptr, 1, size, stream) != size)
   {
     if(feof(stream))
     {
@@ -199,6 +198,15 @@ void sFread(void *ptr, size_t size, FILE *stream, const char *path)
     {
       die("IO error while reading \"%s\"", path);
     }
+  }
+}
+
+/** Safe wrapper around fwrite(). Counterpart to sFread(). */
+void sFwrite(void *ptr, size_t size, FILE *stream, const char *path)
+{
+  if(fwrite(ptr, 1, size, stream) != size)
+  {
+    die("failed to write to \"%s\"", path);
   }
 }
 
