@@ -74,11 +74,14 @@ typedef struct
   }metadata;
 }PathState;
 
-/** Represents a backup. */
+/** Represents a backup. A Backup is only valid, if its reference count
+  is greater than zero. Otherwise its id and timestamp will be undefined.
+*/
 typedef struct Backup Backup;
 struct Backup
 {
-  /** The id of the backup. */
+  /** The id of the backup. It is only used as a helper value while reading
+    or writing metadata files. */
   size_t id;
 
   /** The time at which the backup was completed. */
