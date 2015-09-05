@@ -28,6 +28,9 @@
 #include "safe-write.h"
 
 #include <stdio.h>
+#include <string.h>
+
+#include "safe-wrappers.h"
 
 struct SafeWriteHandle
 {
@@ -49,3 +52,64 @@ struct SafeWriteHandle
     for useful error printing. */
   const char *real_file_path;
 };
+
+/** Appends a slash and the given filename to the specified path. It
+  differs from strAppendPath() by not allocating the string buffer inside
+  the programs internal memory pool.
+
+  @param path The path, to which the filename should be appended.
+  @param filename The filename, which should be appended to the path.
+
+  @return A new path, which must be freed by the caller using free().
+*/
+static char *appendPath(const char *path, const char *filename)
+{
+  size_t path_length = strlen(path);
+  size_t filename_length = strlen(filename);
+
+  size_t required_capacity =
+    sSizeAdd(path_length, sSizeAdd(filename_length, 2));
+
+  char *new_path = sMalloc(required_capacity);
+  memcpy(new_path, path, path_length);
+  memcpy(&new_path[path_length + 1], filename, filename_length);
+  new_path[path_length] = '/';
+  new_path[required_capacity - 1] = '\0';
+
+  return new_path;
+}
+
+/** Creates a new write handle for safe creation of files. The caller must
+  ensure that no open handle exists for the specified directory, or it will
+  lead to undefined behaviour. This function will create a file named
+  "tmp-file" inside the directory, which may get removed or overwritten at
+  any time while the handle is open.
+
+  @param dir_path The full or relative path of the directory inside which
+  the file should be created. The returned handle will keep a reference to
+  this string until it gets closed.
+  @param filename The name of the file inside the directory, which should
+  be the destination of all writes trough this handle.
+  @param real_file_path A human readable path or name of the file that the
+  returned handle represents. While the filename inside the specified
+  directory can be a number or a hash, this string will be printed to the
+  user on errors. The returned handle will keep a reference to this string
+  until it gets closed.
+
+  @return A new write handle which must be closed by the caller using
+  closeSafeWriteHandle().
+*/
+SafeWriteHandle *openSafeWriteHandle(const char *dir_path,
+                                     const char *filename,
+                                     const char *real_file_path)
+{
+  SafeWriteHandle *handle = sMalloc(sizeof *handle);
+
+  handle->dir_path        = dir_path;
+  handle->tmp_file_path   = appendPath(dir_path, "tmp-file");
+  handle->tmp_file_stream = sFopenWrite(handle->tmp_file_path);
+  handle->dest_path       = appendPath(dir_path, filename);
+  handle->real_file_path  = real_file_path;
+
+  return handle;
+}
