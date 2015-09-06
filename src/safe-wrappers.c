@@ -62,26 +62,6 @@ static FileStream *newFileStream(FILE *file, const char *path)
   return stream;
 }
 
-/** Destroys the given file stream without checking for errors.
-
-  @param stream The stream to be destroyed. It should not be used once this
-  function returns.
-
-  @return The path from the stream. Should not be freed by the caller.
-*/
-static const char *destroyFileStream(FileStream *stream)
-{
-  const char *path = stream->path;
-
-  int old_errno = errno;
-  fclose(stream->file);
-  errno = old_errno;
-
-  free(stream);
-
-  return path;
-}
-
 /** Applies the given stat function on the specified path and terminates
   the program on errors.
 
@@ -288,6 +268,26 @@ void sFclose(FileStream *stream)
   {
     dieErrno("failed to close \"%s\"", path);
   }
+}
+
+/** Destroys the given file stream without checking for errors.
+
+  @param stream The stream to be destroyed. It should not be used once this
+  function returns.
+
+  @return The path from the stream. Should not be freed by the caller.
+*/
+const char *destroyFileStream(FileStream *stream)
+{
+  const char *path = stream->path;
+
+  int old_errno = errno;
+  fclose(stream->file);
+  errno = old_errno;
+
+  free(stream);
+
+  return path;
 }
 
 /** Safe wrapper around opendir().

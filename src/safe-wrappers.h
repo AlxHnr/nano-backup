@@ -52,6 +52,7 @@ extern void sFwrite(const void *ptr, size_t size, FileStream *stream);
 extern bool Fwrite(const void *ptr, size_t size, FileStream *stream);
 extern void sFflush(FileStream *stream);
 extern void sFclose(FileStream *stream);
+extern const char *destroyFileStream(FileStream *stream);
 
 extern DIR *sOpenDir(const char *path);
 extern struct dirent *sReadDir(DIR *dir, const char *path);
