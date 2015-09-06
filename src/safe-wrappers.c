@@ -245,12 +245,21 @@ void sFread(void *ptr, size_t size, FileStream *stream)
 }
 
 /** Safe wrapper around fwrite(). Counterpart to sFread(). */
-void sFwrite(void *ptr, size_t size, FileStream *stream)
+void sFwrite(const void *ptr, size_t size, FileStream *stream)
 {
   if(fwrite(ptr, 1, size, stream->file) != size)
   {
     die("failed to write to \"%s\"", destroyFileStream(stream));
   }
+}
+
+/** Unsafe version of sFwrite().
+
+  @return True on success, otherwise false.
+*/
+bool Fwrite(const void *ptr, size_t size, FileStream *stream)
+{
+  return fwrite(ptr, 1, size, stream->file) == size;
 }
 
 /** Safe wrapper around fflush().

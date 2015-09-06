@@ -48,7 +48,8 @@ typedef struct FileStream FileStream;
 extern FileStream *sFopenRead(const char *path);
 extern FileStream *sFopenWrite(const char *path);
 extern void sFread(void *ptr, size_t size, FileStream *stream);
-extern void sFwrite(void *ptr, size_t size, FileStream *stream);
+extern void sFwrite(const void *ptr, size_t size, FileStream *stream);
+extern bool Fwrite(const void *ptr, size_t size, FileStream *stream);
 extern void sFflush(FileStream *stream);
 extern void sFclose(FileStream *stream);
 
