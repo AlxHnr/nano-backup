@@ -210,6 +210,20 @@ void sFwrite(void *ptr, size_t size, FILE *stream, const char *path)
   }
 }
 
+/** Safe wrapper around fflush().
+
+  @param stream The stream to be flushed.
+  @param path The path representing the file opened by the stream. Needed
+  for printing useful error messages.
+*/
+void sFflush(FILE *stream, const char *path)
+{
+  if(fflush(stream) != 0)
+  {
+    dieErrno("failed to flush \"%s\"", path);
+  }
+}
+
 /** Safe wrapper around fclose().
 
   @param stream The stream that should be closed.

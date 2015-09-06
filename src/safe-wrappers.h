@@ -45,6 +45,7 @@ extern FILE *sFopenRead(const char *path);
 extern FILE *sFopenWrite(const char *path);
 extern void sFread(void *ptr, size_t size, FILE *stream, const char *path);
 extern void sFwrite(void *ptr, size_t size, FILE *stream, const char *path);
+extern void sFflush(FILE *stream, const char *path);
 extern void sFclose(FILE *stream, const char *path);
 
 extern DIR *sOpenDir(const char *path);
