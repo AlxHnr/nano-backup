@@ -96,13 +96,13 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("sFopenRead()");
-  FILE *example_txt_1 = sFopenRead("example.txt");
+  FileStream *example_txt_1 = sFopenRead("example.txt");
   assert_true(example_txt_1 != NULL);
 
-  FILE *example_txt_2 = sFopenRead("example.txt");
+  FileStream *example_txt_2 = sFopenRead("example.txt");
   assert_true(example_txt_2 != NULL);
 
-  FILE *example_txt_3 = sFopenRead("example.txt");
+  FileStream *example_txt_3 = sFopenRead("example.txt");
   assert_true(example_txt_3 != NULL);
 
   assert_error(sFopenRead("non-existing-file.txt"),
@@ -110,7 +110,7 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("sFopenWrite()");
-  FILE *dev_null = sFopenWrite("/dev/null");
+  FileStream *dev_null = sFopenWrite("/dev/null");
   assert_true(dev_null != NULL);
 
   assert_error(sFopenWrite("non-existing-dir/file.txt"),
@@ -119,23 +119,22 @@ int main(void)
 
   testGroupStart("sFread()");
   char *example = sMalloc(25);
-  sFread(example, 25, example_txt_2, "example.txt");
+  sFread(example, 25, example_txt_2);
 
   assert_true(strncmp(example, "This is an example file.\n", 25) == 0);
   free(example);
 
   /* Try reading 50 bytes from a 25 byte long file. */
   example = sMalloc(50);
-  assert_error(sFread(example, 50, example_txt_3, "example.txt"),
+  assert_error(sFread(example, 50, example_txt_3),
                "reading \"example.txt\": reached end of file unexpectedly");
   free(example);
   testGroupEnd();
 
   testGroupStart("sFclose()");
-  sFclose(example_txt_1, "example.txt");
-  sFclose(example_txt_2, "example.txt");
-  sFclose(example_txt_3, "example.txt");
-  sFclose(dev_null, "/dev/null");
+  sFclose(example_txt_1);
+  sFclose(example_txt_2);
+  sFclose(dev_null);
   testGroupEnd();
 
   testGroupStart("sOpenDir()");
