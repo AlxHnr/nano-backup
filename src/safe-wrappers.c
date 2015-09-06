@@ -62,6 +62,26 @@ static FileStream *newFileStream(FILE *file, const char *path)
   return stream;
 }
 
+/** Destroys the given file stream without checking for errors.
+
+  @param stream The stream to be destroyed. It should not be used once this
+  function returns.
+
+  @return The path from the stream. Should not be freed by the caller.
+*/
+static const char *destroyFileStream(FileStream *stream)
+{
+  const char *path = stream->path;
+
+  int old_errno = errno;
+  fclose(stream->file);
+  errno = old_errno;
+
+  free(stream);
+
+  return path;
+}
+
 /** Applies the given stat function on the specified path and terminates
   the program on errors.
 
@@ -215,11 +235,11 @@ void sFread(void *ptr, size_t size, FileStream *stream)
     if(feof(stream->file))
     {
       die("reading \"%s\": reached end of file unexpectedly",
-          stream->path);
+          destroyFileStream(stream));
     }
     else
     {
-      die("IO error while reading \"%s\"", stream->path);
+      die("IO error while reading \"%s\"", destroyFileStream(stream));
     }
   }
 }
@@ -229,7 +249,7 @@ void sFwrite(void *ptr, size_t size, FileStream *stream)
 {
   if(fwrite(ptr, 1, size, stream->file) != size)
   {
-    die("failed to write to \"%s\"", stream->path);
+    die("failed to write to \"%s\"", destroyFileStream(stream));
   }
 }
 
@@ -241,7 +261,7 @@ void sFflush(FileStream *stream)
 {
   if(fflush(stream->file) != 0)
   {
-    dieErrno("failed to flush \"%s\"", stream->path);
+    dieErrno("failed to flush \"%s\"", destroyFileStream(stream));
   }
 }
 
@@ -251,9 +271,13 @@ void sFflush(FileStream *stream)
 */
 void sFclose(FileStream *stream)
 {
-  if(fclose(stream->file) != 0)
+  FILE *file = stream->file;
+  const char *path = stream->path;
+  free(stream);
+
+  if(fclose(file) != 0)
   {
-    dieErrno("failed to close \"%s\"", stream->path);
+    dieErrno("failed to close \"%s\"", path);
   }
 }
 
