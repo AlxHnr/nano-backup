@@ -29,11 +29,38 @@
 #include "safe-wrappers.h"
 
 #include <errno.h>
+#include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <unistd.h>
 
 #include "error-handling.h"
+
+struct FileStream
+{
+  /** The actual FILE pointer wrapped by this struct. */
+  FILE *file;
+
+  /** The full or relative path representing the open stream. Needed for
+    simplified printing of error messages. */
+  const char *path;
+};
+
+/** Wraps the given arguments in a new FileStream struct.
+
+  @param file The FILE stream which should be wrapped.
+  @param path The path which should be wrapped.
+
+  @return A new FileStream, containing the arguments of this function. It
+  must be freed by the caller using free().
+*/
+static FileStream *newFileStream(FILE *file, const char *path)
+{
+  FileStream *stream = sMalloc(sizeof *stream);
+  stream->file = file;
+  stream->path = path;
+  return stream;
+}
 
 /** Applies the given stat function on the specified path and terminates
   the program on errors.
@@ -142,12 +169,14 @@ size_t sSizeMul(size_t a, size_t b)
 
 /** Safe wrapper around fopen().
 
-  @param path The path to the file, which should be opened for reading.
+  @param path The path to the file which should be opened for reading. The
+  returned FileStream will keep a reference to this path, so make sure not
+  to free or to modify it unless the stream gets closed.
 
   @return A file stream that can be used for reading. Must be closed by the
   caller.
 */
-FILE *sFopenRead(const char *path)
+FileStream *sFopenRead(const char *path)
 {
   FILE *file = fopen(path, "rb");
   if(file == NULL)
@@ -155,17 +184,12 @@ FILE *sFopenRead(const char *path)
     dieErrno("failed to open \"%s\" for reading", path);
   }
 
-  return file;
+  return newFileStream(file, path);
 }
 
-/** Safe wrapper around fopen().
-
-  @param path The path to the file, which should be opened for writing.
-
-  @return A file stream that can be used for writing. Must be closed by the
-  caller.
-*/
-FILE *sFopenWrite(const char *path)
+/** Almost identical to sFopenRead(), but with the difference that the file
+  gets opened for writing. */
+FileStream *sFopenWrite(const char *path)
 {
   FILE *file = fopen(path, "wb");
   if(file == NULL)
@@ -173,7 +197,7 @@ FILE *sFopenWrite(const char *path)
     dieErrno("failed to open \"%s\" for writing", path);
   }
 
-  return file;
+  return newFileStream(file, path);
 }
 
 /** Safe wrapper around fread(). This function will terminate the program
@@ -182,58 +206,54 @@ FILE *sFopenWrite(const char *path)
 
   @param ptr The location for the data that should be read.
   @param size The amount of bytes to read.
-  @param stream A file stream.
-  @param path The path to the file corresponding to the given stream.
-  Needed for printing useful error messages.
+  @param stream A FileStream.
 */
-void sFread(void *ptr, size_t size, FILE *stream, const char *path)
+void sFread(void *ptr, size_t size, FileStream *stream)
 {
-  if(fread(ptr, 1, size, stream) != size)
+  if(fread(ptr, 1, size, stream->file) != size)
   {
-    if(feof(stream))
+    if(feof(stream->file))
     {
-      die("reading \"%s\": reached end of file unexpectedly", path);
+      die("reading \"%s\": reached end of file unexpectedly",
+          stream->path);
     }
     else
     {
-      die("IO error while reading \"%s\"", path);
+      die("IO error while reading \"%s\"", stream->path);
     }
   }
 }
 
 /** Safe wrapper around fwrite(). Counterpart to sFread(). */
-void sFwrite(void *ptr, size_t size, FILE *stream, const char *path)
+void sFwrite(void *ptr, size_t size, FileStream *stream)
 {
-  if(fwrite(ptr, 1, size, stream) != size)
+  if(fwrite(ptr, 1, size, stream->file) != size)
   {
-    die("failed to write to \"%s\"", path);
+    die("failed to write to \"%s\"", stream->path);
   }
 }
 
 /** Safe wrapper around fflush().
 
   @param stream The stream to be flushed.
-  @param path The path representing the file opened by the stream. Needed
-  for printing useful error messages.
 */
-void sFflush(FILE *stream, const char *path)
+void sFflush(FileStream *stream)
 {
-  if(fflush(stream) != 0)
+  if(fflush(stream->file) != 0)
   {
-    dieErrno("failed to flush \"%s\"", path);
+    dieErrno("failed to flush \"%s\"", stream->path);
   }
 }
 
 /** Safe wrapper around fclose().
 
   @param stream The stream that should be closed.
-  @param path The filepath for which the error message should be shown.
 */
-void sFclose(FILE *stream, const char *path)
+void sFclose(FileStream *stream)
 {
-  if(fclose(stream) != 0)
+  if(fclose(stream->file) != 0)
   {
-    dieErrno("failed to close \"%s\"", path);
+    dieErrno("failed to close \"%s\"", stream->path);
   }
 }
 
@@ -365,10 +385,10 @@ FileContent sGetFilesContent(const char *path)
   char *content = NULL;
   if(file_stats.st_size > 0)
   {
-    FILE *stream = sFopenRead(path);
+    FileStream *stream = sFopenRead(path);
     content = sMalloc(file_stats.st_size);
-    sFread(content, file_stats.st_size, stream, path);
-    sFclose(stream, path);
+    sFread(content, file_stats.st_size, stream);
+    sFclose(stream);
   }
 
   return (FileContent){ .content = content, .size = file_stats.st_size };

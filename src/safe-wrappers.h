@@ -29,7 +29,7 @@
 #ifndef _NANO_BACKUP_SAFE_WRAPPERS_H_
 #define _NANO_BACKUP_SAFE_WRAPPERS_H_
 
-#include <stdio.h>
+#include <stddef.h>
 #include <stdbool.h>
 
 #include <dirent.h>
@@ -41,12 +41,16 @@ extern void *sRealloc(void *ptr, size_t size);
 extern size_t sSizeAdd(size_t a, size_t b);
 extern size_t sSizeMul(size_t a, size_t b);
 
-extern FILE *sFopenRead(const char *path);
-extern FILE *sFopenWrite(const char *path);
-extern void sFread(void *ptr, size_t size, FILE *stream, const char *path);
-extern void sFwrite(void *ptr, size_t size, FILE *stream, const char *path);
-extern void sFflush(FILE *stream, const char *path);
-extern void sFclose(FILE *stream, const char *path);
+/** An opaque wrapper around FILE, which stores additional informations for
+  printing better error messages. */
+typedef struct FileStream FileStream;
+
+extern FileStream *sFopenRead(const char *path);
+extern FileStream *sFopenWrite(const char *path);
+extern void sFread(void *ptr, size_t size, FileStream *stream);
+extern void sFwrite(void *ptr, size_t size, FileStream *stream);
+extern void sFflush(FileStream *stream);
+extern void sFclose(FileStream *stream);
 
 extern DIR *sOpenDir(const char *path);
 extern struct dirent *sReadDir(DIR *dir, const char *path);
