@@ -28,9 +28,11 @@
 #include "safe-write.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "safe-wrappers.h"
+#include "error-handling.h"
 
 struct SafeWriteHandle
 {
@@ -52,6 +54,18 @@ struct SafeWriteHandle
     for useful error printing. */
   const char *real_file_path;
 };
+
+/** Frees the memory associated with the given handler. This function does
+  not finalize the write process, nor does it close its file handles.
+
+  @param handle The handle which should be freed.
+*/
+static void freeSafeWriteHandle(SafeWriteHandle *handle)
+{
+  free(handle->tmp_file_path);
+  free(handle->dest_path);
+  free(handle);
+}
 
 /** Appends a slash and the given filename to the specified path. It
   differs from strAppendPath() by not allocating the string buffer inside
@@ -112,4 +126,29 @@ SafeWriteHandle *openSafeWriteHandle(const char *dir_path,
   handle->real_file_path  = real_file_path;
 
   return handle;
+}
+
+/** Writes data trough a SafeWriteHandle and terminates the program on
+  failure.
+
+  @param handle The handle, which should be used to writing to the file.
+  @param data The data, which should be written.
+  @param size The size of the specified data in bytes.
+*/
+void writeSafeWriteHandle(SafeWriteHandle *handle,
+                          const void *data, size_t size)
+{
+  if(fwrite(data, 1, size, handle->tmp_file_stream) != size)
+  {
+    const char *dir_path = handle->dir_path;
+    const char *real_file_path = handle->real_file_path;
+
+    /* sFclose() is not used here, since it may terminate the program with
+       its own error message. */
+    fclose(handle->tmp_file_stream);
+    freeSafeWriteHandle(handle);
+
+    die("IO error while writing \"%s\" to \"%s\"",
+        real_file_path, dir_path);
+  }
 }
