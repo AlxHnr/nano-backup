@@ -27,7 +27,6 @@
 
 #include "safe-write.h"
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -44,7 +43,7 @@ struct SafeWriteHandle
   char *tmp_file_path;
 
   /** The stream to write to the temporary file. */
-  FILE *tmp_file_stream;
+  FileStream *tmp_file_stream;
 
   /** The final filepath, to which the temporary file gets renamed. */
   char *dest_path;
@@ -138,14 +137,12 @@ SafeWriteHandle *openSafeWriteHandle(const char *dir_path,
 void writeSafeWriteHandle(SafeWriteHandle *handle,
                           const void *data, size_t size)
 {
-  if(fwrite(data, 1, size, handle->tmp_file_stream) != size)
+  if(Fwrite(data, size, handle->tmp_file_stream) == false)
   {
     const char *dir_path = handle->dir_path;
     const char *real_file_path = handle->real_file_path;
 
-    /* sFclose() is not used here, since it may terminate the program with
-       its own error message. */
-    fclose(handle->tmp_file_stream);
+    destroyFileStream(handle->tmp_file_stream);
     freeSafeWriteHandle(handle);
 
     die("IO error while writing \"%s\" to \"%s\"",
