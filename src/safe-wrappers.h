@@ -61,6 +61,7 @@ extern void sCloseDir(DIR *dir, const char *path);
 extern bool sPathExists(const char *path);
 extern struct stat sStat(const char *path);
 extern struct stat sLStat(const char *path);
+extern void sRename(const char *oldpath, const char *newpath);
 
 /** A simple struct, containing the content of the file and its size. */
 typedef struct

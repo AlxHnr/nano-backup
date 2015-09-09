@@ -406,6 +406,19 @@ struct stat sLStat(const char *path)
   return safeStat(path, lstat);
 }
 
+/** Safe wrapper around rename().
+
+  @param oldpath Path to the file which should be renamed.
+  @param newpath The new filepath.
+*/
+void sRename(const char *oldpath, const char *newpath)
+{
+  if(rename(oldpath, newpath) != 0)
+  {
+    dieErrno("failed to rename \"%s\" to \"%s\"", oldpath, newpath);
+  }
+}
+
 /** Reads an entire file into memory.
 
   @param path The path to the file.
