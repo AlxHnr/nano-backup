@@ -27,8 +27,10 @@
 
 #include "safe-write.h"
 
+#include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "safe-wrappers.h"
 #include "error-handling.h"
@@ -147,5 +149,39 @@ void writeSafeWriteHandle(SafeWriteHandle *handle,
 
     die("IO error while writing \"%s\" to \"%s\"",
         real_file_path, dir_path);
+  }
+}
+
+/** Finalizes the write process represented by the given handle. All its
+  data will be written to disk and the temporary file will be renamed to
+  its final filename.
+
+  @param handle The handle which write process should be finished. This
+  function will destroy the handle and free all memory associated with it.
+*/
+void closeSafeWriteHandle(SafeWriteHandle *handle)
+{
+  const char *dir_path = handle->dir_path;
+  const char *real_file_path = handle->real_file_path;
+
+  if(Ftodisk(handle->tmp_file_stream) == false)
+  {
+    destroyFileStream(handle->tmp_file_stream);
+    freeSafeWriteHandle(handle);
+
+    dieErrno("failed to flush/sync \"%s\" to \"%s\"",
+             real_file_path, dir_path);
+  }
+
+  sFclose(handle->tmp_file_stream);
+  sRename(handle->tmp_file_path, handle->dest_path);
+  freeSafeWriteHandle(handle);
+
+  int dir_descriptor = open(dir_path, O_WRONLY, 0);
+  if(dir_descriptor == -1 ||
+     fdatasync(dir_descriptor) != 0 ||
+     close(dir_descriptor) != 0)
+  {
+    dieErrno("failed to sync \"%s\" to device", dir_path);
   }
 }

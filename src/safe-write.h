@@ -32,7 +32,7 @@
 #ifndef _NANO_BACKUP_SAFE_WRITE_H_
 #define _NANO_BACKUP_SAFE_WRITE_H_
 
-#include "string-utils.h"
+#include <stddef.h>
 
 /** An opaque struct, which allows safe creation of files inside
   directories. */
