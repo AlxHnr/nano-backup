@@ -242,16 +242,22 @@ bool Fwrite(const void *ptr, size_t size, FileStream *stream)
   return fwrite(ptr, 1, size, stream->file) == size;
 }
 
-/** Safe wrapper around fflush().
+/** Flushes and synchronizes the given FileStreams buffer to disk without
+  handling errors.
 
-  @param stream The stream to be flushed.
+  @param stream The output stream which should be flushed. If the passed
+  stream is an input stream, the behaviour is undefined.
+
+  @return True on success and false on failure, in which case errno will be
+  set by either fileno(), fflush() or fdatasync().
 */
-void sFflush(FileStream *stream)
+bool Ftodisk(FileStream *stream)
 {
-  if(fflush(stream->file) != 0)
-  {
-    dieErrno("failed to flush \"%s\"", destroyFileStream(stream));
-  }
+  int descriptor = fileno(stream->file);
+
+  return descriptor != -1 &&
+    fflush(stream->file) == 0 &&
+    fdatasync(descriptor) == 0;
 }
 
 /** Safe wrapper around fclose().
@@ -270,7 +276,8 @@ void sFclose(FileStream *stream)
   }
 }
 
-/** Destroys the given file stream without checking for errors.
+/** Destroys the given file stream without checking for errors. It does not
+  modify errno.
 
   @param stream The stream to be destroyed. It should not be used once this
   function returns.
