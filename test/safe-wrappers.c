@@ -216,6 +216,25 @@ int main(void)
   assert_true(test_file_2_content.content == NULL);
   testGroupEnd();
 
+  testGroupStart("sRename()");
+  assert_true(sPathExists("tmp/file-1") == false);
+  sFclose(sFopenWrite("tmp/file-1"));
+
+  assert_true(sPathExists("tmp/file-1"));
+  assert_true(sPathExists("tmp/file-2") == false);
+
+  sRename("tmp/file-1", "tmp/file-2");
+
+  assert_true(sPathExists("tmp/file-1") == false);
+  assert_true(sPathExists("tmp/file-2"));
+
+  assert_error(sRename("non-existing-file.txt", "tmp/file-2"),
+               "failed to rename \"non-existing-file.txt\" to \"tmp/file-2\": No such file or directory");
+
+  assert_true(sPathExists("tmp/file-2"));
+  assert_true(sStat("tmp/file-2").st_size == 0);
+  testGroupEnd();
+
   testGroupStart("sOpenDir()");
   DIR *test_directory = sOpenDir("test directory");
   assert_true(test_directory != NULL);
