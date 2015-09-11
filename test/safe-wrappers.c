@@ -95,82 +95,7 @@ int main(void)
   assert_error(sSizeMul(SIZE_MAX - 80, 295), expected_error);
   testGroupEnd();
 
-  testGroupStart("sFopenRead()");
-  FileStream *example_txt_1 = sFopenRead("example.txt");
-  assert_true(example_txt_1 != NULL);
-
-  FileStream *example_txt_2 = sFopenRead("example.txt");
-  assert_true(example_txt_2 != NULL);
-
-  FileStream *example_txt_3 = sFopenRead("example.txt");
-  assert_true(example_txt_3 != NULL);
-
-  assert_error(sFopenRead("non-existing-file.txt"),
-               "failed to open \"non-existing-file.txt\" for reading: No such file or directory");
-  testGroupEnd();
-
-  testGroupStart("sFopenWrite()");
-  FileStream *dev_null = sFopenWrite("/dev/null");
-  assert_true(dev_null != NULL);
-
-  assert_error(sFopenWrite("non-existing-dir/file.txt"),
-               "failed to open \"non-existing-dir/file.txt\" for writing: No such file or directory");
-  testGroupEnd();
-
-  testGroupStart("sFread()");
-  char *example = sMalloc(25);
-  sFread(example, 25, example_txt_2);
-
-  assert_true(strncmp(example, "This is an example file.\n", 25) == 0);
-  free(example);
-
-  /* Try reading 50 bytes from a 25 byte long file. */
-  example = sMalloc(50);
-  assert_error(sFread(example, 50, example_txt_3),
-               "reading \"example.txt\": reached end of file unexpectedly");
-  free(example);
-  testGroupEnd();
-
-  testGroupStart("sFclose()");
-  sFclose(example_txt_1);
-  sFclose(example_txt_2);
-  sFclose(dev_null);
-  testGroupEnd();
-
-  testGroupStart("sOpenDir()");
-  DIR *test_directory = sOpenDir("test directory");
-  assert_true(test_directory != NULL);
-
-  DIR *test_foo_1 = sOpenDir("./test directory/foo 1/");
-  assert_true(test_foo_1 != NULL);
-
-  assert_error(sOpenDir("non-existing-directory"),
-               "failed to open directory \"non-existing-directory\": No such file or directory");
-  testGroupEnd();
-
-  testGroupStart("sReadDir()");
-  /* Count example files in "test directory". */
-  for(size_t counter = 0; counter < 17; counter++)
-  {
-    checkReadDir(test_directory, "test directory");
-  }
-  assert_true(sReadDir(test_directory, "test directory") == NULL);
-
-  /* Count example files in "test directory/foo 1". */
-  for(size_t counter = 0; counter < 5; counter++)
-  {
-    checkReadDir(test_foo_1, "test directory/foo 1");
-  }
-  assert_true(sReadDir(test_foo_1, "test directory/foo 1") == NULL);
-  testGroupEnd();
-
-  testGroupStart("sCloseDir()");
-  sCloseDir(test_directory, "test directory");
-  sCloseDir(test_foo_1, "test directory/foo 1");
-  testGroupEnd();
-
   testGroupStart("sPathExists()");
-  errno = 0;
   assert_true(checkPathExists("empty.txt"));
   assert_true(checkPathExists("example.txt"));
   assert_true(checkPathExists("symlink.txt"));
@@ -205,6 +130,35 @@ int main(void)
   assert_true(example_stat.st_size == 25);
   testGroupEnd();
 
+  testGroupStart("FileStream reading functions");
+  assert_error(sFopenRead("non-existing-file.txt"),
+               "failed to open \"non-existing-file.txt\" for reading: No such file or directory");
+
+  const char *example_path = "example.txt";
+  FileStream *example_read = sFopenRead(example_path);
+  assert_true(example_read != NULL);
+
+  char buffer[50] = { 0 };
+  sFread(buffer, 25, example_read);
+
+  assert_true(strncmp(buffer, "This is an example file.\n", 25) == 0);
+
+  errno = 0;
+  assert_true(Fdestroy(example_read) == example_path);
+  assert_true(errno == 0);
+
+  /* Try reading 50 bytes from a 25 byte long file. */
+  example_read = sFopenRead("example.txt");
+  assert_true(example_read != NULL);
+  assert_error(sFread(buffer, 50, example_read),
+               "reading \"example.txt\": reached end of file unexpectedly");
+
+  /* Test sFclose(). */
+  example_read = sFopenRead("example.txt");
+  assert_true(example_read != NULL);
+  sFclose(example_read);
+  testGroupEnd();
+
   testGroupStart("sGetFilesContent()");
   assert_error(sGetFilesContent("non-existing-file.txt"), "failed to "
                "access \"non-existing-file.txt\": No such file or "
@@ -220,5 +174,77 @@ int main(void)
   FileContent empty_content = sGetFilesContent("empty.txt");
   assert_true(empty_content.size == 0);
   assert_true(empty_content.content == NULL);
+  testGroupEnd();
+
+  testGroupStart("FileStream writing functions");
+  assert_error(sFopenWrite("non-existing-dir/file.txt"),
+               "failed to open \"non-existing-dir/file.txt\" for writing: No such file or directory");
+
+  assert_true(sPathExists("tmp/test-file-1") == false);
+  FileStream *test_file = sFopenWrite("tmp/test-file-1");
+  assert_true(sPathExists("tmp/test-file-1"));
+  assert_true(test_file != NULL);
+
+  sFwrite("hello", 5, test_file);
+  assert_true(Fwrite(" ", 1, test_file) == true);
+  assert_true(Ftodisk(test_file) == true);
+  assert_true(Fwrite("world", 5, test_file) == true);
+  sFwrite("!", 1, test_file);
+  assert_true(Ftodisk(test_file) == true);
+  assert_true(Ftodisk(test_file) == true);
+  sFclose(test_file);
+
+  FileContent test_file_1_content = sGetFilesContent("tmp/test-file-1");
+  assert_true(test_file_1_content.size == 12);
+  assert_true(memcmp(test_file_1_content.content, "hello world!", 12) == 0);
+  free(test_file_1_content.content);
+
+  /* Assert that the path gets captured properly. */
+  const char *test_file_path = "tmp/test-file-2";
+
+  assert_true(sPathExists(test_file_path) == false);
+  test_file = sFopenWrite(test_file_path);
+  assert_true(sPathExists(test_file_path));
+  assert_true(test_file != NULL);
+
+  errno = 0;
+  assert_true(Fdestroy(test_file) == test_file_path);
+  assert_true(errno == 0);
+
+  FileContent test_file_2_content = sGetFilesContent("tmp/test-file-2");
+  assert_true(test_file_2_content.size == 0);
+  assert_true(test_file_2_content.content == NULL);
+  testGroupEnd();
+
+  testGroupStart("sOpenDir()");
+  DIR *test_directory = sOpenDir("test directory");
+  assert_true(test_directory != NULL);
+
+  DIR *test_foo_1 = sOpenDir("./test directory/foo 1/");
+  assert_true(test_foo_1 != NULL);
+
+  assert_error(sOpenDir("non-existing-directory"),
+               "failed to open directory \"non-existing-directory\": No such file or directory");
+  testGroupEnd();
+
+  testGroupStart("sReadDir()");
+  /* Count example files in "test directory". */
+  for(size_t counter = 0; counter < 17; counter++)
+  {
+    checkReadDir(test_directory, "test directory");
+  }
+  assert_true(sReadDir(test_directory, "test directory") == NULL);
+
+  /* Count example files in "test directory/foo 1". */
+  for(size_t counter = 0; counter < 5; counter++)
+  {
+    checkReadDir(test_foo_1, "test directory/foo 1");
+  }
+  assert_true(sReadDir(test_foo_1, "test directory/foo 1") == NULL);
+  testGroupEnd();
+
+  testGroupStart("sCloseDir()");
+  sCloseDir(test_directory, "test directory");
+  sCloseDir(test_foo_1, "test directory/foo 1");
   testGroupEnd();
 }
