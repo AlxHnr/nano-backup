@@ -214,6 +214,17 @@ int main(void)
   FileContent test_file_2_content = sGetFilesContent("tmp/test-file-2");
   assert_true(test_file_2_content.size == 0);
   assert_true(test_file_2_content.content == NULL);
+
+  /* Test overwriting behaviour. */
+  test_file = sFopenWrite("tmp/test-file-1");
+  assert_true(test_file != NULL);
+  sFwrite("Test 1 2 3", 10, test_file);
+  sFclose(test_file);
+
+  FileContent test_file_content = sGetFilesContent("tmp/test-file-1");
+  assert_true(test_file_content.size == 10);
+  assert_true(memcmp(test_file_content.content, "Test 1 2 3", 10) == 0);
+  free(test_file_content.content);
   testGroupEnd();
 
   testGroupStart("sRename()");
