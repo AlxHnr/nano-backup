@@ -215,11 +215,11 @@ void sFread(void *ptr, size_t size, FileStream *stream)
     if(feof(stream->file))
     {
       die("reading \"%s\": reached end of file unexpectedly",
-          destroyFileStream(stream));
+          Fdestroy(stream));
     }
     else
     {
-      die("IO error while reading \"%s\"", destroyFileStream(stream));
+      die("IO error while reading \"%s\"", Fdestroy(stream));
     }
   }
 }
@@ -229,7 +229,7 @@ void sFwrite(const void *ptr, size_t size, FileStream *stream)
 {
   if(fwrite(ptr, 1, size, stream->file) != size)
   {
-    die("failed to write to \"%s\"", destroyFileStream(stream));
+    die("failed to write to \"%s\"", Fdestroy(stream));
   }
 }
 
@@ -284,7 +284,7 @@ void sFclose(FileStream *stream)
 
   @return The path from the stream. Should not be freed by the caller.
 */
-const char *destroyFileStream(FileStream *stream)
+const char *Fdestroy(FileStream *stream)
 {
   const char *path = stream->path;
 

@@ -144,7 +144,7 @@ void writeSafeWriteHandle(SafeWriteHandle *handle,
     const char *dir_path = handle->dir_path;
     const char *real_file_path = handle->real_file_path;
 
-    destroyFileStream(handle->tmp_file_stream);
+    Fdestroy(handle->tmp_file_stream);
     freeSafeWriteHandle(handle);
 
     die("IO error while writing \"%s\" to \"%s\"",
@@ -166,7 +166,7 @@ void closeSafeWriteHandle(SafeWriteHandle *handle)
 
   if(Ftodisk(handle->tmp_file_stream) == false)
   {
-    destroyFileStream(handle->tmp_file_stream);
+    Fdestroy(handle->tmp_file_stream);
     freeSafeWriteHandle(handle);
 
     dieErrno("failed to flush/sync \"%s\" to \"%s\"",
