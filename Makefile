@@ -28,6 +28,8 @@ build/%.o:
 test: $(TESTS) $(GENERATED_CONFIGS) test/data/test\ directory/.empty/
 	@(cd test/data/ && \
 	  for test in $(TESTS); do \
+	  rm -rf tmp/; \
+	  mkdir -p tmp/; \
 	  echo "Running $$(tput setf 6)$$test$$(tput sgr0):"; \
 	  "../../$$test" || exit 1; \
 	  echo; \
@@ -50,4 +52,4 @@ doc:
 	doxygen
 
 clean:
-	- rm -rf build/ doc/ test/data/generated-config-files/
+	- rm -rf build/ doc/ test/data/generated-config-files/ test/data/tmp/
