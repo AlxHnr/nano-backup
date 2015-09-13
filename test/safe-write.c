@@ -118,4 +118,11 @@ int main(void)
   assert_true(memcmp(foo_content.content, "Nano Backup", 11) == 0);
   free(foo_content.content);
   testGroupEnd();
+
+  testGroupStart("overwrite with empty file");
+  closeSafeWriteHandle(openSafeWriteHandle("tmp", "foo.txt", "foo.txt"));
+  assert_true(sPathExists("tmp/tmp-file") == false);
+  assert_true(sPathExists("tmp/foo.txt")  == true);
+  assert_true(sStat("tmp/foo.txt").st_size == 0);
+  testGroupEnd();
 }
