@@ -101,4 +101,21 @@ int main(void)
   assert_true(memcmp(content.content, "This is a test.", 15) == 0);
   free(content.content);
   testGroupEnd();
+
+  testGroupStart("behaviour with existing tmp-file");
+  sRename("tmp/test.txt", "tmp/tmp-file");
+  assert_true(sStat("tmp/tmp-file").st_size == 15);
+
+  handle = openSafeWriteHandle("tmp", "foo.txt", "foo.txt");
+  writeSafeWriteHandle(handle, "Nano Backup", 11);
+  closeSafeWriteHandle(handle);
+
+  assert_true(sPathExists("tmp/tmp-file") == false);
+  assert_true(sPathExists("tmp/foo.txt")  == true);
+
+  FileContent foo_content = sGetFilesContent("tmp/foo.txt");
+  assert_true(foo_content.size == 11);
+  assert_true(memcmp(foo_content.content, "Nano Backup", 11) == 0);
+  free(foo_content.content);
+  testGroupEnd();
 }
