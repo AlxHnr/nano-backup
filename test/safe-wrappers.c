@@ -153,6 +153,10 @@ int main(void)
   assert_error(sFread(buffer, 50, example_read),
                "reading \"example.txt\": reached end of file unexpectedly");
 
+  /* Provoke failure by reading from a write-only stream. */
+  assert_error(sFread(buffer, 10, sFopenWrite("tmp/example-write")),
+               "IO error while reading \"tmp/example-write\"");
+
   /* Test sFclose(). */
   example_read = sFopenRead("example.txt");
   assert_true(example_read != NULL);
@@ -225,6 +229,14 @@ int main(void)
   assert_true(test_file_content.size == 10);
   assert_true(memcmp(test_file_content.content, "Test 1 2 3", 10) == 0);
   free(test_file_content.content);
+
+  /* Provoke errors by writing to a read-only stream. */
+  assert_error(sFwrite("hello", 5, sFopenRead("example.txt")),
+               "failed to write to \"example.txt\"");
+
+  test_file = sFopenRead("example.txt");
+  assert_true(Fwrite("hello", 5, test_file) == false);
+  sFclose(test_file);
   testGroupEnd();
 
   testGroupStart("sRename()");
