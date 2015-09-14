@@ -661,15 +661,15 @@ static Metadata *genTestData2(void)
     mpAlloc(sSizeMul(sizeof *metadata->backup_history,
                      metadata->backup_history_length));
 
-  metadata->backup_history[0].id = 1;
+  metadata->backup_history[0].id = 0;
   metadata->backup_history[0].timestamp = 3487;
   metadata->backup_history[0].ref_count = 0;
 
-  metadata->backup_history[1].id = 2;
+  metadata->backup_history[1].id = 1;
   metadata->backup_history[1].timestamp = 2645;
   metadata->backup_history[1].ref_count = 0;
 
-  metadata->backup_history[2].id = 3;
+  metadata->backup_history[2].id = 2;
   metadata->backup_history[2].timestamp = 9742;
   metadata->backup_history[2].ref_count = 0;
 
@@ -684,12 +684,12 @@ static Metadata *genTestData2(void)
   metadata->paths = home;
 
   PathNode *user = createPathNode("user", BPOL_mirror, home, metadata);
-  appendHistDirectory(user, &metadata->current_backup, 1000, 75, 120948, 0600);
+  appendHistDirectory(user, &metadata->backup_history[0], 1000, 75, 120948, 0600);
 
   PathNode *bashrc = createPathNode(".bashrc", BPOL_track, user, metadata);
-  appendHistRegular(bashrc, &metadata->current_backup, 983, 57, 1920,
+  appendHistRegular(bashrc, &metadata->backup_history[0], 983, 57, 1920,
                     0655, 579, (uint8_t *)"8130eb0cdef2019a2c1f");
-  appendHistNonExisting(bashrc, &metadata->backup_history[0]);
+  appendHistNonExisting(bashrc, &metadata->backup_history[1]);
   appendHistRegular(bashrc, &metadata->backup_history[2], 1000, 75, 9348,
                     0755, 252, (uint8_t *)"cdef2019a2c1f8130eb0");
 
@@ -697,7 +697,7 @@ static Metadata *genTestData2(void)
   appendHistDirectory(config, &metadata->backup_history[0], 783, 192, 3487901, 0575);
 
   PathNode *usr = createPathNode("usr", BPOL_copy, NULL, metadata);
-  appendHistDirectory(usr, &metadata->current_backup, 3497, 2389, 183640, 0655);
+  appendHistDirectory(usr, &metadata->backup_history[0], 3497, 2389, 183640, 0655);
   appendHistDirectory(usr, &metadata->backup_history[1], 3497, 2389, 816034, 0565);
 
   metadata->paths->next = usr;
@@ -712,18 +712,18 @@ static Metadata *genTestData2(void)
 static void checkTestData2(Metadata *metadata)
 {
   checkMetadata(metadata, 1);
-  assert_true(metadata->current_backup.ref_count == 3);
+  assert_true(metadata->current_backup.ref_count == 0);
   assert_true(metadata->backup_history_length == 3);
 
-  assert_true(metadata->backup_history[0].id == 1);
+  assert_true(metadata->backup_history[0].id == 0);
   assert_true(metadata->backup_history[0].timestamp == 3487);
-  assert_true(metadata->backup_history[0].ref_count == 2);
+  assert_true(metadata->backup_history[0].ref_count == 4);
 
-  assert_true(metadata->backup_history[1].id == 2);
+  assert_true(metadata->backup_history[1].id == 1);
   assert_true(metadata->backup_history[1].timestamp == 2645);
-  assert_true(metadata->backup_history[1].ref_count == 1);
+  assert_true(metadata->backup_history[1].ref_count == 2);
 
-  assert_true(metadata->backup_history[2].id == 3);
+  assert_true(metadata->backup_history[2].id == 2);
   assert_true(metadata->backup_history[2].timestamp == 9742);
   assert_true(metadata->backup_history[2].ref_count == 3);
 
@@ -736,20 +736,20 @@ static void checkTestData2(Metadata *metadata)
   mustHaveDirectory(home, &metadata->backup_history[2], 0, 0, 12878, 0755);
 
   PathNode *user = findNode(home->subnodes, "/home/user", BPOL_mirror, 1, 2);
-  mustHaveDirectory(user, &metadata->current_backup, 1000, 75, 120948, 0600);
+  mustHaveDirectory(user, &metadata->backup_history[0], 1000, 75, 120948, 0600);
 
   PathNode *bashrc = findNode(user->subnodes, "/home/user/.bashrc", BPOL_track, 3, 0);
+  mustHaveRegular(bashrc, &metadata->backup_history[0], 983, 57, 1920,
+                  0655, 579, (uint8_t *)"8130eb0cdef2019a2c1f");
+  mustHaveNonExisting(bashrc, &metadata->backup_history[1]);
   mustHaveRegular(bashrc, &metadata->backup_history[2], 1000, 75, 9348,
                   0755, 252, (uint8_t *)"cdef2019a2c1f8130eb0");
-  mustHaveNonExisting(bashrc, &metadata->backup_history[0]);
-  mustHaveRegular(bashrc, &metadata->current_backup, 983, 57, 1920,
-                  0655, 579, (uint8_t *)"8130eb0cdef2019a2c1f");
 
   PathNode *config = findNode(user->subnodes, "/home/user/.config", BPOL_track, 1, 0);
   mustHaveDirectory(config, &metadata->backup_history[0], 783, 192, 3487901, 0575);
 
   PathNode *usr = findNode(metadata->paths, "/usr", BPOL_copy, 2, 0);
-  mustHaveDirectory(usr, &metadata->current_backup, 3497, 2389, 183640, 0655);
+  mustHaveDirectory(usr, &metadata->backup_history[0], 3497, 2389, 183640, 0655);
   mustHaveDirectory(usr, &metadata->backup_history[1], 3497, 2389, 816034, 0565);
 }
 
