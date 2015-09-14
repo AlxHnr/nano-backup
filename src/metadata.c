@@ -32,6 +32,7 @@
 #include <string.h>
 #include <limits.h>
 
+#include "safe-write.h"
 #include "memory-pool.h"
 #include "safe-wrappers.h"
 #include "error-handling.h"
@@ -143,6 +144,16 @@ static uint8_t read8(FileContent content, size_t *reader_position,
   return byte;
 }
 
+/** Counterpart to read8().
+
+  @param value The value which should be written.
+  @param handle The handle to be used for writing.
+*/
+static void write8(uint8_t value, SafeWriteHandle *handle)
+{
+  writeSafeWriteHandle(&value, sizeof(value), handle);
+}
+
 /** The 4 byte version of read8() which takes care of endian conversion. */
 static uint32_t read32(FileContent content, size_t *reader_position,
                        const char *metadata_path)
@@ -156,6 +167,13 @@ static uint32_t read32(FileContent content, size_t *reader_position,
   return convertEndian32(size);
 }
 
+/** The 4 byte version of write8() which takes care of endian conversion. */
+static void write32(uint32_t value, SafeWriteHandle *handle)
+{
+  uint32_t converted_value = convertEndian32(value);
+  writeSafeWriteHandle(&converted_value, sizeof(converted_value), handle);
+}
+
 /** The 8 byte version of read8() which takes care of endian conversion. */
 static uint64_t read64(FileContent content, size_t *reader_position,
                        const char *metadata_path)
@@ -167,6 +185,13 @@ static uint64_t read64(FileContent content, size_t *reader_position,
   *reader_position += sizeof(size);
 
   return convertEndian64(size);
+}
+
+/** The 8 byte version of write8() which takes care of endian conversion. */
+static void write64(uint64_t value, SafeWriteHandle *handle)
+{
+  uint64_t converted_value = convertEndian64(value);
+  writeSafeWriteHandle(&converted_value, sizeof(converted_value), handle);
 }
 
 /** A wrapper around read64(), which ensures that the read value fits into
@@ -219,6 +244,12 @@ static void readHash(FileContent content, size_t *reader_position,
   *reader_position += SHA_DIGEST_LENGTH;
 }
 
+/** Counterpart to readHash(). */
+static void writeHash(uint8_t *hash, SafeWriteHandle *handle)
+{
+  writeSafeWriteHandle(hash, SHA_DIGEST_LENGTH, handle);
+}
+
 /** Reads a PathHistory struct from the content of the given file.
 
   @param content The content containing the PathHistory.
@@ -242,7 +273,6 @@ static PathHistory *readPathHistory(FileContent content,
   point->backup = &backup_history[id];
 
   point->state.type = read8(content, reader_position, metadata_path);
-
   point->state.uid = read32(content, reader_position, metadata_path);
   point->state.gid = read32(content, reader_position, metadata_path);
   point->state.timestamp =
@@ -328,6 +358,52 @@ static PathHistory *readFullPathHistory(FileContent content,
   return first_point;
 }
 
+/** Writes the given history list via the specified SafeWriteHandle.
+  Counterpart to readFullPathHistory().
+
+  @param starting_point The first element in the list.
+  @param handle The handle which should be used for writing.
+*/
+static void writePathHistoryList(PathHistory *starting_point,
+                                 SafeWriteHandle *handle)
+{
+  size_t history_length = 0;
+  for(PathHistory *point = starting_point;
+      point != NULL; point = point->next)
+  {
+    history_length = sSizeAdd(history_length, 1);
+  }
+
+  write64(history_length, handle);
+  for(PathHistory *point = starting_point;
+      point != NULL; point = point->next)
+  {
+    write64(point->backup->id, handle);
+    write8(point->state.type,  handle);
+    write32(point->state.uid,  handle);
+    write32(point->state.gid,  handle);
+    write64(point->state.timestamp, handle);
+
+    if(point->state.type == PST_regular)
+    {
+      write32(point->state.metadata.reg.mode, handle);
+      write64(point->state.metadata.reg.size, handle);
+      writeHash(point->state.metadata.reg.hash, handle);
+    }
+    else if(point->state.type == PST_symlink)
+    {
+      size_t target_length = strlen(point->state.metadata.sym_target);
+      write64(target_length, handle);
+      writeSafeWriteHandle(point->state.metadata.sym_target,
+                           target_length, handle);
+    }
+    else if(point->state.type == PST_directory)
+    {
+      write32(point->state.metadata.dir_mode, handle);
+    }
+  }
+}
+
 /** Reads the subnodes of the given parent node recursively.
 
   @param content The content of the file from which the subnodes should be
@@ -396,6 +472,33 @@ static PathNode *readPathSubnodes(FileContent content,
   return node_tree;
 }
 
+/** Writes the given list of path nodes recursively.
+
+  @param node_list The list, which should be written.
+  @param handle The handle, which should be used for writing.
+*/
+static void writePathList(PathNode *node_list, SafeWriteHandle *handle)
+{
+  size_t list_length = 0;
+  for(PathNode *node = node_list; node != NULL; node = node->next)
+  {
+    list_length = sSizeAdd(list_length, 1);
+  }
+
+  write64(list_length, handle);
+
+  for(PathNode *node = node_list; node != NULL; node = node->next)
+  {
+    String name = strSplitPath(node->path).tail;
+    write64(name.length, handle);
+    writeSafeWriteHandle(name.str, name.length, handle);
+
+    write8(node->policy, handle);
+    writePathHistoryList(node->history, handle);
+    writePathList(node->subnodes, handle);
+  }
+}
+
 /** Loads the metadata of a repository.
 
   @param path The full or relative path to the metadata file.
@@ -452,4 +555,57 @@ Metadata *loadMetadata(const char *path)
 
   free(content.content);
   return metadata;
+}
+
+/** Writes the given metadata into the specified repositories metadata
+  file. Counterpart to loadMetadata().
+
+  @param metadata The metadata that should be written.
+  @param repo_path The full or relative path to the repository, which
+  should contain the metadata.
+*/
+void writeMetadata(Metadata *metadata, const char *repo_path)
+{
+  SafeWriteHandle *handle =
+    openSafeWriteHandle(repo_path, "metadata", "metadata");
+
+  /* Count referenced history points and update IDs. */
+  size_t id_counter = metadata->current_backup.ref_count > 0;
+  for(size_t index = 0; index < metadata->backup_history_length; index++)
+  {
+    if(metadata->backup_history[index].ref_count > 0)
+    {
+      metadata->backup_history[index].id = id_counter;
+      id_counter = sSizeAdd(id_counter, 1);
+    }
+  }
+
+  /* Write the backup history. */
+  write64(id_counter, handle);
+
+  if(metadata->current_backup.ref_count > 0)
+  {
+    write64(metadata->current_backup.timestamp, handle);
+    write64(metadata->current_backup.ref_count, handle);
+  }
+
+  for(size_t index = 0; index < metadata->backup_history_length; index++)
+  {
+    Backup *backup = &metadata->backup_history[index];
+    if(backup->ref_count > 0)
+    {
+      write64(backup->timestamp, handle);
+      write64(backup->ref_count, handle);
+    }
+  }
+
+  /* Write the config files history. */
+  writePathHistoryList(metadata->config_history, handle);
+
+  /* Write the path tree. */
+  write64(metadata->total_path_count, handle);
+  writePathList(metadata->paths, handle);
+
+  /* Finish writing. */
+  closeSafeWriteHandle(handle);
 }
