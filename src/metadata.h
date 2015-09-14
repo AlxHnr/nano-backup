@@ -150,7 +150,8 @@ typedef struct
     be undefined. */
   PathHistory *config_history;
 
-  /** The amount of paths in the tree. */
+  /** The amount of paths in the tree. It is only used as a helper value
+    while reading or writing metadata files. */
   size_t total_path_count;
 
   /** A StringTable associating a full, absolute filepath with its
@@ -164,5 +165,6 @@ typedef struct
 }Metadata;
 
 extern Metadata *loadMetadata(const char *path);
+extern void writeMetadata(Metadata* metadata, const char *repo_path);
 
 #endif
