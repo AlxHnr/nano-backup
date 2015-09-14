@@ -60,10 +60,10 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("writeSafeWriteHandle()");
-  writeSafeWriteHandle(handle, "Hello",  5);
-  writeSafeWriteHandle(handle, " ",      1);
-  writeSafeWriteHandle(handle, "backup", 6);
-  writeSafeWriteHandle(handle, "!",      1);
+  writeSafeWriteHandle("Hello",  5, handle);
+  writeSafeWriteHandle(" ",      1, handle);
+  writeSafeWriteHandle("backup", 6, handle);
+  writeSafeWriteHandle("!",      1, handle);
   testGroupEnd();
 
   testGroupStart("closeSafeWriteHandle()");
@@ -84,10 +84,10 @@ int main(void)
   assert_true(handle != NULL);
   checkTestFile();
 
-  writeSafeWriteHandle(handle, "This",  4);
-  writeSafeWriteHandle(handle, " is",   3);
-  writeSafeWriteHandle(handle, " a ",   3);
-  writeSafeWriteHandle(handle, "test.", 5);
+  writeSafeWriteHandle("This",  4, handle);
+  writeSafeWriteHandle(" is",   3, handle);
+  writeSafeWriteHandle(" a ",   3, handle);
+  writeSafeWriteHandle("test.", 5, handle);
   checkTestFile();
 
   assert_true(sPathExists("tmp/tmp-file") == true);
@@ -107,7 +107,7 @@ int main(void)
   assert_true(sStat("tmp/tmp-file").st_size == 15);
 
   handle = openSafeWriteHandle("tmp", "foo.txt", "foo.txt");
-  writeSafeWriteHandle(handle, "Nano Backup", 11);
+  writeSafeWriteHandle("Nano Backup", 11, handle);
   closeSafeWriteHandle(handle);
 
   assert_true(sPathExists("tmp/tmp-file") == false);

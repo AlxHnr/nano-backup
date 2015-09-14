@@ -41,8 +41,8 @@ typedef struct SafeWriteHandle SafeWriteHandle;
 extern SafeWriteHandle *openSafeWriteHandle(const char *dir_path,
                                             const char *filename,
                                             const char *real_file_path);
-extern void writeSafeWriteHandle(SafeWriteHandle *handle,
-                                 const void *data, size_t size);
+extern void writeSafeWriteHandle(const void *data, size_t size,
+                                 SafeWriteHandle *handle);
 extern void closeSafeWriteHandle(SafeWriteHandle *handle);
 
 #endif

@@ -136,8 +136,8 @@ SafeWriteHandle *openSafeWriteHandle(const char *dir_path,
   @param data The data, which should be written.
   @param size The size of the specified data in bytes.
 */
-void writeSafeWriteHandle(SafeWriteHandle *handle,
-                          const void *data, size_t size)
+void writeSafeWriteHandle(const void *data, size_t size,
+                          SafeWriteHandle *handle)
 {
   if(Fwrite(data, size, handle->tmp_file_stream) == false)
   {
