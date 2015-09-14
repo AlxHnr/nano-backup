@@ -545,7 +545,7 @@ static Metadata *genTestData1(void)
   metadata->backup_history[3].timestamp = 9876;
   metadata->backup_history[3].ref_count = 0;
 
-  appendConfHist(metadata, &metadata->backup_history[2],
+  appendConfHist(metadata, &metadata->backup_history[1],
                  131, (uint8_t *)"9a2c1f8130eb0cdef201");
   appendConfHist(metadata, &metadata->backup_history[3],
                  96,  (uint8_t *)"f8130eb0cdef2019a2c1");
@@ -600,17 +600,17 @@ static void checkTestData1(Metadata *metadata)
 
   assert_true(metadata->backup_history[1].id == 1);
   assert_true(metadata->backup_history[1].timestamp == 4321);
-  assert_true(metadata->backup_history[1].ref_count == 0);
+  assert_true(metadata->backup_history[1].ref_count == 1);
 
   assert_true(metadata->backup_history[2].id == 2);
   assert_true(metadata->backup_history[2].timestamp == 7890);
-  assert_true(metadata->backup_history[2].ref_count == 4);
+  assert_true(metadata->backup_history[2].ref_count == 3);
 
   assert_true(metadata->backup_history[3].id == 3);
   assert_true(metadata->backup_history[3].timestamp == 9876);
   assert_true(metadata->backup_history[3].ref_count == 6);
 
-  mustHaveConf(metadata, &metadata->backup_history[2], 131,
+  mustHaveConf(metadata, &metadata->backup_history[1], 131,
                (uint8_t *)"9a2c1f8130eb0cdef201");
   mustHaveConf(metadata, &metadata->backup_history[3], 96,
                (uint8_t *)"f8130eb0cdef2019a2c1");
@@ -755,8 +755,21 @@ static void checkTestData2(Metadata *metadata)
 
 int main(void)
 {
-  testGroupStart("generating simple test metadata");
-  checkTestData1(genTestData1());
-  checkTestData2(genTestData2());
+  testGroupStart("reading and writing of metadata");
+  /* Write and read TestData1. */
+  Metadata *test_data_1 = genTestData1();
+  checkTestData1(test_data_1);
+
+  writeMetadata(test_data_1, "tmp");
+  Metadata *read_test_data_1 = loadMetadata("tmp/metadata");
+  checkTestData1(read_test_data_1);
+
+  /* Write and read TestData2. */
+  Metadata *test_data_2 = genTestData2();
+  checkTestData2(test_data_2);
+
+  writeMetadata(test_data_2, "tmp");
+  Metadata *read_test_data_2 = loadMetadata("tmp/metadata");
+  checkTestData2(read_test_data_2);
   testGroupEnd();
 }
