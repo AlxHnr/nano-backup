@@ -177,7 +177,7 @@ void closeSafeWriteHandle(SafeWriteHandle *handle)
   sRename(handle->tmp_file_path, handle->dest_path);
   freeSafeWriteHandle(handle);
 
-  int dir_descriptor = open(dir_path, O_WRONLY, 0);
+  int dir_descriptor = open(dir_path, O_RDONLY, 0);
   if(dir_descriptor == -1 ||
      fdatasync(dir_descriptor) != 0 ||
      close(dir_descriptor) != 0)
