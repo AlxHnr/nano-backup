@@ -51,6 +51,32 @@ static size_t countSubnodes(PathNode *parent_node)
   return subnode_count;
 }
 
+/** Initializes a history point.
+
+  @param metadata The metadata, containing the backup history array.
+  @param index The index of the history point in the array, which should be
+  initialized.
+  @param id The backup id which should be assigned to the point.
+  @param timestamp The timestamp to be assigned to the point.
+*/
+static void initHistPoint(Metadata *metadata, size_t index,
+                          size_t id, time_t timestamp)
+{
+  metadata->backup_history[index].id = id;
+  metadata->backup_history[index].timestamp = timestamp;
+  metadata->backup_history[index].ref_count = 0;
+}
+
+/** Counterpart to initHistPoint() which additionally takes the reference
+  count of the point. */
+static void checkHistPoint(Metadata *metadata, size_t index, size_t id,
+                           time_t timestamp, size_t ref_count)
+{
+  assert_true(metadata->backup_history[index].id == id);
+  assert_true(metadata->backup_history[index].timestamp == timestamp);
+  assert_true(metadata->backup_history[index].ref_count == ref_count);
+}
+
 /** Creates a new path node.
 
   @param path_str The node name, which will be appended to the parent nodes
@@ -529,21 +555,10 @@ static Metadata *genTestData1(void)
     mpAlloc(sSizeMul(sizeof *metadata->backup_history,
                      metadata->backup_history_length));
 
-  metadata->backup_history[0].id = 0;
-  metadata->backup_history[0].timestamp = 1234;
-  metadata->backup_history[0].ref_count = 0;
-
-  metadata->backup_history[1].id = 1;
-  metadata->backup_history[1].timestamp = 4321;
-  metadata->backup_history[1].ref_count = 0;
-
-  metadata->backup_history[2].id = 2;
-  metadata->backup_history[2].timestamp = 7890;
-  metadata->backup_history[2].ref_count = 0;
-
-  metadata->backup_history[3].id = 3;
-  metadata->backup_history[3].timestamp = 9876;
-  metadata->backup_history[3].ref_count = 0;
+  initHistPoint(metadata, 0, 0, 1234);
+  initHistPoint(metadata, 1, 1, 4321);
+  initHistPoint(metadata, 2, 2, 7890);
+  initHistPoint(metadata, 3, 3, 9876);
 
   appendConfHist(metadata, &metadata->backup_history[1],
                  131, (uint8_t *)"9a2c1f8130eb0cdef201");
@@ -594,21 +609,10 @@ static void checkTestData1(Metadata *metadata)
   assert_true(metadata->current_backup.ref_count == 0);
   assert_true(metadata->backup_history_length == 4);
 
-  assert_true(metadata->backup_history[0].id == 0);
-  assert_true(metadata->backup_history[0].timestamp == 1234);
-  assert_true(metadata->backup_history[0].ref_count == 1);
-
-  assert_true(metadata->backup_history[1].id == 1);
-  assert_true(metadata->backup_history[1].timestamp == 4321);
-  assert_true(metadata->backup_history[1].ref_count == 1);
-
-  assert_true(metadata->backup_history[2].id == 2);
-  assert_true(metadata->backup_history[2].timestamp == 7890);
-  assert_true(metadata->backup_history[2].ref_count == 3);
-
-  assert_true(metadata->backup_history[3].id == 3);
-  assert_true(metadata->backup_history[3].timestamp == 9876);
-  assert_true(metadata->backup_history[3].ref_count == 6);
+  checkHistPoint(metadata, 0, 0, 1234, 1);
+  checkHistPoint(metadata, 1, 1, 4321, 1);
+  checkHistPoint(metadata, 2, 2, 7890, 3);
+  checkHistPoint(metadata, 3, 3, 9876, 6);
 
   mustHaveConf(metadata, &metadata->backup_history[1], 131,
                (uint8_t *)"9a2c1f8130eb0cdef201");
@@ -661,17 +665,9 @@ static Metadata *genTestData2(void)
     mpAlloc(sSizeMul(sizeof *metadata->backup_history,
                      metadata->backup_history_length));
 
-  metadata->backup_history[0].id = 0;
-  metadata->backup_history[0].timestamp = 3487;
-  metadata->backup_history[0].ref_count = 0;
-
-  metadata->backup_history[1].id = 1;
-  metadata->backup_history[1].timestamp = 2645;
-  metadata->backup_history[1].ref_count = 0;
-
-  metadata->backup_history[2].id = 2;
-  metadata->backup_history[2].timestamp = 9742;
-  metadata->backup_history[2].ref_count = 0;
+  initHistPoint(metadata, 0, 0, 3487);
+  initHistPoint(metadata, 1, 1, 2645);
+  initHistPoint(metadata, 2, 2, 9742);
 
   appendConfHist(metadata, &metadata->backup_history[2],
                  210, (uint8_t *)"0cdef2019a2c1f8130eb");
@@ -715,17 +711,9 @@ static void checkTestData2(Metadata *metadata)
   assert_true(metadata->current_backup.ref_count == 0);
   assert_true(metadata->backup_history_length == 3);
 
-  assert_true(metadata->backup_history[0].id == 0);
-  assert_true(metadata->backup_history[0].timestamp == 3487);
-  assert_true(metadata->backup_history[0].ref_count == 4);
-
-  assert_true(metadata->backup_history[1].id == 1);
-  assert_true(metadata->backup_history[1].timestamp == 2645);
-  assert_true(metadata->backup_history[1].ref_count == 2);
-
-  assert_true(metadata->backup_history[2].id == 2);
-  assert_true(metadata->backup_history[2].timestamp == 9742);
-  assert_true(metadata->backup_history[2].ref_count == 3);
+  checkHistPoint(metadata, 0, 0, 3487, 4);
+  checkHistPoint(metadata, 1, 1, 2645, 2);
+  checkHistPoint(metadata, 2, 2, 9742, 3);
 
   mustHaveConf(metadata, &metadata->backup_history[2], 210,
                (uint8_t *)"0cdef2019a2c1f8130eb");
