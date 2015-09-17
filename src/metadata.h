@@ -80,8 +80,8 @@ typedef struct
 typedef struct Backup Backup;
 struct Backup
 {
-  /** The id of the backup. It is only used as a helper value while reading
-    or writing metadata files. */
+  /** The id of the backup. It is only used as a helper variable for
+    reading/writing metadata and may not be unique. */
   size_t id;
 
   /** The time at which the backup was completed. */
@@ -150,8 +150,8 @@ typedef struct
     be undefined. */
   PathHistory *config_history;
 
-  /** The amount of paths in the tree. It is only used as a helper value
-    while reading or writing metadata files. */
+  /** The amount of paths in the tree. It is only used as a helper variable
+    for reading/writing metadata and may not be accurate. */
   size_t total_path_count;
 
   /** A StringTable associating a full, absolute filepath with its

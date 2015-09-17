@@ -558,7 +558,8 @@ Metadata *loadMetadata(const char *path)
 }
 
 /** Writes the given metadata into the specified repositories metadata
-  file. Counterpart to loadMetadata().
+  file. Counterpart to loadMetadata(). This function writes only referenced
+  history points and will modify their backup IDs.
 
   @param metadata The metadata that should be written.
   @param repo_path The full or relative path to the repository, which
