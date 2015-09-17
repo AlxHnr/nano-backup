@@ -823,6 +823,65 @@ static void checkLoadedUnusedBackupPoints(Metadata *metadata)
   mustHaveDirectory(config, &metadata->backup_history[2], 783, 192, 3487901, 0575);
 }
 
+static Metadata *genCurrentBackupData(void)
+{
+  Metadata *metadata = mpAlloc(sizeof *metadata);
+
+  metadata->current_backup.id = 0;
+  metadata->current_backup.timestamp = 57645;
+  metadata->current_backup.ref_count = 0;
+
+  metadata->backup_history_length = 2;
+  metadata->backup_history =
+    mpAlloc(sSizeMul(sizeof *metadata->backup_history,
+                     metadata->backup_history_length));
+
+  initHistPoint(metadata, 0, 0, 48390);
+  initHistPoint(metadata, 1, 1, 84908);
+
+  metadata->total_path_count = 0;
+  metadata->path_table = strtableNew();
+
+  PathNode *home = createPathNode("home", BPOL_none, NULL, metadata);
+  appendHistDirectory(home, &metadata->backup_history[0], 0, 0,  12878, 0755);
+  metadata->paths = home;
+
+  PathNode *user = createPathNode("user", BPOL_mirror, home, metadata);
+  appendHistDirectory(user, &metadata->current_backup, 1000, 75, 120948, 0600);
+
+  PathNode *bashrc = createPathNode(".bashrc", BPOL_track, user, metadata);
+  appendHistNonExisting(bashrc, &metadata->current_backup);
+  appendHistRegular(bashrc, &metadata->backup_history[1], 983, 57, 1920,
+                    0655, 579, (uint8_t *)"8130eb0cdef2019a2c1f");
+
+  return metadata;
+}
+
+static void checkLoadedCurrentBackupData(Metadata *metadata)
+{
+  checkMetadata(metadata, 0);
+  assert_true(metadata->current_backup.timestamp == 0);
+  assert_true(metadata->current_backup.ref_count == 0);
+  assert_true(metadata->backup_history_length == 3);
+
+  checkHistPoint(metadata, 0, 0, 57645, 2);
+  checkHistPoint(metadata, 1, 1, 48390, 1);
+  checkHistPoint(metadata, 2, 2, 84908, 1);
+
+  assert_true(metadata->total_path_count == 3);
+
+  PathNode *home = findNode(metadata->paths, "/home", BPOL_none, 1, 1);
+  mustHaveDirectory(home, &metadata->backup_history[1], 0, 0, 12878, 0755);
+
+  PathNode *user = findNode(home->subnodes, "/home/user", BPOL_mirror, 1, 1);
+  mustHaveDirectory(user, &metadata->backup_history[0], 1000, 75, 120948, 0600);
+
+  PathNode *bashrc = findNode(user->subnodes, "/home/user/.bashrc", BPOL_track, 2, 0);
+  mustHaveNonExisting(bashrc, &metadata->backup_history[0]);
+  mustHaveRegular(bashrc, &metadata->backup_history[2], 983, 57, 1920,
+                  0655, 579, (uint8_t *)"8130eb0cdef2019a2c1f");
+}
+
 int main(void)
 {
   testGroupStart("reading and writing of metadata");
@@ -844,5 +903,10 @@ int main(void)
   testGroupStart("writing only referenced backup points");
   writeMetadata(genUnusedBackupPoints(), "tmp");
   checkLoadedUnusedBackupPoints(loadMetadata("tmp/metadata"));
+  testGroupEnd();
+
+  testGroupStart("merging current backup point while writing");
+  writeMetadata(genCurrentBackupData(), "tmp");
+  checkLoadedCurrentBackupData(loadMetadata("tmp/metadata"));
   testGroupEnd();
 }
