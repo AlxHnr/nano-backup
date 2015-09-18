@@ -482,6 +482,34 @@ static void mustHaveDirectory(PathNode *node, Backup *backup, uid_t uid,
       node->path.str, backup->id);
 }
 
+/** Creates an empty metadata tree and initializes some of its variables.
+
+  @param backup_history_length The amount of elements in the backup history
+  which should be allocated.
+
+  @return A new metadata tree which should not be freed by the caller.
+*/
+static Metadata *createEmptyMetadata(size_t backup_history_length)
+{
+  Metadata *metadata = mpAlloc(sizeof *metadata);
+
+  metadata->current_backup.id = 0;
+  metadata->current_backup.timestamp = 0;
+  metadata->current_backup.ref_count = 0;
+
+  metadata->backup_history_length = backup_history_length;
+  metadata->backup_history =
+    mpAlloc(sSizeMul(sizeof *metadata->backup_history,
+                     metadata->backup_history_length));
+
+  metadata->config_history = NULL;
+  metadata->total_path_count = 0;
+  metadata->path_table = strtableNew();
+  metadata->paths = NULL;
+
+  return metadata;
+}
+
 /** Performs some basic checks on a metadata struct.
 
   @param metadata The metadata struct to be checked.
@@ -544,17 +572,7 @@ static PathNode *findNode(PathNode *start_node, const char *path_str,
 */
 static Metadata *genTestData1(void)
 {
-  Metadata *metadata = mpAlloc(sizeof *metadata);
-
-  metadata->current_backup.id = 0;
-  metadata->current_backup.timestamp = 0;
-  metadata->current_backup.ref_count = 0;
-
-  metadata->backup_history_length = 4;
-  metadata->backup_history =
-    mpAlloc(sSizeMul(sizeof *metadata->backup_history,
-                     metadata->backup_history_length));
-
+  Metadata *metadata = createEmptyMetadata(4);
   initHistPoint(metadata, 0, 0, 1234);
   initHistPoint(metadata, 1, 1, 4321);
   initHistPoint(metadata, 2, 2, 7890);
@@ -564,9 +582,6 @@ static Metadata *genTestData1(void)
                  131, (uint8_t *)"9a2c1f8130eb0cdef201");
   appendConfHist(metadata, &metadata->backup_history[3],
                  96,  (uint8_t *)"f8130eb0cdef2019a2c1");
-
-  metadata->total_path_count = 0;
-  metadata->path_table = strtableNew();
 
   PathNode *etc = createPathNode("etc", BPOL_none, NULL, metadata);
   appendHistDirectory(etc, &metadata->backup_history[3], 12, 8,  2389478, 0777);
@@ -654,26 +669,13 @@ static void checkTestData1(Metadata *metadata)
 */
 static Metadata *genTestData2(void)
 {
-  Metadata *metadata = mpAlloc(sizeof *metadata);
-
-  metadata->current_backup.id = 0;
-  metadata->current_backup.timestamp = 0;
-  metadata->current_backup.ref_count = 0;
-
-  metadata->backup_history_length = 3;
-  metadata->backup_history =
-    mpAlloc(sSizeMul(sizeof *metadata->backup_history,
-                     metadata->backup_history_length));
-
+  Metadata *metadata = createEmptyMetadata(3);
   initHistPoint(metadata, 0, 0, 3487);
   initHistPoint(metadata, 1, 1, 2645);
   initHistPoint(metadata, 2, 2, 9742);
 
   appendConfHist(metadata, &metadata->backup_history[2],
                  210, (uint8_t *)"0cdef2019a2c1f8130eb");
-
-  metadata->total_path_count = 0;
-  metadata->path_table = strtableNew();
 
   PathNode *home = createPathNode("home", BPOL_none, NULL, metadata);
   appendHistDirectory(home, &metadata->backup_history[2], 0, 0,  12878, 0755);
@@ -749,17 +751,7 @@ static void checkTestData2(Metadata *metadata)
 */
 static Metadata *genUnusedBackupPoints(void)
 {
-  Metadata *metadata = mpAlloc(sizeof *metadata);
-
-  metadata->current_backup.id = 0;
-  metadata->current_backup.timestamp = 0;
-  metadata->current_backup.ref_count = 0;
-
-  metadata->backup_history_length = 6;
-  metadata->backup_history =
-    mpAlloc(sSizeMul(sizeof *metadata->backup_history,
-                     metadata->backup_history_length));
-
+  Metadata *metadata = createEmptyMetadata(6);
   initHistPoint(metadata, 0, 0, 84390);
   initHistPoint(metadata, 1, 1, 140908);
   initHistPoint(metadata, 2, 2, 13098);
@@ -769,9 +761,6 @@ static Metadata *genUnusedBackupPoints(void)
 
   appendConfHist(metadata, &metadata->backup_history[1],
                  6723, (uint8_t *)"fbc92e19ee0cd2140faa");
-
-  metadata->total_path_count = 0;
-  metadata->path_table = strtableNew();
 
   PathNode *home = createPathNode("home", BPOL_none, NULL, metadata);
   appendHistDirectory(home, &metadata->backup_history[1], 0, 0,  12878, 0755);
@@ -832,22 +821,10 @@ static void checkLoadedUnusedBackupPoints(Metadata *metadata)
 */
 static Metadata *genCurrentBackupData(void)
 {
-  Metadata *metadata = mpAlloc(sizeof *metadata);
-
-  metadata->current_backup.id = 0;
+  Metadata *metadata = createEmptyMetadata(2);
   metadata->current_backup.timestamp = 57645;
-  metadata->current_backup.ref_count = 0;
-
-  metadata->backup_history_length = 2;
-  metadata->backup_history =
-    mpAlloc(sSizeMul(sizeof *metadata->backup_history,
-                     metadata->backup_history_length));
-
   initHistPoint(metadata, 0, 0, 48390);
   initHistPoint(metadata, 1, 1, 84908);
-
-  metadata->total_path_count = 0;
-  metadata->path_table = strtableNew();
 
   PathNode *home = createPathNode("home", BPOL_none, NULL, metadata);
   appendHistDirectory(home, &metadata->backup_history[0], 0, 0,  12878, 0755);
