@@ -28,6 +28,7 @@
 #include "string-table.h"
 
 #include "test.h"
+#include "error-handling.h"
 
 static const char *zlib_license_chunks[] =
 {
@@ -80,12 +81,20 @@ static void testStringTable(StringTable *table, bool spam_strtable_free)
   {
     if(spam_strtable_free) strtableFree(table);
     String string = str(zlib_license_chunks[index]);
-    assert_true(strtableGet(table, string) == NULL);
+    if(strtableGet(table, string) != NULL)
+    {
+      die("string \"%s\" already exists in string table",
+          zlib_license_chunks[index]);
+    }
 
     strtableMap(table, string, &lorem_ipsum_chunks[index]);
     if(spam_strtable_free) strtableFree(table);
 
-    assert_true(strtableGet(table, string) == &lorem_ipsum_chunks[index]);
+    if(strtableGet(table, string) != &lorem_ipsum_chunks[index])
+    {
+      die("failed to map \"%s\" to \"%s\"", zlib_license_chunks[index],
+          lorem_ipsum_chunks[index]);
+    }
   }
 
   /* Assert that all the mappings above succeeded. */
@@ -94,7 +103,11 @@ static void testStringTable(StringTable *table, bool spam_strtable_free)
     String string = str(zlib_license_chunks[index]);
 
     if(spam_strtable_free) strtableFree(table);
-    assert_true(strtableGet(table, string) == &lorem_ipsum_chunks[index]);
+    if(strtableGet(table, string) != &lorem_ipsum_chunks[index])
+    {
+      die("\"%s\" was not mapped to \"%s\"", zlib_license_chunks[index],
+          lorem_ipsum_chunks[index]);
+    }
   }
 
   if(spam_strtable_free) strtableFree(table);
