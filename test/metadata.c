@@ -887,12 +887,50 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("writing only referenced backup points");
-  writeMetadata(genUnusedBackupPoints(), "tmp");
+  Metadata *unused_backup_points = genUnusedBackupPoints();
+  writeMetadata(unused_backup_points, "tmp");
   checkLoadedUnusedBackupPoints(loadMetadata("tmp/metadata"));
   testGroupEnd();
 
   testGroupStart("merging current backup point while writing");
-  writeMetadata(genCurrentBackupData(), "tmp");
+  Metadata *current_backup_data = genCurrentBackupData();
+  writeMetadata(current_backup_data, "tmp");
+  checkLoadedCurrentBackupData(loadMetadata("tmp/metadata"));
+  testGroupEnd();
+
+  testGroupStart("adjust backup ID order");
+  test_data_1->backup_history[0].id = 3;
+  test_data_1->backup_history[1].id = 2;
+  test_data_1->backup_history[2].id = 1;
+  test_data_1->backup_history[3].id = 0;
+  writeMetadata(test_data_1, "tmp");
+  checkTestData1(loadMetadata("tmp/metadata"));
+
+  test_data_1->backup_history[0].id = 12;
+  test_data_1->backup_history[1].id = 8;
+  test_data_1->backup_history[2].id = 12983948;
+  test_data_1->backup_history[3].id = 0;
+  writeMetadata(test_data_1, "tmp");
+  checkTestData1(loadMetadata("tmp/metadata"));
+
+  test_data_2->backup_history[0].id = 0;
+  test_data_2->backup_history[1].id = 0;
+  test_data_2->backup_history[2].id = 0;
+  writeMetadata(test_data_2, "tmp");
+  checkTestData2(loadMetadata("tmp/metadata"));
+
+  unused_backup_points->backup_history[0].id = 0;
+  unused_backup_points->backup_history[1].id = 35;
+  unused_backup_points->backup_history[2].id = 982;
+  unused_backup_points->backup_history[3].id = 982;
+  unused_backup_points->backup_history[4].id = 5;
+  unused_backup_points->backup_history[5].id = 0;
+  writeMetadata(unused_backup_points, "tmp");
+  checkLoadedUnusedBackupPoints(loadMetadata("tmp/metadata"));
+
+  current_backup_data->backup_history[0].id = 70;
+  current_backup_data->backup_history[1].id = 70;
+  writeMetadata(current_backup_data, "tmp");
   checkLoadedCurrentBackupData(loadMetadata("tmp/metadata"));
   testGroupEnd();
 }
