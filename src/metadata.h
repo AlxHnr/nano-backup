@@ -147,7 +147,8 @@ typedef struct
   /** The history of the repositories config file. Its path states will
     have always the type PST_regular. Its RegularMetadata contains only the
     files size and its hash. All other values in its RegularMetadata will
-    be undefined. */
+    be undefined. Will be NULL, if this struct doesn't contain a config
+    history. */
   PathHistory *config_history;
 
   /** The amount of paths in the tree. It is only used as a helper variable
