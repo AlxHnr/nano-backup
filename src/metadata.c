@@ -544,7 +544,16 @@ Metadata *loadMetadata(const char *path)
 
   metadata->total_path_count = readSize(content, &reader_position, path);
 
-  metadata->path_table = strtableNewFixed(metadata->total_path_count);
+  /* Create a dummy path table, if the path count is 0. */
+  if(metadata->total_path_count == 0)
+  {
+    metadata->path_table = strtableNewFixed(1);
+  }
+  else
+  {
+    metadata->path_table = strtableNewFixed(metadata->total_path_count);
+  }
+
   metadata->paths = readPathSubnodes(content, &reader_position,
                                      path, NULL, metadata);
 
