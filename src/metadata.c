@@ -523,9 +523,16 @@ Metadata *loadMetadata(const char *path)
   metadata->backup_history_length =
     readSize(content, &reader_position, path);
 
-  metadata->backup_history =
-    mpAlloc(sSizeMul(sizeof *metadata->backup_history,
-                     metadata->backup_history_length));
+  if(metadata->backup_history_length == 0)
+  {
+    metadata->backup_history = NULL;
+  }
+  else
+  {
+    metadata->backup_history =
+      mpAlloc(sSizeMul(sizeof *metadata->backup_history,
+                       metadata->backup_history_length));
+  }
 
   for(size_t id = 0; id < metadata->backup_history_length; id++)
   {
