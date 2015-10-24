@@ -960,6 +960,33 @@ static void checkNoPathTree(Metadata *metadata)
   assert_true(metadata->paths == NULL);
 }
 
+/** Generates an empty dummy metadata tree, which contains only
+  unreferenced backup points. After writing and loading this metadata from
+  disc, it can be checked with checkEmptyMetadata().
+
+  @return A new metadata struct which should not be freed by the caller.
+*/
+static Metadata *genWithOnlyBackupPoints(void)
+{
+  Metadata *metadata = createEmptyMetadata(3);
+  initHistPoint(metadata, 0, 0, 3249);
+  initHistPoint(metadata, 1, 1, 29849483);
+  initHistPoint(metadata, 2, 2, 1347);
+
+  return metadata;
+}
+
+/** Checks an empty metadata tree. */
+static void checkEmptyMetadata(Metadata *metadata)
+{
+  checkMetadata(metadata, 0);
+  assert_true(metadata->current_backup.ref_count == 0);
+  assert_true(metadata->backup_history_length == 0);
+  assert_true(metadata->config_history == NULL);
+  assert_true(metadata->total_path_count == 0);
+  assert_true(metadata->paths == NULL);
+}
+
 int main(void)
 {
   testGroupStart("reading and writing of metadata");
@@ -988,6 +1015,26 @@ int main(void)
   Metadata *current_backup_data = genCurrentBackupData();
   writeMetadata(current_backup_data, "tmp");
   checkLoadedCurrentBackupData(loadMetadata("tmp/metadata"));
+  testGroupEnd();
+
+  testGroupStart("no config history");
+  Metadata *no_conf_hist = genNoConfHist();
+  checkNoConfHist(no_conf_hist);
+  writeMetadata(no_conf_hist, "tmp");
+  checkNoConfHist(loadMetadata("tmp/metadata"));
+  testGroupEnd();
+
+  testGroupStart("no path tree");
+  Metadata *no_path_tree = genNoPathTree();
+  checkNoPathTree(no_path_tree);
+  writeMetadata(no_path_tree, "tmp");
+  checkNoPathTree(loadMetadata("tmp/metadata"));
+  testGroupEnd();
+
+  testGroupStart("no config history and no path tree");
+  Metadata *no_conf_no_paths = genWithOnlyBackupPoints();
+  writeMetadata(no_conf_no_paths, "tmp");
+  checkEmptyMetadata(loadMetadata("tmp/metadata"));
   testGroupEnd();
 
   testGroupStart("adjust backup ID order");
@@ -1024,19 +1071,5 @@ int main(void)
   current_backup_data->backup_history[1].id = 70;
   writeMetadata(current_backup_data, "tmp");
   checkLoadedCurrentBackupData(loadMetadata("tmp/metadata"));
-  testGroupEnd();
-
-  testGroupStart("no config history");
-  Metadata *no_conf_hist = genNoConfHist();
-  checkNoConfHist(no_conf_hist);
-  writeMetadata(no_conf_hist, "tmp");
-  checkNoConfHist(loadMetadata("tmp/metadata"));
-  testGroupEnd();
-
-  testGroupStart("no path tree");
-  Metadata *no_path_tree = genNoPathTree();
-  checkNoPathTree(no_path_tree);
-  writeMetadata(no_path_tree, "tmp");
-  checkNoPathTree(loadMetadata("tmp/metadata"));
   testGroupEnd();
 }
