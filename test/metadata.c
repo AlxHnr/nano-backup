@@ -1017,26 +1017,6 @@ int main(void)
   checkLoadedCurrentBackupData(loadMetadata("tmp/metadata"));
   testGroupEnd();
 
-  testGroupStart("no config history");
-  Metadata *no_conf_hist = genNoConfHist();
-  checkNoConfHist(no_conf_hist);
-  writeMetadata(no_conf_hist, "tmp");
-  checkNoConfHist(loadMetadata("tmp/metadata"));
-  testGroupEnd();
-
-  testGroupStart("no path tree");
-  Metadata *no_path_tree = genNoPathTree();
-  checkNoPathTree(no_path_tree);
-  writeMetadata(no_path_tree, "tmp");
-  checkNoPathTree(loadMetadata("tmp/metadata"));
-  testGroupEnd();
-
-  testGroupStart("no config history and no path tree");
-  Metadata *no_conf_no_paths = genWithOnlyBackupPoints();
-  writeMetadata(no_conf_no_paths, "tmp");
-  checkEmptyMetadata(loadMetadata("tmp/metadata"));
-  testGroupEnd();
-
   testGroupStart("adjust backup ID order");
   test_data_1->backup_history[0].id = 3;
   test_data_1->backup_history[1].id = 2;
@@ -1071,5 +1051,25 @@ int main(void)
   current_backup_data->backup_history[1].id = 70;
   writeMetadata(current_backup_data, "tmp");
   checkLoadedCurrentBackupData(loadMetadata("tmp/metadata"));
+  testGroupEnd();
+
+  testGroupStart("no config history");
+  Metadata *no_conf_hist = genNoConfHist();
+  checkNoConfHist(no_conf_hist);
+  writeMetadata(no_conf_hist, "tmp");
+  checkNoConfHist(loadMetadata("tmp/metadata"));
+  testGroupEnd();
+
+  testGroupStart("no path tree");
+  Metadata *no_path_tree = genNoPathTree();
+  checkNoPathTree(no_path_tree);
+  writeMetadata(no_path_tree, "tmp");
+  checkNoPathTree(loadMetadata("tmp/metadata"));
+  testGroupEnd();
+
+  testGroupStart("no config history and no path tree");
+  Metadata *no_conf_no_paths = genWithOnlyBackupPoints();
+  writeMetadata(no_conf_no_paths, "tmp");
+  checkEmptyMetadata(loadMetadata("tmp/metadata"));
   testGroupEnd();
 }
