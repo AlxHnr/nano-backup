@@ -498,9 +498,16 @@ static Metadata *createEmptyMetadata(size_t backup_history_length)
   metadata->current_backup.ref_count = 0;
 
   metadata->backup_history_length = backup_history_length;
-  metadata->backup_history =
-    mpAlloc(sSizeMul(sizeof *metadata->backup_history,
-                     metadata->backup_history_length));
+  if(backup_history_length == 0)
+  {
+    metadata->backup_history = NULL;
+  }
+  else
+  {
+    metadata->backup_history =
+      mpAlloc(sSizeMul(sizeof *metadata->backup_history,
+                       metadata->backup_history_length));
+  }
 
   metadata->config_history = NULL;
   metadata->total_path_count = 0;
@@ -1070,6 +1077,13 @@ int main(void)
   testGroupStart("no config history and no path tree");
   Metadata *no_conf_no_paths = genWithOnlyBackupPoints();
   writeMetadata(no_conf_no_paths, "tmp");
+  checkEmptyMetadata(loadMetadata("tmp/metadata"));
+  testGroupEnd();
+
+  testGroupStart("empty metadata");
+  Metadata *empty_metadata = createEmptyMetadata(0);
+  checkEmptyMetadata(empty_metadata);
+  writeMetadata(empty_metadata, "tmp");
   checkEmptyMetadata(loadMetadata("tmp/metadata"));
   testGroupEnd();
 }
