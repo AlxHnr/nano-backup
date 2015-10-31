@@ -994,6 +994,61 @@ static void checkEmptyMetadata(Metadata *metadata)
   assert_true(metadata->paths == NULL);
 }
 
+/** Initializes the given metadata tree, so that it only contains history
+  points pointing to the current backup. After reloading the metadata from
+  disk, it can be verified with checkOnlyCurrentBackupData().
+
+  @param metadata A valid metadata struct which should be initialized.
+
+  @return The same metadata that was passed to this function.
+*/
+static Metadata *initOnlyCurrentBackupData(Metadata *metadata)
+{
+  metadata->current_backup.timestamp = 1348981;
+
+  appendConfHist(metadata, &metadata->current_backup,
+                 6723, (uint8_t *)"fbc92e19ee0cd2140faa");
+
+  PathNode *home = createPathNode("home", BPOL_none, NULL, metadata);
+  appendHistDirectory(home, &metadata->current_backup, 0, 0,  12878, 0755);
+  metadata->paths = home;
+
+  PathNode *user = createPathNode("user", BPOL_mirror, home, metadata);
+  appendHistDirectory(user, &metadata->current_backup, 1000, 75, 120948, 0600);
+
+  PathNode *bashrc = createPathNode(".bashrc", BPOL_track, user, metadata);
+  appendHistRegular(bashrc, &metadata->current_backup, 983, 57, 1920,
+                    0655, 579, (uint8_t *)"8130eb0cdef2019a2c1f");
+
+  return metadata;
+}
+
+/** Counterpart to initOnlyCurrentBackupData(). */
+static void checkOnlyCurrentBackupData(Metadata *metadata)
+{
+  checkMetadata(metadata, 1);
+  assert_true(metadata->current_backup.timestamp == 0);
+  assert_true(metadata->current_backup.ref_count == 0);
+  assert_true(metadata->backup_history_length == 1);
+
+  checkHistPoint(metadata, 0, 0, 1348981, 4);
+
+  mustHaveConf(metadata, &metadata->backup_history[0], 6723,
+               (uint8_t *)"fbc92e19ee0cd2140faa");
+
+  assert_true(metadata->total_path_count == 3);
+
+  PathNode *home = findNode(metadata->paths, "/home", BPOL_none, 1, 1);
+  mustHaveDirectory(home, &metadata->backup_history[0], 0, 0, 12878, 0755);
+
+  PathNode *user = findNode(home->subnodes, "/home/user", BPOL_mirror, 1, 1);
+  mustHaveDirectory(user, &metadata->backup_history[0], 1000, 75, 120948, 0600);
+
+  PathNode *bashrc = findNode(user->subnodes, "/home/user/.bashrc", BPOL_track, 1, 0);
+  mustHaveRegular(bashrc, &metadata->backup_history[0], 983, 57, 1920,
+                  0655, 579, (uint8_t *)"8130eb0cdef2019a2c1f");
+}
+
 int main(void)
 {
   testGroupStart("reading and writing of metadata");
@@ -1085,5 +1140,15 @@ int main(void)
   checkEmptyMetadata(empty_metadata);
   writeMetadata(empty_metadata, "tmp");
   checkEmptyMetadata(loadMetadata("tmp/metadata"));
+  testGroupEnd();
+
+  testGroupStart("merging current backup into empty metadata");
+  writeMetadata(initOnlyCurrentBackupData(createEmptyMetadata(0)), "tmp");
+  checkOnlyCurrentBackupData(loadMetadata("tmp/metadata"));
+
+  /* The same test as above, but with unreferenced backup points, which
+     should be discarded while writing. */
+  writeMetadata(initOnlyCurrentBackupData(genWithOnlyBackupPoints()), "tmp");
+  checkOnlyCurrentBackupData(loadMetadata("tmp/metadata"));
   testGroupEnd();
 }
