@@ -511,7 +511,7 @@ static Metadata *createEmptyMetadata(size_t backup_history_length)
 
   metadata->config_history = NULL;
   metadata->total_path_count = 0;
-  metadata->path_table = strtableNew();
+  metadata->path_table = strtableNewFixed(8);
   metadata->paths = NULL;
 
   return metadata;
