@@ -161,7 +161,8 @@ typedef struct
     table. */
   StringTable *path_table;
 
-  /** A list of backed up files in the filesystem. */
+  /** A list of backed up files in the filesystem. Can be NULL if this
+    metadata doesn't contain any filepaths. */
   PathNode *paths;
 }Metadata;
 
