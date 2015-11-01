@@ -43,6 +43,11 @@ typedef struct
   mode_t mode; /**< The permission bits of the file. */
   size_t size; /**< The file size. */
   uint8_t hash[SHA_DIGEST_LENGTH]; /**< The hash of the file. */
+
+  /** The slot number of the corresponding file in the repository. It is
+    used for generating unique filenames in case that two different files
+    have the same size and hash. */
+  uint8_t slot;
 }RegularMetadata;
 
 /** The different states a filepath can represent at a specific backup. */

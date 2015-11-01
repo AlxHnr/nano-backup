@@ -288,6 +288,9 @@ static PathHistory *readPathHistory(FileContent content,
 
     readHash(content, reader_position, metadata_path,
              point->state.metadata.reg.hash);
+
+    point->state.metadata.reg.slot =
+      read8(content, reader_position, metadata_path);
   }
   else if(point->state.type == PST_symlink)
   {
@@ -389,6 +392,7 @@ static void writePathHistoryList(PathHistory *starting_point,
       write32(point->state.metadata.reg.mode, handle);
       write64(point->state.metadata.reg.size, handle);
       writeHash(point->state.metadata.reg.hash, handle);
+      write8(point->state.metadata.reg.slot, handle);
     }
     else if(point->state.type == PST_symlink)
     {
