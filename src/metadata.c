@@ -69,7 +69,8 @@ static void assertBytesLeft(size_t reader_position, size_t bytes,
 {
   if(sSizeAdd(reader_position, bytes) > content.size)
   {
-    die("broken metadata file: \"%s\"", metadata_path);
+    die("corrupted metadata: expected %zu byte%s, got %zu: \"%s\"", bytes,
+        bytes == 1? "":"s", content.size - reader_position, metadata_path);
   }
 }
 
