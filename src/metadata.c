@@ -568,13 +568,13 @@ Metadata *loadMetadata(const char *path)
 
   metadata->paths = readPathSubnodes(content, &reader_position,
                                      path, NULL, metadata);
+  free(content.content);
 
   if(reader_position != content.size)
   {
-    die("inconsistent byte count in \"%s\"", path);
+    die("unneeded trailing bytes in \"%s\"", path);
   }
 
-  free(content.content);
   return metadata;
 }
 
