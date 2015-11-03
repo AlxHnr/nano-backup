@@ -1154,4 +1154,43 @@ int main(void)
   writeMetadata(initOnlyCurrentBackupData(genWithOnlyBackupPoints()), "tmp");
   checkOnlyCurrentBackupData(loadMetadata("tmp/metadata"));
   testGroupEnd();
+
+  testGroupStart("reject corrupted metadata");
+  assert_error(loadMetadata("non-existing.txt"),
+               "failed to access \"non-existing.txt\": No such file or directory");
+  assert_error(loadMetadata("generated-broken-metadata/missing-byte"),
+               "corrupted metadata: expected 1 byte, got 0: \"generated-broken-metadata/missing-byte\"");
+  assert_error(loadMetadata("generated-broken-metadata/invalid-path-state-type"),
+               "invalid PathStateType in \"generated-broken-metadata/invalid-path-state-type\"");
+  assert_error(loadMetadata("generated-broken-metadata/incomplete-32-bit-value"),
+               "corrupted metadata: expected 4 bytes, got 3: \"generated-broken-metadata/incomplete-32-bit-value\"");
+  assert_error(loadMetadata("generated-broken-metadata/missing-32-bit-value"),
+               "corrupted metadata: expected 4 bytes, got 0: \"generated-broken-metadata/missing-32-bit-value\"");
+  assert_error(loadMetadata("generated-broken-metadata/incomplete-size"),
+               "corrupted metadata: expected 8 bytes, got 3: \"generated-broken-metadata/incomplete-size\"");
+  assert_error(loadMetadata("generated-broken-metadata/missing-size"),
+               "corrupted metadata: expected 8 bytes, got 0: \"generated-broken-metadata/missing-size\"");
+  assert_error(loadMetadata("generated-broken-metadata/incomplete-time"),
+               "corrupted metadata: expected 8 bytes, got 7: \"generated-broken-metadata/incomplete-time\"");
+  assert_error(loadMetadata("generated-broken-metadata/missing-time"),
+               "corrupted metadata: expected 8 bytes, got 0: \"generated-broken-metadata/missing-time\"");
+  assert_error(loadMetadata("generated-broken-metadata/time-overflow"),
+               "overflow reading timestamp from \"generated-broken-metadata/time-overflow\"");
+  assert_error(loadMetadata("generated-broken-metadata/incomplete-hash"),
+               "corrupted metadata: expected 20 bytes, got 5: \"generated-broken-metadata/incomplete-hash\"");
+  assert_error(loadMetadata("generated-broken-metadata/missing-hash"),
+               "corrupted metadata: expected 20 bytes, got 0: \"generated-broken-metadata/missing-hash\"");
+  assert_error(loadMetadata("generated-broken-metadata/incomplete-path"),
+               "corrupted metadata: expected 7 bytes, got 4: \"generated-broken-metadata/incomplete-path\"");
+  assert_error(loadMetadata("generated-broken-metadata/missing-path"),
+               "corrupted metadata: expected 3 bytes, got 0: \"generated-broken-metadata/missing-path\"");
+  assert_error(loadMetadata("generated-broken-metadata/incomplete-symlink-target-path"),
+               "corrupted metadata: expected 16 bytes, got 6: \"generated-broken-metadata/incomplete-symlink-target-path\"");
+  assert_error(loadMetadata("generated-broken-metadata/missing-symlink-target-path"),
+               "corrupted metadata: expected 16 bytes, got 0: \"generated-broken-metadata/missing-symlink-target-path\"");
+  assert_error(loadMetadata("generated-broken-metadata/last-byte-missing"),
+               "corrupted metadata: expected 8 bytes, got 7: \"generated-broken-metadata/last-byte-missing\"");
+  assert_error(loadMetadata("generated-broken-metadata/unneeded-trailing-bytes"),
+               "unneeded trailing bytes in \"generated-broken-metadata/unneeded-trailing-bytes\"");
+  testGroupEnd();
 }
