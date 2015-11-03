@@ -12,6 +12,7 @@ mkdir "$target_dir"
 
 # Generate incomplete copies of "test-data-1".
 head -c 699 "$test_data_1" > "$target_dir/missing-byte"
+head -c 748 "$test_data_1" > "$target_dir/missing-slot"
 head -c 393 "$test_data_1" > "$target_dir/missing-path-state-type"
 head -c 703 "$test_data_1" > "$target_dir/incomplete-32-bit-value"
 head -c 302 "$test_data_1" > "$target_dir/missing-32-bit-value"
@@ -30,5 +31,6 @@ head -c 756 "$test_data_1" > "$target_dir/last-byte-missing"
 # Copy or generate various other broken files.
 cp "$dummy_path/time-overflow" "$target_dir"
 cp "$dummy_path/invalid-path-state-type" "$target_dir"
+cp "$dummy_path/path-count-zero" "$target_dir"
 cp "$test_data_1" "$target_dir/unneeded-trailing-bytes"
 echo -n "   " >> "$target_dir/unneeded-trailing-bytes"

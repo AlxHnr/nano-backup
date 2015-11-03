@@ -1160,6 +1160,8 @@ int main(void)
                "failed to access \"non-existing.txt\": No such file or directory");
   assert_error(loadMetadata("generated-broken-metadata/missing-byte"),
                "corrupted metadata: expected 1 byte, got 0: \"generated-broken-metadata/missing-byte\"");
+  assert_error(loadMetadata("generated-broken-metadata/missing-slot"),
+               "corrupted metadata: expected 1 byte, got 0: \"generated-broken-metadata/missing-slot\"");
   assert_error(loadMetadata("generated-broken-metadata/invalid-path-state-type"),
                "invalid PathStateType in \"generated-broken-metadata/invalid-path-state-type\"");
   assert_error(loadMetadata("generated-broken-metadata/missing-path-state-type"),
@@ -1194,5 +1196,7 @@ int main(void)
                "corrupted metadata: expected 8 bytes, got 7: \"generated-broken-metadata/last-byte-missing\"");
   assert_error(loadMetadata("generated-broken-metadata/unneeded-trailing-bytes"),
                "unneeded trailing bytes in \"generated-broken-metadata/unneeded-trailing-bytes\"");
+  assert_error(loadMetadata("generated-broken-metadata/path-count-zero"),
+               "unneeded trailing bytes in \"generated-broken-metadata/path-count-zero\"");
   testGroupEnd();
 }
