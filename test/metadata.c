@@ -1162,6 +1162,8 @@ int main(void)
                "corrupted metadata: expected 1 byte, got 0: \"generated-broken-metadata/missing-byte\"");
   assert_error(loadMetadata("generated-broken-metadata/invalid-path-state-type"),
                "invalid PathStateType in \"generated-broken-metadata/invalid-path-state-type\"");
+  assert_error(loadMetadata("generated-broken-metadata/missing-path-state-type"),
+               "corrupted metadata: expected 1 byte, got 0: \"generated-broken-metadata/missing-path-state-type\"");
   assert_error(loadMetadata("generated-broken-metadata/incomplete-32-bit-value"),
                "corrupted metadata: expected 4 bytes, got 3: \"generated-broken-metadata/incomplete-32-bit-value\"");
   assert_error(loadMetadata("generated-broken-metadata/missing-32-bit-value"),
