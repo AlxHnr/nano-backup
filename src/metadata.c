@@ -162,10 +162,10 @@ static uint32_t read32(FileContent content, size_t *reader_position,
   assertBytesLeft(*reader_position, sizeof(uint32_t),
                   content, metadata_path);
 
-  uint32_t size = *((uint32_t *)&content.content[*reader_position]);
-  *reader_position += sizeof(size);
+  uint32_t value = *((uint32_t *)&content.content[*reader_position]);
+  *reader_position += sizeof(value);
 
-  return convertEndian32(size);
+  return convertEndian32(value);
 }
 
 /** The 4 byte version of write8() which takes care of endian conversion. */
@@ -182,10 +182,10 @@ static uint64_t read64(FileContent content, size_t *reader_position,
   assertBytesLeft(*reader_position, sizeof(uint64_t),
                   content, metadata_path);
 
-  uint64_t size = *((uint64_t *)&content.content[*reader_position]);
-  *reader_position += sizeof(size);
+  uint64_t value = *((uint64_t *)&content.content[*reader_position]);
+  *reader_position += sizeof(value);
 
-  return convertEndian64(size);
+  return convertEndian64(value);
 }
 
 /** The 8 byte version of write8() which takes care of endian conversion. */
@@ -285,7 +285,7 @@ static PathHistory *readPathHistory(FileContent content,
       read32(content, reader_position, metadata_path);
 
     point->state.metadata.reg.size =
-      readSize(content, reader_position, metadata_path);
+      read64(content, reader_position, metadata_path);
 
     readHash(content, reader_position, metadata_path,
              point->state.metadata.reg.hash);

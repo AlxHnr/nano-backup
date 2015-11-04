@@ -41,7 +41,7 @@
 typedef struct
 {
   mode_t mode; /**< The permission bits of the file. */
-  size_t size; /**< The file size. */
+  uint64_t size; /**< The file size. */
   uint8_t hash[SHA_DIGEST_LENGTH]; /**< The hash of the file. */
 
   /** The slot number of the corresponding file in the repository. It is

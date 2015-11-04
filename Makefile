@@ -1,6 +1,6 @@
 CC      ?= $(firstword $(shell which gcc clang))
 CFLAGS  ?= -Wall -Wextra -Werror -pedantic -O2
-CFLAGS  += -std=c99 -D_POSIX_C_SOURCE=200112L
+CFLAGS  += -std=c99 -D_POSIX_C_SOURCE=200112L -D_FILE_OFFSET_BITS=64
 CFLAGS  += $(shell pkg-config --cflags openssl)
 LDFLAGS += $(shell pkg-config --libs openssl)
 

@@ -173,7 +173,7 @@ static void appendHistNonExisting(PathNode *node, Backup *backup)
 */
 static void appendHistRegular(PathNode *node, Backup *backup, uid_t uid,
                               gid_t gid, time_t timestamp, mode_t mode,
-                              size_t size, uint8_t *hash, uint8_t slot)
+                              uint64_t size, uint8_t *hash, uint8_t slot)
 {
   PathState state =
   {
@@ -242,7 +242,7 @@ static void appendHistDirectory(PathNode *node, Backup *backup, uid_t uid,
   @param hash The hash of the config file during the backup point.
 */
 static void appendConfHist(Metadata *metadata, Backup *backup,
-                           size_t file_size, uint8_t *hash)
+                           uint64_t file_size, uint8_t *hash)
 {
   PathHistory *history_point = mpAlloc(sizeof *history_point);
 
@@ -349,7 +349,7 @@ static size_t checkConfHist(Metadata *metadata)
 /** Assert that the given metadata contains a config history point with the
   specified properties. Counterpart to appendConfHist(). */
 static void mustHaveConf(Metadata *metadata, Backup *backup,
-                         size_t file_size, uint8_t *hash)
+                         uint64_t file_size, uint8_t *hash)
 {
   for(PathHistory *point = metadata->config_history;
       point != NULL; point = point->next)
@@ -418,7 +418,7 @@ static void mustHaveNonExisting(PathNode *node, Backup *backup)
   properties. Counterpart to appendHistRegular(). */
 static void mustHaveRegular(PathNode *node, Backup *backup, uid_t uid,
                             gid_t gid, time_t timestamp, mode_t mode,
-                            size_t size, uint8_t *hash, uint8_t slot)
+                            uint64_t size, uint8_t *hash, uint8_t slot)
 {
   for(PathHistory *point = node->history;
       point != NULL; point = point->next)

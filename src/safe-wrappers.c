@@ -435,6 +435,12 @@ FileContent sGetFilesContent(const char *path)
     die("\"%s\" is not a regular file", path);
   }
 
+  /* On 32-bit systems off_t is often larger than size_t. */
+  if((uint64_t)file_stats.st_size > SIZE_MAX)
+  {
+    die("unable to load file into mem due to its size: \"%s\"", path);
+  }
+
   char *content = NULL;
   if(file_stats.st_size > 0)
   {
