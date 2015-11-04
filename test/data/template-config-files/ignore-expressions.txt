@@ -1,6 +1,6 @@
 [ignore]
 test/data/e.+\.txt$
-test/data/.+-config-files$
+test/data/.*(tmp|config-files|metadata)$
 ^will-never-match-anything$
 symlink
 

@@ -268,6 +268,21 @@ static void checkHasPolicy(StringTable *table, const char *path,
   assert_true(address == (void *)((size_t)policy + 1));
 }
 
+/** Asserts that various test data directories where ignored properly.
+
+  @param table The table which contains all files found during search.
+*/
+static void checkHasIgnoredProperly(StringTable *table)
+{
+  assert_true(strtableGet(table, str("valid-config-files"))        == NULL);
+  assert_true(strtableGet(table, str("broken-config-files"))       == NULL);
+  assert_true(strtableGet(table, str("template-config-files"))     == NULL);
+  assert_true(strtableGet(table, str("generated-config-files"))    == NULL);
+  assert_true(strtableGet(table, str("generated-broken-metadata")) == NULL);
+  assert_true(strtableGet(table, str("dummy-metadata"))            == NULL);
+  assert_true(strtableGet(table, str("tmp"))                       == NULL);
+}
+
 /** Asserts that a subnode with the given properties exists or terminate
   the program with an error message.
 
@@ -334,11 +349,7 @@ static void testSimpleSearch(String cwd)
   checkHasPolicy(found_files, "empty.txt",   BPOL_track);
   checkHasPolicy(found_files, "example.txt", BPOL_track);
   checkHasPolicy(found_files, "symlink.txt", BPOL_mirror);
-
-  assert_true(strtableGet(found_files, str("valid-config-files"))     == NULL);
-  assert_true(strtableGet(found_files, str("broken-config-files"))    == NULL);
-  assert_true(strtableGet(found_files, str("template-config-files"))  == NULL);
-  assert_true(strtableGet(found_files, str("generated-config-files")) == NULL);
+  checkHasIgnoredProperly(found_files);
 
   assert_true(strtableGet(found_files, str("non-existing-directory")) == NULL);
   assert_true(strtableGet(found_files, str("test directory/non-existing-file.txt")) == NULL);
@@ -416,8 +427,8 @@ static void testIgnoreExpressions(String cwd)
   assert_true(populateDirectoryTable(context, found_files, cwd) == 19);
   finishSearch(context, cwd_depth);
 
+  checkIgnoreExpression(root, "test/data/.*(tmp|config-files|metadata)$", true);
   checkIgnoreExpression(root, "test/data/e.+\\.txt$",        true);
-  checkIgnoreExpression(root, "test/data/.+-config-files$",  true);
   checkIgnoreExpression(root, "^will-never-match-anything$", false);
   checkIgnoreExpression(root, "symlink",                     true);
   checkIgnoreExpression(root, "[b1]\\.txt$",                 true);
@@ -429,11 +440,7 @@ static void testIgnoreExpressions(String cwd)
   assert_true(strtableGet(found_files, str("empty.txt"))   == NULL);
   assert_true(strtableGet(found_files, str("example.txt")) == NULL);
   checkHasPolicy(found_files, "symlink.txt", BPOL_mirror);
-
-  assert_true(strtableGet(found_files, str("valid-config-files"))     == NULL);
-  assert_true(strtableGet(found_files, str("broken-config-files"))    == NULL);
-  assert_true(strtableGet(found_files, str("template-config-files"))  == NULL);
-  assert_true(strtableGet(found_files, str("generated-config-files")) == NULL);
+  checkHasIgnoredProperly(found_files);
 
   checkHasPolicy(found_files, "test directory",                            BPOL_copy);
   checkHasPolicy(found_files, "test directory/.empty",                     BPOL_copy);
@@ -500,10 +507,7 @@ static void testSymlinkFollowing(String cwd)
   assert_true(strtableGet(found_files, str("empty.txt"))   == NULL);
   assert_true(strtableGet(found_files, str("example.txt")) == NULL);
   assert_true(strtableGet(found_files, str("symlink.txt")) == NULL);
-  assert_true(strtableGet(found_files, str("valid-config-files"))     == NULL);
-  assert_true(strtableGet(found_files, str("broken-config-files"))    == NULL);
-  assert_true(strtableGet(found_files, str("template-config-files"))  == NULL);
-  assert_true(strtableGet(found_files, str("generated-config-files")) == NULL);
+  checkHasIgnoredProperly(found_files);
 
   checkHasPolicy(found_files, "test directory",                            BPOL_track);
   checkHasPolicy(found_files, "test directory/.empty",                     BPOL_track);
@@ -570,10 +574,7 @@ static void testMismatchedPaths(String cwd)
   assert_true(strtableGet(found_files, str("symlink.txt/foo-bar.txt")) == NULL);
 
   assert_true(strtableGet(found_files, str("example.txt"))            == NULL);
-  assert_true(strtableGet(found_files, str("valid-config-files"))     == NULL);
-  assert_true(strtableGet(found_files, str("broken-config-files"))    == NULL);
-  assert_true(strtableGet(found_files, str("template-config-files"))  == NULL);
-  assert_true(strtableGet(found_files, str("generated-config-files")) == NULL);
+  checkHasIgnoredProperly(found_files);
 
   checkHasPolicy(found_files, "test directory", BPOL_none);
   assert_true(strtableGet(found_files, str("test directory/super-file.txt"))  == NULL);
@@ -625,7 +626,7 @@ static void testComplexSearch(String cwd)
   assert_true(populateDirectoryTable(context, found_files, cwd) == 26);
   finishSearch(context, cwd_depth);
 
-  checkIgnoreExpression(root, "test/data/.+-config-files$", true);
+  checkIgnoreExpression(root, "test/data/.*(tmp|config-files|metadata)$", true);
   checkIgnoreExpression(root, "^never-matches-anything$",   false);
   checkIgnoreExpression(root, "\\.hidden symlink/2\\.txt$", false);
   checkIgnoreExpression(root, "1\\.txt$",                   true);
@@ -634,11 +635,7 @@ static void testComplexSearch(String cwd)
   checkHasPolicy(found_files, "empty.txt",   BPOL_copy);
   checkHasPolicy(found_files, "example.txt", BPOL_copy);
   checkHasPolicy(found_files, "symlink.txt", BPOL_copy);
-
-  assert_true(strtableGet(found_files, str("valid-config-files"))     == NULL);
-  assert_true(strtableGet(found_files, str("broken-config-files"))    == NULL);
-  assert_true(strtableGet(found_files, str("template-config-files"))  == NULL);
-  assert_true(strtableGet(found_files, str("generated-config-files")) == NULL);
+  checkHasIgnoredProperly(found_files);
 
   checkHasPolicy(found_files, "test directory",                            BPOL_mirror);
   checkHasPolicy(found_files, "test directory/.empty",                     BPOL_mirror);
