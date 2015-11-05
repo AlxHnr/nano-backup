@@ -219,7 +219,7 @@ void sFread(void *ptr, size_t size, FileStream *stream)
     }
     else
     {
-      die("IO error while reading \"%s\"", Fdestroy(stream));
+      dieErrno("IO error while reading \"%s\"", Fdestroy(stream));
     }
   }
 }
@@ -229,7 +229,7 @@ void sFwrite(const void *ptr, size_t size, FileStream *stream)
 {
   if(fwrite(ptr, 1, size, stream->file) != size)
   {
-    die("failed to write to \"%s\"", Fdestroy(stream));
+    dieErrno("failed to write to \"%s\"", Fdestroy(stream));
   }
 }
 

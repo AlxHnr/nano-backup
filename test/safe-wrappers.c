@@ -155,7 +155,7 @@ int main(void)
 
   /* Provoke failure by reading from a write-only stream. */
   assert_error(sFread(buffer, 10, sFopenWrite("tmp/example-write")),
-               "IO error while reading \"tmp/example-write\"");
+               "IO error while reading \"tmp/example-write\": Bad file descriptor");
 
   /* Test sFclose(). */
   example_read = sFopenRead("example.txt");
@@ -232,7 +232,7 @@ int main(void)
 
   /* Provoke errors by writing to a read-only stream. */
   assert_error(sFwrite("hello", 5, sFopenRead("example.txt")),
-               "failed to write to \"example.txt\"");
+               "failed to write to \"example.txt\": Bad file descriptor");
 
   test_file = sFopenRead("example.txt");
   assert_true(Fwrite("hello", 5, test_file) == false);
