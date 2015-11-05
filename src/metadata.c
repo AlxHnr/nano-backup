@@ -226,29 +226,25 @@ static time_t readTime(FileContent content, size_t *reader_position,
   return (time_t)time;
 }
 
-/** Reads the hash from a files content.
+/** Reads bytes into a specified buffer.
 
-  @param content The content of the file containing the hash.
-  @param reader_position The reader position at which the hash starts. It
-  will be moved to the next unread byte.
-  @param metadata_path The path to the file of the content, for printing
-  the error message.
-  @param hash The address of the array, into which the hash will be copied.
+  @param content The FileContent struct from which the bytes should be
+  read.
+  @param reader_position The position of the first byte to read in the
+  given content. It will be moved to the next unread byte once this
+  function returns.
+  @param buffer The buffer in which the bytes should be stored.
+  @param size The amount of bytes to be read.
+  @param metadata_path The path to the metadata file, for printing useful
+  error messages.
 */
-static void readHash(FileContent content, size_t *reader_position,
-                     const char *metadata_path, uint8_t *hash)
+static void readBytes(FileContent content, size_t *reader_position,
+                      char *buffer, size_t size, const char *metadata_path)
 {
-  assertBytesLeft(*reader_position, SHA_DIGEST_LENGTH,
-                  content, metadata_path);
+  assertBytesLeft(*reader_position, size, content, metadata_path);
 
-  memcpy(hash, &content.content[*reader_position], SHA_DIGEST_LENGTH);
-  *reader_position += SHA_DIGEST_LENGTH;
-}
-
-/** Counterpart to readHash(). */
-static void writeHash(uint8_t *hash, SafeWriteHandle *handle)
-{
-  writeSafeWriteHandle(hash, SHA_DIGEST_LENGTH, handle);
+  memcpy(buffer, &content.content[*reader_position], size);
+  *reader_position += size;
 }
 
 /** Reads a PathHistory struct from the content of the given file.
@@ -287,28 +283,34 @@ static PathHistory *readPathHistory(FileContent content,
     point->state.metadata.reg.size =
       read64(content, reader_position, metadata_path);
 
-    readHash(content, reader_position, metadata_path,
-             point->state.metadata.reg.hash);
-
-    point->state.metadata.reg.slot =
-      read8(content, reader_position, metadata_path);
+    if(point->state.metadata.reg.size > SHA_DIGEST_LENGTH)
+    {
+      readBytes(content, reader_position,
+                (char *)point->state.metadata.reg.hash,
+                SHA_DIGEST_LENGTH, metadata_path);
+      point->state.metadata.reg.slot =
+        read8(content, reader_position, metadata_path);
+    }
+    else if(point->state.metadata.reg.size > 0)
+    {
+      readBytes(content, reader_position,
+                (char *)point->state.metadata.reg.hash,
+                point->state.metadata.reg.size, metadata_path);
+    }
   }
   else if(point->state.type == PST_symlink)
   {
     size_t target_length =
       readSize(content, reader_position, metadata_path);
 
-    assertBytesLeft(*reader_position, target_length,
-                    content, metadata_path);
+    char *buffer = mpAlloc(sSizeAdd(target_length, 1));
 
-    char *target = mpAlloc(sSizeAdd(target_length, 1));
+    readBytes(content, reader_position, buffer, target_length,
+              metadata_path);
 
-    memcpy(target, &content.content[*reader_position], target_length);
-    *reader_position += target_length;
+    buffer[target_length] = '\0';
 
-    target[target_length] = '\0';
-
-    point->state.metadata.sym_target = target;
+    point->state.metadata.sym_target = buffer;
   }
   else if(point->state.type == PST_directory)
   {
@@ -392,8 +394,18 @@ static void writePathHistoryList(PathHistory *starting_point,
     {
       write32(point->state.metadata.reg.mode, handle);
       write64(point->state.metadata.reg.size, handle);
-      writeHash(point->state.metadata.reg.hash, handle);
-      write8(point->state.metadata.reg.slot, handle);
+
+      if(point->state.metadata.reg.size > SHA_DIGEST_LENGTH)
+      {
+        writeSafeWriteHandle(point->state.metadata.reg.hash,
+                             SHA_DIGEST_LENGTH, handle);
+        write8(point->state.metadata.reg.slot, handle);
+      }
+      else if(point->state.metadata.reg.size > 0)
+      {
+        writeSafeWriteHandle(point->state.metadata.reg.hash,
+                             point->state.metadata.reg.size, handle);
+      }
     }
     else if(point->state.type == PST_symlink)
     {
