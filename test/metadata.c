@@ -240,9 +240,10 @@ static void appendHistDirectory(PathNode *node, Backup *backup, uid_t uid,
   @param backup The backup, to which the history point belongs.
   @param file_size The size of the config file at the backup point.
   @param hash The hash of the config file during the backup point.
+  @param The slot number of the corresponding file in the repository.
 */
 static void appendConfHist(Metadata *metadata, Backup *backup,
-                           uint64_t file_size, uint8_t *hash)
+                           uint64_t file_size, uint8_t *hash, uint8_t slot)
 {
   PathHistory *history_point = mpAlloc(sizeof *history_point);
 
@@ -274,7 +275,8 @@ static void appendConfHist(Metadata *metadata, Backup *backup,
       .metadata.reg =
       {
         .mode = 0,
-        .size = file_size
+        .size = file_size,
+        .slot = slot
       }
     };
 
@@ -349,13 +351,14 @@ static size_t checkConfHist(Metadata *metadata)
 /** Assert that the given metadata contains a config history point with the
   specified properties. Counterpart to appendConfHist(). */
 static void mustHaveConf(Metadata *metadata, Backup *backup,
-                         uint64_t file_size, uint8_t *hash)
+                         uint64_t file_size, uint8_t *hash, uint8_t slot)
 {
   for(PathHistory *point = metadata->config_history;
       point != NULL; point = point->next)
   {
     if(point->backup == backup &&
        point->state.metadata.reg.size == file_size &&
+       point->state.metadata.reg.slot == slot &&
        memcmp(point->state.metadata.reg.hash, hash, SHA_DIGEST_LENGTH) == 0)
     {
       return;
@@ -589,9 +592,9 @@ static Metadata *genTestData1(void)
   initHistPoint(metadata, 3, 3, 9876);
 
   appendConfHist(metadata, &metadata->backup_history[1],
-                 131, (uint8_t *)"9a2c1f8130eb0cdef201");
+                 131, (uint8_t *)"9a2c1f8130eb0cdef201", 0);
   appendConfHist(metadata, &metadata->backup_history[3],
-                 96,  (uint8_t *)"f8130eb0cdef2019a2c1");
+                 96,  (uint8_t *)"f8130eb0cdef2019a2c1", 98);
 
   PathNode *etc = createPathNode("etc", BPOL_none, NULL, metadata);
   appendHistDirectory(etc, &metadata->backup_history[3], 12, 8,  2389478, 0777);
@@ -640,9 +643,9 @@ static void checkTestData1(Metadata *metadata)
   checkHistPoint(metadata, 3, 3, 9876, 6);
 
   mustHaveConf(metadata, &metadata->backup_history[1], 131,
-               (uint8_t *)"9a2c1f8130eb0cdef201");
+               (uint8_t *)"9a2c1f8130eb0cdef201", 0);
   mustHaveConf(metadata, &metadata->backup_history[3], 96,
-               (uint8_t *)"f8130eb0cdef2019a2c1");
+               (uint8_t *)"f8130eb0cdef2019a2c1", 98);
 
   assert_true(metadata->total_path_count == 6);
 
@@ -685,7 +688,7 @@ static Metadata *genTestData2(void)
   initHistPoint(metadata, 2, 2, 9742);
 
   appendConfHist(metadata, &metadata->backup_history[2],
-                 210, (uint8_t *)"0cdef2019a2c1f8130eb");
+                 210, (uint8_t *)"0cdef2019a2c1f8130eb", 255);
 
   PathNode *home = createPathNode("home", BPOL_none, NULL, metadata);
   appendHistDirectory(home, &metadata->backup_history[2], 0, 0,  12878, 0755);
@@ -728,7 +731,7 @@ static void checkTestData2(Metadata *metadata)
   checkHistPoint(metadata, 2, 2, 9742, 3);
 
   mustHaveConf(metadata, &metadata->backup_history[2], 210,
-               (uint8_t *)"0cdef2019a2c1f8130eb");
+               (uint8_t *)"0cdef2019a2c1f8130eb", 255);
 
   assert_true(metadata->total_path_count == 5);
 
@@ -770,7 +773,7 @@ static Metadata *genUnusedBackupPoints(void)
   initHistPoint(metadata, 5, 5, 47622);
 
   appendConfHist(metadata, &metadata->backup_history[1],
-                 6723, (uint8_t *)"fbc92e19ee0cd2140faa");
+                 6723, (uint8_t *)"fbc92e19ee0cd2140faa", 0);
 
   PathNode *home = createPathNode("home", BPOL_none, NULL, metadata);
   appendHistDirectory(home, &metadata->backup_history[1], 0, 0,  12878, 0755);
@@ -803,7 +806,7 @@ static void checkLoadedUnusedBackupPoints(Metadata *metadata)
   checkHistPoint(metadata, 2, 2, 54111,  2);
 
   mustHaveConf(metadata, &metadata->backup_history[0], 6723,
-               (uint8_t *)"fbc92e19ee0cd2140faa");
+               (uint8_t *)"fbc92e19ee0cd2140faa", 0);
 
   assert_true(metadata->total_path_count == 4);
 
@@ -837,7 +840,7 @@ static Metadata *genCurrentBackupData(void)
   initHistPoint(metadata, 1, 1, 84908);
 
   appendConfHist(metadata, &metadata->current_backup,
-                 6723, (uint8_t *)"fbc92e19ee0cd2140faa");
+                 6723, (uint8_t *)"fbc92e19ee0cd2140faa", 76);
 
   PathNode *home = createPathNode("home", BPOL_none, NULL, metadata);
   appendHistDirectory(home, &metadata->backup_history[0], 0, 0,  12878, 0755);
@@ -868,7 +871,7 @@ static void checkLoadedCurrentBackupData(Metadata *metadata)
   checkHistPoint(metadata, 2, 2, 84908, 1);
 
   mustHaveConf(metadata, &metadata->backup_history[0], 6723,
-               (uint8_t *)"fbc92e19ee0cd2140faa");
+               (uint8_t *)"fbc92e19ee0cd2140faa", 76);
 
   assert_true(metadata->total_path_count == 3);
 
@@ -944,9 +947,9 @@ static Metadata *genNoPathTree(void)
   initHistPoint(metadata, 1, 1, 29849483);
 
   appendConfHist(metadata, &metadata->backup_history[0],
-                 6723, (uint8_t *)"fbc92e19ee0cd2140faa");
+                 6723, (uint8_t *)"fbc92e19ee0cd2140faa", 34);
   appendConfHist(metadata, &metadata->backup_history[1],
-                 103894, (uint8_t *)"some test bytes?????");
+                 103894, (uint8_t *)"some test bytes?????", 35);
 
   return metadata;
 }
@@ -962,9 +965,9 @@ static void checkNoPathTree(Metadata *metadata)
   checkHistPoint(metadata, 1, 1, 29849483, 1);
 
   mustHaveConf(metadata, &metadata->backup_history[0],
-               6723, (uint8_t *)"fbc92e19ee0cd2140faa");
+               6723, (uint8_t *)"fbc92e19ee0cd2140faa", 34);
   mustHaveConf(metadata, &metadata->backup_history[1],
-               103894, (uint8_t *)"some test bytes?????");
+               103894, (uint8_t *)"some test bytes?????", 35);
 
   assert_true(metadata->total_path_count == 0);
   assert_true(metadata->paths == NULL);
@@ -1010,7 +1013,7 @@ static Metadata *initOnlyCurrentBackupData(Metadata *metadata)
   metadata->current_backup.timestamp = 1348981;
 
   appendConfHist(metadata, &metadata->current_backup,
-                 6723, (uint8_t *)"fbc92e19ee0cd2140faa");
+                 6723, (uint8_t *)"fbc92e19ee0cd2140faa", 1);
 
   PathNode *home = createPathNode("home", BPOL_none, NULL, metadata);
   appendHistDirectory(home, &metadata->current_backup, 0, 0,  12878, 0755);
@@ -1037,7 +1040,7 @@ static void checkOnlyCurrentBackupData(Metadata *metadata)
   checkHistPoint(metadata, 0, 0, 1348981, 4);
 
   mustHaveConf(metadata, &metadata->backup_history[0], 6723,
-               (uint8_t *)"fbc92e19ee0cd2140faa");
+               (uint8_t *)"fbc92e19ee0cd2140faa", 1);
 
   assert_true(metadata->total_path_count == 3);
 
