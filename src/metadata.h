@@ -42,11 +42,17 @@ typedef struct
 {
   mode_t mode; /**< The permission bits of the file. */
   uint64_t size; /**< The file size. */
-  uint8_t hash[SHA_DIGEST_LENGTH]; /**< The hash of the file. */
+
+  /** The hash of the file. This array is only defined if the file size is
+    greater than zero. If the files size is smaller than or equal to
+    SHA_DIGEST_LENGTH, the entire file will be stored in the first bytes of
+    this array. */
+  uint8_t hash[SHA_DIGEST_LENGTH];
 
   /** The slot number of the corresponding file in the repository. It is
     used for generating unique filenames in case that two different files
-    have the same size and hash. */
+    have the same size and hash. This variable is only defined if the file
+    size is greater than SHA_DIGEST_LENGTH. */
   uint8_t slot;
 }RegularMetadata;
 
@@ -150,10 +156,10 @@ typedef struct
   Backup *backup_history;
 
   /** The history of the repositories config file. Its path states will
-    have always the type PST_regular. Its RegularMetadata contains only the
-    files size and its hash. All other values in its RegularMetadata will
-    be undefined. Will be NULL, if this struct doesn't contain a config
-    history. */
+    have always the type PST_regular and all its variables will be
+    undefined, with the exception of metadata.reg. In metadata.reg the
+    "mode" variable will be undefined. If this metadata doesn't have a
+    config history, it will point to NULL. */
   PathHistory *config_history;
 
   /** The amount of paths in the tree. It is only used as a helper variable
