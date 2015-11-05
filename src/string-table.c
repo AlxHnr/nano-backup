@@ -208,7 +208,7 @@ void strtableMap(StringTable *table, String key, void *data)
   bucket->next = table->buckets[bucket_id];
   table->buckets[bucket_id] = bucket;
 
-  table->associations++;
+  table->associations = sSizeAdd(table->associations, 1);
 }
 
 /** Returns the value associated with the given key.
