@@ -153,6 +153,32 @@ static void appendHist(PathNode *node, Backup *backup, PathState state)
   history_point->next = NULL;
 }
 
+/** Assigns the given values to the specified path state as defined in the
+  documentation of RegularMetadata.
+
+  @param state A path state which must have the type PST_regular.
+  @param size The size of the file described by the path state.
+  @param hash The hash of the file or the files entire content, depending
+  on the files size.
+  @param slot The slot number of the file in the repository. Will be
+  ignored if the files size is not greater than SHA_DIGEST_LENGTH.
+*/
+static void assignRegularValues(PathState *state, uint64_t size,
+                                uint8_t *hash ,uint8_t slot)
+{
+  state->metadata.reg.size = size;
+
+  if(size > SHA_DIGEST_LENGTH)
+  {
+    memcpy(state->metadata.reg.hash, hash, SHA_DIGEST_LENGTH);
+    state->metadata.reg.slot = slot;
+  }
+  else if(size > 0)
+  {
+    memcpy(state->metadata.reg.hash, hash, size);
+  }
+}
+
 /** A wrapper around appendHist(), which appends a path state with the type
   PST_non_existing. */
 static void appendHistNonExisting(PathNode *node, Backup *backup)
@@ -168,8 +194,11 @@ static void appendHistNonExisting(PathNode *node, Backup *backup)
   @param timestamp The modification time of the file.
   @param mode The permission bits of the file.
   @param size The files size.
-  @param hash A pointer to the hash of the file.
+  @param hash A pointer to the hash of the file. Will be ignored if the
+  file size is 0. Otherwise it will be defined like in the documentation of
+  RegularMetadata.
   @param slot The slot number of the corresponding file in the repository.
+  Will be ignored if the file size is not bigger than SHA_DIGEST_LENGTH.
 */
 static void appendHistRegular(PathNode *node, Backup *backup, uid_t uid,
                               gid_t gid, time_t timestamp, mode_t mode,
@@ -180,16 +209,11 @@ static void appendHistRegular(PathNode *node, Backup *backup, uid_t uid,
     .type = PST_regular,
     .uid = uid,
     .gid = gid,
-    .timestamp = timestamp,
-    .metadata.reg =
-    {
-      .mode = mode,
-      .size = size,
-      .slot = slot
-    }
+    .timestamp = timestamp
   };
 
-  memcpy(&state.metadata.reg.hash, hash, SHA_DIGEST_LENGTH);
+  state.metadata.reg.mode = mode;
+  assignRegularValues(&state, size, hash, slot);
   appendHist(node, backup, state);
 }
 
@@ -239,8 +263,11 @@ static void appendHistDirectory(PathNode *node, Backup *backup, uid_t uid,
   @param metadata The metadata struct containing the history.
   @param backup The backup, to which the history point belongs.
   @param file_size The size of the config file at the backup point.
-  @param hash The hash of the config file during the backup point.
-  @param The slot number of the corresponding file in the repository.
+  @param hash The hash of the config file during the backup point. Read the
+  documentation of RegularMetadata for more informations how and when the
+  hash will be stored.
+  @param The slot number of the corresponding file in the repository. Will
+  be ignored if the file size is not greater than SHA_DIGEST_LENGTH.
 */
 static void appendConfHist(Metadata *metadata, Backup *backup,
                            uint64_t file_size, uint8_t *hash, uint8_t slot)
@@ -272,15 +299,10 @@ static void appendConfHist(Metadata *metadata, Backup *backup,
       .uid = 0,
       .gid = 0,
       .timestamp = 0,
-      .metadata.reg =
-      {
-        .mode = 0,
-        .size = file_size,
-        .slot = slot
-      }
     };
 
-  memcpy(&history_point->state.metadata.reg.hash, hash, SHA_DIGEST_LENGTH);
+  history_point->state.metadata.reg.mode = 0;
+  assignRegularValues(&history_point->state, file_size, hash, slot);
   history_point->next = NULL;
 }
 
