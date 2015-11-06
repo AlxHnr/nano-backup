@@ -264,10 +264,10 @@ static void appendHistDirectory(PathNode *node, Backup *backup, uid_t uid,
   @param backup The backup, to which the history point belongs.
   @param file_size The size of the config file at the backup point.
   @param hash The hash of the config file during the backup point. Read the
-  documentation of RegularMetadata for more informations how and when the
-  hash will be stored.
-  @param The slot number of the corresponding file in the repository. Will
-  be ignored if the file size is not greater than SHA_DIGEST_LENGTH.
+  documentation of RegularMetadata for more informations on how and when
+  the hash will be stored.
+  @param slot The slot number of the corresponding file in the repository.
+  Will be ignored if the file size is not greater than SHA_DIGEST_LENGTH.
 */
 static void appendConfHist(Metadata *metadata, Backup *backup,
                            uint64_t file_size, uint8_t *hash, uint8_t slot)
