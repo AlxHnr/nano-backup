@@ -286,7 +286,7 @@ static void appendHistDirectory(PathNode *node, Backup *backup, uid_t uid,
 
   @param metadata The metadata struct containing the history.
   @param backup The backup, to which the history point belongs.
-  @param file_size The size of the config file at the backup point.
+  @param size The size of the config file at the backup point.
   @param hash The hash of the config file during the backup point. Read the
   documentation of RegularMetadata for more informations on how and when
   the hash will be stored.
@@ -294,7 +294,7 @@ static void appendHistDirectory(PathNode *node, Backup *backup, uid_t uid,
   Will be ignored if the file size is not greater than SHA_DIGEST_LENGTH.
 */
 static void appendConfHist(Metadata *metadata, Backup *backup,
-                           uint64_t file_size, uint8_t *hash, uint8_t slot)
+                           uint64_t size, uint8_t *hash, uint8_t slot)
 {
   PathHistory *history_point = mpAlloc(sizeof *history_point);
 
@@ -326,7 +326,7 @@ static void appendConfHist(Metadata *metadata, Backup *backup,
     };
 
   history_point->state.metadata.reg.mode = 0;
-  assignRegularValues(&history_point->state, file_size, hash, slot);
+  assignRegularValues(&history_point->state, size, hash, slot);
   history_point->next = NULL;
 }
 
@@ -397,13 +397,13 @@ static size_t checkConfHist(Metadata *metadata)
 /** Assert that the given metadata contains a config history point with the
   specified properties. Counterpart to appendConfHist(). */
 static void mustHaveConf(Metadata *metadata, Backup *backup,
-                         uint64_t file_size, uint8_t *hash, uint8_t slot)
+                         uint64_t size, uint8_t *hash, uint8_t slot)
 {
   for(PathHistory *point = metadata->config_history;
       point != NULL; point = point->next)
   {
     if(point->backup == backup &&
-       checkRegularValues(&point->state, file_size, hash, slot))
+       checkRegularValues(&point->state, size, hash, slot))
     {
       return;
     }
