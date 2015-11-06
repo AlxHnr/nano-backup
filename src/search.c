@@ -405,9 +405,9 @@ static SearchResult finishCurrentNode(SearchContext *context)
 
 /** Creates a new SearchContext for searching the filesystem.
 
-  @param node A search tree used for searching the filesystem. The returned
-  SearchContext will keep references into this search tree, so make sure
-  not to modify it as long as the context is in use.
+  @param root_node A search tree used for searching the filesystem. The
+  returned SearchContext will keep references into this search tree, so
+  make sure not to modify it as long as the context is in use.
 
   @return A new search context from which files and directories can be
   queried by using searchGetNext(). It will be automatically destroyed if

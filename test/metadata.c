@@ -548,6 +548,8 @@ static Metadata *createEmptyMetadata(size_t backup_history_length)
 /** Performs some basic checks on a metadata struct.
 
   @param metadata The metadata struct to be checked.
+  @param config_history_length The length of the config history which the
+  given metadata must have.
 */
 static void checkMetadata(Metadata *metadata, size_t config_history_length)
 {
