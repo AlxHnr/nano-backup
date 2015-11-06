@@ -179,6 +179,30 @@ static void assignRegularValues(PathState *state, uint64_t size,
   }
 }
 
+/** Returns true if the specified regular path state contains the given
+  values. Counterpart to assignRegularValues(). */
+static bool checkRegularValues(PathState *state, uint64_t size,
+                               uint8_t *hash, uint8_t slot)
+{
+  if(state->metadata.reg.size != size)
+  {
+    return false;
+  }
+  else if(size > SHA_DIGEST_LENGTH)
+  {
+    return (memcmp(state->metadata.reg.hash, hash, SHA_DIGEST_LENGTH) == 0)
+      && state->metadata.reg.slot == slot;
+  }
+  else if(size > 0)
+  {
+    return memcmp(state->metadata.reg.hash, hash, size) == 0;
+  }
+  else
+  {
+    return true;
+  }
+}
+
 /** A wrapper around appendHist(), which appends a path state with the type
   PST_non_existing. */
 static void appendHistNonExisting(PathNode *node, Backup *backup)
@@ -379,9 +403,7 @@ static void mustHaveConf(Metadata *metadata, Backup *backup,
       point != NULL; point = point->next)
   {
     if(point->backup == backup &&
-       point->state.metadata.reg.size == file_size &&
-       point->state.metadata.reg.slot == slot &&
-       memcmp(point->state.metadata.reg.hash, hash, SHA_DIGEST_LENGTH) == 0)
+       checkRegularValues(&point->state, file_size, hash, slot))
     {
       return;
     }
@@ -453,9 +475,7 @@ static void mustHaveRegular(PathNode *node, Backup *backup, uid_t uid,
        point->state.uid == uid && point->state.gid == gid &&
        point->state.timestamp == timestamp &&
        point->state.metadata.reg.mode == mode &&
-       point->state.metadata.reg.size == size &&
-       point->state.metadata.reg.slot == slot &&
-       memcmp(point->state.metadata.reg.hash, hash, SHA_DIGEST_LENGTH) == 0)
+       checkRegularValues(&point->state, size, hash, slot))
     {
       return;
     }
