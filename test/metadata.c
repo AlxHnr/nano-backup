@@ -1101,6 +1101,10 @@ static void checkOnlyCurrentBackupData(Metadata *metadata)
 
 int main(void)
 {
+  testGroupStart("newMetadata()");
+  checkEmptyMetadata(newMetadata());
+  testGroupEnd();
+
   testGroupStart("reading and writing of metadata");
   /* Write and read TestData1. */
   Metadata *test_data_1 = genTestData1();
