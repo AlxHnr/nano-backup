@@ -38,7 +38,7 @@ test: $(TESTS) $(GENERATED_CONFIGS) test/data/test\ directory/.empty/ \
 	  rm -rf tmp/)
 
 build/test/%: build/test/%.o \
-  $(filter-out build/main.o build/error-handling.o,$(OBJECTS))
+  $(filter-out build/nb.o build/error-handling.o,$(OBJECTS))
 	$(CC) $(LDFLAGS) $^ -o $@
 
 build/test/%.o: test/%.c
