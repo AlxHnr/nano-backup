@@ -516,6 +516,30 @@ static void writePathList(PathNode *node_list, SafeWriteHandle *handle)
   }
 }
 
+/** Creates an empty metadata struct.
+
+  @return A metadata struct which should not be freed by the caller.
+*/
+Metadata *newMetadata(void)
+{
+  Metadata *metadata = mpAlloc(sizeof *metadata);
+
+  metadata->current_backup.id = 0;
+  metadata->current_backup.timestamp = 0;
+  metadata->current_backup.ref_count = 0;
+
+  metadata->backup_history_length = 0;
+  metadata->backup_history = NULL;
+
+  metadata->config_history = NULL;
+
+  metadata->total_path_count = 0;
+  metadata->path_table = strtableNewFixed(1);
+  metadata->paths = NULL;
+
+  return metadata;
+}
+
 /** Loads the metadata of a repository.
 
   @param path The full or relative path to the metadata file.
