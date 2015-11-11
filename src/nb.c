@@ -35,7 +35,7 @@ int main(const int arg_count, const char **arg_list)
 {
   if(arg_count <= 1)
   {
-    die("no arguments specified");
+    die("no arguments");
   }
   else if(arg_count > 2)
   {
@@ -58,7 +58,7 @@ int main(const int arg_count, const char **arg_list)
 
   if(!sPathExists(config_path.str))
   {
-    die("repository doesn't have a config file: \"%s\"", arg_list[1]);
+    die("repository has no config file: \"%s\"", arg_list[1]);
   }
   searchTreeLoad(config_path.str);
 
