@@ -27,7 +27,76 @@
 
 #include "backup.h"
 
+#include <unistd.h>
+
 #include "search.h"
+#include "memory-pool.h"
+#include "safe-wrappers.h"
+#include "error-handling.h"
+
+/** Constructs a path history point from the given data.
+
+  @param metadata The metadata to which the point belongs to.
+  @param result The search result describing a found path, which must have
+  the type SRT_regular, SRT_symlink or SRT_directory. Otherwise it will
+  result in undefined behaviour.
+
+  @return A new PathHistory point that should not be freed by the caller.
+*/
+static PathHistory *buildPathHistoryPoint(Metadata *metadata,
+                                          SearchResult result)
+{
+  PathHistory *point = mpAlloc(sizeof *point);
+
+  point->backup = &metadata->current_backup;
+  point->backup->ref_count = sSizeAdd(point->backup->ref_count, 1);
+
+  point->state.uid = result.stats.st_uid;
+  point->state.gid = result.stats.st_gid;
+  point->state.timestamp = result.stats.st_mtime;
+
+  if(result.type == SRT_regular)
+  {
+    point->state.type = PST_regular;
+    point->state.metadata.reg.mode = result.stats.st_mode;
+    point->state.metadata.reg.size = result.stats.st_size;
+  }
+  else if(result.type == SRT_symlink)
+  {
+    point->state.type = PST_symlink;
+
+    char *buffer = mpAlloc(sSizeAdd(result.stats.st_size, 1));
+
+    /* Although st_size bytes are enough to store the symlinks target path,
+       +1 is added to make use of the full buffer. This allows to detect
+       whether the symlink has increased in size since its last lstat() or
+       not. */
+    ssize_t read_bytes =
+      readlink(result.path.str, buffer, result.stats.st_size + 1);
+
+    if(read_bytes == -1)
+    {
+      dieErrno("failed to read symlink: \"%s\"", result.path.str);
+    }
+    else if(read_bytes != result.stats.st_size)
+    {
+      die("symlink changed while reading: \"%s\"", result.path.str);
+    }
+
+    buffer[result.stats.st_size] = '\0';
+
+    point->state.metadata.sym_target = buffer;
+  }
+  else if(result.type == SRT_directory)
+  {
+    point->state.type = PST_directory;
+    point->state.metadata.dir_mode = result.stats.st_mode;
+  }
+
+  point->next = NULL;
+
+  return point;
+}
 
 /** Initiates a backup by updating the given metadata with new or changed
   files found trough the specified search tree. To speed things up, hash
