@@ -27,6 +27,7 @@
 
 #include "backup.h"
 
+#include <string.h>
 #include <unistd.h>
 
 #include "search.h"
@@ -98,6 +99,56 @@ static PathHistory *buildPathHistoryPoint(Metadata *metadata,
   return point;
 }
 
+/** Queries and processes the next search result recursively and updates
+  the given metadata as described in the documentation of initiateBackup().
+
+  @param metadata The metadata which should be updated.
+  @param node_list A pointer to the node list corresponding to the
+  currently traversed directory.
+  @param context The context from which the search result should be
+  queried.
+
+  @return The type of the processed result.
+*/
+static SearchResultType initiateMetadataRecursively(Metadata *metadata,
+                                                    PathNode **node_list,
+                                                    SearchContext *context)
+{
+  SearchResult result = searchGetNext(context);
+  if(result.type == SRT_end_of_directory ||
+     result.type == SRT_end_of_search ||
+     result.type == SRT_other)
+  {
+    return result.type;
+  }
+
+  PathNode *node = strtableGet(metadata->path_table, result.path);
+
+  if(node == NULL)
+  {
+    node = mpAlloc(sizeof *node);
+
+    String path_copy = strCopy(result.path);
+    memcpy(&node->path, &path_copy, sizeof(node->path));
+
+    node->policy = result.policy;
+    node->history = buildPathHistoryPoint(metadata, result);
+    node->subnodes = NULL;
+
+    /* Prepend the new node to the current node list. */
+    node->next = *node_list;
+    *node_list = node;
+  }
+
+  if(result.type == SRT_directory)
+  {
+    while(initiateMetadataRecursively(metadata, &node->subnodes, context)
+          != SRT_end_of_directory);
+  }
+
+  return result.type;
+}
+
 /** Initiates a backup by updating the given metadata with new or changed
   files found trough the specified search tree. To speed things up, hash
   computations of some files are skipped, which leaves the metadata in an
@@ -116,6 +167,7 @@ static PathHistory *buildPathHistoryPoint(Metadata *metadata,
 */
 void initiateBackup(Metadata *metadata, SearchNode *root_node)
 {
-  (void)metadata;
-  (void)root_node;
+  SearchContext *context = searchNew(root_node);
+  while(initiateMetadataRecursively(metadata, &metadata->paths, context)
+        != SRT_end_of_search);
 }
