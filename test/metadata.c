@@ -1229,8 +1229,6 @@ int main(void)
                "corrupted metadata: expected 8 bytes, got 7: \"generated-broken-metadata/incomplete-time\"");
   assert_error(loadMetadata("generated-broken-metadata/missing-time"),
                "corrupted metadata: expected 8 bytes, got 0: \"generated-broken-metadata/missing-time\"");
-  assert_error(loadMetadata("generated-broken-metadata/time-overflow"),
-               "overflow reading timestamp from \"generated-broken-metadata/time-overflow\"");
   assert_error(loadMetadata("generated-broken-metadata/incomplete-hash"),
                "corrupted metadata: expected 20 bytes, got 5: \"generated-broken-metadata/incomplete-hash\"");
   assert_error(loadMetadata("generated-broken-metadata/missing-hash"),

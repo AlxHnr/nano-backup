@@ -29,7 +29,6 @@ head -c 418 "$test_data_1" > "$target_dir/missing-symlink-target-path"
 head -c 756 "$test_data_1" > "$target_dir/last-byte-missing"
 
 # Copy or generate various other broken files.
-cp "$dummy_path/time-overflow" "$target_dir"
 cp "$dummy_path/invalid-path-state-type" "$target_dir"
 cp "$dummy_path/path-count-zero" "$target_dir"
 cp "$test_data_1" "$target_dir/unneeded-trailing-bytes"

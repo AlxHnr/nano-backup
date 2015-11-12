@@ -217,10 +217,9 @@ static time_t readTime(FileContent content, size_t *reader_position,
 {
   uint64_t time = read64(content, reader_position, metadata_path);
 
-  if((sizeof(time_t) == 8 && time > INT64_MAX) ||
-     (sizeof(time_t) == 4 && time > INT32_MAX))
+  if(sizeof(time_t) == 4 && time > UINT32_MAX)
   {
-    die("overflow reading timestamp from \"%s\"", metadata_path);
+    die("unable to read 64-bit timestamp from \"%s\"", metadata_path);
   }
 
   return (time_t)time;
