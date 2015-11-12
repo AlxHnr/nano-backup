@@ -631,7 +631,7 @@ static Metadata *genTestData1(void)
 {
   Metadata *metadata = createEmptyMetadata(4);
   initHistPoint(metadata, 0, 0, 1234);
-  initHistPoint(metadata, 1, 1, 4321);
+  initHistPoint(metadata, 1, 1, -1334953412);
   initHistPoint(metadata, 2, 2, 7890);
   initHistPoint(metadata, 3, 3, 9876);
 
@@ -641,7 +641,7 @@ static Metadata *genTestData1(void)
                  21,  (uint8_t *)"f8130eb0cdef2019a2c1", 98);
 
   PathNode *etc = createPathNode("etc", BPOL_none, NULL, metadata);
-  appendHistDirectory(etc, &metadata->backup_history[3], 12, 8,  2389478, 0777);
+  appendHistDirectory(etc, &metadata->backup_history[3], 12, 8, INT32_MAX, 0777);
   metadata->paths = etc;
 
   PathNode *conf_d = createPathNode("conf.d", BPOL_none, etc, metadata);
@@ -682,7 +682,7 @@ static void checkTestData1(Metadata *metadata)
   assert_true(metadata->backup_history_length == 4);
 
   checkHistPoint(metadata, 0, 0, 1234, 1);
-  checkHistPoint(metadata, 1, 1, 4321, 1);
+  checkHistPoint(metadata, 1, 1, -1334953412, 1);
   checkHistPoint(metadata, 2, 2, 7890, 3);
   checkHistPoint(metadata, 3, 3, 9876, 6);
 
@@ -694,7 +694,7 @@ static void checkTestData1(Metadata *metadata)
   assert_true(metadata->total_path_count == 6);
 
   PathNode *etc = findNode(metadata->paths, "/etc", BPOL_none, 1, 2);
-  mustHaveDirectory(etc, &metadata->backup_history[3], 12, 8, 2389478, 0777);
+  mustHaveDirectory(etc, &metadata->backup_history[3], 12, 8, INT32_MAX, 0777);
 
   PathNode *conf_d = findNode(etc->subnodes, "/etc/conf.d", BPOL_none, 1, 2);
   mustHaveDirectory(conf_d, &metadata->backup_history[3], 3, 5, 102934, 0123);
@@ -749,7 +749,7 @@ static Metadata *genTestData2(void)
                     0755, 252, (uint8_t *)"cdef2019a2c1f8130eb0", 43);
 
   PathNode *config = createPathNode(".config", BPOL_track, user, metadata);
-  appendHistDirectory(config, &metadata->backup_history[0], 783, 192, 3487901, 0575);
+  appendHistDirectory(config, &metadata->backup_history[0], 783, 192, INT32_MIN, 0575);
 
   PathNode *usr = createPathNode("usr", BPOL_copy, NULL, metadata);
   appendHistDirectory(usr, &metadata->backup_history[0], 3497, 2389, 183640, 0655);
@@ -793,7 +793,7 @@ static void checkTestData2(Metadata *metadata)
                   0755, 252, (uint8_t *)"cdef2019a2c1f8130eb0", 43);
 
   PathNode *config = findNode(user->subnodes, "/home/user/.config", BPOL_track, 1, 0);
-  mustHaveDirectory(config, &metadata->backup_history[0], 783, 192, 3487901, 0575);
+  mustHaveDirectory(config, &metadata->backup_history[0], 783, 192, INT32_MIN, 0575);
 
   PathNode *usr = findNode(metadata->paths, "/usr", BPOL_copy, 2, 0);
   mustHaveDirectory(usr, &metadata->backup_history[0], 3497, 2389, 183640, 0655);
@@ -812,7 +812,7 @@ static Metadata *genUnusedBackupPoints(void)
   initHistPoint(metadata, 0, 0, 84390);
   initHistPoint(metadata, 1, 1, 140908);
   initHistPoint(metadata, 2, 2, 13098);
-  initHistPoint(metadata, 3, 3, 6810);
+  initHistPoint(metadata, 3, 3, -6810);
   initHistPoint(metadata, 4, 4, 54111);
   initHistPoint(metadata, 5, 5, 47622);
 
@@ -846,7 +846,7 @@ static void checkLoadedUnusedBackupPoints(Metadata *metadata)
   assert_true(metadata->backup_history_length == 3);
 
   checkHistPoint(metadata, 0, 0, 140908, 3);
-  checkHistPoint(metadata, 1, 1, 6810,   1);
+  checkHistPoint(metadata, 1, 1, -6810,  1);
   checkHistPoint(metadata, 2, 2, 54111,  2);
 
   mustHaveConf(metadata, &metadata->backup_history[0], 3,
@@ -1067,7 +1067,7 @@ static Metadata *initOnlyCurrentBackupData(Metadata *metadata)
   appendHistDirectory(user, &metadata->current_backup, 1000, 75, 120948, 0600);
 
   PathNode *bashrc = createPathNode(".bashrc", BPOL_track, user, metadata);
-  appendHistRegular(bashrc, &metadata->current_backup, 983, 57, 1920,
+  appendHistRegular(bashrc, &metadata->current_backup, 983, 57, -1,
                     0655, 0, (uint8_t *)"8130eb0cdef2019a2c1f", 127);
 
   return metadata;
@@ -1095,7 +1095,7 @@ static void checkOnlyCurrentBackupData(Metadata *metadata)
   mustHaveDirectory(user, &metadata->backup_history[0], 1000, 75, 120948, 0600);
 
   PathNode *bashrc = findNode(user->subnodes, "/home/user/.bashrc", BPOL_track, 1, 0);
-  mustHaveRegular(bashrc, &metadata->backup_history[0], 983, 57, 1920,
+  mustHaveRegular(bashrc, &metadata->backup_history[0], 983, 57, -1,
                   0655, 0, (uint8_t *)"....................", 217);
 }
 
