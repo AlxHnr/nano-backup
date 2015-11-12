@@ -25,6 +25,7 @@
   Implements the nb program.
 */
 
+#include "backup.h"
 #include "metadata.h"
 #include "search-tree.h"
 #include "string-utils.h"
@@ -60,10 +61,13 @@ int main(const int arg_count, const char **arg_list)
   {
     die("repository has no config file: \"%s\"", arg_list[1]);
   }
-  searchTreeLoad(config_path.str);
+  SearchNode *root_node = searchTreeLoad(config_path.str);
 
-  if(sPathExists(metadata_path.str))
-  {
-    loadMetadata(metadata_path.str);
-  }
+  Metadata *metadata =
+    sPathExists(metadata_path.str)?
+    loadMetadata(metadata_path.str):
+    newMetadata();
+
+  initiateBackup(metadata, root_node);
+  writeMetadata(metadata, arg_list[1]);
 }
