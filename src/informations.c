@@ -29,6 +29,8 @@
 
 #include <stdio.h>
 
+#include "safe-wrappers.h"
+
 /** Recursively prints informations about all nodes in the given search
   tree, that have never matched an existing file or directory.
 
@@ -56,6 +58,85 @@ static void printSearchNodeInfos(SearchNode *root_node)
       printSearchNodeInfos(node);
     }
   }
+}
+
+/** Prints informations about a new directory.
+
+  @param node The node representing the new directory.
+  @param changes A summary of all changes in the subnodes of the given
+  node.
+*/
+static void printNewDirInfo(PathNode *node, MetadataChanges changes)
+{
+  printf("++ %s/ (", node->path.str);
+
+  if(changes.new_files_count > 0)
+  {
+    printf("+%zu File%s, +", changes.new_files_count,
+           changes.new_files_count == 1?"":"s");
+    printHumanReadableSize(changes.new_files_size);
+  }
+  else
+  {
+    printf("Empty");
+  }
+
+  printf(")\n");
+}
+
+static MetadataChanges printPathListRecursively(Metadata *metadata,
+                                                PathNode *path_list,
+                                                bool print)
+{
+  MetadataChanges changes =
+  {
+    .new_files_count = 0,
+    .new_files_size = 0
+  };
+
+  for(PathNode *node = path_list; node != NULL; node = node->next)
+  {
+    /* Skip files that already existed in the last backup. */
+    if(node->history->backup != &metadata->current_backup ||
+       node->history->next != NULL)
+    {
+      continue;
+    }
+
+    if(node->history->state.type == PST_directory)
+    {
+      MetadataChanges subnode_changes;
+
+      if(node->policy != BPOL_none && print == true)
+      {
+        subnode_changes =
+          printPathListRecursively(metadata, node->subnodes, false);
+        printNewDirInfo(node, subnode_changes);
+      }
+      else
+      {
+        subnode_changes =
+          printPathListRecursively(metadata, node->subnodes, print);
+      }
+
+      changes.new_files_count =
+        sUint64Add(changes.new_files_count,
+                   subnode_changes.new_files_count);
+      changes.new_files_size =
+        sSizeAdd(changes.new_files_size, subnode_changes.new_files_size);
+    }
+    else if(node->history->state.type == PST_regular)
+    {
+      changes.new_files_count = sUint64Add(changes.new_files_count, 1);
+      changes.new_files_size =
+        sSizeAdd(changes.new_files_size,
+                 node->history->state.metadata.reg.size);
+
+      if(print) printf("++ %s\n", node->path.str);
+    }
+  }
+
+  return changes;
 }
 
 /** Prints the given size in a human readable way.
@@ -102,4 +183,16 @@ void printSearchTreeInfos(SearchNode *root_node)
              expression->line_nr, expression->expression.str);
     }
   }
+}
+
+/** Prints the changes in the given metadata tree.
+
+  @param metadata A metadata tree, which must have been initiated with
+  initiateBackup().
+
+  @return A shallow summary of the printed changes for further processing.
+*/
+MetadataChanges printMetadataChanges(Metadata *metadata)
+{
+  return printPathListRecursively(metadata, metadata->paths, true);
 }

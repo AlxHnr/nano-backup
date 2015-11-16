@@ -28,9 +28,24 @@
 #ifndef _NANO_BACKUP_INFORMATIONS_H_
 #define _NANO_BACKUP_INFORMATIONS_H_
 
+#include <stddef.h>
+#include <stdint.h>
+
+#include "metadata.h"
 #include "search-tree.h"
+
+/** Stores a shallow summary of the changes in a metadata tree. */
+typedef struct
+{
+  /** The amount of new files added to the metadata tree. */
+  size_t new_files_count;
+
+  /** The total size of all new files added to the metadata tree. */
+  uint64_t new_files_size;
+}MetadataChanges;
 
 extern void printHumanReadableSize(size_t size);
 extern void printSearchTreeInfos(SearchNode *root_node);
+extern MetadataChanges printMetadataChanges(Metadata *metadata);
 
 #endif
