@@ -25,6 +25,8 @@
   Implements the nb program.
 */
 
+#include <stdio.h>
+
 #include "backup.h"
 #include "metadata.h"
 #include "search-tree.h"
@@ -70,5 +72,10 @@ int main(const int arg_count, const char **arg_list)
     newMetadata();
 
   initiateBackup(metadata, root_node);
+  MetadataChanges changes = printMetadataChanges(metadata);
   printSearchTreeInfos(root_node);
+
+  printf("\nTotal: +%zu Files, +", changes.new_files_count);
+  printHumanReadableSize(changes.new_files_size);
+  printf("\n");
 }
