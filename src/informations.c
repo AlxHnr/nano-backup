@@ -58,6 +58,32 @@ static void printSearchNodeInfos(SearchNode *root_node)
   }
 }
 
+/** Prints the given size in a human readable way.
+
+  @param size The size which should be printed.
+*/
+void printHumanReadableSize(size_t size)
+{
+  static const char units[] = "bKMGT";
+  double converted_value = size;
+  size_t unit_index = 0;
+
+  while(converted_value > 999.9 && unit_index + 2 < sizeof(units))
+  {
+    converted_value /= 1024.0;
+    unit_index++;
+  }
+
+  if(unit_index == 0)
+  {
+    printf("%.0lf B", converted_value);
+  }
+  else
+  {
+    printf("%.1lf %ciB", converted_value, units[unit_index]);
+  }
+}
+
 /** Prints informations about the entire given search tree.
 
   @param root_node The root node of the tree for which informations should

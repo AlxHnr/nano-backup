@@ -30,6 +30,7 @@
 
 #include "search-tree.h"
 
+extern void printHumanReadableSize(size_t size);
 extern void printSearchTreeInfos(SearchNode *root_node);
 
 #endif
