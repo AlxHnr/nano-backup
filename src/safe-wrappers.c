@@ -167,6 +167,23 @@ size_t sSizeMul(size_t a, size_t b)
   return a * b;
 }
 
+/** Adds two uint64_t values and terminates the program on overflows.
+
+  @param a The first summand.
+  @param b The second summand.
+
+  @return The sum of a and b.
+*/
+uint64_t sUint64Add(uint64_t a, uint64_t b)
+{
+  if(a > UINT64_MAX - b)
+  {
+    die("overflow calculating unsigned 64-bit value");
+  }
+
+  return a + b;
+}
+
 /** Safe wrapper around fopen().
 
   @param path The path to the file which should be opened for reading. The

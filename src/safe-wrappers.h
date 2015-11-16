@@ -30,6 +30,7 @@
 #define _NANO_BACKUP_SAFE_WRAPPERS_H_
 
 #include <stddef.h>
+#include <stdint.h>
 #include <stdbool.h>
 
 #include <dirent.h>
@@ -40,6 +41,7 @@ extern void *sRealloc(void *ptr, size_t size);
 
 extern size_t sSizeAdd(size_t a, size_t b);
 extern size_t sSizeMul(size_t a, size_t b);
+extern uint64_t sUint64Add(uint64_t a, uint64_t b);
 
 /** An opaque wrapper around FILE, which stores additional informations for
   printing better error messages. */
