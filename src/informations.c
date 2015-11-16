@@ -1,0 +1,95 @@
+/*
+  Copyright (c) 2015 Alexander Heinrich <alxhnr@nudelpost.de>
+
+  This software is provided 'as-is', without any express or implied
+  warranty. In no event will the authors be held liable for any damages
+  arising from the use of this software.
+
+  Permission is granted to anyone to use this software for any purpose,
+  including commercial applications, and to alter it and redistribute it
+  freely, subject to the following restrictions:
+
+     1. The origin of this software must not be misrepresented; you must
+        not claim that you wrote the original software. If you use this
+        software in a product, an acknowledgment in the product
+        documentation would be appreciated but is not required.
+
+     2. Altered source versions must be plainly marked as such, and must
+        not be misrepresented as being the original software.
+
+     3. This notice may not be removed or altered from any source
+        distribution.
+*/
+
+/** @file
+  Implements printing of various backup informations.
+*/
+
+#include "informations.h"
+
+#include <stdio.h>
+
+/** Prints informations about an unmatched node.
+
+  @param node A node which has never matched a file or directory.
+*/
+static void printUnmatchedNode(SearchNode *node)
+{
+  if(node->regex != NULL)
+  {
+    printf("config: line %zu: regex matches no existing files: \"%s\"\n",
+           node->line_nr, node->name.str);
+  }
+  else
+  {
+    printf("config: line %zu: file or directory doesn't exist: \"%s\"\n",
+           node->line_nr, node->name.str);
+  }
+}
+
+/** Recursively prints informations about all nodes in the given search
+  tree, that have never matched an existing file or directory.
+
+  @param root_node The root node of the search tree, for which the
+  informations should be printed.
+*/
+static void printSearchNodeInfos(SearchNode *root_node)
+{
+  for(SearchNode *node = root_node->subnodes;
+      node != NULL; node = node->next)
+  {
+    if(node->search_match == SRT_none)
+    {
+      printUnmatchedNode(node);
+    }
+    else if(node->search_match != SRT_directory && node->subnodes != NULL)
+    {
+      printf("config: line %zu: %s doesn't match a directory: \"%s\"\n",
+             node->line_nr, node->regex?"regex":"file", node->name.str);
+    }
+    else if(node->subnodes != NULL)
+    {
+      printSearchTreeInfos(node->subnodes);
+    }
+  }
+}
+
+/** Prints informations about the entire given search tree.
+
+  @param root_node The root node of the tree for which informations should
+  be printed.
+*/
+void printSearchTreeInfos(SearchNode *root_node)
+{
+  printSearchNodeInfos(root_node);
+
+  for(RegexList *expression = *root_node->ignore_expressions;
+      expression != NULL; expression = expression->next)
+  {
+    if(expression->has_matched == false)
+    {
+      printf("config: line %zu: regex never matched a path: \"%s\"\n",
+             expression->line_nr, expression->expression.str);
+    }
+  }
+}

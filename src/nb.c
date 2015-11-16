@@ -28,6 +28,7 @@
 #include "backup.h"
 #include "metadata.h"
 #include "search-tree.h"
+#include "informations.h"
 #include "string-utils.h"
 #include "safe-wrappers.h"
 #include "error-handling.h"
@@ -69,5 +70,5 @@ int main(const int arg_count, const char **arg_list)
     newMetadata();
 
   initiateBackup(metadata, root_node);
-  writeMetadata(metadata, arg_list[1]);
+  printSearchTreeInfos(root_node);
 }
