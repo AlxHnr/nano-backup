@@ -29,24 +29,6 @@
 
 #include <stdio.h>
 
-/** Prints informations about an unmatched node.
-
-  @param node A node which has never matched a file or directory.
-*/
-static void printUnmatchedNode(SearchNode *node)
-{
-  if(node->regex != NULL)
-  {
-    printf("config: line %zu: regex matches no existing files: \"%s\"\n",
-           node->line_nr, node->name.str);
-  }
-  else
-  {
-    printf("config: line %zu: file or directory doesn't exist: \"%s\"\n",
-           node->line_nr, node->name.str);
-  }
-}
-
 /** Recursively prints informations about all nodes in the given search
   tree, that have never matched an existing file or directory.
 
@@ -60,16 +42,18 @@ static void printSearchNodeInfos(SearchNode *root_node)
   {
     if(node->search_match == SRT_none)
     {
-      printUnmatchedNode(node);
+      printf("config: line %zu: %s never matched a %s: \"%s\"\n",
+             node->line_nr, node->regex?"regex":"string",
+             node->subnodes?"directory":"file", node->name.str);
     }
     else if(node->search_match != SRT_directory && node->subnodes != NULL)
     {
-      printf("config: line %zu: %s doesn't match a directory: \"%s\"\n",
-             node->line_nr, node->regex?"regex":"file", node->name.str);
+      printf("config: line %zu: %s matches, but not a directory: \"%s\"\n",
+             node->line_nr, node->regex?"regex":"string", node->name.str);
     }
     else if(node->subnodes != NULL)
     {
-      printSearchTreeInfos(node->subnodes);
+      printSearchNodeInfos(node);
     }
   }
 }
