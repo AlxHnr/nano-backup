@@ -37,6 +37,8 @@
 #include <stdint.h>
 #include <limits.h>
 
+#include "colors.h"
+
 /** A global jump buffer. It should not be used directly. */
 jmp_buf test_jump_buffer;
 
@@ -173,15 +175,18 @@ void dieTest(const char *format, ...)
   va_list arguments;
   va_start(arguments, format);
 
-  fprintf(stderr, "[FAILURE]\n    ");
+  printf("[");
+  colorPrintf(stdout, TC_red_bold, "FAILURE");
+  printf("]\n    ");
 
   if(test_catch_die == false)
   {
-    fprintf(stderr, "unexpected error: ");
+    colorPrintf(stdout, TC_red, "unexpected error");
+    printf(": ");
   }
 
-  vfprintf(stderr, format, arguments);
-  fprintf(stderr, "\n");
+  vprintf(format, arguments);
+  printf("\n");
 
   va_end(arguments);
 
@@ -196,11 +201,11 @@ void dieTest(const char *format, ...)
 */
 void testGroupStart(const char *name)
 {
-  fprintf(stderr, "  Testing %s", name);
+  printf("  Testing %s", name);
 
   for(size_t index = strlen(name); index < 61; index++)
   {
-    fputc('.', stderr);
+    fputc('.', stdout);
   }
 }
 
@@ -210,5 +215,7 @@ void testGroupStart(const char *name)
 */
 void testGroupEnd(void)
 {
-  fprintf(stderr, "[success]\n");
+  printf("[");
+  colorPrintf(stdout, TC_green, "success");
+  printf("]\n");
 }
