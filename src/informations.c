@@ -29,6 +29,7 @@
 
 #include <stdio.h>
 
+#include "colors.h"
 #include "safe-wrappers.h"
 
 /** Recursively prints informations about all nodes in the given search
@@ -68,7 +69,9 @@ static void printSearchNodeInfos(SearchNode *root_node)
 */
 static void printNewDirInfo(PathNode *node, MetadataChanges changes)
 {
-  printf("++ %s/ (", node->path.str);
+  colorPrintf(stdout, TC_green_bold, "++ ");
+  colorPrintf(stdout, TC_green, "%s/", node->path.str);
+  printf(" (");
 
   if(changes.new_files_count > 0)
   {
@@ -132,7 +135,11 @@ static MetadataChanges printPathListRecursively(Metadata *metadata,
         sSizeAdd(changes.new_files_size,
                  node->history->state.metadata.reg.size);
 
-      if(print) printf("++ %s\n", node->path.str);
+      if(print)
+      {
+        colorPrintf(stdout, TC_green_bold, "++ ");
+        colorPrintf(stdout, TC_green, "%s\n", node->path.str);
+      }
     }
   }
 
