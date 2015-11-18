@@ -31,7 +31,8 @@ test: $(TESTS) $(GENERATED_CONFIGS) test/data/test\ directory/.empty/ \
 	  for test in $(TESTS); do \
 	  rm -rf tmp/; \
 	  mkdir -p tmp/; \
-	  echo "Running $$(tput setf 6)$$test$$(tput sgr0):"; \
+	  test -t 1 && echo -e "Running \033[0;33m$$test\033[0m:" || \
+	  echo -e "Running $$test:"; \
 	  "../../$$test" || exit 1; \
 	  echo; \
 	  done && \
