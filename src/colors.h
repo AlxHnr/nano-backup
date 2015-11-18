@@ -38,7 +38,7 @@ typedef enum
   TC_green,      /**< Green text. */
   TC_green_bold, /**< Green and bold text. */
   TC_yellow,     /**< Yellow text. */
-  TC_blue        /**< Blue text. */
+  TC_blue,       /**< Blue text. */
 }TextColor;
 
 extern void colorPrintf(FILE *stream, TextColor color,
