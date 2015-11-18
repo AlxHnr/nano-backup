@@ -32,6 +32,25 @@
 #include "colors.h"
 #include "safe-wrappers.h"
 
+/** Prints the given config line number in colors to stderr. */
+static void warnConfigLineNr(size_t line_nr)
+{
+  colorPrintf(stderr, TC_yellow, "config");
+  fprintf(stderr, ": ");
+  colorPrintf(stderr, TC_blue, "line ");
+  colorPrintf(stderr, TC_red, "%zu", line_nr);
+  fprintf(stderr, ": ");
+}
+
+/** Prints the given path in quotes to stderr, colorized and followed by a
+  newline. */
+static void warnPathNewline(String path)
+{
+  fprintf(stderr, "\"");
+  colorPrintf(stderr, TC_red, "%s", path.str);
+  fprintf(stderr, "\"\n");
+}
+
 /** Recursively prints informations about all nodes in the given search
   tree, that have never matched an existing file or directory.
 
@@ -45,14 +64,18 @@ static void printSearchNodeInfos(SearchNode *root_node)
   {
     if(node->search_match == SRT_none)
     {
-      printf("config: line %zu: %s never matched a %s: \"%s\"\n",
-             node->line_nr, node->regex?"regex":"string",
-             node->subnodes?"directory":"file", node->name.str);
+      warnConfigLineNr(node->line_nr);
+      fprintf(stderr, "%s never matched a %s: ",
+              node->regex?"regex":"string",
+              node->subnodes?"directory":"file");
+      warnPathNewline(node->name);
     }
     else if(node->search_match != SRT_directory && node->subnodes != NULL)
     {
-      printf("config: line %zu: %s matches, but not a directory: \"%s\"\n",
-             node->line_nr, node->regex?"regex":"string", node->name.str);
+      warnConfigLineNr(node->line_nr);
+      fprintf(stderr, "%s matches, but not a directory: ",
+             node->regex?"regex":"string");
+      warnPathNewline(node->name);
     }
     else if(node->subnodes != NULL)
     {
@@ -186,8 +209,9 @@ void printSearchTreeInfos(SearchNode *root_node)
   {
     if(expression->has_matched == false)
     {
-      printf("config: line %zu: regex never matched a path: \"%s\"\n",
-             expression->line_nr, expression->expression.str);
+      warnConfigLineNr(expression->line_nr);
+      fprintf(stderr, "regex never matched a path: ");
+      warnPathNewline(expression->expression);
     }
   }
 }
