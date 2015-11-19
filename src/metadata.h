@@ -33,28 +33,10 @@
 
 #include <openssl/sha.h>
 
+#include "repository.h"
 #include "string-utils.h"
 #include "string-table.h"
 #include "backup-policies.h"
-
-/** Stores the metadata of a regular file. */
-typedef struct
-{
-  mode_t mode; /**< The permission bits of the file. */
-  uint64_t size; /**< The file size. */
-
-  /** The hash of the file. This array is only defined if the file size is
-    greater than zero. If the files size is smaller than or equal to
-    SHA_DIGEST_LENGTH, the entire file will be stored in the first bytes of
-    this array. */
-  uint8_t hash[SHA_DIGEST_LENGTH];
-
-  /** The slot number of the corresponding file in the repository. It is
-    used for generating unique filenames in case that two different files
-    have the same size and hash. This variable is only defined if the file
-    size is greater than SHA_DIGEST_LENGTH. */
-  uint8_t slot;
-}RegularMetadata;
 
 /** The different states a filepath can represent at a specific backup. */
 typedef enum
@@ -79,7 +61,7 @@ typedef struct
   /** Optional metadata, depending on the PathStateType. */
   union
   {
-    RegularMetadata reg;    /**< The metadata of a regular file. */
+    RegularFileInfo reg;    /**< The metadata of a regular file. */
     const char *sym_target; /**< The target path of a symlink. */
     mode_t dir_mode;        /**< The permission bits of a directory. */
   }metadata;
