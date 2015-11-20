@@ -27,9 +27,11 @@
 
 #include "repository.h"
 
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "safe-wrappers.h"
 #include "error-handling.h"
@@ -39,6 +41,9 @@ struct RepoWriter
 {
   /** The path to the repository. */
   const char *repo_path;
+
+  /** The path to the repositories temporary dummy file. */
+  const char *repo_tmp_file_path;
 
   /** The path to the source file in the filesystem, which gets written
     to the repository trough this writer. This is required for printing
@@ -153,6 +158,7 @@ RepoWriter *repoWriterOpenFile(const char *repo_path,
   RepoWriter *writer = sMalloc(sizeof *writer);
 
   writer->repo_path = repo_path;
+  writer->repo_tmp_file_path = repo_tmp_file_path;
   writer->source_file_path = source_file_path;
   writer->stream = sFopenWrite(repo_tmp_file_path);
   writer->info = info;
@@ -179,5 +185,34 @@ void repoWriterWrite(const void *data, size_t size, RepoWriter *writer)
 
     die("IO error while writing \"%s\" to \"%s\"",
         source_file_path, repo_path);
+  }
+}
+
+void repoWriterClose(RepoWriter *writer)
+{
+  const char *repo_path = writer->repo_path;
+  const char *repo_tmp_file_path = writer->repo_tmp_file_path;
+  const char *source_file_path = writer->source_file_path;
+  FileStream *stream = writer->stream;
+  const RegularFileInfo *info = writer->info;
+  free(writer);
+
+  if(Ftodisk(stream) == false)
+  {
+    Fdestroy(stream);
+    dieErrno("failed to flush/sync \"%s\" to \"%s\"",
+             source_file_path, repo_path);
+  }
+
+  sFclose(stream);
+  fillPathBufferWithInfo(str(repo_path), info);
+  sRename(repo_tmp_file_path, path_buffer);
+
+  int dir_descriptor = open(repo_path, O_RDONLY, 0);
+  if(dir_descriptor == -1 ||
+     fdatasync(dir_descriptor) != 0 ||
+     close(dir_descriptor) != 0)
+  {
+    dieErrno("failed to sync \"%s\" to device", repo_path);
   }
 }
