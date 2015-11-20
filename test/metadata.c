@@ -233,7 +233,7 @@ static void appendHistRegular(PathNode *node, Backup *backup, uid_t uid,
     .type = PST_regular,
     .uid = uid,
     .gid = gid,
-    .timestamp = timestamp
+    .timestamp = timestamp,
   };
 
   state.metadata.reg.mode = mode;
@@ -259,7 +259,7 @@ static void appendHistSymlink(PathNode *node, Backup *backup, uid_t uid,
     .uid = uid,
     .gid = gid,
     .timestamp = timestamp,
-    .metadata.sym_target = sym_target
+    .metadata.sym_target = sym_target,
   };
 
   appendHist(node, backup, state);
@@ -275,7 +275,7 @@ static void appendHistDirectory(PathNode *node, Backup *backup, uid_t uid,
     .uid = uid,
     .gid = gid,
     .timestamp = timestamp,
-    .metadata.dir_mode = mode
+    .metadata.dir_mode = mode,
   };
 
   appendHist(node, backup, state);

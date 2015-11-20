@@ -202,7 +202,7 @@ static SearchResult buildSearchResult(SearchContext *context,
       },
 
     .policy = policy,
-    .stats = stats
+    .stats = stats,
   };
 }
 

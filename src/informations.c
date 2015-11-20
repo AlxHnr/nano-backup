@@ -117,7 +117,7 @@ static MetadataChanges printPathListRecursively(Metadata *metadata,
   MetadataChanges changes =
   {
     .new_files_count = 0,
-    .new_files_size = 0
+    .new_files_size = 0,
   };
 
   for(PathNode *node = path_list; node != NULL; node = node->next)
