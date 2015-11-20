@@ -40,8 +40,11 @@ static const char *color_codes[] =
 {
   "0;31", "1;31",
   "0;32", "1;32",
-  "0;33",
-  "0;34",
+  "0;33", "1;33",
+  "0;34", "1;34",
+  "0;35", "1;35",
+  "0;36", "1;36",
+  "0;37", "1;37",
 };
 
 /** Checks if the given stream may support ANSI escape color codes.
