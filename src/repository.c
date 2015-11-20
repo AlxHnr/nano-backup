@@ -33,11 +33,21 @@
 
 #include "safe-wrappers.h"
 
+/** A struct for safely writing files into backup repositories. */
 struct RepoWriter
 {
+  /** The path to the repository. */
   const char *repo_path;
+
+  /** The path to the source file in the filesystem, which gets written
+    to the repository trough this writer. This is required for printing
+    useful error messages. */
   const char *source_file_path;
+
+  /** The FileStream wrapped by this struct. */
   FileStream *stream;
+
+  /** A reference to the informations describing the source file. */
   const RegularFileInfo *info;
 };
 
