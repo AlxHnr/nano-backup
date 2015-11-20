@@ -27,20 +27,28 @@
 
 #include "repository.h"
 
+#include <stdio.h>
+
 #include "test.h"
 #include "safe-wrappers.h"
 
-/** Creates the given filepath. */
-static void createFile(const char *path)
+/** Tests repoRegularFileExists() by creating the specific file.
+
+  @param file_path The path of the file which will be created.
+  @param repo_path The repository containing the file.
+  @param info Informations describing the file.
+*/
+static void testFileExists(const char *file_path, const char *repo_path,
+                           const RegularFileInfo *info)
 {
-  sFclose(sFopenWrite(path));
+  assert_true(repoRegularFileExists(str(repo_path), info) == false);
+  sFclose(sFopenWrite(file_path));
+  assert_true(repoRegularFileExists(str(repo_path), info) == true);
 }
 
 int main(void)
 {
-  testGroupStart("repoRegularFileExists()");
-  String repo_path = str("tmp");
-
+  const char *info_1_path = "tmp/070a0d101316191c1f2225282b2e3134373a3d40:139:24";
   RegularFileInfo info_1 =
   {
     .size = 139, .slot = 24,
@@ -50,10 +58,8 @@ int main(void)
       0x25, 0x28, 0x2b, 0x2e, 0x31, 0x34, 0x37, 0x3a, 0x3d, 0x40,
     },
   };
-  assert_true(repoRegularFileExists(repo_path, &info_1) == false);
-  createFile("tmp/070a0d101316191c1f2225282b2e3134373a3d40:139:24");
-  assert_true(repoRegularFileExists(repo_path, &info_1) == true);
 
+  const char *info_2_path = "tmp/21514d1d49151941393d2d251109552931350d45:138904:255";
   RegularFileInfo info_2 =
   {
     .size = 138904, .slot = 255,
@@ -63,10 +69,8 @@ int main(void)
       0x2d, 0x25, 0x11, 0x09, 0x55, 0x29, 0x31, 0x35, 0x0d, 0x45,
     },
   };
-  assert_true(repoRegularFileExists(repo_path, &info_2) == false);
-  createFile("tmp/21514d1d49151941393d2d251109552931350d45:138904:255");
-  assert_true(repoRegularFileExists(repo_path, &info_2) == true);
 
+  const char *info_3_path = "tmp/4b5f2b134f473b1f2757333f17531b23372f435b:18446744073709551615:0";
   RegularFileInfo info_3 =
   {
     .size = 18446744073709551615UL, .slot = 0,
@@ -76,10 +80,8 @@ int main(void)
       0x33, 0x3f, 0x17, 0x53, 0x1b, 0x23, 0x37, 0x2f, 0x43, 0x5b,
     },
   };
-  assert_true(repoRegularFileExists(repo_path, &info_3) == false);
-  createFile("tmp/4b5f2b134f473b1f2757333f17531b23372f435b:18446744073709551615:0");
-  assert_true(repoRegularFileExists(repo_path, &info_3) == true);
 
+  const char *info_4_path = "tmp/000000000000112233445566778899aabbccddee:0:39";
   RegularFileInfo info_4 =
   {
     .size = 0, .slot = 39,
@@ -89,8 +91,40 @@ int main(void)
       0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee,
     },
   };
-  assert_true(repoRegularFileExists(repo_path, &info_4) == false);
-  createFile("tmp/000000000000112233445566778899aabbccddee:0:39");
-  assert_true(repoRegularFileExists(repo_path, &info_4) == true);
+
+  testGroupStart("repoRegularFileExists()");
+  assert_true(repoRegularFileExists(str("non-existing-path"), &info_1) == false);
+  testFileExists(info_1_path, "tmp", &info_1);
+  testFileExists(info_2_path, "tmp", &info_2);
+  testFileExists(info_3_path, "tmp", &info_3);
+  testFileExists(info_4_path, "tmp", &info_4);
+  testGroupEnd();
+
+  testGroupStart("repoWriterOpenFile()");
+  /* Remove previously created files. */
+  assert_true(remove(info_1_path) == 0);
+  assert_true(remove(info_2_path) == 0);
+  assert_true(remove(info_3_path) == 0);
+  assert_true(remove(info_4_path) == 0);
+  assert_true(sPathExists(info_1_path) == false);
+  assert_true(sPathExists(info_2_path) == false);
+  assert_true(sPathExists(info_3_path) == false);
+  assert_true(sPathExists(info_4_path) == false);
+
+  /* Try to access invalid directories. */
+  assert_error(repoWriterOpenFile("non-existing-directory", "non-existing-directory/tmp-file", "foo", &info_1),
+               "failed to open \"non-existing-directory/tmp-file\" for writing: No such file or directory");
+  assert_error(repoWriterOpenFile("example.txt", "example.txt/tmp-file", "foo", &info_2),
+               "failed to open \"example.txt/tmp-file\" for writing: Not a directory");
+
+  /* Test creation of files. */
+  assert_true(sPathExists("tmp/tmp-file") == false);
+  assert_true(sPathExists(info_1_path)    == false);
+
+  RepoWriter *writer = repoWriterOpenFile("tmp", "tmp/tmp-file", "info_1", &info_1);
+  assert_true(writer != NULL);
+
+  assert_true(sPathExists("tmp/tmp-file") == true);
+  assert_true(sPathExists(info_1_path)    == false);
   testGroupEnd();
 }
