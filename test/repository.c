@@ -180,4 +180,28 @@ int main(void)
   assert_true(memcmp(content.content, "This is a test.", content.size) == 0);
   free(content.content);
   testGroupEnd();
+
+  testGroupStart("behaviour with existing tmp-file");
+  sRename(info_1_path, "tmp/tmp-file");
+  assert_true(sStat("tmp/tmp-file").st_size == 15);
+
+  writer = repoWriterOpenFile("tmp", "tmp/tmp-file", "info_2", &info_2);
+  repoWriterWrite("Nano Backup", 11, writer);
+  repoWriterClose(writer);
+
+  assert_true(sPathExists("tmp/tmp-file") == false);
+  assert_true(sPathExists(info_2_path)    == true);
+
+  FileContent foo_content = sGetFilesContent(info_2_path);
+  assert_true(foo_content.size == 11);
+  assert_true(memcmp(foo_content.content, "Nano Backup", foo_content.size) == 0);
+  free(foo_content.content);
+  testGroupEnd();
+
+  testGroupStart("overwrite with empty file");
+  repoWriterClose(repoWriterOpenFile("tmp", "tmp/tmp-file", "info_2", &info_2));
+  assert_true(sPathExists("tmp/tmp-file") == false);
+  assert_true(sPathExists(info_2_path)    == true);
+  assert_true(sStat(info_2_path).st_size  == 0);
+  testGroupEnd();
 }
