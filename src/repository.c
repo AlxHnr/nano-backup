@@ -33,6 +33,14 @@
 
 #include "safe-wrappers.h"
 
+struct RepoWriter
+{
+  const char *repo_path;
+  const char *source_file_path;
+  FileStream *stream;
+  const RegularFileInfo *info;
+};
+
 /** A reusable buffer for constructing paths of files inside repos. */
 static char *path_buffer = NULL;
 static size_t path_buffer_capacity = 0;
@@ -66,7 +74,8 @@ static void pathBufferEnsureCapacity(size_t size)
   @param info The informations describing the file, for which the path
   should be build.
 */
-static void fillPathBufferWithInfo(String repo_path, RegularFileInfo *info)
+static void fillPathBufferWithInfo(String repo_path,
+                                   const RegularFileInfo *info)
 {
   size_t required_capacity =
     snprintf(NULL, 0, ":%zu:%i", info->size, info->slot);
@@ -96,8 +105,46 @@ static void fillPathBufferWithInfo(String repo_path, RegularFileInfo *info)
 
   @return True, if the given file exists.
 */
-bool repoRegularFileExists(String repo_path, RegularFileInfo *info)
+bool repoRegularFileExists(String repo_path, const RegularFileInfo *info)
 {
   fillPathBufferWithInfo(repo_path, info);
   return sPathExists(path_buffer);
+}
+
+/** Opens a new RepoWriter for safe writing into the specified repository.
+  The returned RepoWriter will keep a reference to all the arguments passed
+  to this function, so make sure not to free or modify them as long as the
+  writer is in use. The caller of this function must ensure, that only one
+  writer can exists for the given repository. Otherwise it will lead to
+  corrupted data.
+
+  @param repo_path The path to the repository.
+  @param repo_tmp_file_path The path to the dummy file inside the
+  repository. This is the file to which all the data will be written. Once
+  the writer is closed, its data gets synced to disk and the dummy file
+  renamed to its final name. If the dummy file already exists, it will be
+  overwritten. The dummy file path must be either inside the repository or
+  on the same device in order to be effective.
+  @param source_file_path The path of the file, which gets written to the
+  repository trough the writer. This is only needed in case of an error, to
+  display which file failed to be written to the repository.
+  @param info The regular file info, describing the file that gets written
+  to the repository. Needed to generate the filename inside the repository.
+
+  @return A new RepoWriter which must be closed by the caller using
+  repoWriterClose().
+*/
+RepoWriter *repoWriterOpenFile(const char *repo_path,
+                               const char *repo_tmp_file_path,
+                               const char *source_file_path,
+                               const RegularFileInfo *info)
+{
+  RepoWriter *writer = sMalloc(sizeof *writer);
+
+  writer->repo_path = repo_path;
+  writer->source_file_path = source_file_path;
+  writer->stream = sFopenWrite(repo_tmp_file_path);
+  writer->info = info;
+
+  return writer;
 }

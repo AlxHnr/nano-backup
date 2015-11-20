@@ -58,12 +58,15 @@ typedef struct
   uint8_t slot;
 }RegularFileInfo;
 
-extern bool repoRegularFileExists(String repo_path, RegularFileInfo *info);
-extern RepoWriter *repoWriterOpenFile(String repo_path,
-                                      RegularFileInfo *info);
+extern bool repoRegularFileExists(String repo_path,
+                                  const RegularFileInfo *info);
+extern RepoWriter *repoWriterOpenFile(const char *repo_path,
+                                      const char *repo_tmp_file_path,
+                                      const char *file_system_path,
+                                      const RegularFileInfo *info);
 extern RepoWriter *repoWriterOpenMetadata(String repo_path);
 extern void repoWriterWrite(const void *data, size_t size,
                             RepoWriter *writer);
-extern void repoWriterFinish(RepoWriter *writer);
+extern void repoWriterClose(RepoWriter *writer);
 
 #endif
