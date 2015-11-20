@@ -28,6 +28,7 @@
 #include "repository.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "test.h"
 #include "safe-wrappers.h"
@@ -44,6 +45,15 @@ static void testFileExists(const char *file_path, const char *repo_path,
   assert_true(repoRegularFileExists(str(repo_path), info) == false);
   sFclose(sFopenWrite(file_path));
   assert_true(repoRegularFileExists(str(repo_path), info) == true);
+}
+
+/** Asserts that the given file contains the string "Hello backup!". */
+static void checkTestFile(const char *file_path)
+{
+  FileContent content = sGetFilesContent(file_path);
+  assert_true(content.size == 13);
+  assert_true(memcmp(content.content, "Hello backup!", 13) == 0);
+  free(content.content);
 }
 
 int main(void)
@@ -126,5 +136,48 @@ int main(void)
 
   assert_true(sPathExists("tmp/tmp-file") == true);
   assert_true(sPathExists(info_1_path)    == false);
+  testGroupEnd();
+
+  testGroupStart("repoWriterWrite()");
+  repoWriterWrite("Hello",  5, writer);
+  repoWriterWrite(" ",      1, writer);
+  repoWriterWrite("backup", 6, writer);
+  repoWriterWrite("!",      1, writer);
+  testGroupEnd();
+
+  testGroupStart("repoWriterClose()");
+  assert_true(sPathExists("tmp/tmp-file") == true);
+  assert_true(sPathExists(info_1_path)    == false);
+
+  repoWriterClose(writer);
+
+  assert_true(sPathExists("tmp/tmp-file") == false);
+  assert_true(sPathExists(info_1_path)    == true);
+  checkTestFile(info_1_path);
+  testGroupEnd();
+
+  testGroupStart("safe overwriting");
+  writer = repoWriterOpenFile("tmp", "tmp/tmp-file", "info_1", &info_1);
+  assert_true(sPathExists("tmp/tmp-file") == true);
+  assert_true(sPathExists(info_1_path)    == true);
+  assert_true(writer != NULL);
+  checkTestFile(info_1_path);
+
+  repoWriterWrite("This",  4, writer);
+  repoWriterWrite(" is",   3, writer);
+  repoWriterWrite(" a ",   3, writer);
+  repoWriterWrite("test.", 5, writer);
+  checkTestFile(info_1_path);
+
+  assert_true(sPathExists("tmp/tmp-file") == true);
+  assert_true(sPathExists(info_1_path)    == true);
+  repoWriterClose(writer);
+  assert_true(sPathExists("tmp/tmp-file") == false);
+  assert_true(sPathExists(info_1_path)    == true);
+
+  FileContent content = sGetFilesContent(info_1_path);
+  assert_true(content.size == 15);
+  assert_true(memcmp(content.content, "This is a test.", content.size) == 0);
+  free(content.content);
   testGroupEnd();
 }
