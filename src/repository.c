@@ -188,6 +188,13 @@ void repoWriterWrite(const void *data, size_t size, RepoWriter *writer)
   }
 }
 
+/** Finalizes the write process represented by the given writer. All its
+  data will be written to disk and the temporary file will be renamed to
+  its final filename.
+
+  @param writer The writer which should be finalized. This function will
+  destroy the writer and free all memory associated with it.
+*/
 void repoWriterClose(RepoWriter *writer)
 {
   const char *repo_path = writer->repo_path;
