@@ -125,23 +125,23 @@ bool repoRegularFileExists(String repo_path, const RegularFileInfo *info)
   The returned RepoWriter will keep a reference to all the arguments passed
   to this function, so make sure not to free or modify them as long as the
   writer is in use. The caller of this function must ensure, that only one
-  writer can exists for the given repository. Otherwise it will lead to
+  writer exists for the given repository. Otherwise it will lead to
   corrupted data.
 
   @param repo_path The path to the repository.
   @param repo_tmp_file_path The path to the dummy file inside the
   repository. This is the file to which all the data will be written. Once
-  the writer is closed, its data gets synced to disk and the dummy file
-  renamed to its final name. If the dummy file already exists, it will be
-  overwritten. The dummy file path must be either inside the repository or
-  on the same device in order to be effective.
-  @param source_file_path The path of the file, which gets written to the
-  repository trough the writer. This is only needed in case of an error, to
-  display which file failed to be written to the repository.
-  @param info The regular file info, describing the file that gets written
-  to the repository. Needed to generate the filename inside the repository.
+  the writer gets closed, the data will be synced to disk and the dummy
+  file gets renamed to the final file. If the dummy file already exists, it
+  will be overwritten. The dummy file must be either inside the repository
+  or on the same device as the repository in order to be effective.
+  @param source_file_path The path to the original file, that gets written
+  to the repository trough this writer. This is only needed in case of an
+  error, to display which file failed to be written to the repository.
+  @param info Informations describing the file, which gets written to the
+  repository.
 
-  @return A new RepoWriter which must be closed by the caller using
+  @return A new RepoWriter, which must be closed by the caller using
   repoWriterClose().
 */
 RepoWriter *repoWriterOpenFile(const char *repo_path,
