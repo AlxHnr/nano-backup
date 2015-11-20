@@ -32,6 +32,7 @@
 #include <string.h>
 
 #include "safe-wrappers.h"
+#include "error-handling.h"
 
 /** A struct for safely writing files into backup repositories. */
 struct RepoWriter
@@ -157,4 +158,26 @@ RepoWriter *repoWriterOpenFile(const char *repo_path,
   writer->info = info;
 
   return writer;
+}
+
+/** Writes data using the given RepoWriter and terminates the program on
+  failure.
+
+  @param data The data which should be written.
+  @param size The size of the data in bytes.
+  @param writer The writer which should be used.
+*/
+void repoWriterWrite(const void *data, size_t size, RepoWriter *writer)
+{
+  if(Fwrite(data, size, writer->stream) == false)
+  {
+    const char *repo_path = writer->repo_path;
+    const char *source_file_path = writer->source_file_path;
+
+    Fdestroy(writer->stream);
+    free(writer);
+
+    die("IO error while writing \"%s\" to \"%s\"",
+        source_file_path, repo_path);
+  }
 }
