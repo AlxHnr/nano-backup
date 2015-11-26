@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdbool.h>
 
 #include "safe-wrappers.h"
 #include "error-handling.h"
@@ -53,8 +54,21 @@ struct RepoWriter
   /** The FileStream wrapped by this struct. */
   FileStream *stream;
 
-  /** A reference to the informations describing the source file. */
-  const RegularFileInfo *info;
+  /** True, if the repo writer was opened in raw mode. */
+  bool raw_mode;
+
+  /** Contains informations about the final path to which the temporary
+    file gets renamed to. */
+  union
+  {
+    /** If the repo writer was opened in raw mode, it will contain the
+      final path to which the temporary file will be renamed to. */
+    const char *path;
+
+    /** If the repo writer was not opened in raw mode, the final filepath
+      will be generated from this file info. */
+    const RegularFileInfo *info;
+  }rename_to;
 };
 
 /** A reusable buffer for constructing paths of files inside repos. */
@@ -113,6 +127,24 @@ static void fillPathBufferWithInfo(String repo_path,
   sprintf(suffix_buffer, ":%zu:%i", info->size, info->slot);
 }
 
+/** Creates a new RepoWriter from its arguments. Contains the core logic
+  behind repoWriterOpenFile() and repoWriterOpenRaw(). */
+static RepoWriter *createRepoWriter(const char *repo_path,
+                                    const char *repo_tmp_file_path,
+                                    const char *source_file_path,
+                                    bool raw_mode)
+{
+  RepoWriter *writer = sMalloc(sizeof *writer);
+
+  writer->repo_path = repo_path;
+  writer->repo_tmp_file_path = repo_tmp_file_path;
+  writer->source_file_path = source_file_path;
+  writer->stream = sFopenWrite(repo_tmp_file_path);
+  writer->raw_mode = raw_mode;
+
+  return writer;
+}
+
 /** Checks if a file with the given properties exist inside the specified
   repository.
 
@@ -145,7 +177,10 @@ bool repoRegularFileExists(String repo_path, const RegularFileInfo *info)
   to the repository trough this writer. This is only needed in case of an
   error, to display which file failed to be written to the repository.
   @param info Informations describing the file, which gets written to the
-  repository.
+  repository. This is needed for generating the filename inside the
+  repository. All values inside this struct must be defined, otherwise it
+  will lead to unexpected behaviour. So make sure, that the files size is
+  larger than SHA_DIGEST_LENGTH.
 
   @return A new RepoWriter, which must be closed by the caller using
   repoWriterClose().
@@ -155,13 +190,29 @@ RepoWriter *repoWriterOpenFile(const char *repo_path,
                                const char *source_file_path,
                                const RegularFileInfo *info)
 {
-  RepoWriter *writer = sMalloc(sizeof *writer);
+  RepoWriter *writer = createRepoWriter(repo_path, repo_tmp_file_path,
+                                        source_file_path, false);
+  writer->rename_to.info = info;
 
-  writer->repo_path = repo_path;
-  writer->repo_tmp_file_path = repo_tmp_file_path;
-  writer->source_file_path = source_file_path;
-  writer->stream = sFopenWrite(repo_tmp_file_path);
-  writer->info = info;
+  return writer;
+}
+
+/** Like repoWriterOpenFile(), but takes the final filepath as argument.
+
+  @param final_path The path to which the temporary file gets renamed to
+  after flushing. The returned RepoWriter will keep a reference to this
+  string, so make sure not to modify or free it as long as the writer is in
+  use. The file in this path must be inside the repository in order to be
+  effective.
+*/
+RepoWriter *repoWriterOpenRaw(const char *repo_path,
+                              const char *repo_tmp_file_path,
+                              const char *source_file_path,
+                              const char *final_path)
+{
+  RepoWriter *writer = createRepoWriter(repo_path, repo_tmp_file_path,
+                                        source_file_path, true);
+  writer->rename_to.path = final_path;
 
   return writer;
 }
@@ -195,31 +246,35 @@ void repoWriterWrite(const void *data, size_t size, RepoWriter *writer)
   @param writer The writer which should be finalized. This function will
   destroy the writer and free all memory associated with it.
 */
-void repoWriterClose(RepoWriter *writer)
+void repoWriterClose(RepoWriter *writer_to_close)
 {
-  const char *repo_path = writer->repo_path;
-  const char *repo_tmp_file_path = writer->repo_tmp_file_path;
-  const char *source_file_path = writer->source_file_path;
-  FileStream *stream = writer->stream;
-  const RegularFileInfo *info = writer->info;
-  free(writer);
+  RepoWriter writer = *writer_to_close;
+  free(writer_to_close);
 
-  if(Ftodisk(stream) == false)
+  if(Ftodisk(writer.stream) == false)
   {
-    Fdestroy(stream);
+    Fdestroy(writer.stream);
     dieErrno("failed to flush/sync \"%s\" to \"%s\"",
-             source_file_path, repo_path);
+             writer.source_file_path, writer.repo_path);
   }
 
-  sFclose(stream);
-  fillPathBufferWithInfo(str(repo_path), info);
-  sRename(repo_tmp_file_path, path_buffer);
+  sFclose(writer.stream);
 
-  int dir_descriptor = open(repo_path, O_RDONLY, 0);
+  if(writer.raw_mode == true)
+  {
+    sRename(writer.repo_tmp_file_path, writer.rename_to.path);
+  }
+  else
+  {
+    fillPathBufferWithInfo(str(writer.repo_path), writer.rename_to.info);
+    sRename(writer.repo_tmp_file_path, path_buffer);
+  }
+
+  int dir_descriptor = open(writer.repo_path, O_RDONLY, 0);
   if(dir_descriptor == -1 ||
      fdatasync(dir_descriptor) != 0 ||
      close(dir_descriptor) != 0)
   {
-    dieErrno("failed to sync \"%s\" to device", repo_path);
+    dieErrno("failed to sync \"%s\" to device", writer.repo_path);
   }
 }
