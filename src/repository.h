@@ -62,11 +62,11 @@ extern bool repoRegularFileExists(String repo_path,
                                   const RegularFileInfo *info);
 extern RepoWriter *repoWriterOpenFile(const char *repo_path,
                                       const char *repo_tmp_file_path,
-                                      const char *file_system_path,
+                                      const char *source_file_path,
                                       const RegularFileInfo *info);
 extern RepoWriter *repoWriterOpenRaw(const char *repo_path,
                                      const char *repo_tmp_file_path,
-                                     const char *file_system_path,
+                                     const char *source_file_path,
                                      const char *final_path);
 extern void repoWriterWrite(const void *data, size_t size,
                             RepoWriter *writer);
