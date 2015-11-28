@@ -150,7 +150,7 @@ static void testWithExistingTmpFile(RepoWriter *writer,
 
 int main(void)
 {
-  const char *info_1_path = "tmp/070a0d101316191c1f2225282b2e3134373a3d40:139:24";
+  const char *info_1_path = "tmp/24-070a0d101316191c1f2225282b2e3134373a3d40-139";
   RegularFileInfo info_1 =
   {
     .size = 139, .slot = 24,
@@ -161,7 +161,7 @@ int main(void)
     },
   };
 
-  const char *info_2_path = "tmp/21514d1d49151941393d2d251109552931350d45:138904:255";
+  const char *info_2_path = "tmp/255-21514d1d49151941393d2d251109552931350d45-138904";
   RegularFileInfo info_2 =
   {
     .size = 138904, .slot = 255,
@@ -172,7 +172,7 @@ int main(void)
     },
   };
 
-  const char *info_3_path = "tmp/4b5f2b134f473b1f2757333f17531b23372f435b:18446744073709551615:0";
+  const char *info_3_path = "tmp/0-4b5f2b134f473b1f2757333f17531b23372f435b-18446744073709551615";
   RegularFileInfo info_3 =
   {
     .size = 18446744073709551615UL, .slot = 0,
@@ -183,7 +183,7 @@ int main(void)
     },
   };
 
-  const char *info_4_path = "tmp/000000000000112233445566778899aabbccddee:0:39";
+  const char *info_4_path = "tmp/39-000000000000112233445566778899aabbccddee-0";
   RegularFileInfo info_4 =
   {
     .size = 0, .slot = 39,

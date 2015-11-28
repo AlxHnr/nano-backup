@@ -107,8 +107,9 @@ static void pathBufferEnsureCapacity(size_t size)
 static void fillPathBufferWithInfo(String repo_path,
                                    const RegularFileInfo *info)
 {
+  size_t prefix_length = snprintf(NULL, 0, "%i-", info->slot);
   size_t required_capacity =
-    snprintf(NULL, 0, ":%zu:%i", info->size, info->slot);
+    prefix_length + snprintf(NULL, 0, "-%zu", info->size);
   required_capacity += SHA_DIGEST_LENGTH * 2;
   required_capacity += 2; /* Reserve some room for the slash and '\0'. */
   required_capacity = sSizeAdd(required_capacity, repo_path.length);
@@ -117,14 +118,17 @@ static void fillPathBufferWithInfo(String repo_path,
   memcpy(path_buffer, repo_path.str, repo_path.length);
   path_buffer[repo_path.length] = '/';
 
-  char *hash_buffer = &path_buffer[repo_path.length + 1];
+  char *prefix_buffer = &path_buffer[repo_path.length + 1];
+  sprintf(prefix_buffer, "%i-", info->slot);
+
+  char *hash_buffer = &prefix_buffer[prefix_length];
   for(size_t index = 0; index < SHA_DIGEST_LENGTH; index++)
   {
     sprintf(&hash_buffer[index * 2], "%02x", info->hash[index]);
   }
 
   char *suffix_buffer = &hash_buffer[SHA_DIGEST_LENGTH * 2];
-  sprintf(suffix_buffer, ":%zu:%i", info->size, info->slot);
+  sprintf(suffix_buffer, "-%zu", info->size);
 }
 
 /** Creates a new RepoWriter from its arguments. Contains the core logic
