@@ -68,8 +68,8 @@ int main(const int arg_count, const char **arg_list)
 
   Metadata *metadata =
     sPathExists(metadata_path.str)?
-    loadMetadata(metadata_path.str):
-    newMetadata();
+    metadataLoad(metadata_path.str):
+    metadataNew();
 
   initiateBackup(metadata, root_node);
   MetadataChanges changes = printMetadataChanges(metadata);

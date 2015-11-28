@@ -362,7 +362,7 @@ static PathHistory *readFullPathHistory(FileContent content,
   return first_point;
 }
 
-/** Writes the given history list via the specified SafeWriteHandle.
+/** Writes the given history list via the specified RepoWriter.
   Counterpart to readFullPathHistory().
 
   @param starting_point The first element in the list.
