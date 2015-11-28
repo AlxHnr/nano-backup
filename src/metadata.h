@@ -159,8 +159,11 @@ typedef struct
   PathNode *paths;
 }Metadata;
 
-extern Metadata *newMetadata(void);
-extern Metadata *loadMetadata(const char *path);
-extern void writeMetadata(Metadata* metadata, const char *repo_path);
+extern Metadata *metadataNew(void);
+extern Metadata *metadataLoad(const char *path);
+extern void metadataWrite(Metadata *metadata,
+                          const char *repo_path,
+                          const char *repo_tmp_file_path,
+                          const char *repo_metadata_path);
 
 #endif

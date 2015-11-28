@@ -51,6 +51,15 @@ static size_t countSubnodes(PathNode *parent_node)
   return subnode_count;
 }
 
+/** Writes the given metadata to the temporary test directory.
+
+  @param metadata The metadata which should be written.
+*/
+static void writeMetadataToTmpDir(Metadata *metadata)
+{
+  metadataWrite(metadata, "tmp", "tmp/tmp-file", "tmp/metadata");
+}
+
 /** Initializes a history point.
 
   @param metadata The metadata, containing the backup history array.
@@ -1101,8 +1110,8 @@ static void checkOnlyCurrentBackupData(Metadata *metadata)
 
 int main(void)
 {
-  testGroupStart("newMetadata()");
-  checkEmptyMetadata(newMetadata());
+  testGroupStart("metadataNew()");
+  checkEmptyMetadata(metadataNew());
   testGroupEnd();
 
   testGroupStart("reading and writing of metadata");
@@ -1110,27 +1119,27 @@ int main(void)
   Metadata *test_data_1 = genTestData1();
   checkTestData1(test_data_1);
 
-  writeMetadata(test_data_1, "tmp");
-  checkTestData1(loadMetadata("tmp/metadata"));
+  writeMetadataToTmpDir(test_data_1);
+  checkTestData1(metadataLoad("tmp/metadata"));
 
   /* Write and read TestData2. */
   Metadata *test_data_2 = genTestData2();
   checkTestData2(test_data_2);
 
-  writeMetadata(test_data_2, "tmp");
-  checkTestData2(loadMetadata("tmp/metadata"));
+  writeMetadataToTmpDir(test_data_2);
+  checkTestData2(metadataLoad("tmp/metadata"));
   testGroupEnd();
 
   testGroupStart("writing only referenced backup points");
   Metadata *unused_backup_points = genUnusedBackupPoints();
-  writeMetadata(unused_backup_points, "tmp");
-  checkLoadedUnusedBackupPoints(loadMetadata("tmp/metadata"));
+  writeMetadataToTmpDir(unused_backup_points);
+  checkLoadedUnusedBackupPoints(metadataLoad("tmp/metadata"));
   testGroupEnd();
 
   testGroupStart("merging current backup point while writing");
   Metadata *current_backup_data = genCurrentBackupData();
-  writeMetadata(current_backup_data, "tmp");
-  checkLoadedCurrentBackupData(loadMetadata("tmp/metadata"));
+  writeMetadataToTmpDir(current_backup_data);
+  checkLoadedCurrentBackupData(metadataLoad("tmp/metadata"));
   testGroupEnd();
 
   testGroupStart("adjust backup ID order");
@@ -1138,21 +1147,21 @@ int main(void)
   test_data_1->backup_history[1].id = 2;
   test_data_1->backup_history[2].id = 1;
   test_data_1->backup_history[3].id = 0;
-  writeMetadata(test_data_1, "tmp");
-  checkTestData1(loadMetadata("tmp/metadata"));
+  writeMetadataToTmpDir(test_data_1);
+  checkTestData1(metadataLoad("tmp/metadata"));
 
   test_data_1->backup_history[0].id = 12;
   test_data_1->backup_history[1].id = 8;
   test_data_1->backup_history[2].id = 12983948;
   test_data_1->backup_history[3].id = 0;
-  writeMetadata(test_data_1, "tmp");
-  checkTestData1(loadMetadata("tmp/metadata"));
+  writeMetadataToTmpDir(test_data_1);
+  checkTestData1(metadataLoad("tmp/metadata"));
 
   test_data_2->backup_history[0].id = 0;
   test_data_2->backup_history[1].id = 0;
   test_data_2->backup_history[2].id = 0;
-  writeMetadata(test_data_2, "tmp");
-  checkTestData2(loadMetadata("tmp/metadata"));
+  writeMetadataToTmpDir(test_data_2);
+  checkTestData2(metadataLoad("tmp/metadata"));
 
   unused_backup_points->backup_history[0].id = 0;
   unused_backup_points->backup_history[1].id = 35;
@@ -1160,92 +1169,92 @@ int main(void)
   unused_backup_points->backup_history[3].id = 982;
   unused_backup_points->backup_history[4].id = 5;
   unused_backup_points->backup_history[5].id = 0;
-  writeMetadata(unused_backup_points, "tmp");
-  checkLoadedUnusedBackupPoints(loadMetadata("tmp/metadata"));
+  writeMetadataToTmpDir(unused_backup_points);
+  checkLoadedUnusedBackupPoints(metadataLoad("tmp/metadata"));
 
   current_backup_data->backup_history[0].id = 70;
   current_backup_data->backup_history[1].id = 70;
-  writeMetadata(current_backup_data, "tmp");
-  checkLoadedCurrentBackupData(loadMetadata("tmp/metadata"));
+  writeMetadataToTmpDir(current_backup_data);
+  checkLoadedCurrentBackupData(metadataLoad("tmp/metadata"));
   testGroupEnd();
 
   testGroupStart("no config history");
   Metadata *no_conf_hist = genNoConfHist();
   checkNoConfHist(no_conf_hist);
-  writeMetadata(no_conf_hist, "tmp");
-  checkNoConfHist(loadMetadata("tmp/metadata"));
+  writeMetadataToTmpDir(no_conf_hist);
+  checkNoConfHist(metadataLoad("tmp/metadata"));
   testGroupEnd();
 
   testGroupStart("no path tree");
   Metadata *no_path_tree = genNoPathTree();
   checkNoPathTree(no_path_tree);
-  writeMetadata(no_path_tree, "tmp");
-  checkNoPathTree(loadMetadata("tmp/metadata"));
+  writeMetadataToTmpDir(no_path_tree);
+  checkNoPathTree(metadataLoad("tmp/metadata"));
   testGroupEnd();
 
   testGroupStart("no config history and no path tree");
   Metadata *no_conf_no_paths = genWithOnlyBackupPoints();
-  writeMetadata(no_conf_no_paths, "tmp");
-  checkEmptyMetadata(loadMetadata("tmp/metadata"));
+  writeMetadataToTmpDir(no_conf_no_paths);
+  checkEmptyMetadata(metadataLoad("tmp/metadata"));
   testGroupEnd();
 
   testGroupStart("empty metadata");
   Metadata *empty_metadata = createEmptyMetadata(0);
   checkEmptyMetadata(empty_metadata);
-  writeMetadata(empty_metadata, "tmp");
-  checkEmptyMetadata(loadMetadata("tmp/metadata"));
+  writeMetadataToTmpDir(empty_metadata);
+  checkEmptyMetadata(metadataLoad("tmp/metadata"));
   testGroupEnd();
 
   testGroupStart("merging current backup into empty metadata");
-  writeMetadata(initOnlyCurrentBackupData(createEmptyMetadata(0)), "tmp");
-  checkOnlyCurrentBackupData(loadMetadata("tmp/metadata"));
+  writeMetadataToTmpDir(initOnlyCurrentBackupData(createEmptyMetadata(0)));
+  checkOnlyCurrentBackupData(metadataLoad("tmp/metadata"));
 
   /* The same test as above, but with unreferenced backup points, which
      should be discarded while writing. */
-  writeMetadata(initOnlyCurrentBackupData(genWithOnlyBackupPoints()), "tmp");
-  checkOnlyCurrentBackupData(loadMetadata("tmp/metadata"));
+  writeMetadataToTmpDir(initOnlyCurrentBackupData(genWithOnlyBackupPoints()));
+  checkOnlyCurrentBackupData(metadataLoad("tmp/metadata"));
   testGroupEnd();
 
   testGroupStart("reject corrupted metadata");
-  assert_error(loadMetadata("non-existing.txt"),
+  assert_error(metadataLoad("non-existing.txt"),
                "failed to access \"non-existing.txt\": No such file or directory");
-  assert_error(loadMetadata("generated-broken-metadata/missing-byte"),
+  assert_error(metadataLoad("generated-broken-metadata/missing-byte"),
                "corrupted metadata: expected 1 byte, got 0: \"generated-broken-metadata/missing-byte\"");
-  assert_error(loadMetadata("generated-broken-metadata/missing-slot"),
+  assert_error(metadataLoad("generated-broken-metadata/missing-slot"),
                "corrupted metadata: expected 1 byte, got 0: \"generated-broken-metadata/missing-slot\"");
-  assert_error(loadMetadata("generated-broken-metadata/invalid-path-state-type"),
+  assert_error(metadataLoad("generated-broken-metadata/invalid-path-state-type"),
                "invalid PathStateType in \"generated-broken-metadata/invalid-path-state-type\"");
-  assert_error(loadMetadata("generated-broken-metadata/missing-path-state-type"),
+  assert_error(metadataLoad("generated-broken-metadata/missing-path-state-type"),
                "corrupted metadata: expected 1 byte, got 0: \"generated-broken-metadata/missing-path-state-type\"");
-  assert_error(loadMetadata("generated-broken-metadata/incomplete-32-bit-value"),
+  assert_error(metadataLoad("generated-broken-metadata/incomplete-32-bit-value"),
                "corrupted metadata: expected 4 bytes, got 3: \"generated-broken-metadata/incomplete-32-bit-value\"");
-  assert_error(loadMetadata("generated-broken-metadata/missing-32-bit-value"),
+  assert_error(metadataLoad("generated-broken-metadata/missing-32-bit-value"),
                "corrupted metadata: expected 4 bytes, got 0: \"generated-broken-metadata/missing-32-bit-value\"");
-  assert_error(loadMetadata("generated-broken-metadata/incomplete-size"),
+  assert_error(metadataLoad("generated-broken-metadata/incomplete-size"),
                "corrupted metadata: expected 8 bytes, got 3: \"generated-broken-metadata/incomplete-size\"");
-  assert_error(loadMetadata("generated-broken-metadata/missing-size"),
+  assert_error(metadataLoad("generated-broken-metadata/missing-size"),
                "corrupted metadata: expected 8 bytes, got 0: \"generated-broken-metadata/missing-size\"");
-  assert_error(loadMetadata("generated-broken-metadata/incomplete-time"),
+  assert_error(metadataLoad("generated-broken-metadata/incomplete-time"),
                "corrupted metadata: expected 8 bytes, got 7: \"generated-broken-metadata/incomplete-time\"");
-  assert_error(loadMetadata("generated-broken-metadata/missing-time"),
+  assert_error(metadataLoad("generated-broken-metadata/missing-time"),
                "corrupted metadata: expected 8 bytes, got 0: \"generated-broken-metadata/missing-time\"");
-  assert_error(loadMetadata("generated-broken-metadata/incomplete-hash"),
+  assert_error(metadataLoad("generated-broken-metadata/incomplete-hash"),
                "corrupted metadata: expected 20 bytes, got 5: \"generated-broken-metadata/incomplete-hash\"");
-  assert_error(loadMetadata("generated-broken-metadata/missing-hash"),
+  assert_error(metadataLoad("generated-broken-metadata/missing-hash"),
                "corrupted metadata: expected 20 bytes, got 0: \"generated-broken-metadata/missing-hash\"");
-  assert_error(loadMetadata("generated-broken-metadata/incomplete-path"),
+  assert_error(metadataLoad("generated-broken-metadata/incomplete-path"),
                "corrupted metadata: expected 7 bytes, got 4: \"generated-broken-metadata/incomplete-path\"");
-  assert_error(loadMetadata("generated-broken-metadata/missing-path"),
+  assert_error(metadataLoad("generated-broken-metadata/missing-path"),
                "corrupted metadata: expected 3 bytes, got 0: \"generated-broken-metadata/missing-path\"");
-  assert_error(loadMetadata("generated-broken-metadata/incomplete-symlink-target-path"),
+  assert_error(metadataLoad("generated-broken-metadata/incomplete-symlink-target-path"),
                "corrupted metadata: expected 16 bytes, got 6: \"generated-broken-metadata/incomplete-symlink-target-path\"");
-  assert_error(loadMetadata("generated-broken-metadata/missing-symlink-target-path"),
+  assert_error(metadataLoad("generated-broken-metadata/missing-symlink-target-path"),
                "corrupted metadata: expected 16 bytes, got 0: \"generated-broken-metadata/missing-symlink-target-path\"");
-  assert_error(loadMetadata("generated-broken-metadata/last-byte-missing"),
+  assert_error(metadataLoad("generated-broken-metadata/last-byte-missing"),
                "corrupted metadata: expected 8 bytes, got 7: \"generated-broken-metadata/last-byte-missing\"");
-  assert_error(loadMetadata("generated-broken-metadata/unneeded-trailing-bytes"),
+  assert_error(metadataLoad("generated-broken-metadata/unneeded-trailing-bytes"),
                "unneeded trailing bytes in \"generated-broken-metadata/unneeded-trailing-bytes\"");
-  assert_error(loadMetadata("generated-broken-metadata/path-count-zero"),
+  assert_error(metadataLoad("generated-broken-metadata/path-count-zero"),
                "unneeded trailing bytes in \"generated-broken-metadata/path-count-zero\"");
   testGroupEnd();
 }
