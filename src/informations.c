@@ -98,7 +98,7 @@ static void printNewDirInfo(PathNode *node, MetadataChanges changes)
 
   if(changes.new_items_count > 0)
   {
-    printf("+%zu Item%s", changes.new_items_count,
+    printf("+%zu item%s", changes.new_items_count,
            changes.new_items_count == 1?"":"s");
     if(changes.new_files_size > 0)
     {
@@ -153,7 +153,10 @@ static MetadataChanges printPathListRecursively(Metadata *metadata,
       if(print)
       {
         colorPrintf(stdout, TC_green_bold, "++ ");
-        colorPrintf(stdout, TC_green, "%s\n", node->path.str);
+        colorPrintf(stdout, TC_cyan, "%s", node->path.str);
+        colorPrintf(stdout, TC_magenta, " -> ");
+        colorPrintf(stdout, TC_yellow, "%s\n",
+                    node->history->state.metadata.sym_target);
       }
     }
     else if(node->history->state.type == PST_directory)
