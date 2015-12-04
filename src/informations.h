@@ -37,8 +37,8 @@
 /** Stores a shallow summary of the changes in a metadata tree. */
 typedef struct
 {
-  /** The amount of new files added to the metadata tree. */
-  size_t new_files_count;
+  /** The amount of new items added to the metadata tree. */
+  size_t new_items_count;
 
   /** The total size of all new files added to the metadata tree. */
   uint64_t new_files_size;

@@ -96,11 +96,15 @@ static void printNewDirInfo(PathNode *node, MetadataChanges changes)
   colorPrintf(stdout, TC_green, "%s/", node->path.str);
   printf(" (");
 
-  if(changes.new_files_count > 0)
+  if(changes.new_items_count > 0)
   {
-    printf("+%zu File%s, +", changes.new_files_count,
-           changes.new_files_count == 1?"":"s");
-    printHumanReadableSize(changes.new_files_size);
+    printf("+%zu Item%s", changes.new_items_count,
+           changes.new_items_count == 1?"":"s");
+    if(changes.new_files_size > 0)
+    {
+      printf(", +");
+      printHumanReadableSize(changes.new_files_size);
+    }
   }
   else
   {
@@ -116,7 +120,7 @@ static MetadataChanges printPathListRecursively(Metadata *metadata,
 {
   MetadataChanges changes =
   {
-    .new_files_count = 0,
+    .new_items_count = 0,
     .new_files_size = 0,
   };
 
@@ -129,8 +133,32 @@ static MetadataChanges printPathListRecursively(Metadata *metadata,
       continue;
     }
 
-    if(node->history->state.type == PST_directory)
+    if(node->history->state.type == PST_regular)
     {
+      changes.new_items_count = sUint64Add(changes.new_items_count, 1);
+      changes.new_files_size =
+        sSizeAdd(changes.new_files_size,
+                 node->history->state.metadata.reg.size);
+
+      if(print)
+      {
+        colorPrintf(stdout, TC_green_bold, "++ ");
+        colorPrintf(stdout, TC_green, "%s\n", node->path.str);
+      }
+    }
+    else if(node->history->state.type == PST_symlink)
+    {
+      changes.new_items_count = sUint64Add(changes.new_items_count, 1);
+
+      if(print)
+      {
+        colorPrintf(stdout, TC_green_bold, "++ ");
+        colorPrintf(stdout, TC_green, "%s\n", node->path.str);
+      }
+    }
+    else if(node->history->state.type == PST_directory)
+    {
+      changes.new_items_count = sUint64Add(changes.new_items_count, 1);
       MetadataChanges subnode_changes;
 
       if(node->policy != BPOL_none && print == true)
@@ -145,24 +173,11 @@ static MetadataChanges printPathListRecursively(Metadata *metadata,
           printPathListRecursively(metadata, node->subnodes, print);
       }
 
-      changes.new_files_count =
-        sUint64Add(changes.new_files_count,
-                   subnode_changes.new_files_count);
+      changes.new_items_count =
+        sUint64Add(changes.new_items_count,
+                   subnode_changes.new_items_count);
       changes.new_files_size =
         sSizeAdd(changes.new_files_size, subnode_changes.new_files_size);
-    }
-    else if(node->history->state.type == PST_regular)
-    {
-      changes.new_files_count = sUint64Add(changes.new_files_count, 1);
-      changes.new_files_size =
-        sSizeAdd(changes.new_files_size,
-                 node->history->state.metadata.reg.size);
-
-      if(print)
-      {
-        colorPrintf(stdout, TC_green_bold, "++ ");
-        colorPrintf(stdout, TC_green, "%s\n", node->path.str);
-      }
     }
   }
 
@@ -187,7 +202,7 @@ void printHumanReadableSize(size_t size)
 
   if(unit_index == 0)
   {
-    printf("%.0lf B", converted_value);
+    printf("%.0lf b", converted_value);
   }
   else
   {
