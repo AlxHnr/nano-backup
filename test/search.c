@@ -28,47 +28,10 @@
 #include "search.h"
 
 #include "test.h"
+#include "test-common.h"
 #include "string-table.h"
 #include "safe-wrappers.h"
 #include "error-handling.h"
-
-#include <errno.h>
-#include <stdlib.h>
-#include <unistd.h>
-
-/** Determines the current working directory.
-
-  @return A pointer to an allocated string that must be freed by the
-  caller.
-*/
-static String getCwd(void)
-{
-  int old_errno = errno;
-  size_t capacity = 128;
-  char *buffer = sMalloc(capacity);
-  char *result = NULL;
-
-  do
-  {
-    result = getcwd(buffer, capacity);
-    if(result == NULL)
-    {
-      if(errno != ERANGE)
-      {
-        dieErrno("failed to get current working directory");
-      }
-
-      capacity = sSizeMul(capacity, 2);
-      buffer = sRealloc(buffer, capacity);
-      errno = old_errno;
-    }
-  }while(result == NULL);
-
-  String cwd = strCopy(str(buffer));
-  free(buffer);
-
-  return cwd;
-}
 
 /** Performs some checks on the given SearchResult.
 

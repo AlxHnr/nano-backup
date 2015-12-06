@@ -19,7 +19,7 @@ build/dependencies.makefile:
 	mkdir -p build/
 	$(CC) -MM src/*.c | sed -r 's,^(\S+:),build/\1,g' > $@
 
-build/nb: $(filter-out build/test.o,$(OBJECTS))
+build/nb: $(filter-out build/test.o build/test-common.o,$(OBJECTS))
 	$(CC) $(LDFLAGS) $^ -o $@
 
 build/%.o:
