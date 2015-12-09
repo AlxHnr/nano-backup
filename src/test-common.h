@@ -28,8 +28,11 @@
 #ifndef _NANO_BACKUP_TEST_COMMON_H_
 #define _NANO_BACKUP_TEST_COMMON_H_
 
+#include "metadata.h"
 #include "string-utils.h"
 
 extern String getCwd(void);
+extern void checkMetadata(Metadata *metadata,
+                          size_t config_history_length);
 
 #endif

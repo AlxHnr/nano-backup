@@ -28,6 +28,7 @@
 #include "metadata.h"
 
 #include "test.h"
+#include "test-common.h"
 #include "memory-pool.h"
 #include "safe-wrappers.h"
 #include "error-handling.h"
@@ -339,70 +340,6 @@ static void appendConfHist(Metadata *metadata, Backup *backup,
   history_point->next = NULL;
 }
 
-/** Checks a path tree recursively and terminates the program on errors.
-
-  @param parent_node The first node in the list, which should be checked
-  recursively.
-  @param metadata The metadata to which the tree belongs.
-
-  @return The amount of path nodes in the entire tree.
-*/
-static size_t checkPathTree(PathNode *parent_node, Metadata *metadata)
-{
-  size_t count = 0;
-
-  for(PathNode *node = parent_node; node != NULL; node = node->next)
-  {
-    if(node->path.str[node->path.length] != '\0')
-    {
-      die("unterminated path string in metadata: \"%s\"",
-          strCopy(node->path).str);
-    }
-    else if(strtableGet(metadata->path_table, node->path) == NULL)
-    {
-      die("path was not mapped in metadata: \"%s\"", node->path.str);
-    }
-    else if(node->history == NULL)
-    {
-      die("path has no history: \"%s\"", node->path.str);
-    }
-
-    count += checkPathTree(node->subnodes, metadata);
-    count++;
-  }
-
-  return count;
-}
-
-/** Performs some basic checks on the given metadatas config history.
-
-  @param metadata The metadata struct containing the config file history.
-
-  @return The history length of the config file.
-*/
-static size_t checkConfHist(Metadata *metadata)
-{
-  size_t history_length = 0;
-
-  for(PathHistory *point = metadata->config_history;
-      point != NULL; point = point->next)
-  {
-    if(point->state.type != PST_regular)
-    {
-      die("config history point doesn't represent a regular file");
-    }
-    else if(point->next != NULL &&
-            point->backup->id >= point->next->backup->id)
-    {
-      die("config history has an invalid order");
-    }
-
-    history_length++;
-  }
-
-  return history_length;
-}
-
 /** Assert that the given metadata contains a config history point with the
   specified properties. Counterpart to appendConfHist(). */
 static void mustHaveConf(Metadata *metadata, Backup *backup,
@@ -572,33 +509,6 @@ static Metadata *createEmptyMetadata(size_t backup_history_length)
   metadata->paths = NULL;
 
   return metadata;
-}
-
-/** Performs some basic checks on a metadata struct.
-
-  @param metadata The metadata struct to be checked.
-  @param config_history_length The length of the config history which the
-  given metadata must have.
-*/
-static void checkMetadata(Metadata *metadata, size_t config_history_length)
-{
-  assert_true(metadata != NULL);
-  assert_true(metadata->current_backup.id == 0);
-  assert_true(metadata->current_backup.timestamp == 0);
-
-  if(metadata->backup_history_length == 0)
-  {
-    assert_true(metadata->backup_history == NULL);
-  }
-  else
-  {
-    assert_true(metadata->backup_history != NULL);
-  }
-
-  assert_true(checkConfHist(metadata) == config_history_length);
-  assert_true(metadata->path_table != NULL);
-  assert_true(metadata->total_path_count ==
-              checkPathTree(metadata->paths, metadata));
 }
 
 /** Finds a specific node in the given PathNode list. If the node couldn't
