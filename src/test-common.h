@@ -33,6 +33,7 @@
 
 extern String getCwd(void);
 extern void checkMetadata(Metadata *metadata,
-                          size_t config_history_length);
+                          size_t config_history_length,
+                          bool check_path_table);
 
 #endif

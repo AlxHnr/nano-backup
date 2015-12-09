@@ -69,10 +69,13 @@ static size_t checkConfHist(Metadata *metadata)
   @param parent_node The first node in the list, which should be checked
   recursively.
   @param metadata The metadata to which the tree belongs.
+  @param check_path_table True, if the associations in the metadatas path
+  table should be checked.
 
   @return The amount of path nodes in the entire tree.
 */
-static size_t checkPathTree(PathNode *parent_node, Metadata *metadata)
+static size_t checkPathTree(PathNode *parent_node, Metadata *metadata,
+                            bool check_path_table)
 {
   size_t count = 0;
 
@@ -83,7 +86,8 @@ static size_t checkPathTree(PathNode *parent_node, Metadata *metadata)
       die("unterminated path string in metadata: \"%s\"",
           strCopy(node->path).str);
     }
-    else if(strtableGet(metadata->path_table, node->path) == NULL)
+    else if(check_path_table == true &&
+            strtableGet(metadata->path_table, node->path) == NULL)
     {
       die("path was not mapped in metadata: \"%s\"", node->path.str);
     }
@@ -92,7 +96,7 @@ static size_t checkPathTree(PathNode *parent_node, Metadata *metadata)
       die("path has no history: \"%s\"", node->path.str);
     }
 
-    count += checkPathTree(node->subnodes, metadata);
+    count += checkPathTree(node->subnodes, metadata, check_path_table);
     count++;
   }
 
@@ -137,8 +141,11 @@ String getCwd(void)
   @param metadata The metadata struct to be checked.
   @param config_history_length The length of the config history which the
   given metadata must have.
+  @param check_path_table True, if the associations in the metadatas path
+  table should be checked.
 */
-void checkMetadata(Metadata *metadata, size_t config_history_length)
+void checkMetadata(Metadata *metadata, size_t config_history_length,
+                   bool check_path_table)
 {
   assert_true(metadata != NULL);
   assert_true(metadata->current_backup.id == 0);
@@ -156,5 +163,5 @@ void checkMetadata(Metadata *metadata, size_t config_history_length)
   assert_true(checkConfHist(metadata) == config_history_length);
   assert_true(metadata->path_table != NULL);
   assert_true(metadata->total_path_count ==
-              checkPathTree(metadata->paths, metadata));
+              checkPathTree(metadata->paths, metadata, check_path_table));
 }
