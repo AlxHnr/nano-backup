@@ -37,7 +37,8 @@
   It will terminate the program if the node doesn't exist, or its parent
   nodes are invalid.
 
-  @param metadata The metadata containing the nodes.
+  @param metadata The metadata containing the nodes. It must be a valid
+  metadata structure, so make sure to pass it to checkMetadata() first.
   @param cwd The current working directory.
 
   @return The found node.
@@ -99,10 +100,12 @@ int main(void)
 
   Metadata *metadata = metadataNew();
   SearchNode *root_node = searchTreeLoad("generated-config-files/backup-search-test.txt");
-
   initiateBackup(metadata, root_node);
 
+  checkMetadata(metadata, 0, false);
   assert_true(metadata->current_backup.ref_count == cwd_depth + 10);
+  assert_true(metadata->backup_history_length == 0);
+  assert_true(metadata->total_path_count == cwd_depth + 10);
 
   findCwdNode(metadata, cwd);
   testGroupEnd();
