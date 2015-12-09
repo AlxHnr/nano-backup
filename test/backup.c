@@ -50,9 +50,9 @@ static PathNode *findCwdNode(Metadata *metadata, String cwd)
     {
       die("path shouldn't have a policy: \"%s\"", node->path.str);
     }
-    else if(node->history == NULL || node->history->next != NULL)
+    else if(node->history->next != NULL)
     {
-      die("path has an invalid history: \"%s\"", node->path.str);
+      die("path has too many history points: \"%s\"", node->path.str);
     }
     else if(node->next != NULL)
     {
