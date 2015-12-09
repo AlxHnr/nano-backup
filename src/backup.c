@@ -138,6 +138,8 @@ static SearchResultType initiateMetadataRecursively(Metadata *metadata,
     /* Prepend the new node to the current node list. */
     node->next = *node_list;
     *node_list = node;
+
+    metadata->total_path_count = sSizeAdd(metadata->total_path_count, 1);
   }
 
   if(result.type == SRT_directory)
