@@ -372,7 +372,7 @@ static size_t checkNodeHist(PathNode *node)
       point != NULL; point = point->next)
   {
     if(point->next != NULL &&
-            point->backup->id >= point->next->backup->id)
+       point->backup->id >= point->next->backup->id)
     {
       die("path node history has an invalid order: \"%s\"",
           node->path.str);
