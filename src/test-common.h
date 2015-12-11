@@ -35,5 +35,8 @@ extern String getCwd(void);
 extern void checkMetadata(Metadata *metadata,
                           size_t config_history_length,
                           bool check_path_table);
+extern PathNode *findNode(PathNode *start_node, const char *path_str,
+                          BackupPolicy policy, size_t history_length,
+                          size_t subnode_count);
 
 #endif

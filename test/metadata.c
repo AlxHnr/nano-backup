@@ -33,25 +33,6 @@
 #include "safe-wrappers.h"
 #include "error-handling.h"
 
-/** Counts the subnodes of the given node.
-
-  @param parent_node The node containing the subnodes.
-
-  @return The subnode count.
-*/
-static size_t countSubnodes(PathNode *parent_node)
-{
-  size_t subnode_count = 0;
-
-  for(PathNode *node = parent_node->subnodes;
-      node != NULL; node = node->next)
-  {
-    subnode_count++;
-  }
-
-  return subnode_count;
-}
-
 /** Writes the given metadata to the temporary test directory.
 
   @param metadata The metadata which should be written.
@@ -358,37 +339,6 @@ static void mustHaveConf(Metadata *metadata, Backup *backup,
   die("config history point with id %zu doesn't exist", backup->id);
 }
 
-/** Performs some basic checks on a path nodes history.
-
-  @param node The node containing the history.
-
-  @return The length of the nodes history.
-*/
-static size_t checkNodeHist(PathNode *node)
-{
-  size_t history_length = 0;
-
-  for(PathHistory *point = node->history;
-      point != NULL; point = point->next)
-  {
-    if(point->next != NULL &&
-       point->backup->id >= point->next->backup->id)
-    {
-      die("path node history has an invalid order: \"%s\"",
-          node->path.str);
-    }
-    else if(point->state.type > PST_directory)
-    {
-      die("node history point has an invalid state type: \"%s\"",
-          node->path.str);
-    }
-
-    history_length++;
-  }
-
-  return history_length;
-}
-
 /** Assert that the given node has a non-existing path state at the given
   backup point. Counterpart to appendHistNonExisting(). */
 static void mustHaveNonExisting(PathNode *node, Backup *backup)
@@ -509,37 +459,6 @@ static Metadata *createEmptyMetadata(size_t backup_history_length)
   metadata->paths = NULL;
 
   return metadata;
-}
-
-/** Finds a specific node in the given PathNode list. If the node couldn't
-  be found, the program will be terminated with failure.
-
-  @param start_node The beginning of the list.
-  @param path_str The name of the node which should be found.
-  @param policy The policy of the node.
-  @param history_length The history length of the node.
-  @param subnode_count The amount of subnodes.
-
-  @return The node with the specified properties.
-*/
-static PathNode *findNode(PathNode *start_node, const char *path_str,
-                          BackupPolicy policy, size_t history_length,
-                          size_t subnode_count)
-{
-  String path = str(path_str);
-  for(PathNode *node = start_node; node != NULL; node = node->next)
-  {
-    if(strCompare(node->path, path) && node->policy == policy &&
-       checkNodeHist(node) == history_length &&
-       countSubnodes(node) == subnode_count)
-    {
-      return node;
-    }
-  }
-
-  die("node \"%s\" with the specified properties does not exist",
-      path_str);
-  return NULL;
 }
 
 /** Generates test metadata, that can be tested with checkTestData1().
