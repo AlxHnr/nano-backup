@@ -54,6 +54,30 @@ static size_t countSubnodes(PathNode *parent_node)
   return subnode_count;
 }
 
+/** Returns true if the specified regular path state contains the given
+  values. */
+static bool checkRegularValues(PathState *state, uint64_t size,
+                               uint8_t *hash, uint8_t slot)
+{
+  if(state->metadata.reg.size != size)
+  {
+    return false;
+  }
+  else if(size > SHA_DIGEST_LENGTH)
+  {
+    return (memcmp(state->metadata.reg.hash, hash, SHA_DIGEST_LENGTH) == 0)
+      && state->metadata.reg.slot == slot;
+  }
+  else if(size > 0)
+  {
+    return memcmp(state->metadata.reg.hash, hash, size) == 0;
+  }
+  else
+  {
+    return true;
+  }
+}
+
 /** Performs some basic checks on the given metadatas config history.
 
   @param metadata The metadata struct containing the config file history.
@@ -216,6 +240,24 @@ void checkMetadata(Metadata *metadata, size_t config_history_length,
               checkPathTree(metadata->paths, metadata, check_path_table));
 }
 
+/** Assert that the given metadata contains a config history point with the
+  specified properties. Counterpart to appendConfHist(). */
+void mustHaveConf(Metadata *metadata, Backup *backup, uint64_t size,
+                  uint8_t *hash, uint8_t slot)
+{
+  for(PathHistory *point = metadata->config_history;
+      point != NULL; point = point->next)
+  {
+    if(point->backup == backup &&
+       checkRegularValues(&point->state, size, hash, slot))
+    {
+      return;
+    }
+  }
+
+  die("config history point with id %zu doesn't exist", backup->id);
+}
+
 /** Finds a specific node in the given PathNode list. If the node couldn't
   be found, the program will be terminated with failure.
 
@@ -245,4 +287,90 @@ PathNode *findNode(PathNode *start_node, const char *path_str,
   die("node \"%s\" with the specified properties does not exist",
       path_str);
   return NULL;
+}
+
+/** Assert that the given node has a non-existing path state at the given
+  backup point. */
+void mustHaveNonExisting(PathNode *node, Backup *backup)
+{
+  for(PathHistory *point = node->history;
+      point != NULL; point = point->next)
+  {
+    if(point->backup == backup &&
+       point->state.type == PST_non_existing)
+    {
+      return;
+    }
+  }
+
+  die("node \"%s\" has no non-existing history point at backup %zu",
+      node->path.str, backup->id);
+}
+
+/** Assert that the given node contains a history point with the specified
+  properties. */
+void mustHaveRegular(PathNode *node, Backup *backup, uid_t uid, gid_t gid,
+                     time_t timestamp, mode_t mode, uint64_t size,
+                     uint8_t *hash, uint8_t slot)
+{
+  for(PathHistory *point = node->history;
+      point != NULL; point = point->next)
+  {
+    if(point->backup == backup &&
+       point->state.type == PST_regular &&
+       point->state.uid == uid && point->state.gid == gid &&
+       point->state.timestamp == timestamp &&
+       point->state.metadata.reg.mode == mode &&
+       checkRegularValues(&point->state, size, hash, slot))
+    {
+      return;
+    }
+  }
+
+  die("path node \"%s\" has no regular path state in its history",
+      node->path.str);
+}
+
+/** Assert that the given node contains a symlink history point with the
+  specified properties. */
+void mustHaveSymlink(PathNode *node, Backup *backup, uid_t uid, gid_t gid,
+                     time_t timestamp, const char *sym_target)
+{
+  for(PathHistory *point = node->history;
+      point != NULL; point = point->next)
+  {
+    if(point->backup == backup &&
+       point->state.type == PST_symlink &&
+       point->state.uid == uid && point->state.gid == gid &&
+       point->state.timestamp == timestamp &&
+       strcmp(point->state.metadata.sym_target, sym_target) == 0)
+    {
+      return;
+    }
+  }
+
+  die("path node \"%s\" doesn't have the symlink \"%s\" in its history",
+      node->path.str, sym_target);
+}
+
+/** Assert that the given node contains a directory history point with the
+  specified properties. */
+void mustHaveDirectory(PathNode *node, Backup *backup, uid_t uid,
+                       gid_t gid, time_t timestamp, mode_t mode)
+{
+  for(PathHistory *point = node->history;
+      point != NULL; point = point->next)
+  {
+    if(point->backup == backup &&
+       point->state.type == PST_directory &&
+       point->state.uid == uid && point->state.gid == gid &&
+       point->state.timestamp == timestamp &&
+       point->state.metadata.dir_mode == mode)
+    {
+      return;
+    }
+  }
+
+  die("path node \"%s\" was not a directory at backup point %zu",
+      node->path.str, backup->id);
 }
