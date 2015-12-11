@@ -31,6 +31,7 @@
 #include "metadata.h"
 #include "search-tree.h"
 #include "test-common.h"
+#include "safe-wrappers.h"
 #include "error-handling.h"
 
 /** Finds the node that represents the directory in which this test runs.
@@ -73,6 +74,29 @@ static PathNode *findCwdNode(Metadata *metadata, String cwd)
   return NULL;
 }
 
+/** Simplified wrapper around findNode(). It constructs the full subnode
+  path from the given parent node and the specified name.
+
+  @param node The node, which subnodes should be searched.
+  @param subnode_name The name of the subnode, which should be found. This
+  string will be used, to construct the subnodes full path.
+  @param policy The policy which the subnode must contain.
+  @param history_length The length of the found nodes history.
+  @param found_node_subnode_count The amount of subnodes, which the found
+  node must have.
+
+  @return The requested node. If it doesn't exist, the program will be
+  terminated with failure.
+*/
+static PathNode *findSubnode(PathNode *node, const char *subnode_name,
+                             BackupPolicy policy, size_t history_length,
+                             size_t found_node_subnode_count)
+{
+  String subnode_path = strAppendPath(node->path, str(subnode_name));
+  return findNode(node->subnodes, subnode_path.str, policy,
+                  history_length, found_node_subnode_count);
+}
+
 /** Counts the path elements in the given string. E.g. "/home/foo/bar" has
   3 path elements.
 
@@ -92,6 +116,46 @@ static size_t countPathElements(String string)
   return count;
 }
 
+/** Simplified wrapper around mustHaveRegular(). It extracts additional
+  informations via stat() and passes them to mustHaveRegular().
+
+  @param node The node which should be checked.
+  @param backup The backup to which the given node must point.
+  @param hash The expected hash in RegularFileInfo.
+  @param slot The expected slot in RegularFileInfo.
+*/
+static void mustHaveRegularStat(PathNode *node, Backup *backup,
+                                uint8_t *hash, uint8_t slot)
+{
+  struct stat stats = sStat(node->path.str);
+  mustHaveRegular(node, backup, stats.st_uid, stats.st_gid,
+                  stats.st_mtime, stats.st_mode, stats.st_size,
+                  hash, slot);
+}
+
+/** Simplified wrapper around mustHaveSymlink(). It extracts additional
+  informations via lstat() and passes them to mustHaveSymlink().
+
+  @param node The node which should be checked.
+  @param backup The backup to which the given node must point.
+  @param sym_target The target path of the symlink.
+*/
+static void mustHaveSymlinkLStat(PathNode *node, Backup *backup,
+                                 const char *sym_target)
+{
+  struct stat stats = sLStat(node->path.str);
+  mustHaveSymlink(node, backup, stats.st_uid, stats.st_gid,
+                  stats.st_mtime, sym_target);
+}
+
+/** Like mustHaveRegularStat(), but for mustHaveDirectory(). */
+static void mustHaveDirectoryStat(PathNode *node, Backup *backup)
+{
+  struct stat stats = sStat(node->path.str);
+  mustHaveDirectory(node, backup, stats.st_uid, stats.st_gid,
+                    stats.st_mtime, stats.st_mode);
+}
+
 int main(void)
 {
   testGroupStart("discovering new files");
@@ -107,6 +171,38 @@ int main(void)
   assert_true(metadata->backup_history_length == 0);
   assert_true(metadata->total_path_count == cwd_depth + 10);
 
-  findCwdNode(metadata, cwd);
+  PathNode *data_dir = findCwdNode(metadata, cwd);
+  assert_true(data_dir->subnodes != NULL);
+  assert_true(data_dir->subnodes->next == NULL);
+
+  PathNode *test_dir = findSubnode(data_dir, "test directory", BPOL_none, 1, 5);
+  mustHaveDirectoryStat(test_dir, &metadata->current_backup);
+
+  PathNode *bar_a_txt = findSubnode(test_dir, "bar-a.txt", BPOL_copy, 1, 0);
+  mustHaveRegularStat(bar_a_txt, &metadata->current_backup, NULL, 0);
+
+  PathNode *foobar_a1_txt = findSubnode(test_dir, "foobar a1.txt", BPOL_copy, 1, 0);
+  mustHaveRegularStat(foobar_a1_txt, &metadata->current_backup, NULL, 0);
+
+  PathNode *empty_dir = findSubnode(test_dir, "empty-directory", BPOL_mirror, 1, 0);
+  mustHaveSymlinkLStat(empty_dir, &metadata->current_backup, ".empty");
+
+  PathNode *euro_txt = findSubnode(test_dir, "€.txt", BPOL_mirror, 1, 0);
+  mustHaveRegularStat(euro_txt, &metadata->current_backup, NULL, 0);
+
+  PathNode *foo_1 = findSubnode(test_dir, "foo 1", BPOL_none, 1, 1);
+  mustHaveDirectoryStat(foo_1, &metadata->current_backup);
+
+  PathNode *bar = findSubnode(foo_1, "bar", BPOL_track, 1, 3);
+  mustHaveDirectoryStat(bar, &metadata->current_backup);
+
+  PathNode *one_txt = findSubnode(bar, "1.txt", BPOL_track, 1, 0);
+  mustHaveRegularStat(one_txt, &metadata->current_backup, NULL, 0);
+
+  PathNode *two_txt = findSubnode(bar, "2.txt", BPOL_track, 1, 0);
+  mustHaveRegularStat(two_txt, &metadata->current_backup, NULL, 0);
+
+  PathNode *three_txt = findSubnode(bar, "3.txt", BPOL_track, 1, 0);
+  mustHaveRegularStat(three_txt, &metadata->current_backup, NULL, 0);
   testGroupEnd();
 }
