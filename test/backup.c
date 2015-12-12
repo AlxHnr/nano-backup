@@ -74,27 +74,29 @@ static PathNode *findCwdNode(Metadata *metadata, String cwd)
   return NULL;
 }
 
-/** Simplified wrapper around findNode(). It constructs the full subnode
-  path from the given parent node and the specified name.
+/** Simplified wrapper around findNode().
 
-  @param node The node, which subnodes should be searched.
-  @param subnode_name The name of the subnode, which should be found. This
-  string will be used, to construct the subnodes full path.
-  @param policy The policy which the subnode must contain.
-  @param history_length The length of the found nodes history.
-  @param found_node_subnode_count The amount of subnodes, which the found
-  node must have.
+  @param node The node containing the requested subnode.
+  @param subnode_name The name of the requested subnode. This should not be
+  a full path.
+  @param policy The policy of the requested subnode.
+  @param requested_history_length The history length of the requested
+  subnode.
+  @param requested_subnode_count The amount of subnodes in the requested
+  subnode.
 
-  @return The requested node. If it doesn't exist, the program will be
+  @return The requested subnode. If it doesn't exist, the program will be
   terminated with failure.
 */
-static PathNode *findSubnode(PathNode *node, const char *subnode_name,
-                             BackupPolicy policy, size_t history_length,
-                             size_t found_node_subnode_count)
+static PathNode *findSubnode(PathNode *node,
+                             const char *subnode_name,
+                             BackupPolicy policy,
+                             size_t requested_history_length,
+                             size_t requested_subnode_count)
 {
   String subnode_path = strAppendPath(node->path, str(subnode_name));
   return findNode(node->subnodes, subnode_path.str, policy,
-                  history_length, found_node_subnode_count);
+                  requested_history_length, requested_subnode_count);
 }
 
 /** Counts the path elements in the given string. E.g. "/home/foo/bar" has
