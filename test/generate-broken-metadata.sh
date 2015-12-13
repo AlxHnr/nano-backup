@@ -1,8 +1,7 @@
-#!/bin/bash
+#!/bin/sh -e
 
 # This script generates various broken metadata files for testing. It must
 # be run from the projects root directory.
-set -e
 
 target_dir="test/data/generated-broken-metadata"
 dummy_path="test/data/dummy-metadata"
