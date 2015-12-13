@@ -25,25 +25,26 @@ build/nb: $(filter-out build/test.o build/test-common.o,$(OBJECTS))
 build/%.o:
 	$(CC) $(CFLAGS) -c $< -o $@
 
-test: $(TESTS) $(GENERATED_CONFIGS) test/data/test\ directory/.empty/ \
-  test/data/generated-broken-metadata/
+test: build/nb $(TESTS) $(GENERATED_CONFIGS) \
+  test/data/test\ directory/.empty/ test/data/generated-broken-metadata/
 	@(cd test/data/ && \
 	  for test in $(TESTS); do \
 	  rm -rf tmp/; \
 	  mkdir -p tmp/; \
 	  test -t 1 && echo -e "Running \033[0;33m$$test\033[0m:" || \
-	  echo -e "Running $$test:"; \
+	  echo "Running $$test:"; \
 	  "../../$$test" || exit 1; \
 	  echo; \
 	  done && \
 	  rm -rf tmp/)
+	@./test/run-full-program-tests.sh
 
 build/test/%: build/test/%.o \
   $(filter-out build/nb.o build/error-handling.o,$(OBJECTS))
 	$(CC) $(LDFLAGS) $^ -o $@
 
 build/test/%.o: test/%.c
-	 mkdir -p build/test/ && $(CC) $(CFLAGS) -Isrc/ -c $< -o $@
+	mkdir -p build/test/ && $(CC) $(CFLAGS) -Isrc/ -c $< -o $@
 
 test/data/generated-config-files/%: test/data/template-config-files/%
 	mkdir -p "$(dir $@)" && sed -r "s,^/,$$PWD/test/data/,g" "$<" > "$@"
@@ -59,3 +60,9 @@ doc:
 
 clean:
 	- rm -rf build/ doc/ test/data/generated-*/ test/data/tmp/
+	@(for script in "test/full program tests"/*/*/clean.sh; do \
+	  echo "$$script"; \
+	  cd "$$(dirname "$$script")" && \
+	  sh -e "$$(basename "$$script")" || exit 1; \
+	  cd - >&/dev/null; \
+	  done)
