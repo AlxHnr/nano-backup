@@ -42,11 +42,12 @@ fail_test()
 # $1 The name of the target.
 try_to_run_target()
 {
-  test -f "${1}.sh" || return
+  local target_script="../../fallback targets/${1}.sh"
+  test -f "${1}.sh" && local target_script="${1}.sh"
 
-  test_output=$(sh -e "${1}.sh" 2>&1)
+  output=$(sh -e "${target_script}" 2>&1)
   test ! $? -eq 0 &&
-    fail_test "${yellow}${1}.sh${normal}: $test_output"
+    fail_test "${yellow}$(basename "$target_script")${normal}: $output"
 }
 
 # Various variables available to test scripts.
@@ -56,6 +57,8 @@ export NB="$PROJECT_PATH/build/nb"
 # The main test loop.
 for test_group_path in "test/full program tests/"*; do
   test_group=$(basename "$test_group_path")
+  test "$test_group" == "fallback targets" && continue
+
   echo -e "Running full program test group: ${blue}${test_group}${normal}:"
 
   for test_path in "$test_group_path"/*; do
