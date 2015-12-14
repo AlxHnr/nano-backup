@@ -72,6 +72,6 @@ for test_group_path in "test/full program tests/"*; do
     cd - >&/dev/null
 
     echo -e "[${green}success${normal}]"
-    echo
   done
+  echo
 done
