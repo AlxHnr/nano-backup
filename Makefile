@@ -16,14 +16,15 @@ all: build/nb
 
 -include build/dependencies.makefile
 build/dependencies.makefile:
-	mkdir -p build/
+	mkdir -p build/test/
 	$(CC) -MM src/*.c | sed -r 's,^(\S+:),build/\1,g' > $@
+	$(CC) -Isrc/ -MM test/*.c | sed -r 's,^(\S+:),build/test/\1,g' >> $@
 
 build/nb: $(filter-out build/test.o build/test-common.o,$(OBJECTS))
 	$(CC) $(LDFLAGS) $^ -o $@
 
 build/%.o:
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -Isrc/ -c $< -o $@
 
 test: build/nb $(TESTS) $(GENERATED_CONFIGS) \
   test/data/test\ directory/.empty/ test/data/generated-broken-metadata/
@@ -42,9 +43,6 @@ test: build/nb $(TESTS) $(GENERATED_CONFIGS) \
 build/test/%: build/test/%.o \
   $(filter-out build/nb.o build/error-handling.o,$(OBJECTS))
 	$(CC) $(LDFLAGS) $^ -o $@
-
-build/test/%.o: test/%.c
-	mkdir -p build/test/ && $(CC) $(CFLAGS) -Isrc/ -c $< -o $@
 
 test/data/generated-config-files/%: test/data/template-config-files/%
 	mkdir -p "$(dir $@)" && sed -r "s,^/,$$PWD/test/data/,g" "$<" > "$@"
