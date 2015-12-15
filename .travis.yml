@@ -1,5 +1,10 @@
 language: c
 compiler:
-  - clang
   - gcc
+  - clang
+env: CFLAGS="-coverage -O0" LDFLAGS="-coverage"
+before_install:
+  - pip install --user cpp-coveralls
 script: make && make test
+after_success:
+  - coveralls -e test/ -e src/test.c -e src/test-common.c
