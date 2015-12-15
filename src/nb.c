@@ -75,7 +75,7 @@ int main(const int arg_count, const char **arg_list)
   MetadataChanges changes = printMetadataChanges(metadata);
   printSearchTreeInfos(root_node);
 
-  printf("\nTotal: +%zu Files, +", changes.new_files_count);
+  printf("\nTotal: +%zu items, +", changes.new_items_count);
   printHumanReadableSize(changes.new_files_size);
   printf("\n");
 }
