@@ -62,7 +62,7 @@ export NB="$PROJECT_PATH/build/nb"
 # The main test loop.
 for test_group_path in "test/full program tests/"*; do
   test_group=$(basename "$test_group_path")
-  test "$test_group" == "fallback targets" && continue
+  test "$test_group" = "fallback targets" && continue
 
   echo -e "Running full program test group: ${blue}${test_group}${normal}:"
 
