@@ -155,9 +155,7 @@ static SearchNode *checkCwdTree(SearchNode *root_node, size_t cwd_depth)
 */
 static void finishSearch(SearchContext *context, size_t recursion_depth)
 {
-  /* Volatile is only required to suppress GCC's warnings about longjumps
-     inside the assert statement. */
-  for(volatile size_t counter = 0; counter < recursion_depth; counter++)
+  for(size_t counter = 0; counter < recursion_depth; counter++)
   {
     SearchResult result = searchGetNext(context);
     assert_true(result.type == SRT_end_of_directory);
@@ -304,7 +302,7 @@ static void testSimpleSearch(String cwd)
   SearchContext *context = searchNew(root);
   assert_true(context != NULL);
 
-  volatile size_t cwd_depth = skipCwd(context, cwd);
+  size_t cwd_depth = skipCwd(context, cwd);
   StringTable *found_files = strtableNew();
   assert_true(populateDirectoryTable(context, found_files, cwd) == 29);
   finishSearch(context, cwd_depth);
@@ -385,7 +383,7 @@ static void testIgnoreExpressions(String cwd)
   SearchContext *context = searchNew(root);
   assert_true(context != NULL);
 
-  volatile size_t cwd_depth = skipCwd(context, cwd);
+  size_t cwd_depth = skipCwd(context, cwd);
   StringTable *found_files = strtableNew();
   assert_true(populateDirectoryTable(context, found_files, cwd) == 19);
   finishSearch(context, cwd_depth);
@@ -459,7 +457,7 @@ static void testSymlinkFollowing(String cwd)
   SearchContext *context = searchNew(root);
   assert_true(context != NULL);
 
-  volatile size_t cwd_depth = skipCwd(context, cwd);
+  size_t cwd_depth = skipCwd(context, cwd);
   StringTable *found_files = strtableNew();
   assert_true(populateDirectoryTable(context, found_files, cwd) == 20);
   finishSearch(context, cwd_depth);
@@ -525,7 +523,7 @@ static void testMismatchedPaths(String cwd)
   SearchContext *context = searchNew(root);
   assert_true(context != NULL);
 
-  volatile size_t cwd_depth = skipCwd(context, cwd);
+  size_t cwd_depth = skipCwd(context, cwd);
   StringTable *found_files = strtableNew();
   assert_true(populateDirectoryTable(context, found_files, cwd) == 2);
   finishSearch(context, cwd_depth);
@@ -584,7 +582,7 @@ static void testComplexSearch(String cwd)
   SearchContext *context = searchNew(root);
   assert_true(context != NULL);
 
-  volatile size_t cwd_depth = skipCwd(context, cwd);
+  size_t cwd_depth = skipCwd(context, cwd);
   StringTable *found_files = strtableNew();
   assert_true(populateDirectoryTable(context, found_files, cwd) == 26);
   finishSearch(context, cwd_depth);

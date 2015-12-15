@@ -162,7 +162,7 @@ int main(void)
 {
   testGroupStart("discovering new files");
   String cwd = getCwd();
-  volatile size_t cwd_depth = countPathElements(cwd);
+  size_t cwd_depth = countPathElements(cwd);
 
   Metadata *metadata = metadataNew();
   SearchNode *root_node = searchTreeLoad("generated-config-files/backup-search-test.txt");

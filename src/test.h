@@ -33,6 +33,14 @@
 #include <setjmp.h>
 #include <stdbool.h>
 
+/* This test suite uses longjump to catch and handle calls to die().
+   Unfortunately GCC tries to inline as much as possible into assert
+   statements, which causes self-imposed warnings that don't build with
+   -Werror. */
+#if defined __GNUC__ && !defined __clang__
+#pragma GCC diagnostic ignored "-Wclobbered"
+#endif
+
 /** Asserts that the given expression evaluates to true. It will catch
   calls to die(). */
 #define assert_true(expression) \
