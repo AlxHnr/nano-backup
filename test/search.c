@@ -640,7 +640,7 @@ static void testComplexSearch(String cwd)
   SearchNode *node = checkCwdTree(root, cwd_depth);
   assert_true(node != NULL);
 
-  checkSubnode(node, "^[es]", SRT_regular);
+  checkSubnode(node, "^[es]", SRT_regular | SRT_symlink);
 
   SearchNode *test_dir = checkSubnode(node, "^tes", SRT_directory);
 

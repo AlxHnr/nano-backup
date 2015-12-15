@@ -266,7 +266,7 @@ static SearchResult finishNodeStep(SearchContext *context,
 
   if(node != NULL)
   {
-    node->search_match = found_file.type;
+    node->search_match |= found_file.type;
   }
 
   if(found_file.type == SRT_directory)
