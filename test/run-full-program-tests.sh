@@ -42,8 +42,13 @@ fail_test()
 # $1 The name of the target.
 try_to_run_target()
 {
-  local target_script="../../fallback targets/${1}.sh"
-  test -f "${1}.sh" && local target_script="${1}.sh"
+  if [[ -f "${1}.sh" ]]; then
+    local target_script="${1}.sh"
+  elif [[ -f "../../fallback targets/${1}.sh" ]]; then
+    local target_script="../../fallback targets/${1}.sh"
+  else
+    return
+  fi
 
   output=$(sh -e "${target_script}" 2>&1)
   test ! $? -eq 0 &&
@@ -67,7 +72,9 @@ for test_group_path in "test/full program tests/"*; do
 
     cd "$test_path"
     for target in clean init run clean; do
-      try_to_run_target "$target";
+      try_to_run_target "pre-$target"
+      try_to_run_target "$target"
+      try_to_run_target "post-$target"
     done
     cd - >&/dev/null
 
