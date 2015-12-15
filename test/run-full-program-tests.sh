@@ -7,11 +7,11 @@ unset yellow
 unset red_bold
 unset normal
 if test -t 1; then
-  blue="\033[0;34m"
-  green="\033[0;32m"
-  yellow="\033[0;33m"
-  red_bold="\033[1;31m"
-  normal="\033[0m"
+  blue="[0;34m"
+  green="[0;32m"
+  yellow="[0;33m"
+  red_bold="[1;31m"
+  normal="[0m"
 fi
 
 # Prints a message, which indicates that a test is running.
@@ -19,7 +19,7 @@ fi
 # $1 The name of the test.
 print_running_test()
 {
-  echo -en "  Testing $1"
+  echo -n "  Testing $1"
   dots_to_print=$((61 - ${#1}))
   test $dots_to_print -gt 0 &&
     for i in $(seq $dots_to_print); do
@@ -31,8 +31,8 @@ print_running_test()
 # program with failure. It passes all its arguments directly to `echo -e`.
 fail_test()
 {
-  echo -e "[${red_bold}FAILURE${normal}]"
-  echo -e "    ${red_bold}error${normal}: $@"
+  echo "[${red_bold}FAILURE${normal}]"
+  echo "    ${red_bold}error${normal}: $@"
   exit 1
 }
 
@@ -43,9 +43,9 @@ fail_test()
 try_to_run_target()
 {
   if test -f "${1}.sh"; then
-    local target_script="${1}.sh"
+    target_script="${1}.sh"
   elif test -f "../../fallback targets/${1}.sh"; then
-    local target_script="../../fallback targets/${1}.sh"
+    target_script="../../fallback targets/${1}.sh"
   else
     return
   fi
@@ -64,7 +64,7 @@ for test_group_path in "test/full program tests/"*; do
   test_group=$(basename "$test_group_path")
   test "$test_group" = "fallback targets" && continue
 
-  echo -e "Running full program test group: ${blue}${test_group}${normal}:"
+  echo "Running full program test group: ${blue}${test_group}${normal}:"
 
   for test_path in "$test_group_path"/*; do
     test_name=$(basename "$test_path")
@@ -76,9 +76,9 @@ for test_group_path in "test/full program tests/"*; do
       try_to_run_target "$target"
       try_to_run_target "post-$target"
     done
-    cd - >&/dev/null
+    cd - >/dev/null
 
-    echo -e "[${green}success${normal}]"
+    echo "[${green}success${normal}]"
   done
   echo
 done
