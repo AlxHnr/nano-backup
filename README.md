@@ -1,5 +1,8 @@
 Nano-backup grants the user precise control about changes in files and
-directories and to which degree a history of them should be kept.
+directories and to which extend a history of them should be kept.
+
+**Warning**: Nano-backup is still under construction and most features
+described here may not work yet.
 
 It can be either installed from my
 [Gentoo overlay](https://github.com/AlxHnr/gentoo-overlay) or by cloning
@@ -20,11 +23,12 @@ directory:
 mkdir repo/
 ```
 
-The repository can be configured by creating a file named `conf` inside it.
+The repository can be configured by creating a file named `config` inside
+it.
 
 To tell nano-backup to simply copy files into the repository, the backup
-policy _copy_ must be set in the config file. After that, full filepaths
-can be specified for files that should be backed up:
+policy [copy](#copy) must be set in the config file. After that, full
+filepaths can be specified for files that should be backed up:
 
 ```
 [copy]
@@ -40,9 +44,9 @@ directory names:
 /home/user/Pictures//\.(png|jpg)$
 ```
 
-To prevent files from being backed up, set the _ignore_ policy in the
-config file. Every line after that is a POSIX extended regex and will be
-matched against full, absolute filepaths:
+To prevent files from being backed up, set the [ignore](#ignore) policy in
+the config file. Every line after that is a POSIX extended regex and will
+be matched against full, absolute filepaths:
 
 ```
 [ignore]
@@ -100,5 +104,5 @@ permission bits.
 
 ### ignore
 
-This is not really a policy, but allows specifying POSIX extended regular
-expressions from excluding full paths from being backed up.
+This is not really a policy, but allows to specify POSIX extended regular
+expressions for excluding full paths from being backed up.
