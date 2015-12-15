@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/AlxHnr/nano-backup.svg?branch=master)](https://travis-ci.org/AlxHnr/nano-backup)
+[![codecov.io](https://codecov.io/github/AlxHnr/nano-backup/coverage.svg?branch=master)](https://codecov.io/github/AlxHnr/nano-backup?branch=master)
 
 Nano-backup grants the user precise control about changes in files and
 directories and to which extend a history of them should be kept.
