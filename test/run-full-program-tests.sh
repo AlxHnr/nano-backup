@@ -6,7 +6,7 @@ unset green
 unset yellow
 unset red_bold
 unset normal
-if [[ -t 1 ]]; then
+if test -t 1; then
   blue="\033[0;34m"
   green="\033[0;32m"
   yellow="\033[0;33m"
@@ -42,9 +42,9 @@ fail_test()
 # $1 The name of the target.
 try_to_run_target()
 {
-  if [[ -f "${1}.sh" ]]; then
+  if test -f "${1}.sh"; then
     local target_script="${1}.sh"
-  elif [[ -f "../../fallback targets/${1}.sh" ]]; then
+  elif test -f "../../fallback targets/${1}.sh"; then
     local target_script="../../fallback targets/${1}.sh"
   else
     return

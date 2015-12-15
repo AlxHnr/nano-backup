@@ -1,4 +1,4 @@
-if [[ -f arguments ]]; then
+if test -f arguments; then
   cat arguments
 else
   echo generated/repo
