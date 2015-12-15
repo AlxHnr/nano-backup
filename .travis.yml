@@ -5,6 +5,8 @@ compiler:
 env: CFLAGS="-coverage -O0" LDFLAGS="-coverage"
 before_install:
   - pip install --user cpp-coveralls
+  - pip install --user codecov
 script: make && make test
 after_success:
-  - coveralls -b . -x .c -e test/ -e src/test.c -e src/test-common.c
+  - coveralls -b . -x .c -e test/ -e src/test.c -e src/test-common.c -e '<build-in>'
+  - codecov
