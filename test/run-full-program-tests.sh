@@ -28,7 +28,7 @@ print_running_test()
 }
 
 # Prints a message, which indicates that the test failed and terminates the
-# program with failure. It passes all its arguments directly to `echo -e`.
+# program with failure. It passes all its arguments directly to echo.
 fail_test()
 {
   echo "[${red_bold}FAILURE${normal}]"
