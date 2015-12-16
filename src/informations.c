@@ -70,16 +70,27 @@ static void printSearchNodeInfos(SearchNode *root_node)
               node->subnodes?"directory":"file");
       warnPathNewline(node->name);
     }
-    else if(node->search_match != SRT_directory && node->subnodes != NULL)
-    {
-      warnConfigLineNr(node->line_nr);
-      fprintf(stderr, "%s matches, but not a directory: ",
-             node->regex?"regex":"string");
-      warnPathNewline(node->name);
-    }
     else if(node->subnodes != NULL)
     {
-      printSearchNodeInfos(node);
+      if(!(node->search_match & SRT_directory))
+      {
+        warnConfigLineNr(node->line_nr);
+        fprintf(stderr, "%s matches, but not a directory: ",
+                node->regex?"regex":"string");
+        warnPathNewline(node->name);
+      }
+      else if(node->search_match & ~SRT_directory)
+      {
+        warnConfigLineNr(node->line_nr);
+        fprintf(stderr, "%s matches not only directories: ",
+                node->regex?"regex":"string");
+        warnPathNewline(node->name);
+        printSearchNodeInfos(node);
+      }
+      else
+      {
+        printSearchNodeInfos(node);
+      }
     }
   }
 }
