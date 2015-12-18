@@ -1,0 +1,4 @@
+
+[track]
+
+/test directory//^[abc]ar-.\.txt$/test.txt

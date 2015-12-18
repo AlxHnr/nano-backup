@@ -1,0 +1,11 @@
+++ /test directory/bar-a.txt
+++ /test directory/bar-b.txt
+++ /test directory/foobar a1.txt
+++ /test directory/foobar a2.txt
+++ /test directory/foobar b1.txt
+++ /test directory/foobar b2.txt
+++ /test directory/φ.txt
+++ /test directory/€.txt
+config: line 3: regex never matched a file: "foo:bar[0-9]+$"
+
+Total: +9 items, +0 b

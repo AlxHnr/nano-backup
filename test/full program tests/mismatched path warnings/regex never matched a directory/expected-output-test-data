@@ -1,0 +1,6 @@
+++ /test directory/.hidden/.hidden/ (+3 items)
+++ /test directory/.hidden/test file.☢
+++ /test directory/.hidden/❤❤❤.txt
+config: line 3: regex never matched a directory: "foo:bar[0-9]+$"
+
+Total: +8 items, +0 b

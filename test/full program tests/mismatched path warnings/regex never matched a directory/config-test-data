@@ -1,0 +1,3 @@
+[copy]
+/test directory/.hidden//.
+/test directory//foo:bar[0-9]+$/subdir/file 1.txt

@@ -1,0 +1,4 @@
+++ /test directory/ (+31 items)
+config: line 9: string never matched a file: "unmatched-string"
+
+Total: +32 items, +0 b

@@ -1,0 +1,12 @@
+[mirror]
+[copy]
+[track]
+
+[copy]
+/test directory/.hidden//.
+[mirror]
+
+/test directory/unmatched-string
+
+[track]
+/test directory

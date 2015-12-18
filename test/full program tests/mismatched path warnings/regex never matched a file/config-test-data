@@ -1,0 +1,3 @@
+[copy]
+/test directory//\.txt$
+/test directory//foo:bar[0-9]+$
