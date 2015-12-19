@@ -1,37 +1,30 @@
 [![Build Status](https://travis-ci.org/AlxHnr/nano-backup.svg?branch=master)](https://travis-ci.org/AlxHnr/nano-backup)
 [![codecov.io](https://codecov.io/github/AlxHnr/nano-backup/coverage.svg?branch=master)](https://codecov.io/github/AlxHnr/nano-backup?branch=master)
 
-Nano-backup grants the user precise control about changes in files and
-directories and to which extend a history of them should be kept.
+Nano-backup is still under development and most features described here do
+not work yet. If you want to get notified when its done, you can subscribe
+to the [release feed](https://github.com/AlxHnr/nano-backup/releases.atom).
 
-**Warning**: Nano-backup is still under construction and most features
-described here may not work yet.
-
-It can be either installed from my
-[Gentoo overlay](https://github.com/AlxHnr/gentoo-overlay) or by cloning
-this repository and running `make` inside it. If the build succeeds,
-simply copy `build/nb` to a directory like `/usr/bin`.
-
-Nano-backup requires a POSIX.1-2001 conform OS and depends on
+It requires a POSIX.1-2001 conform OS and depends on
 [OpenSSL](https://www.openssl.org/). Building the program requires a C99
-Compiler and
+conform C compiler and
 [pkg-config](http://www.freedesktop.org/wiki/Software/pkg-config/).
+
+Nano-backup can be installed by cloning this repository and running `make`
+inside it. If the build succeeds, simply copy `build/nb` to a directory
+like `/usr/bin`. You probably want to run the test suite via `make test`
+after building it.
 
 ## Usage
 
-Creating a backup repository is not different from creating a new
-directory:
+To create a backup repository just create a new directory:
 
 ```sh
 mkdir repo/
 ```
 
-The repository can be configured by creating a file named `config` inside
-it.
-
-To tell nano-backup to simply copy files into the repository, the backup
-policy [copy](#copy) must be set in the config file. After that, full
-filepaths can be specified for files that should be backed up:
+The repository can be configured via the file `config` inside it. Here is
+an example for backing up two directories:
 
 ```
 [copy]
@@ -39,17 +32,17 @@ filepaths can be specified for files that should be backed up:
 /home/user/Pictures
 ```
 
-To use POSIX extended regular expressions for file matching, prefix a
-pattern with an additional slash. These patterns will only match file and
-directory names:
+The first line sets the copy [policy](#policies). The other lines are
+absolute paths to files or directories which should be backed up. To do a
+backup, pass the repository to nano-backup:
 
-```
-/home/user/Pictures//\.(png|jpg)$
+```sh
+nb repo/
 ```
 
-To prevent files from being backed up, set the [ignore](#ignore) policy in
-the config file. Every line after that is a POSIX extended regex and will
-be matched against full, absolute filepaths:
+To prevent files from being backed up, set the ignore policy. This allows
+specifying regular expressions, which will be matched against full,
+absolute filepaths. They must be valid POSIX extended regular expressions:
 
 ```
 [ignore]
@@ -57,23 +50,28 @@ be matched against full, absolute filepaths:
 ^/home/user/.+~$
 ```
 
-To do a backup, simply pass the repository path to nano-backup:
+Regular expressions can also be used for matching files you want to backup.
+Just prefix a pattern with an additional slash:
 
-```sh
-nb repo/
 ```
+[copy]
+/home/user/Pictures//\.(png|jpg)$
+```
+
+**Note**: A regular expression can not contain a slash and will only match
+file or directory names.
 
 ## Policies
 
-Nano-backup can backup various files in different ways. Policies apply only
-to the last element of a path:
+Policies specify how files should be backed up and apply only to the last
+element of a path:
 
 ```
+[policy]
 /home/user/Pictures/last-element
 ```
 
-All the parent directories of the last element will be backed up silently
-without the users knowledge and will not have a history. Paths can inherit
+All its parent directories will be backed up silently. Paths can inherit
 policies from their parents:
 
 ```
@@ -84,28 +82,12 @@ policies from their parents:
 /home/user/.config/
 ```
 
-In the example above, the files in `user` will be mirrored, while the files
+In the example above the files in `user` will be mirrored, while the files
 in `.config` will be tracked.
 
-### copy
-
-This is the simplest policy. Every file/directory will be backed up
-recursively without having a change history. If a file gets changed in the
-filesystem, its backup gets overwritten.
-
-### mirror
-
-This policy is almost identical to [copy](#copy), but with the difference
-that if a file gets removed from the filesystem, it will also be removed
-from the backup.
-
-### track
-
-This policy will create a history of every change in a file or directory.
-This includes metadata, like modification timestamps, owner, group and
-permission bits.
-
-### ignore
-
-This is not really a policy, but allows to specify POSIX extended regular
-expressions for excluding full paths from being backed up.
+Policy name | Description
+------------|-------------
+copy        | Backup only the latest version of a file.
+mirror      | Like copy, but if a file gets removed from the filesystem, it will also be removed from the backup.
+track       | Keep a history of every change, including modification timestamps, owner, group and permission bits.
+ignore      | Not really a policy, but allows to specify regular expressions for excluding files. It has a lower priority than the other policies and only matches files which have not been matched already.
