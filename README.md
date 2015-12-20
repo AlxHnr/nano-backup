@@ -63,7 +63,7 @@ file or directory names.
 
 ## Policies
 
-Policies specify how files should be backed up and apply only to the last
+Policies specify how files should be backed up. They apply only to the last
 element of a path:
 
 ```
