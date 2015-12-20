@@ -420,7 +420,7 @@ SearchContext *searchNew(SearchNode *root_node)
   SearchContext *context = sMalloc(sizeof *context);
 
   /* Initialize string buffer. */
-  context->buffer.capacity = 128;
+  context->buffer.capacity = 8;
   context->buffer.str = sMalloc(context->buffer.capacity);
 
   /* Initialize a search step into "/". */
@@ -438,7 +438,7 @@ SearchContext *searchNew(SearchNode *root_node)
 
   /* Initialise the state stack. */
   context->state_stack.used = 0;
-  context->state_stack.capacity = 16;
+  context->state_stack.capacity = 4;
   context->state_stack.state_array =
     sMalloc(sSizeMul(sizeof *context->state_stack.state_array,
                      context->state_stack.capacity));
