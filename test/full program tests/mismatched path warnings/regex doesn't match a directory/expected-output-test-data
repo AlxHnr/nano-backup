@@ -1,5 +1,3 @@
-++ /test directory/bar-a.txt
-++ /test directory/bar-b.txt
 config: line 4: regex matches, but not a directory: "^[abc]ar-.\.txt$"
 
-Total: +3 items, +0 b
+Total: +0 items, +0 b

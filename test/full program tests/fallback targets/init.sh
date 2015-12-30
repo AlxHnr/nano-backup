@@ -9,7 +9,11 @@ gen_expected_output()
   path_elements=$(echo "$2" | grep -o '\/' | wc -l)
   expected_files=$(grep -E '^Total: \+[0-9]+ items' "$1" | \
     sed -r 's,^Total: \+([0-9]+) items.*$,\1,g')
-  total_files=$(($expected_files + $path_elements))
+  total_files="0"
+
+  test -n "$expected_files" &&
+    test "$expected_files" != "0" &&
+    total_files=$(($path_elements + $expected_files))
 
   sed -r "s,^(.. )\/(.*)$,\1$2/\2,g" "$1" | \
     sed -r "s,^Total: \+$expected_files items,Total: +$total_files items,g" | \

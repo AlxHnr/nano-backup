@@ -143,6 +143,12 @@ static MetadataChanges printPathListRecursively(Metadata *metadata,
     {
       continue;
     }
+    /* Skip non-directories without a policy. */
+    else if(node->history->state.type != PST_directory &&
+            node->policy == BPOL_none)
+    {
+      continue;
+    }
 
     if(node->history->state.type == PST_regular)
     {
@@ -172,7 +178,6 @@ static MetadataChanges printPathListRecursively(Metadata *metadata,
     }
     else if(node->history->state.type == PST_directory)
     {
-      changes.new_items_count = sUint64Add(changes.new_items_count, 1);
       MetadataChanges subnode_changes;
 
       if(node->policy != BPOL_none && print == true)
@@ -185,6 +190,11 @@ static MetadataChanges printPathListRecursively(Metadata *metadata,
       {
         subnode_changes =
           printPathListRecursively(metadata, node->subnodes, print);
+      }
+
+      if(node->policy != BPOL_none || subnode_changes.new_items_count > 0)
+      {
+        changes.new_items_count = sUint64Add(changes.new_items_count, 1);
       }
 
       changes.new_items_count =

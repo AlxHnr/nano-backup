@@ -4,7 +4,6 @@
 ++ /test directory/.hidden symlink -> foo 1/bar
 ++ /test directory/.hidden/ (+6 items)
 ++ /test directory/empty-directory -> .empty
-++ /test directory/foobar a1.txt
-Total: +14 items, +0 b
+Total: +13 items, +0 b
 
 config: line 4: string matches, but not a directory: "foobar a1.txt"
