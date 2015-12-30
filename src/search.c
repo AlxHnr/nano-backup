@@ -350,6 +350,12 @@ static SearchResult finishSearchStep(SearchContext *context)
     }
   }
 
+  /* Skip current path, if no fallback policy was defined. */
+  if(context->state.access.search.fallback_policy == BPOL_none)
+  {
+    return finishSearchStep(context);
+  }
+
   /* Match against ignore expressions. */
   for(RegexList *element = context->ignore_expressions;
       element != NULL; element = element->next)
@@ -359,12 +365,6 @@ static SearchResult finishSearchStep(SearchContext *context)
       element->has_matched = true;
       return finishSearchStep(context);
     }
-  }
-
-  /* Skip current path, if no fallback policy was defined. */
-  if(context->state.access.search.fallback_policy == BPOL_none)
-  {
-    return finishSearchStep(context);
   }
 
   return finishNodeStep(context, NULL,
