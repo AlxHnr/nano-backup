@@ -1,0 +1,13 @@
+[ignore]
+test directory/bar
+
+[track]
+/non-existing dir/foo
+/non-existing file
+
+[mirror]
+/test directory//unmatched regex
+/test directory//bar
+
+[ignore]
+.

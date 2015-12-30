@@ -1,0 +1,6 @@
+[track]
+/test directory//^(b|foo )/bar/2.txt/non-existing
+
+[copy]
+/test directory//^(b|foo )//^[^b]
+/test directory//^(b|foo )/super

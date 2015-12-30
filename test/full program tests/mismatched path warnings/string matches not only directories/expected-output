@@ -1,0 +1,4 @@
+++ /generated/files/foo/super/test.txt
+config: line 2: string matches not only directories: "super"
+
+Total: +5 items, +0 b

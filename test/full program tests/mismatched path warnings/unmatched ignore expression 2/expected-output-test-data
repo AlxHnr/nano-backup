@@ -1,0 +1,8 @@
+++ /test directory/foo 1/bar/ (+3 items)
+++ /test directory/foo 1/test-file-a.txt
+++ /test directory/foo 1/test-file-b.txt
+++ /test directory/foo 1/test-file-c.txt
+++ /test directory/foo 1/♞.☂
+config: line 2: regex never matched a path: "test directory/foo 1$"
+
+Total: +10 items, +0 b

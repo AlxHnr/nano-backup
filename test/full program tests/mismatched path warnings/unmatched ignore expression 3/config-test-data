@@ -1,0 +1,10 @@
+[copy]
+/test directory/
+
+[track]
+/test directory//^.
+
+[ignore]
+.
+test directory/foobar b1.txt$
+test directory/void

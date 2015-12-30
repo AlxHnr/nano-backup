@@ -1,0 +1,5 @@
+[ignore]
+test directory/foo 1$
+
+[copy]
+/test directory/foo 1//.

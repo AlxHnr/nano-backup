@@ -1,0 +1,3 @@
+[track]
+/test directory//^(b|foo )/bar
+/test directory//^(b|foo )/buzz

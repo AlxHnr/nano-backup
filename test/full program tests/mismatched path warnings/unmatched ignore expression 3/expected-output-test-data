@@ -1,0 +1,5 @@
+++ /test directory/ (+17 items)
+config: line 9: regex never matched a path: "test directory/foobar b1.txt$"
+config: line 10: regex never matched a path: "test directory/void"
+
+Total: +18 items, +0 b

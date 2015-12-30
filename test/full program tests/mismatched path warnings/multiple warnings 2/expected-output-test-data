@@ -1,0 +1,9 @@
+++ /test directory/foo 1/test-file-a.txt
+++ /test directory/foo 1/test-file-b.txt
+++ /test directory/foo 1/test-file-c.txt
+++ /test directory/foo 1/♞.☂
+config: line 2: regex matches not only directories: "^(b|foo )"
+config: line 2: string matches, but not a directory: "2.txt"
+config: line 6: string never matched a file: "super"
+
+Total: +6 items, +0 b

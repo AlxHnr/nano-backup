@@ -1,0 +1,8 @@
+
+[mirror]
+
+/test directory//[ao]
+
+
+[ignore]
+^never-matches-any-file

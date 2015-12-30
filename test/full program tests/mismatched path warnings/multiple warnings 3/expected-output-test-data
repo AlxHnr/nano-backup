@@ -1,0 +1,13 @@
+++ /test directory/bar-a.txt
+++ /test directory/bar-b.txt
+++ /test directory/foobar a1.txt
+++ /test directory/foobar a2.txt
+++ /test directory/foobar b1.txt
+++ /test directory/foobar b2.txt
+config: line 2: regex never matched a path: "test directory/bar"
+config: line 5: string never matched a directory: "non-existing dir"
+config: line 6: string never matched a file: "non-existing file"
+config: line 9: regex never matched a file: "unmatched regex"
+config: line 13: regex never matched a path: "."
+
+Total: +7 items, +0 b
