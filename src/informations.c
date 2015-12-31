@@ -125,6 +125,15 @@ static void printNewDirInfo(PathNode *node, MetadataChanges changes)
   printf(")\n");
 }
 
+/** Prints changes in the given metadata tree recursively.
+
+  @param metadata A metadata tree which must have been initiated with
+  initiateBackup().
+  @param path_list The path list into which should be recursed.
+  @param print True, if informations should be printed.
+
+  @return A shallow summary of the printed changes for further processing.
+*/
 static MetadataChanges printPathListRecursively(Metadata *metadata,
                                                 PathNode *path_list,
                                                 bool print)
