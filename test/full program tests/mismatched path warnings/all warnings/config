@@ -1,0 +1,21 @@
+[copy]
+/generated/foo//./dir/bar.txt
+/generated/foo//.//some dir
+
+[mirror]
+/generated/foo//.//another dir/foo
+/generated/a/b/c/d/e/f/g/foo/bar.txt
+
+[track]
+/generated/FOO//^BAR.txt$/foobar.txt
+/generated/FOO/test.txt/config.txt
+
+[ignore]
+5$
+6$
+
+[copy]
+/generated/a
+
+[copy]
+/generated/BAR//^(bird|gentoo)$/file.txt

@@ -1,0 +1,13 @@
+++ /generated/a/ (+30 items, +24 b)
+++ /generated/BAR/bird/file.txt
+config: line 2: string matches not only directories: "dir"
+config: line 2: string never matched a file: "bar.txt"
+config: line 3: regex never matched a file: "some dir"
+config: line 6: regex never matched a directory: "another dir"
+config: line 7: string never matched a directory: "foo"
+config: line 10: regex matches, but not a directory: "^BAR.txt$"
+config: line 11: string matches, but not a directory: "test.txt"
+config: line 15: regex never matched a path: "6$"
+config: line 21: regex matches not only directories: "^(bird|gentoo)$"
+
+Total: +35 items, +40 b
