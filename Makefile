@@ -21,7 +21,7 @@ build/dependencies.makefile:
 	$(CC) -Isrc/ -MM test/*.c | sed -r 's,^(\S+:),build/test/\1,g' >> $@
 
 build/nb: $(filter-out build/test.o build/test-common.o,$(OBJECTS))
-	$(CC) $(LDFLAGS) $^ -o $@
+	$(CC) $^ $(LDFLAGS) -o $@
 
 build/%.o:
 	$(CC) $(CFLAGS) -Isrc/ -c $< -o $@
@@ -42,7 +42,7 @@ test: build/nb $(TESTS) $(GENERATED_CONFIGS) \
 
 build/test/%: build/test/%.o \
   $(filter-out build/nb.o build/error-handling.o,$(OBJECTS))
-	$(CC) $(LDFLAGS) $^ -o $@
+	$(CC) $^ $(LDFLAGS) -o $@
 
 test/data/generated-config-files/%: test/data/template-config-files/%
 	mkdir -p "$(dir $@)" && sed -r "s,^/,$$PWD/test/data/,g" "$<" > "$@"
