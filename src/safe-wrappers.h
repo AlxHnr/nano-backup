@@ -53,6 +53,7 @@ extern void sFread(void *ptr, size_t size, FileStream *stream);
 extern void sFwrite(const void *ptr, size_t size, FileStream *stream);
 extern bool Fwrite(const void *ptr, size_t size, FileStream *stream);
 extern bool Ftodisk(FileStream *stream);
+extern bool sFbytesLeft(FileStream *stream);
 extern void sFclose(FileStream *stream);
 extern const char *Fdestroy(FileStream *stream);
 

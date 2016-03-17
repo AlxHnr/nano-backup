@@ -55,6 +55,18 @@ static bool checkPathExists(const char *path)
   return path_exists;
 }
 
+/** A wrapper around sFbytesLeft() which asserts that errno doesn't get
+  polluted. Errno must be 0 when this function gets called.
+*/
+static bool checkBytesLeft(FileStream *stream)
+{
+  assert_true(errno == 0);
+  bool bytes_left = sFbytesLeft(stream);
+  assert_true(errno == 0);
+
+  return bytes_left;
+}
+
 int main(void)
 {
   testGroupStart("sMalloc()");
@@ -145,17 +157,23 @@ int main(void)
   testGroupStart("FileStream reading functions");
   assert_error(sFopenRead("non-existing-file.txt"),
                "failed to open \"non-existing-file.txt\" for reading: No such file or directory");
+  errno = 0;
 
   const char *example_path = "example.txt";
   FileStream *example_read = sFopenRead(example_path);
   assert_true(example_read != NULL);
 
+  assert_true(checkBytesLeft(example_read));
+  assert_true(checkBytesLeft(example_read));
+
   char buffer[50] = { 0 };
   sFread(buffer, 25, example_read);
 
+  assert_true(checkBytesLeft(example_read) == false);
+  assert_true(checkBytesLeft(example_read) == false);
+
   assert_true(strncmp(buffer, "This is an example file.\n", 25) == 0);
 
-  errno = 0;
   assert_true(Fdestroy(example_read) == example_path);
   assert_true(errno == 0);
 

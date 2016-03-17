@@ -363,6 +363,34 @@ struct dirent *sReadDir(DIR *dir, const char *path)
   return dir_entry;
 }
 
+/** Checks if there are unread bytes left in the given stream.
+
+  @param stream The stream to check.
+
+  @return True if the given stream has unread bytes left. False if it has
+  reached its end.
+*/
+bool sFbytesLeft(FileStream *stream)
+{
+  int old_errno = errno;
+  errno = 0;
+
+  int character = fgetc(stream->file);
+  if(character == EOF && errno != 0)
+  {
+    dieErrno("failed to check for remaining bytes in \"%s\"",
+             stream->path);
+  }
+  errno = old_errno;
+
+  if(ungetc(character, stream->file) != character)
+  {
+    die("failed to check for remaining bytes in \"%s\"", stream->path);
+  }
+
+  return character != EOF;
+}
+
 /** Safe wrapper around closedir().
 
   @param dir The directory stream that should be closed.
