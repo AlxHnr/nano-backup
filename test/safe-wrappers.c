@@ -34,10 +34,15 @@
 
 #include "test.h"
 
-/** Calls sReadDir() with the given arguments and checks its result. */
+/** Calls sReadDir() with the given arguments and checks its result. This
+  function asserts that errno doesn't get modified. Errno must be set to 0
+  before this function can be called. */
 static void checkReadDir(DIR *dir, const char *dir_path)
 {
+  assert_true(errno == 0);
   struct dirent *dir_entry = sReadDir(dir,dir_path);
+  assert_true(errno == 0);
+
   assert_true(dir_entry != NULL);
   assert_true(strcmp(dir_entry->d_name, ".")  != 0);
   assert_true(strcmp(dir_entry->d_name, "..") != 0);
@@ -157,7 +162,6 @@ int main(void)
   testGroupStart("FileStream reading functions");
   assert_error(sFopenRead("non-existing-file.txt"),
                "failed to open \"non-existing-file.txt\" for reading: No such file or directory");
-  errno = 0;
 
   const char *example_path = "example.txt";
   FileStream *example_read = sFopenRead(example_path);
@@ -241,7 +245,6 @@ int main(void)
   assert_true(sPathExists(test_file_path));
   assert_true(test_file != NULL);
 
-  errno = 0;
   assert_true(Fdestroy(test_file) == test_file_path);
   assert_true(errno == 0);
 
@@ -305,14 +308,20 @@ int main(void)
   {
     checkReadDir(test_directory, "test directory");
   }
+
+  assert_true(errno == 0);
   assert_true(sReadDir(test_directory, "test directory") == NULL);
+  assert_true(errno == 0);
 
   /* Count example files in "test directory/foo 1". */
   for(size_t counter = 0; counter < 5; counter++)
   {
     checkReadDir(test_foo_1, "test directory/foo 1");
   }
+
+  assert_true(errno == 0);
   assert_true(sReadDir(test_foo_1, "test directory/foo 1") == NULL);
+  assert_true(errno == 0);
   testGroupEnd();
 
   testGroupStart("sCloseDir()");

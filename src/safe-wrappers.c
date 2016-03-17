@@ -344,13 +344,14 @@ DIR *sOpenDir(const char *path)
 struct dirent *sReadDir(DIR *dir, const char *path)
 {
   struct dirent *dir_entry;
+  int old_errno = errno;
+  errno = 0;
 
   do
   {
-    int old_errno = errno;
     dir_entry = readdir(dir);
 
-    if(dir_entry == NULL && errno != old_errno)
+    if(dir_entry == NULL && errno != 0)
     {
       dieErrno("failed to read directory \"%s\"", path);
     }
@@ -360,6 +361,7 @@ struct dirent *sReadDir(DIR *dir, const char *path)
         (dir_entry->d_name[1] == '\0' ||
          (dir_entry->d_name[1] == '.' && dir_entry->d_name[2] == '\0')));
 
+  errno = old_errno;
   return dir_entry;
 }
 

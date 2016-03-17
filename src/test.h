@@ -29,6 +29,7 @@
 #ifndef _NANO_BACKUP_TEST_H_
 #define _NANO_BACKUP_TEST_H_
 
+#include <errno.h>
 #include <string.h>
 #include <setjmp.h>
 #include <stdbool.h>
@@ -67,7 +68,7 @@
     dieTest("%s: line %i: got wrong error message: \"%s\"\n" \
             "\t\texpected: \"%s\"", __FILE__, __LINE__, \
             test_error_message, message); \
-  } test_catch_die = false;
+  } errno = 0; test_catch_die = false;
 
 extern jmp_buf test_jump_buffer;
 extern char *test_error_message;
