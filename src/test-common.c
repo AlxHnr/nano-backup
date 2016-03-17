@@ -183,10 +183,11 @@ static size_t checkPathTree(PathNode *parent_node, Metadata *metadata,
 */
 String getCwd(void)
 {
-  int old_errno = errno;
   size_t capacity = 128;
   char *buffer = sMalloc(capacity);
   char *result = NULL;
+  int old_errno = errno;
+  errno = 0;
 
   do
   {
@@ -200,13 +201,14 @@ String getCwd(void)
 
       capacity = sSizeMul(capacity, 2);
       buffer = sRealloc(buffer, capacity);
-      errno = old_errno;
+      errno = 0;
     }
   }while(result == NULL);
 
   String cwd = strCopy(str(buffer));
   free(buffer);
 
+  errno = old_errno;
   return cwd;
 }
 

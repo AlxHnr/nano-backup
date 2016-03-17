@@ -417,18 +417,21 @@ void sCloseDir(DIR *dir, const char *path)
 bool sPathExists(const char *path)
 {
   int old_errno = errno;
+  bool exists = true;
+  errno = 0;
+
   if(access(path, F_OK) != 0)
   {
-    if(errno != old_errno && errno != ENOENT)
+    if(errno != 0 && errno != ENOENT)
     {
       dieErrno("failed to check existence of \"%s\"", path);
     }
 
-    errno = old_errno;
-    return false;
+    exists = false;
   }
 
-  return true;
+  errno = old_errno;
+  return exists;
 }
 
 /** A failsafe wrapper around stat().
