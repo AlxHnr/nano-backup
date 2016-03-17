@@ -176,7 +176,7 @@ int main(void)
   assert_true(checkBytesLeft(example_read) == false);
   assert_true(checkBytesLeft(example_read) == false);
 
-  assert_true(strncmp(buffer, "This is an example file.\n", 25) == 0);
+  assert_true(strcmp(buffer, "This is an example file.\n") == 0);
 
   assert_true(Fdestroy(example_read) == example_path);
   assert_true(errno == 0);
@@ -184,7 +184,7 @@ int main(void)
   /* Try reading 50 bytes from a 25 byte long file. */
   example_read = sFopenRead("example.txt");
   assert_true(example_read != NULL);
-  assert_error(sFread(buffer, 50, example_read),
+  assert_error(sFread(buffer, sizeof(buffer), example_read),
                "reading \"example.txt\": reached end of file unexpectedly");
 
   /* Provoke failure by reading from a write-only stream. */
@@ -194,6 +194,31 @@ int main(void)
   /* Test sFclose(). */
   example_read = sFopenRead("example.txt");
   assert_true(example_read != NULL);
+  sFclose(example_read);
+
+  /* Test sFbytesLeft(). */
+  assert_error(sFbytesLeft(sFopenRead("test directory")),
+               "failed to check for remaining bytes in \"test directory\": Is a directory");
+  assert_error(sFbytesLeft(sFopenWrite("tmp/some-test-file.txt")),
+               "failed to check for remaining bytes in \"tmp/some-test-file.txt\": Bad file descriptor");
+
+  example_read = sFopenRead(example_path);
+  assert_true(example_read != NULL);
+
+  assert_true(checkBytesLeft(example_read));
+  assert_true(checkBytesLeft(example_read));
+  memset(buffer, 0, sizeof(buffer));
+  sFread(buffer, 24, example_read);
+  assert_true(strcmp(buffer, "This is an example file.") == 0);
+
+  assert_true(checkBytesLeft(example_read));
+  assert_true(checkBytesLeft(example_read));
+  memset(buffer, 0, sizeof(buffer));
+  sFread(buffer, 1, example_read);
+  assert_true(strcmp(buffer, "\n") == 0);
+
+  assert_true(checkBytesLeft(example_read) == false);
+  assert_true(checkBytesLeft(example_read) == false);
   sFclose(example_read);
   testGroupEnd();
 

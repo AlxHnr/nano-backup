@@ -381,13 +381,14 @@ bool sFbytesLeft(FileStream *stream)
   if(character == EOF && errno != 0)
   {
     dieErrno("failed to check for remaining bytes in \"%s\"",
-             stream->path);
+             Fdestroy(stream));
   }
   errno = old_errno;
 
   if(ungetc(character, stream->file) != character)
   {
-    die("failed to check for remaining bytes in \"%s\"", stream->path);
+    die("failed to check for remaining bytes in \"%s\"",
+        Fdestroy(stream));
   }
 
   return character != EOF;
