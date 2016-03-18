@@ -31,8 +31,6 @@
 #include <stdint.h>
 #include <sys/types.h>
 
-#include <openssl/sha.h>
-
 #include "repository.h"
 #include "string-utils.h"
 #include "string-table.h"

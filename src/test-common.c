@@ -63,9 +63,9 @@ static bool checkRegularValues(PathState *state, uint64_t size,
   {
     return false;
   }
-  else if(size > SHA_DIGEST_LENGTH)
+  else if(size > FILE_HASH_SIZE)
   {
-    return (memcmp(state->metadata.reg.hash, hash, SHA_DIGEST_LENGTH) == 0)
+    return (memcmp(state->metadata.reg.hash, hash, FILE_HASH_SIZE) == 0)
       && state->metadata.reg.slot == slot;
   }
   else if(size > 0)

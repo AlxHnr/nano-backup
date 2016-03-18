@@ -28,6 +28,7 @@
 #include "metadata.h"
 
 #include "test.h"
+#include "file-hash.h"
 #include "test-common.h"
 #include "memory-pool.h"
 #include "safe-wrappers.h"
@@ -152,16 +153,16 @@ static void appendHist(PathNode *node, Backup *backup, PathState state)
   @param hash The hash of the file or the files entire content, depending
   on the files size.
   @param slot The slot number of the file in the repository. Will be
-  ignored if the files size is not greater than SHA_DIGEST_LENGTH.
+  ignored if the files size is not greater than FILE_HASH_SIZE.
 */
 static void assignRegularValues(PathState *state, uint64_t size,
                                 uint8_t *hash ,uint8_t slot)
 {
   state->metadata.reg.size = size;
 
-  if(size > SHA_DIGEST_LENGTH)
+  if(size > FILE_HASH_SIZE)
   {
-    memcpy(state->metadata.reg.hash, hash, SHA_DIGEST_LENGTH);
+    memcpy(state->metadata.reg.hash, hash, FILE_HASH_SIZE);
     state->metadata.reg.slot = slot;
   }
   else if(size > 0)
@@ -189,7 +190,7 @@ static void appendHistNonExisting(PathNode *node, Backup *backup)
   file size is 0. Otherwise it will be defined like in the documentation of
   RegularMetadata.
   @param slot The slot number of the corresponding file in the repository.
-  Will be ignored if the file size is not bigger than SHA_DIGEST_LENGTH.
+  Will be ignored if the file size is not bigger than FILE_HASH_SIZE.
 */
 static void appendHistRegular(PathNode *node, Backup *backup, uid_t uid,
                               gid_t gid, time_t timestamp, mode_t mode,
@@ -258,7 +259,7 @@ static void appendHistDirectory(PathNode *node, Backup *backup, uid_t uid,
   documentation of RegularMetadata for more informations on how and when
   the hash will be stored.
   @param slot The slot number of the corresponding file in the repository.
-  Will be ignored if the file size is not greater than SHA_DIGEST_LENGTH.
+  Will be ignored if the file size is not greater than FILE_HASH_SIZE.
 */
 static void appendConfHist(Metadata *metadata, Backup *backup,
                            uint64_t size, uint8_t *hash, uint8_t slot)

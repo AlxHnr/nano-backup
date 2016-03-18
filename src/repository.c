@@ -110,7 +110,7 @@ static void fillPathBufferWithInfo(String repo_path,
   size_t prefix_length = snprintf(NULL, 0, "%i-", info->slot);
   size_t required_capacity =
     prefix_length + snprintf(NULL, 0, "-%zu", info->size);
-  required_capacity += SHA_DIGEST_LENGTH * 2;
+  required_capacity += FILE_HASH_SIZE * 2;
   required_capacity += 2; /* Reserve some room for the slash and '\0'. */
   required_capacity = sSizeAdd(required_capacity, repo_path.length);
   pathBufferEnsureCapacity(required_capacity);
@@ -122,12 +122,12 @@ static void fillPathBufferWithInfo(String repo_path,
   sprintf(prefix_buffer, "%i-", info->slot);
 
   char *hash_buffer = &prefix_buffer[prefix_length];
-  for(size_t index = 0; index < SHA_DIGEST_LENGTH; index++)
+  for(size_t index = 0; index < FILE_HASH_SIZE; index++)
   {
     sprintf(&hash_buffer[index * 2], "%02x", info->hash[index]);
   }
 
-  char *suffix_buffer = &hash_buffer[SHA_DIGEST_LENGTH * 2];
+  char *suffix_buffer = &hash_buffer[FILE_HASH_SIZE * 2];
   sprintf(suffix_buffer, "-%zu", info->size);
 }
 
@@ -184,7 +184,7 @@ bool repoRegularFileExists(String repo_path, const RegularFileInfo *info)
   repository. This is needed for generating the filename inside the
   repository. All values inside this struct must be defined, otherwise it
   will lead to unexpected behaviour. So make sure, that the files size is
-  larger than SHA_DIGEST_LENGTH.
+  larger than FILE_HASH_SIZE.
 
   @return A new RepoWriter, which must be closed by the caller using
   repoWriterClose().

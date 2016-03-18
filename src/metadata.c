@@ -32,6 +32,7 @@
 #include <string.h>
 #include <limits.h>
 
+#include "file-hash.h"
 #include "memory-pool.h"
 #include "safe-wrappers.h"
 #include "error-handling.h"
@@ -281,11 +282,11 @@ static PathHistory *readPathHistory(FileContent content,
     point->state.metadata.reg.size =
       read64(content, reader_position, metadata_path);
 
-    if(point->state.metadata.reg.size > SHA_DIGEST_LENGTH)
+    if(point->state.metadata.reg.size > FILE_HASH_SIZE)
     {
       readBytes(content, reader_position,
                 (char *)point->state.metadata.reg.hash,
-                SHA_DIGEST_LENGTH, metadata_path);
+                FILE_HASH_SIZE, metadata_path);
       point->state.metadata.reg.slot =
         read8(content, reader_position, metadata_path);
     }
@@ -393,10 +394,10 @@ static void writePathHistoryList(PathHistory *starting_point,
       write32(point->state.metadata.reg.mode, writer);
       write64(point->state.metadata.reg.size, writer);
 
-      if(point->state.metadata.reg.size > SHA_DIGEST_LENGTH)
+      if(point->state.metadata.reg.size > FILE_HASH_SIZE)
       {
         repoWriterWrite(point->state.metadata.reg.hash,
-                             SHA_DIGEST_LENGTH, writer);
+                             FILE_HASH_SIZE, writer);
         write8(point->state.metadata.reg.slot, writer);
       }
       else if(point->state.metadata.reg.size > 0)
