@@ -27,6 +27,7 @@
 
 #include "repository.h"
 
+#include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -209,6 +210,39 @@ RepoReader *repoReaderOpenFile(const char *repo_path,
   reader->stream = stream;
 
   return reader;
+}
+
+/** Reads data from a RepoReader.
+
+  @param data The location to store the requested data.
+  @param size The number of bytes to read.
+  @param reader The reader which should be used.
+*/
+void repoReaderRead(void *data, size_t size, RepoReader *reader)
+{
+  if(fread(data, 1, size, reader->stream) != size)
+  {
+    const char *repo_path = reader->repo_path;
+    const char *source_file_path = reader->source_file_path;
+    bool reached_end_of_file = feof(reader->stream);
+
+    int old_errno = errno;
+    fclose(reader->stream);
+    errno = old_errno;
+
+    free(reader);
+
+    if(reached_end_of_file)
+    {
+      die("reading \"%s\" from \"%s\": reached end of file unexpectedly",
+          source_file_path, repo_path);
+    }
+    else
+    {
+      dieErrno("IO error while reading \"%s\" from \"%s\"",
+               source_file_path, repo_path);
+    }
+  }
 }
 
 /** Closes the given RepoReader and frees all its memory.

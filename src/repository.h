@@ -66,6 +66,7 @@ extern bool repoRegularFileExists(String repo_path,
 extern RepoReader *repoReaderOpenFile(const char *repo_path,
                                       const char *source_file_path,
                                       const RegularFileInfo *info);
+extern void repoReaderRead(void *data, size_t size, RepoReader *reader);
 extern void repoReaderClose(RepoReader *reader);
 
 extern RepoWriter *repoWriterOpenFile(const char *repo_path,
