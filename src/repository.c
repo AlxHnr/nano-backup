@@ -71,6 +71,20 @@ struct RepoWriter
   }rename_to;
 };
 
+/** A struct for reading files from backup repositories. */
+struct RepoReader
+{
+  /** The path to the repository. */
+  const char *repo_path;
+
+  /** The original filepath representing the file read trough this reader.
+    This is required for printing useful error messages. */
+  const char *source_file_path;
+
+  /** The FILE stream wrapped by this struct. */
+  FILE *stream;
+};
+
 /** A reusable buffer for constructing paths of files inside repos. */
 static char *path_buffer = NULL;
 static size_t path_buffer_capacity = 0;
@@ -161,6 +175,57 @@ bool repoRegularFileExists(String repo_path, const RegularFileInfo *info)
 {
   fillPathBufferWithInfo(repo_path, info);
   return sPathExists(path_buffer);
+}
+
+/** Opens a new RepoReader for reading a file from a repository.
+
+  @param repo_path The path to the repository. The returned RepoReader will
+  keep a reference to this string, so make sure not to modify or free it
+  while the reader is in use.
+  @param source_file_path The requested files original path. It is only
+  used for printing useful error messages in case of failure. The returned
+  RepoReader will keep a reference to this string, so make sure not to
+  modify or free it while the reader is in use.
+  @param info Informations about the requested file. Needed for generating
+  the files unique name inside the repository.
+
+  @return A new RepoReader which must be closed using repoReaderClose().
+*/
+RepoReader *repoReaderOpenFile(const char *repo_path,
+                               const char *source_file_path,
+                               const RegularFileInfo *info)
+{
+  fillPathBufferWithInfo(str(repo_path), info);
+  FILE *stream = fopen(path_buffer, "rb");
+  if(stream == NULL)
+  {
+    dieErrno("failed to open \"%s\" in \"%s\"",
+             source_file_path, repo_path);
+  }
+
+  RepoReader *reader = sMalloc(sizeof *reader);
+  reader->repo_path = repo_path;
+  reader->source_file_path = source_file_path;
+  reader->stream = stream;
+
+  return reader;
+}
+
+/** Closes the given RepoReader and frees all its memory.
+
+  @param reader_to_close The reader which should be closed. It will be
+  destroyed by this function and should not be used anymore.
+*/
+void repoReaderClose(RepoReader *reader_to_close)
+{
+  RepoReader reader = *reader_to_close;
+  free(reader_to_close);
+
+  if(fclose(reader.stream) != 0)
+  {
+    dieErrno("failed to close \"%s\" in \"%s\"",
+             reader.source_file_path, reader.repo_path);
+  }
 }
 
 /** Opens a new RepoWriter for safe writing into the specified repository.

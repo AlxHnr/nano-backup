@@ -38,6 +38,9 @@
   repositories. */
 typedef struct RepoWriter RepoWriter;
 
+/** An opaque struct, which allows reading files from repositories. */
+typedef struct RepoReader RepoReader;
+
 /** Stores the metadata of a regular file. */
 typedef struct
 {
@@ -59,6 +62,12 @@ typedef struct
 
 extern bool repoRegularFileExists(String repo_path,
                                   const RegularFileInfo *info);
+
+extern RepoReader *repoReaderOpenFile(const char *repo_path,
+                                      const char *source_file_path,
+                                      const RegularFileInfo *info);
+extern void repoReaderClose(RepoReader *reader);
+
 extern RepoWriter *repoWriterOpenFile(const char *repo_path,
                                       const char *repo_tmp_file_path,
                                       const char *source_file_path,
