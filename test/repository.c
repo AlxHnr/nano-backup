@@ -29,6 +29,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "test.h"
 #include "safe-wrappers.h"
@@ -252,5 +253,50 @@ int main(void)
   repoWriterClose(repoWriterOpenRaw("tmp", TMP_FILE_PATH, "another-file", "tmp/another-file"));
   assert_true(sPathExists(TMP_FILE_PATH)        == false);
   assert_true(sStat("tmp/another-file").st_size == 0);
+  testGroupEnd();
+
+  testGroupStart("reading from repository");
+  assert_error(repoReaderOpenFile("tmp", "info_1", &info_1),
+               "failed to open \"info_1\" in \"tmp\": No such file or directory");
+  assert_true(mkdir(info_1_path, 0) == 0);
+  assert_error(repoReaderOpenFile("tmp", "info_1", &info_1),
+               "failed to open \"info_1\" in \"tmp\": Permission denied");
+  assert_true(rmdir(info_1_path) == 0);
+
+  FileStream *writer = sFopenWrite(info_1_path);
+  sFwrite("This is an example text.", 24, writer);
+  sFclose(writer);
+
+  RepoReader *reader = repoReaderOpenFile("tmp", "info_1", &info_1);
+  assert_true(reader != NULL);
+
+  char buffer[25] = { 0 };
+  repoReaderRead(buffer, 14, reader);
+  assert_true(strcmp(buffer, "This is an exa") == 0);
+
+  memset(buffer, 0, sizeof(buffer));
+  repoReaderRead(buffer, 10, reader);
+  assert_true(strcmp(buffer, "mple text.") == 0);
+  repoReaderClose(reader);
+
+  reader = repoReaderOpenFile("tmp", "info_1", &info_1);
+  assert_true(reader != NULL);
+
+  assert_error(repoReaderRead(buffer, 25, reader),
+               "reading \"info_1\" from \"tmp\": reached end of file unexpectedly");
+
+  reader = repoReaderOpenFile("tmp", "info_1", &info_1);
+  assert_true(reader != NULL);
+
+  memset(buffer, 0, sizeof(buffer));
+  repoReaderRead(buffer, 23, reader);
+  assert_true(strcmp(buffer, "This is an example text") == 0);
+
+  memset(buffer, 0, sizeof(buffer));
+  repoReaderRead(buffer, 1, reader);
+  assert_true(strcmp(buffer, ".") == 0);
+
+  assert_error(repoReaderRead(buffer, 1, reader),
+               "reading \"info_1\" from \"tmp\": reached end of file unexpectedly");
   testGroupEnd();
 }
