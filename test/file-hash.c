@@ -96,5 +96,14 @@ int main(void)
   assert_error(fileHash("dummy-metadata/test-data-1", stats, hash),
                "reading \"dummy-metadata/test-data-1\": reached end of file unexpectedly");
 
+  stats.st_size -= 2;
+  assert_error(fileHash("dummy-metadata/test-data-1", stats, hash),
+               "file changed while calculating hash: \"dummy-metadata/test-data-1\"");
+
+  stats.st_size += 1;
+  stats.st_blksize = 1;
+  fileHash("dummy-metadata/test-data-1", stats, hash);
+  assert_true(memcmp(hash, test_hash, FILE_HASH_SIZE) == 0);
+
   testGroupEnd();
 }

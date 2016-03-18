@@ -30,6 +30,7 @@
 #include <stdlib.h>
 
 #include "safe-wrappers.h"
+#include "error-handling.h"
 
 /** Calculates the hash of a file.
 
@@ -60,6 +61,13 @@ void fileHash(const char *path, struct stat stats, uint8_t *hash)
   }
 
   free(buffer);
+  bool stream_not_at_end = sFbytesLeft(stream);
   sFclose(stream);
+
+  if(stream_not_at_end)
+  {
+    die("file changed while calculating hash: \"%s\"", path);
+  }
+
   SHA1_Final(hash, &context);
 }
