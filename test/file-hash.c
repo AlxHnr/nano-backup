@@ -47,6 +47,8 @@ int main(void)
                "failed to open \"non-existing.txt\" for reading: No such file or directory");
   assert_error(fileHash("test directory", stats, hash),
                "IO error while reading \"test directory\": Is a directory");
+  assert_error(fileHash("test directory", sStat("empty.txt"), hash),
+               "failed to check for remaining bytes in \"test directory\": Is a directory");
 
   uint8_t empty_hash[FILE_HASH_SIZE] =
   {
