@@ -59,6 +59,7 @@ int main(const int arg_count, const char **arg_list)
   String repo_path = strRemoveTrailingSlashes(str(arg_list[1]));
   String config_path = strAppendPath(repo_path, str("config"));
   String metadata_path = strAppendPath(repo_path, str("metadata"));
+  String tmp_file_path = strAppendPath(repo_path, str("tmp-file"));
 
   if(!sPathExists(config_path.str))
   {
@@ -78,4 +79,8 @@ int main(const int arg_count, const char **arg_list)
   printf("\nTotal: +%zu items, +", changes.new_items_count);
   printHumanReadableSize(changes.new_files_size);
   printf("\n");
+
+  finishBackup(metadata, repo_path.str, tmp_file_path.str);
+  metadataWrite(metadata, repo_path.str, tmp_file_path.str,
+                metadata_path.str);
 }

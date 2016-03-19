@@ -27,10 +27,13 @@
 
 #include "backup.h"
 
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
 #include "search.h"
+#include "file-hash.h"
+#include "repository.h"
 #include "memory-pool.h"
 #include "safe-wrappers.h"
 #include "error-handling.h"
@@ -151,6 +154,220 @@ static SearchResultType initiateMetadataRecursively(Metadata *metadata,
   return result.type;
 }
 
+/** Copies the file represented by the given node into the repository.
+
+  @param node A PathNode which represents a regular file at its current
+  history point.
+  @param repo_path The path to the backup repository.
+  @param repo_tmp_file_path The path to the repositories temporary file.
+  @param stats The stats of the file represented by the node. Required to
+  determine the ideal block size.
+*/
+static void copyFileIntoRepo(PathNode *node, const char *repo_path,
+                             const char *repo_tmp_file_path,
+                             struct stat stats)
+{
+  RegularFileInfo *reg = &node->history->state.metadata.reg;
+  uint64_t blocksize  = stats.st_blksize;
+  uint64_t bytes_left = reg->size;
+
+  FileStream *reader = sFopenRead(node->path.str);
+  RepoWriter *writer = repoWriterOpenFile(repo_path, repo_tmp_file_path,
+                                          node->path.str, reg);
+  char *buffer = sMalloc(blocksize);
+
+  while(bytes_left > 0)
+  {
+    size_t bytes_to_read = bytes_left > blocksize ? blocksize : bytes_left;
+
+    sFread(buffer, bytes_to_read, reader);
+    repoWriterWrite(buffer, bytes_to_read, writer);
+
+    bytes_left -= bytes_to_read;
+  }
+
+  free(buffer);
+
+  bool stream_not_at_end = sFbytesLeft(reader);
+  sFclose(reader);
+
+  if(stream_not_at_end)
+  {
+    die("file changed during backup: \"%s\"", node->path.str);
+  }
+
+  repoWriterClose(writer);
+}
+
+/** Checks if the file represented by the given node is equal to its stored
+  counterpart in the backup repository.
+
+  @param node A PathNode which represents a regular file at its current
+  history point. Its hash and slot number must be set to the stored file it
+  should be compared to.
+  @param repo_path The path to the backup repository.
+  @param stats The stats of the file represented by the node. Required to
+  determine the ideal block size.
+
+  @return True if the file represented by the node is equal to its stored
+  counterpart.
+*/
+static bool equalsToStoredFile(PathNode *node, const char *repo_path,
+                               struct stat stats)
+{
+  RegularFileInfo *reg = &node->history->state.metadata.reg;
+  uint64_t blocksize  = stats.st_blksize;
+  uint64_t bytes_left = reg->size;
+
+  FileStream *stream = sFopenRead(node->path.str);
+  char *buffer = sMalloc(blocksize);
+
+  RepoReader *repo_stream =
+    repoReaderOpenFile(repo_path, node->path.str, reg);
+  char *repo_buffer = sMalloc(blocksize);
+
+  bool files_equal = true;
+
+  while(bytes_left > 0 && files_equal)
+  {
+    size_t bytes_to_read = bytes_left > blocksize ? blocksize : bytes_left;
+
+    sFread(buffer, bytes_to_read, stream);
+    repoReaderRead(repo_buffer, bytes_to_read, repo_stream);
+
+    files_equal = memcmp(buffer, repo_buffer, bytes_to_read) == 0;
+
+    bytes_left -= bytes_to_read;
+  }
+
+  repoReaderClose(repo_stream);
+  free(repo_buffer);
+  free(buffer);
+
+  bool stream_not_at_end = sFbytesLeft(stream);
+  sFclose(stream);
+
+  if(stream_not_at_end)
+  {
+    die("file changed while comparing to backup: \"%s\"", node->path.str);
+  }
+
+  return files_equal;
+}
+
+/** Checks if the regular file represented by the given node already exists
+  in the repository.
+
+  @param node A PathNode which represents a regular file at its current
+  history point. Its hash must be set and its slot number will be modified
+  by this function.
+  @param repo_path The path to the backup repository.
+  @param stats The stats of the file represented by the node. Required to
+  determine the ideal block size.
+
+  @return True if the file already exists. In this case the nodes slot
+  number will be set to the already existing files slot number. If false is
+  returned, the nodes slot number will contain the next free slot number.
+*/
+static bool searchFileDuplicates(PathNode *node, const char *repo_path,
+                                 struct stat stats)
+{
+  RegularFileInfo *reg = &node->history->state.metadata.reg;
+  String repo_path_str = str(repo_path);
+  reg->slot = 0;
+
+  while(repoRegularFileExists(repo_path_str, reg))
+  {
+    if(equalsToStoredFile(node, repo_path, stats))
+    {
+      return true;
+    }
+    else if(reg->slot == UINT8_MAX)
+    {
+      die("overflow calculating slot number");
+    }
+
+    reg->slot++;
+  }
+
+  return false;
+}
+
+/** Adds/copies a new file to the repository.
+
+  @param node A PathNode which represents a regular file at its current
+  history point. Its hash and slot number will be set by this function. In
+  some cases the entire file will be stored as the hash. See the
+  documentation of RegularFileInfo for more informations.
+  @param repo_path The path to the repository.
+  @param repo_tmp_file_path The path to the repositories temporary file.
+*/
+static void addNewFileToRepo(PathNode *node, const char *repo_path,
+                             const char *repo_tmp_file_path)
+{
+  RegularFileInfo *reg = &node->history->state.metadata.reg;
+
+  /* Die if the file has changed since the metadata was initiated. */
+  struct stat stats = sStat(node->path.str);
+  if(node->history->state.timestamp != stats.st_mtime ||
+     reg->size != (uint64_t)stats.st_size)
+  {
+    die("file has changed during backup: \"%s\"", node->path.str);
+  }
+  else if(reg->size <= FILE_HASH_SIZE)
+  {
+    /* Store small files directly in its hash buffer. */
+    FileStream *stream = sFopenRead(node->path.str);
+    sFread(&reg->hash, reg->size, stream);
+    bool stream_not_at_end = sFbytesLeft(stream);
+    sFclose(stream);
+
+    if(stream_not_at_end)
+    {
+      die("file has changed during backup: \"%s\"", node->path.str);
+    }
+  }
+  else
+  {
+    fileHash(node->path.str, stats, reg->hash);
+    if(searchFileDuplicates(node, repo_path, stats) == false)
+    {
+      copyFileIntoRepo(node, repo_path, repo_tmp_file_path, stats);
+    }
+  }
+}
+
+/** Finishes a backup recursively, as described in the documentation of
+  finishBackup().
+
+  @param metadata A valid metadata struct as described in the documentation
+  of finishBackup().
+  @param node_list A list containing the subnodes of the currently
+  traversed node.
+  @param repo_path The path to the repository.
+  @param repo_tmp_file_path The path to the repositories temporary file.
+*/
+static void finishBackupRecursively(Metadata *metadata,
+                                    PathNode *node_list,
+                                    const char *repo_path,
+                                    const char *repo_tmp_file_path)
+{
+  for(PathNode *node = node_list; node != NULL; node = node->next)
+  {
+    /* Handle only new regular files. */
+    if(node->history->backup == &metadata->current_backup &&
+       node->history->next == NULL &&
+       node->history->state.type == PST_regular &&
+       node->history->state.metadata.reg.size > 0)
+    {
+      addNewFileToRepo(node, repo_path, repo_tmp_file_path);
+    }
+
+    finishBackupRecursively(metadata, node->subnodes,
+                            repo_path, repo_tmp_file_path);
+  }
+}
+
 /** Initiates a backup by updating the given metadata with new or changed
   files found trough the specified search tree. To speed things up, hash
   computations of some files are skipped, which leaves the metadata in an
@@ -172,4 +389,21 @@ void initiateBackup(Metadata *metadata, SearchNode *root_node)
   SearchContext *context = searchNew(root_node);
   while(initiateMetadataRecursively(metadata, &metadata->paths, context)
         != SRT_end_of_search);
+}
+
+/** Completes a backup initiated with initiateBackup(). It copies
+  new/changed files to the repository and calculates missing hashes and
+  slot numbers.
+
+  @param metadata A valid metadata struct which was successfully initiated
+  using initiateBackup(). This struct will be finalized and should never be
+  passed to this function again.
+  @param repo_path The path to the repository.
+  @param repo_tmp_file_path The path to the repositories temporary file.
+*/
+void finishBackup(Metadata *metadata, const char *repo_path,
+                  const char *repo_tmp_file_path)
+{
+  finishBackupRecursively(metadata, metadata->paths, repo_path,
+                          repo_tmp_file_path);
 }
