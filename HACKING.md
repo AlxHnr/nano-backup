@@ -4,7 +4,6 @@ considered when working with the source code:
 
 * [Error handling](#errorhandling)
 * [Memory management](#memorymanagement)
-* [NULL](#null)
 * [Handling strings](#handlingstrings)
 * [Testing](#testing)
 
@@ -26,14 +25,6 @@ To simplify error handling even further, wrappers for commonly used
 functions are provided. See safe-wrappers.h. **Warning**: never call die(),
 dieErrno() or any failsafe function from a function registered with
 atexit().
-
-## NULL
-
-NULL is an error. Try to avoid it whenever you can. Write a wrapper
-function that handles NULL with an appropriate error message. There are
-very few places where NULL occurs in the codebase. One example would be to
-terminate linked lists, or to denote optional variables. Places where NULL
-occurs are explicitly denoted as such in the documentation.
 
 ## Memory management
 
