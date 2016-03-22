@@ -220,11 +220,11 @@ static bool equalsToStoredFile(PathNode *node, const char *repo_path,
   uint64_t bytes_left = reg->size;
 
   FileStream *stream = sFopenRead(node->path.str);
-  char *buffer = sMalloc(blocksize);
+  char *buffer = sMalloc(sSizeMul(blocksize, 2));
 
   RepoReader *repo_stream =
     repoReaderOpenFile(repo_path, node->path.str, reg);
-  char *repo_buffer = sMalloc(blocksize);
+  char *repo_buffer = &buffer[blocksize];
 
   bool files_equal = true;
 
@@ -241,7 +241,6 @@ static bool equalsToStoredFile(PathNode *node, const char *repo_path,
   }
 
   repoReaderClose(repo_stream);
-  free(repo_buffer);
   free(buffer);
 
   bool stream_not_at_end = sFbytesLeft(stream);
