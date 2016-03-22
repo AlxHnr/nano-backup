@@ -13,13 +13,11 @@ Since the backup repository is guaranteed not to break, errors are handled
 by terminating with an error message. This should only be done trough the
 functions die() and dieErrno(). The error message shouldn't contain a
 newline and must not end with a period. Everything is an error, that
-prevents to achieve the users exact goal. One example is to backup a file,
-which can't be read due to a lack of permissions. Another example would be
-if a file gets modified while being backed up and doesn't match the changes
-confirmed by the user anymore. Nano-backup must be predictable and precise.
-Take the time to write good and conclusive error messages. Errors like
-`"failed to backup foo.txt"` are useless, because they don't explain _why_
-it fails.
+prevents to achieve the users exact goal. One example would be if a file
+gets modified during backup and doesn't match the changes confirmed by the
+user anymore. Take the time to write good and conclusive error messages.
+Errors like `"failed to backup foo.txt"` are useless, because they don't
+explain _why_ it fails.
 
 To simplify error handling even further, wrappers for commonly used
 functions are provided. See safe-wrappers.h. **Warning**: never call die(),
@@ -29,11 +27,10 @@ atexit().
 ## Memory management
 
 Most data lives until the backup is completed and the program terminates.
-Nano-backup provides a fast, internal memory pool for such structs. This
-pool will be freed automatically when the program terminates. Allocating
-memory from this pool can be done with mpAlloc(). This memory should not be
-freed manually and data structures allocated inside this pool are denoted
-appropriately in their documentation.
+Nano-backup provides a fast, internal memory pool for such data. This pool
+will be freed automatically when the program terminates. Allocating memory
+from this pool can be done with mpAlloc(). This memory should not be freed
+manually.
 
 Sometimes data has a shorter lifetime than the program. Such data will not
 be allocated inside the internal memory pool and must be freed explicitly.
@@ -52,10 +49,11 @@ be split just by pointing into another string. This will never break
 foreign strings, because a slice can't mutate the data to which it points
 to.
 
-The only tricky thing is the fact, that a string slice may not point to a
-null-terminated char array. Before passing a string slice to a C library
-function, make sure that the documentation guarantees that it is
-null-terminated.
+The tricky part is passing such strings to C library functions. Before
+doing so, you should make sure that the strings buffer is null-terminated.
+To clarify that a function expects a null-terminated string, denote it in
+its documentation. Or even better: let the function accept a __const char
+*__ instead of a String.
 
 ## Testing
 
@@ -63,5 +61,5 @@ Handling errors by terminating the program is not helpful when testing
 code. Sometimes a test must assert that errors get raised properly. For
 this purpose nano-backup ships its own testing functions. Test programs are
 linked against a special implementation of die() and dieErrno(), which
-longjump back into the current assert statement. See the documentation of
+longjump back into the last assert statement. See the documentation of
 test.h.
