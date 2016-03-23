@@ -1,0 +1,11 @@
+++ /test directory/€.txt
+++ /test directory/.hidden/ (+3 items)
+++ /test directory/empty-directory -> .empty
+++ /test directory/foobar a1.txt
+++ /test directory/foo 1/bar/ (+3 items)
+++ /test directory/foo 1/♞.☂
+++ /test directory/bar-a.txt
+
+Total: +15 items, +0 b
+
+proceed? (y/n) 
