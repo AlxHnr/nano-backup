@@ -470,6 +470,64 @@ void sRename(const char *oldpath, const char *newpath)
   }
 }
 
+/** Reads a line from the given stream and terminates the program on
+  failure.
+
+  @param stream The stream to read from.
+
+  @return A new string that must be freed by the caller using free().
+  Returns NULL if the given stream has reached EOF.
+*/
+char *sReadLine(FILE *stream)
+{
+  size_t capacity = 16;
+  size_t used     = 0;
+  char *buffer    = sMalloc(capacity);
+
+  int old_errno = errno;
+  errno = 0;
+
+  bool reached_end = false;
+  do
+  {
+    if(used == capacity)
+    {
+      capacity = sSizeMul(capacity, 2);
+      buffer = sRealloc(buffer, capacity);
+    }
+
+    int character = fgetc(stream);
+    if(character == '\n' || character == '\r' || character == '\0')
+    {
+      reached_end = true;
+    }
+    else if(character == EOF)
+    {
+      if(errno != 0)
+      {
+        free(buffer);
+        dieErrno("failed to read line");
+      }
+      else if(used == 0)
+      {
+        free(buffer);
+        buffer = NULL;
+      }
+
+      reached_end = true;
+    }
+    else
+    {
+      buffer[used] = character;
+      used++;
+    }
+  }while(reached_end == false);
+  errno = old_errno;
+
+  if(buffer) buffer[used] = '\0';
+  return buffer;
+}
+
 /** Reads an entire file into memory.
 
   @param path The path to the file.

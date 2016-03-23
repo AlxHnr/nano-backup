@@ -29,6 +29,7 @@
 #ifndef _NANO_BACKUP_SAFE_WRAPPERS_H_
 #define _NANO_BACKUP_SAFE_WRAPPERS_H_
 
+#include <stdio.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -65,6 +66,8 @@ extern bool sPathExists(const char *path);
 extern struct stat sStat(const char *path);
 extern struct stat sLStat(const char *path);
 extern void sRename(const char *oldpath, const char *newpath);
+
+extern char *sReadLine(FILE *stream);
 
 /** A simple struct, containing the content of the file and its size. */
 typedef struct

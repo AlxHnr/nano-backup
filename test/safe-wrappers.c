@@ -72,6 +72,38 @@ static bool checkBytesLeft(FileStream *stream)
   return bytes_left;
 }
 
+/** Tests sReadLine().
+
+  @param stream The stream which should be passed to sReadLine().
+  @param expected_line The expected string.
+*/
+static void checkReadLine(FILE *stream, const char *expected_line)
+{
+  char *line = sReadLine(stream);
+  assert_true(strcmp(line, expected_line) == 0);
+  free(line);
+}
+
+/** Tests sReadLine() by reading lines from "valid-config-files/simple.txt"
+  using the given file stream.
+
+  @param stream A valid stream.
+*/
+static void checkReadSimpleTxt(FILE *stream)
+{
+  assert_true(stream != NULL);
+
+  checkReadLine(stream, "[copy]");
+  checkReadLine(stream, "/home/user/Pictures");
+  checkReadLine(stream, "");
+  checkReadLine(stream, "[mirror]");
+  checkReadLine(stream, "/home/foo");
+  checkReadLine(stream, "");
+  checkReadLine(stream, "[track]");
+  checkReadLine(stream, "/etc");
+  checkReadLine(stream, "/home/user/.config");
+}
+
 int main(void)
 {
   testGroupStart("sMalloc()");
@@ -314,6 +346,26 @@ int main(void)
 
   assert_true(sPathExists("tmp/file-2"));
   assert_true(sStat("tmp/file-2").st_size == 0);
+  testGroupEnd();
+
+  testGroupStart("sReadLine()");
+  FILE *in_stream = fopen("valid-config-files/simple.txt", "rb");
+  checkReadSimpleTxt(in_stream);
+  assert_true(feof(in_stream) == 0);
+  assert_true(sReadLine(in_stream) == NULL);
+  assert_true(feof(in_stream));
+  assert_true(sReadLine(in_stream) == NULL);
+  assert_true(sReadLine(in_stream) == NULL);
+  assert_true(fclose(in_stream) == 0);
+
+  in_stream = fopen("valid-config-files/simple-noeol.txt", "rb");
+  checkReadSimpleTxt(in_stream);
+  assert_true(feof(in_stream));
+  assert_true(sReadLine(in_stream) == NULL);
+  assert_true(feof(in_stream));
+  assert_true(sReadLine(in_stream) == NULL);
+  assert_true(sReadLine(in_stream) == NULL);
+  assert_true(fclose(in_stream) == 0);
   testGroupEnd();
 
   testGroupStart("sOpenDir()");
