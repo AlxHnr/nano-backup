@@ -9,3 +9,5 @@
 config: line 8: regex never matched a path: "^never-matches-any-file"
 
 Total: +17 items, +0 b
+
+proceed? (y/n) 

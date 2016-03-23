@@ -1,3 +1,5 @@
 config: line 4: regex matches, but not a directory: "^[abc]ar-.\.txt$"
 
 Total: +0 items, +0 b
+
+proceed? (y/n) 

@@ -11,3 +11,5 @@ config: line 15: regex never matched a path: "6$"
 config: line 21: regex matches not only directories: "^(bird|gentoo)$"
 
 Total: +35 items, +40 b
+
+proceed? (y/n) 

@@ -2,3 +2,5 @@
 config: line 6: string never matched a directory: "unmatched-string"
 
 Total: +32 items, +0 b
+
+proceed? (y/n) 

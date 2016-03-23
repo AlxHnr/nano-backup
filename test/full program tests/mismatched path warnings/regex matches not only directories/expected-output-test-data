@@ -2,3 +2,5 @@
 config: line 7: regex matches not only directories: "^(b|foo )"
 
 Total: +6 items, +0 b
+
+proceed? (y/n) 
