@@ -46,3 +46,8 @@ if test -f config; then
 elif test -f config-test-data; then
   gen_config_file "config-test-data" "$PROJECT_PATH/test/data"
 fi
+
+# Generate repository file list.
+if test -f expected-repo-files; then
+  sort expected-repo-files > generated/expected-repo-files
+fi
