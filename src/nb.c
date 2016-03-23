@@ -26,6 +26,8 @@
 */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "backup.h"
 #include "metadata.h"
@@ -34,6 +36,38 @@
 #include "string-utils.h"
 #include "safe-wrappers.h"
 #include "error-handling.h"
+
+/** Prompts the user to proceed.
+
+  @return True if the user entered "y" or "yes". False if "n" or "no" was
+  entered. False will also be returned if stdin has reached its end.
+*/
+static bool askUserProceed(void)
+{
+  char *line = NULL;
+  while(true)
+  {
+    printf("proceed? (y/n) ");
+
+    free(line);
+    line = sReadLine(stdin);
+
+    if(line == NULL)
+    {
+      return false;
+    }
+    else if(strcmp(line, "y") == 0 || strcmp(line, "yes") == 0)
+    {
+      free(line);
+      return true;
+    }
+    else if(strcmp(line, "n") == 0 || strcmp(line, "no") == 0)
+    {
+      free(line);
+      return false;
+    }
+  }
+}
 
 int main(const int arg_count, const char **arg_list)
 {
@@ -78,9 +112,12 @@ int main(const int arg_count, const char **arg_list)
 
   printf("\nTotal: +%zu items, +", changes.new_items_count);
   printHumanReadableSize(changes.new_files_size);
-  printf("\n");
+  printf("\n\n");
 
-  finishBackup(metadata, repo_path.str, tmp_file_path.str);
-  metadataWrite(metadata, repo_path.str, tmp_file_path.str,
-                metadata_path.str);
+  if(askUserProceed())
+  {
+    finishBackup(metadata, repo_path.str, tmp_file_path.str);
+    metadataWrite(metadata, repo_path.str, tmp_file_path.str,
+                  metadata_path.str);
+  }
 }
