@@ -1,0 +1,8 @@
+[mirror]
+/generated/files//.\..
+
+[copy]
+/generated/files/foo
+
+[track]
+/generated/files/subdir
