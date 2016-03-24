@@ -337,8 +337,8 @@ void repoWriterWrite(const void *data, size_t size, RepoWriter *writer)
     Fdestroy(writer->stream);
     free(writer);
 
-    die("IO error while writing \"%s\" to \"%s\"",
-        source_file_path, repo_path);
+    dieErrno("IO error while writing \"%s\" to \"%s\"",
+             source_file_path, repo_path);
   }
 }
 
