@@ -118,6 +118,26 @@ static size_t countPathElements(String string)
   return count;
 }
 
+/** Counts the items in the specified directory, excluding "." and "..".
+
+  @param path The path to a valid directory.
+
+  @return The amount of files in the specified directory.
+*/
+static size_t countFilesInDir(const char *path)
+{
+  size_t counter = 0;
+  DIR *dir = sOpenDir(path);
+
+  while(sReadDir(dir, path) != NULL)
+  {
+    counter++;
+  }
+
+  sCloseDir(dir, path);
+  return counter;
+}
+
 /** Simplified wrapper around mustHaveRegular(). It extracts additional
   informations via stat() and passes them to mustHaveRegular().
 
@@ -158,16 +178,16 @@ static void mustHaveDirectoryStat(PathNode *node, Backup *backup)
                     stats.st_mtime, stats.st_mode);
 }
 
-int main(void)
+/** Checks a metadata tree containing files found using
+  "generated-config-files/backup-search-test.txt".
+
+  @param metadata A valid metadata tree.
+  @param cwd The path to the current working directory.
+  @param cwd_depth The amount of elements in the given cwd.
+*/
+static void checkBackupSearchData(Metadata *metadata, String cwd,
+                                  size_t cwd_depth)
 {
-  testGroupStart("discovering new files");
-  String cwd = getCwd();
-  size_t cwd_depth = countPathElements(cwd);
-
-  Metadata *metadata = metadataNew();
-  SearchNode *root_node = searchTreeLoad("generated-config-files/backup-search-test.txt");
-  initiateBackup(metadata, root_node);
-
   checkMetadata(metadata, 0, false);
   assert_true(metadata->current_backup.ref_count == cwd_depth + 10);
   assert_true(metadata->backup_history_length == 0);
@@ -206,5 +226,22 @@ int main(void)
 
   PathNode *three_txt = findSubnode(bar, "3.txt", BPOL_track, 1, 0);
   mustHaveRegularStat(three_txt, &metadata->current_backup, NULL, 0);
+}
+
+int main(void)
+{
+  testGroupStart("discovering new files");
+  String cwd = getCwd();
+  size_t cwd_depth = countPathElements(cwd);
+
+  Metadata *metadata = metadataNew();
+  SearchNode *root_node = searchTreeLoad("generated-config-files/backup-search-test.txt");
+
+  initiateBackup(metadata, root_node);
+  checkBackupSearchData(metadata, cwd, cwd_depth);
+  finishBackup(metadata, "tmp", "tmp/tmp-file");
+  checkBackupSearchData(metadata, cwd, cwd_depth);
+  assert_true(countFilesInDir("tmp/") == 0);
+
   testGroupEnd();
 }
