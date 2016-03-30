@@ -267,6 +267,7 @@ static PathHistory *readPathHistory(FileContent content,
 
   size_t id = readSize(content, reader_position, metadata_path);
   point->backup = &backup_history[id];
+  point->backup->ref_count = sSizeAdd(point->backup->ref_count, 1);
 
   point->state.type = read8(content, reader_position, metadata_path);
   point->state.uid = read32(content, reader_position, metadata_path);
@@ -580,9 +581,6 @@ Metadata *metadataLoad(const char *path)
 
     metadata->backup_history[id].timestamp =
       readTime(content, &reader_position, path);
-
-    metadata->backup_history[id].ref_count =
-      readSize(content, &reader_position, path);
   }
 
   metadata->config_history =
@@ -648,7 +646,6 @@ void metadataWrite(Metadata *metadata,
   if(metadata->current_backup.ref_count > 0)
   {
     write64(metadata->current_backup.timestamp, writer);
-    write64(metadata->current_backup.ref_count, writer);
   }
 
   for(size_t index = 0; index < metadata->backup_history_length; index++)
@@ -657,7 +654,6 @@ void metadataWrite(Metadata *metadata,
     if(backup->ref_count > 0)
     {
       write64(backup->timestamp, writer);
-      write64(backup->ref_count, writer);
     }
   }
 
