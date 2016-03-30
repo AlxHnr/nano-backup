@@ -253,7 +253,7 @@ static void readBytes(FileContent content, size_t *reader_position,
   to the next unread byte.
   @param metadata_path The path to the file to which the given content
   belongs to.
-  @param backup_history An array containing the backup history.
+  @param metadata The metadata to which the returned PathHistory belongs.
 
   @return A new path history allocated inside the internal memory pool,
   which should not be freed by the caller.
@@ -261,12 +261,17 @@ static void readBytes(FileContent content, size_t *reader_position,
 static PathHistory *readPathHistory(FileContent content,
                                     size_t *reader_position,
                                     const char *metadata_path,
-                                    Backup *backup_history)
+                                    Metadata *metadata)
 {
   PathHistory *point = mpAlloc(sizeof *point);
 
   size_t id = readSize(content, reader_position, metadata_path);
-  point->backup = &backup_history[id];
+  if(id >= metadata->backup_history_length)
+  {
+    die("backup id is out of range in \"%s\"", metadata_path);
+  }
+
+  point->backup = &metadata->backup_history[id];
   point->backup->ref_count = sSizeAdd(point->backup->ref_count, 1);
 
   point->state.type = read8(content, reader_position, metadata_path);
@@ -332,7 +337,7 @@ static PathHistory *readPathHistory(FileContent content,
   @param reader_position The position from which should be read. It will be
   moved to the next unread byte.
   @param metadata_path The path to the metadata file.
-  @param backup_history An array containing the backup history.
+  @param metadata The metadata to which the returned PathHistory belongs.
 
   @return A complete path history allocated inside the internal memory
   pool. It should not be freed by the caller.
@@ -340,7 +345,7 @@ static PathHistory *readPathHistory(FileContent content,
 static PathHistory *readFullPathHistory(FileContent content,
                                         size_t *reader_position,
                                         const char *metadata_path,
-                                        Backup *backup_history)
+                                        Metadata *metadata)
 {
   size_t history_length =
     readSize(content, reader_position, metadata_path);
@@ -351,13 +356,13 @@ static PathHistory *readFullPathHistory(FileContent content,
   }
 
   PathHistory *first_point = readPathHistory(content, reader_position,
-                                             metadata_path, backup_history);
+                                             metadata_path, metadata);
   PathHistory *current_point = first_point;
 
   for(size_t counter = 1; counter < history_length; counter++)
   {
     current_point->next = readPathHistory(content, reader_position,
-                                          metadata_path, backup_history);
+                                          metadata_path, metadata);
     current_point = current_point->next;
   }
 
@@ -478,9 +483,8 @@ static PathNode *readPathSubnodes(FileContent content,
     strtableMap(metadata->path_table, node->path, node);
 
     node->policy = read8(content, reader_position, metadata_path);
-    node->history =
-      readFullPathHistory(content, reader_position, metadata_path,
-                          metadata->backup_history);
+    node->history = readFullPathHistory(content, reader_position,
+                                        metadata_path, metadata);
 
     node->subnodes = readPathSubnodes(content, reader_position,
                                       metadata_path, node, metadata);
@@ -584,8 +588,7 @@ Metadata *metadataLoad(const char *path)
   }
 
   metadata->config_history =
-    readFullPathHistory(content, &reader_position,
-                        path, metadata->backup_history);
+    readFullPathHistory(content, &reader_position, path, metadata);
 
   metadata->total_path_count = readSize(content, &reader_position, path);
 

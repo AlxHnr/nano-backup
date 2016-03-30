@@ -935,6 +935,10 @@ int main(void)
                "corrupted metadata: expected 8 bytes, got 3: \"generated-broken-metadata/incomplete-size\"");
   assert_error(metadataLoad("generated-broken-metadata/missing-size"),
                "corrupted metadata: expected 8 bytes, got 0: \"generated-broken-metadata/missing-size\"");
+  assert_error(metadataLoad("generated-broken-metadata/backup-id-out-of-range-1"),
+               "backup id is out of range in \"generated-broken-metadata/backup-id-out-of-range-1\"");
+  assert_error(metadataLoad("generated-broken-metadata/backup-id-out-of-range-2"),
+               "backup id is out of range in \"generated-broken-metadata/backup-id-out-of-range-2\"");
   assert_error(metadataLoad("generated-broken-metadata/incomplete-time"),
                "corrupted metadata: expected 8 bytes, got 7: \"generated-broken-metadata/incomplete-time\"");
   assert_error(metadataLoad("generated-broken-metadata/missing-time"),
