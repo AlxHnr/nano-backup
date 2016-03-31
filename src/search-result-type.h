@@ -25,8 +25,8 @@
   Defines the result of a search query.
 */
 
-#ifndef _NANO_BACKUP_SEARCH_RESULT_H_
-#define _NANO_BACKUP_SEARCH_RESULT_H_
+#ifndef _NANO_BACKUP_SEARCH_RESULT_TYPE_H_
+#define _NANO_BACKUP_SEARCH_RESULT_TYPE_H_
 
 #include <sys/stat.h>
 
