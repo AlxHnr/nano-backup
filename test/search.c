@@ -67,13 +67,16 @@ static void checkSearchResult(SearchResult result)
   @param context The context that should be fast-forwarded to the given
   path.
   @param cwd The path which should be skipped.
+  @param root_node The root of the search tree.
 
   @return The recursion depth count for unwinding and leaving the
   directories which lead to the given cwd.
 */
-static size_t skipCwd(SearchContext *context, String cwd)
+static size_t skipCwd(SearchContext *context, String cwd,
+                      SearchNode *root_node)
 {
   size_t recursion_depth = 0;
+  SearchNode *node = root_node->subnodes;
 
   while(true)
   {
@@ -82,6 +85,11 @@ static size_t skipCwd(SearchContext *context, String cwd)
     if(result.type != SRT_directory)
     {
       die("failed to find \"%s\" in the given context", cwd.str);
+    }
+    else if(result.node == NULL || result.node != node)
+    {
+      die("search result contains invalid node for path \"%s\"",
+          result.path.str);
     }
 
     checkSearchResult(result);
@@ -93,8 +101,11 @@ static size_t skipCwd(SearchContext *context, String cwd)
     {
       die("unexpected policy in \"%s\"", result.path.str);
     }
-
-    recursion_depth++;
+    else
+    {
+      node = node->subnodes;
+      recursion_depth++;
+    }
   }
 
   return recursion_depth;
@@ -302,7 +313,7 @@ static void testSimpleSearch(String cwd)
   SearchContext *context = searchNew(root);
   assert_true(context != NULL);
 
-  size_t cwd_depth = skipCwd(context, cwd);
+  size_t cwd_depth = skipCwd(context, cwd, root);
   StringTable *found_files = strtableNew();
   assert_true(populateDirectoryTable(context, found_files, cwd) == 29);
   finishSearch(context, cwd_depth);
@@ -383,7 +394,7 @@ static void testIgnoreExpressions(String cwd)
   SearchContext *context = searchNew(root);
   assert_true(context != NULL);
 
-  size_t cwd_depth = skipCwd(context, cwd);
+  size_t cwd_depth = skipCwd(context, cwd, root);
   StringTable *found_files = strtableNew();
   assert_true(populateDirectoryTable(context, found_files, cwd) == 19);
   finishSearch(context, cwd_depth);
@@ -457,7 +468,7 @@ static void testSymlinkFollowing(String cwd)
   SearchContext *context = searchNew(root);
   assert_true(context != NULL);
 
-  size_t cwd_depth = skipCwd(context, cwd);
+  size_t cwd_depth = skipCwd(context, cwd, root);
   StringTable *found_files = strtableNew();
   assert_true(populateDirectoryTable(context, found_files, cwd) == 20);
   finishSearch(context, cwd_depth);
@@ -523,7 +534,7 @@ static void testMismatchedPaths(String cwd)
   SearchContext *context = searchNew(root);
   assert_true(context != NULL);
 
-  size_t cwd_depth = skipCwd(context, cwd);
+  size_t cwd_depth = skipCwd(context, cwd, root);
   StringTable *found_files = strtableNew();
   assert_true(populateDirectoryTable(context, found_files, cwd) == 2);
   finishSearch(context, cwd_depth);
@@ -582,7 +593,7 @@ static void testComplexSearch(String cwd)
   SearchContext *context = searchNew(root);
   assert_true(context != NULL);
 
-  size_t cwd_depth = skipCwd(context, cwd);
+  size_t cwd_depth = skipCwd(context, cwd, root);
   StringTable *found_files = strtableNew();
   assert_true(populateDirectoryTable(context, found_files, cwd) == 26);
   finishSearch(context, cwd_depth);
