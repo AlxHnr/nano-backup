@@ -201,6 +201,7 @@ static SearchResult buildSearchResult(SearchContext *context,
         .length = context->buffer.length
       },
 
+    .node = node,
     .policy = policy,
     .stats = stats,
   };

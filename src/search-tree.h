@@ -32,7 +32,7 @@
 #include <regex.h>
 
 #include "string-utils.h"
-#include "search-result.h"
+#include "search-result-type.h"
 #include "backup-policies.h"
 
 /** A list of compiled regular expressions. */

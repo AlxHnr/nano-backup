@@ -56,22 +56,4 @@ typedef enum
   SRT_end_of_search = 1 << 5,
 }SearchResultType;
 
-/**Contains the result of a search query. */
-typedef struct
-{
-  /** The type of the result. */
-  SearchResultType type;
-
-  /** The full path to the found file, containing a null-terminated buffer.
-    It shares memory with the SearchContext to which it belongs and will be
-    invalidated with the next call to searchGetNext(). */
-  String path;
-
-  /** The policy of the file. */
-  BackupPolicy policy;
-
-  /** Further informations about the file. */
-  struct stat stats;
-}SearchResult;
-
 #endif
