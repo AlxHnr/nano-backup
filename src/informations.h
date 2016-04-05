@@ -44,7 +44,7 @@ typedef struct
   uint64_t new_files_size;
 }MetadataChanges;
 
-extern void printHumanReadableSize(size_t size);
+extern void printHumanReadableSize(uint64_t size);
 extern void printSearchTreeInfos(SearchNode *root_node);
 extern MetadataChanges printMetadataChanges(Metadata *metadata);
 

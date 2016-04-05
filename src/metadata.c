@@ -215,9 +215,9 @@ static size_t readSize(FileContent content, size_t *reader_position,
 static time_t readTime(FileContent content, size_t *reader_position,
                        const char *metadata_path)
 {
-  uint64_t time = read64(content, reader_position, metadata_path);
+  int64_t time = read64(content, reader_position, metadata_path);
 
-  if(sizeof(time_t) == 4 && time > UINT32_MAX)
+  if(sizeof(time_t) == 4 && (time < INT32_MIN || time > INT32_MAX))
   {
     die("unable to read 64-bit timestamp from \"%s\"", metadata_path);
   }

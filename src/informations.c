@@ -161,10 +161,10 @@ static MetadataChanges printPathListRecursively(Metadata *metadata,
 
     if(node->history->state.type == PST_regular)
     {
-      changes.new_items_count = sUint64Add(changes.new_items_count, 1);
+      changes.new_items_count = sSizeAdd(changes.new_items_count, 1);
       changes.new_files_size =
-        sSizeAdd(changes.new_files_size,
-                 node->history->state.metadata.reg.size);
+        sUint64Add(changes.new_files_size,
+                   node->history->state.metadata.reg.size);
 
       if(print)
       {
@@ -207,10 +207,9 @@ static MetadataChanges printPathListRecursively(Metadata *metadata,
       }
 
       changes.new_items_count =
-        sUint64Add(changes.new_items_count,
-                   subnode_changes.new_items_count);
+        sSizeAdd(changes.new_items_count, subnode_changes.new_items_count);
       changes.new_files_size =
-        sSizeAdd(changes.new_files_size, subnode_changes.new_files_size);
+        sUint64Add(changes.new_files_size, subnode_changes.new_files_size);
     }
   }
 
@@ -221,7 +220,7 @@ static MetadataChanges printPathListRecursively(Metadata *metadata,
 
   @param size The size which should be printed.
 */
-void printHumanReadableSize(size_t size)
+void printHumanReadableSize(uint64_t size)
 {
   static const char units[] = "bKMGT";
   double converted_value = size;
