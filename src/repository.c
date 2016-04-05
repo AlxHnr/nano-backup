@@ -34,6 +34,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include <inttypes.h>
 
 #include "safe-wrappers.h"
 #include "error-handling.h"
@@ -124,7 +125,7 @@ static void fillPathBufferWithInfo(String repo_path,
 {
   size_t prefix_length = snprintf(NULL, 0, "%i-", info->slot);
   size_t required_capacity =
-    prefix_length + snprintf(NULL, 0, "-%zu", info->size);
+    prefix_length + snprintf(NULL, 0, "-%"PRIu64, info->size);
   required_capacity += FILE_HASH_SIZE * 2;
   required_capacity += 2; /* Reserve some room for the slash and '\0'. */
   required_capacity = sSizeAdd(required_capacity, repo_path.length);
@@ -143,7 +144,7 @@ static void fillPathBufferWithInfo(String repo_path,
   }
 
   char *suffix_buffer = &hash_buffer[FILE_HASH_SIZE * 2];
-  sprintf(suffix_buffer, "-%zu", info->size);
+  sprintf(suffix_buffer, "-%"PRIu64, info->size);
 }
 
 /** Creates a new RepoWriter from its arguments. Contains the core logic
