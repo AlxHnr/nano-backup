@@ -74,7 +74,7 @@ static PathNode *findCwdNode(Metadata *metadata, String cwd)
   return NULL;
 }
 
-/** Simplified wrapper around findNode().
+/** Simplified wrapper around findPathNode().
 
   @param node The node containing the requested subnode.
   @param subnode_name The name of the requested subnode. This should not be
@@ -95,8 +95,9 @@ static PathNode *findSubnode(PathNode *node,
                              size_t requested_subnode_count)
 {
   String subnode_path = strAppendPath(node->path, str(subnode_name));
-  return findNode(node->subnodes, subnode_path.str, policy,
-                  requested_history_length, requested_subnode_count);
+  return findPathNode(node->subnodes, subnode_path.str, policy,
+                      requested_history_length, requested_subnode_count,
+                      BH_none);
 }
 
 /** Counts the path elements in the given string. E.g. "/home/foo/bar" has

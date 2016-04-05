@@ -86,6 +86,7 @@ static PathNode *createPathNode(const char *path_str, BackupPolicy policy,
 {
   PathNode *node = mpAlloc(sizeof *node);
 
+  node->hint = BH_none;
   node->policy = policy;
   node->history = NULL;
   node->subnodes = NULL;
@@ -110,6 +111,17 @@ static PathNode *createPathNode(const char *path_str, BackupPolicy policy,
   metadata->total_path_count = sSizeAdd(metadata->total_path_count, 1);
 
   return node;
+}
+
+/** Wrapper around findPathNode(). It is almost identical, but doesn't take
+  a PathNodeHint. */
+static PathNode *findNode(PathNode *start_node, const char *path_str,
+                          BackupPolicy policy, size_t history_length,
+                          size_t subnode_count)
+{
+  return findPathNode(start_node, path_str, policy,
+                      history_length, subnode_count,
+                      BH_none);
 }
 
 /** Appends a new history point to the given node.

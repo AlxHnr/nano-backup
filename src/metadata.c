@@ -482,6 +482,7 @@ static PathNode *readPathSubnodes(FileContent content,
     /* Read other node variables. */
     strtableMap(metadata->path_table, node->path, node);
 
+    node->hint = BH_none;
     node->policy = read8(content, reader_position, metadata_path);
     node->history = readFullPathHistory(content, reader_position,
                                         metadata_path, metadata);

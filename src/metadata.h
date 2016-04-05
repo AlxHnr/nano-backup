@@ -96,6 +96,14 @@ struct PathHistory
   PathHistory *next;
 };
 
+/** Defines various hints to denote certain PathNode changes during a
+  backup. */
+typedef enum
+{
+  /** The file represented by the node has not changed. */
+  BH_none,
+}BackupHint;
+
 /** A node representing a path in the filetree. */
 typedef struct PathNode PathNode;
 struct PathNode
@@ -103,6 +111,10 @@ struct PathNode
   /** The full, absolute path inside the filesystem, containing a
     null-terminated buffer. */
   String path;
+
+  /** Contains temporary informations about this node. They will not be
+    written to disk and are only used during a single backup. */
+  BackupHint hint;
 
   /** The backup policy of the current path. */
   BackupPolicy policy;

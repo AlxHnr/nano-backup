@@ -332,12 +332,13 @@ void mustHaveConf(Metadata *metadata, Backup *backup, uint64_t size,
   @param policy The policy of the node.
   @param history_length The history length of the node.
   @param subnode_count The amount of subnodes.
+  @param hint The nodes backup hint.
 
   @return The node with the specified properties.
 */
-PathNode *findNode(PathNode *start_node, const char *path_str,
-                   BackupPolicy policy, size_t history_length,
-                   size_t subnode_count)
+PathNode *findPathNode(PathNode *start_node, const char *path_str,
+                       BackupPolicy policy, size_t history_length,
+                       size_t subnode_count, BackupHint hint)
 {
   String path = str(path_str);
   PathNode *requested_node = NULL;
@@ -367,6 +368,10 @@ PathNode *findNode(PathNode *start_node, const char *path_str,
   else if(countSubnodes(requested_node) != subnode_count)
   {
     die("requested node has wrong subnode count: \"%s\"", path_str);
+  }
+  else if(requested_node->hint != hint)
+  {
+    die("requested node has wrong backup hint: \"%s\"", path_str);
   }
 
   return requested_node;
