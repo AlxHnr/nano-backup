@@ -586,6 +586,8 @@ Metadata *metadataLoad(const char *path)
 
     metadata->backup_history[id].timestamp =
       readTime(content, &reader_position, path);
+
+    metadata->backup_history[id].ref_count = 0;
   }
 
   metadata->config_history =
