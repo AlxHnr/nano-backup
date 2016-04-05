@@ -28,7 +28,11 @@
 #ifndef _NANO_BACKUP_SEARCH_H_
 #define _NANO_BACKUP_SEARCH_H_
 
+#include <sys/stat.h>
+
 #include "search-tree.h"
+#include "string-utils.h"
+#include "backup-policies.h"
 #include "search-result-type.h"
 
 /**Contains the result of a search query. */

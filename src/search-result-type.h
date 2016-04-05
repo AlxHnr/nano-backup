@@ -28,11 +28,6 @@
 #ifndef _NANO_BACKUP_SEARCH_RESULT_TYPE_H_
 #define _NANO_BACKUP_SEARCH_RESULT_TYPE_H_
 
-#include <sys/stat.h>
-
-#include "string-utils.h"
-#include "backup-policies.h"
-
 /** The type of a search result. */
 typedef enum
 {
