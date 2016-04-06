@@ -520,4 +520,5 @@ void finishBackup(Metadata *metadata, const char *repo_path,
 {
   finishBackupRecursively(metadata, metadata->paths, repo_path,
                           repo_tmp_file_path);
+  metadata->current_backup.timestamp = sTime();
 }

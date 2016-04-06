@@ -226,13 +226,25 @@ static void mustHaveDirectoryStat(PathNode *node, Backup *backup)
                     stats.st_mtime, stats.st_mode);
 }
 
+/** Contains the timestamp at which a phase finished. */
+static time_t phase_timestamps[2] = { 0 };
+
 /** Finishes a backup and writes the given metadata struct into "tmp/repo".
 
   @param metadata The metadata which should be used to finish the backup.
+  @param phase The number of the current backup phase minus 1. Needed for
+  storing the backup timestamp.
 */
-static void completeBackup(Metadata *metadata)
+static void completeBackup(Metadata *metadata, size_t phase)
 {
+  time_t before_finishing = sTime();
   finishBackup(metadata,  "tmp/repo", "tmp/repo/tmp-file");
+  time_t after_finishing = sTime();
+
+  assert_true(metadata->current_backup.timestamp >= before_finishing);
+  assert_true(metadata->current_backup.timestamp <= after_finishing);
+  phase_timestamps[phase] = metadata->current_backup.timestamp;
+
   metadataWrite(metadata, "tmp/repo", "tmp/repo/tmp-file", "tmp/repo/metadata");
 }
 
@@ -326,7 +338,7 @@ static void runPhase1(String cwd_path, size_t cwd_depth,
   mustHaveRegularStat(some_file, &metadata->current_backup, 84, NULL, 0);
 
   /* Finish backup and perform additional checks. */
-  completeBackup(metadata);
+  completeBackup(metadata, 0);
   mustHaveRegularStat(one_txt,       &metadata->current_backup, 12,  (uint8_t *)"A small file", 0);
   mustHaveRegularStat(two_txt,       &metadata->current_backup, 0,   (uint8_t *)"", 0);
   mustHaveRegularStat(three_txt,     &metadata->current_backup, 400, three_hash, 0);
@@ -348,6 +360,7 @@ static void runPhase2(String cwd_path, size_t cwd_depth,
   assert_true(metadata->current_backup.ref_count == cwd_depth + 3);
   assert_true(metadata->backup_history_length == 1);
   assert_true(metadata->total_path_count == cwd_depth + 12);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[0], 9);
 
   PathNode *files = findFilesNode(metadata, cwd_path, BH_unchanged);
   PathNode *foo = findSubnode(files, "foo", BH_unchanged, BPOL_none, 1, 3);
@@ -375,7 +388,7 @@ static void runPhase2(String cwd_path, size_t cwd_depth,
   mustHaveRegularStat(some_file, &metadata->backup_history[0], 84, some_file_hash, 0);
 
   /* Finish backup and perform additional checks. */
-  completeBackup(metadata);
+  completeBackup(metadata, 1);
   assert_true(countFilesInDir("tmp/repo") == 3);
 }
 
