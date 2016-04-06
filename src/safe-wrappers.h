@@ -29,6 +29,7 @@
 #ifndef _NANO_BACKUP_SAFE_WRAPPERS_H_
 #define _NANO_BACKUP_SAFE_WRAPPERS_H_
 
+#include <time.h>
 #include <stdio.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -68,6 +69,7 @@ extern struct stat sLStat(const char *path);
 extern void sRename(const char *oldpath, const char *newpath);
 
 extern char *sReadLine(FILE *stream);
+extern time_t sTime(void);
 
 /** A simple struct, containing the content of the file and its size. */
 typedef struct

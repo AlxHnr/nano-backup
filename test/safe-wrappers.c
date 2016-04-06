@@ -368,6 +368,10 @@ int main(void)
   assert_true(fclose(in_stream) == 0);
   testGroupEnd();
 
+  testGroupStart("sTime()");
+  assert_true(sTime() != (time_t)-1);
+  testGroupEnd();
+
   testGroupStart("sOpenDir()");
   DIR *test_directory = sOpenDir("test directory");
   assert_true(test_directory != NULL);

@@ -528,6 +528,22 @@ char *sReadLine(FILE *stream)
   return buffer;
 }
 
+/** Safe wrapper around time().
+
+  @return The current time in seconds since 1970.
+*/
+time_t sTime(void)
+{
+  time_t current_time = time(NULL);
+
+  if(current_time == (time_t)-1)
+  {
+    die("failed to determine current time");
+  }
+
+  return current_time;
+}
+
 /** Reads an entire file into memory.
 
   @param path The path to the file.
