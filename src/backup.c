@@ -134,7 +134,7 @@ static SearchResultType initiateMetadataRecursively(Metadata *metadata,
     String path_copy = strCopy(result.path);
     memcpy(&node->path, &path_copy, sizeof(node->path));
 
-    node->hint = BH_none;
+    node->hint = BH_added;
     node->policy = result.policy;
     node->history = buildPathHistoryPoint(metadata, result);
     node->subnodes = NULL;
@@ -144,6 +144,10 @@ static SearchResultType initiateMetadataRecursively(Metadata *metadata,
     *node_list = node;
 
     metadata->total_path_count = sSizeAdd(metadata->total_path_count, 1);
+  }
+  else
+  {
+    node->hint = BH_unchanged;
   }
 
   if(result.type == SRT_directory)

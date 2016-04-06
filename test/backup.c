@@ -92,12 +92,13 @@ static PathNode *findSubnode(PathNode *node,
                              const char *subnode_name,
                              BackupPolicy policy,
                              size_t requested_history_length,
-                             size_t requested_subnode_count)
+                             size_t requested_subnode_count,
+                             BackupHint hint)
 {
   String subnode_path = strAppendPath(node->path, str(subnode_name));
   return findPathNode(node->subnodes, subnode_path.str, policy,
                       requested_history_length, requested_subnode_count,
-                      BH_none);
+                      hint);
 }
 
 /** Counts the path elements in the given string. E.g. "/home/foo/bar" has
@@ -198,34 +199,34 @@ static void checkBackupSearchData(Metadata *metadata, String cwd,
   assert_true(data_dir->subnodes != NULL);
   assert_true(data_dir->subnodes->next == NULL);
 
-  PathNode *test_dir = findSubnode(data_dir, "test directory", BPOL_none, 1, 5);
+  PathNode *test_dir = findSubnode(data_dir, "test directory", BPOL_none, 1, 5, BH_added);
   mustHaveDirectoryStat(test_dir, &metadata->current_backup);
 
-  PathNode *bar_a_txt = findSubnode(test_dir, "bar-a.txt", BPOL_copy, 1, 0);
+  PathNode *bar_a_txt = findSubnode(test_dir, "bar-a.txt", BPOL_copy, 1, 0, BH_added);
   mustHaveRegularStat(bar_a_txt, &metadata->current_backup, NULL, 0);
 
-  PathNode *foobar_a1_txt = findSubnode(test_dir, "foobar a1.txt", BPOL_copy, 1, 0);
+  PathNode *foobar_a1_txt = findSubnode(test_dir, "foobar a1.txt", BPOL_copy, 1, 0, BH_added);
   mustHaveRegularStat(foobar_a1_txt, &metadata->current_backup, NULL, 0);
 
-  PathNode *empty_dir = findSubnode(test_dir, "empty-directory", BPOL_mirror, 1, 0);
+  PathNode *empty_dir = findSubnode(test_dir, "empty-directory", BPOL_mirror, 1, 0, BH_added);
   mustHaveSymlinkLStat(empty_dir, &metadata->current_backup, ".empty");
 
-  PathNode *euro_txt = findSubnode(test_dir, "€.txt", BPOL_mirror, 1, 0);
+  PathNode *euro_txt = findSubnode(test_dir, "€.txt", BPOL_mirror, 1, 0, BH_added);
   mustHaveRegularStat(euro_txt, &metadata->current_backup, NULL, 0);
 
-  PathNode *foo_1 = findSubnode(test_dir, "foo 1", BPOL_none, 1, 1);
+  PathNode *foo_1 = findSubnode(test_dir, "foo 1", BPOL_none, 1, 1, BH_added);
   mustHaveDirectoryStat(foo_1, &metadata->current_backup);
 
-  PathNode *bar = findSubnode(foo_1, "bar", BPOL_track, 1, 3);
+  PathNode *bar = findSubnode(foo_1, "bar", BPOL_track, 1, 3, BH_added);
   mustHaveDirectoryStat(bar, &metadata->current_backup);
 
-  PathNode *one_txt = findSubnode(bar, "1.txt", BPOL_track, 1, 0);
+  PathNode *one_txt = findSubnode(bar, "1.txt", BPOL_track, 1, 0, BH_added);
   mustHaveRegularStat(one_txt, &metadata->current_backup, NULL, 0);
 
-  PathNode *two_txt = findSubnode(bar, "2.txt", BPOL_track, 1, 0);
+  PathNode *two_txt = findSubnode(bar, "2.txt", BPOL_track, 1, 0, BH_added);
   mustHaveRegularStat(two_txt, &metadata->current_backup, NULL, 0);
 
-  PathNode *three_txt = findSubnode(bar, "3.txt", BPOL_track, 1, 0);
+  PathNode *three_txt = findSubnode(bar, "3.txt", BPOL_track, 1, 0, BH_added);
   mustHaveRegularStat(three_txt, &metadata->current_backup, NULL, 0);
 }
 

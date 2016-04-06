@@ -100,8 +100,20 @@ struct PathHistory
   backup. */
 typedef enum
 {
-  /** The file represented by the node has not changed. */
+  /** The path has no hint and was neither added, changed or removed. */
   BH_none,
+
+  /** The path was added. */
+  BH_added,
+
+  /** The path has not changed since the last backup. */
+  BH_unchanged,
+
+  /** The path was removed from the users system. */
+  BH_removed,
+
+  /** The path is not part of the backup anymore and will be wiped. */
+  BH_not_part_of_repository,
 }BackupHint;
 
 /** A node representing a path in the filetree. */
