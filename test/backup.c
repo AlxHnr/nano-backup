@@ -27,6 +27,8 @@
 
 #include "backup.h"
 
+#include <unistd.h>
+
 #include "test.h"
 #include "metadata.h"
 #include "search-tree.h"
@@ -138,6 +140,45 @@ static size_t countFilesInDir(const char *path)
   return counter;
 }
 
+/** Safe wrapper around mkdir(). */
+static void makeDir(const char *path)
+{
+  if(mkdir(path, 0755) != 0)
+  {
+    dieErrno("failed to create directory \"%s\"", path);
+  }
+}
+
+/** Safe wrapper around symlink(). */
+static void makeSymlink(const char *target, const char *linkpath)
+{
+  if(symlink(target, linkpath) != 0)
+  {
+    dieErrno("failed to create symlink \"%s\" -> \"%s\"", linkpath, target);
+  }
+}
+
+/** Generates a dummy file.
+
+  @param path The full or relative path to the dummy file.
+  @param content A string containing the desired files content.
+  @param repetitions A value describing how often the specified content
+  should be repeated.
+*/
+static void generateFile(const char *path, const char *content,
+                         size_t repetitions)
+{
+  FileStream *stream = sFopenWrite(path);
+  size_t content_length = strlen(content);
+
+  for(size_t index = 0; index < repetitions; index++)
+  {
+    sFwrite(content, content_length, stream);
+  }
+
+  sFclose(stream);
+}
+
 /** Simplified wrapper around mustHaveRegular(). It extracts additional
   informations via stat() and passes them to mustHaveRegular().
 
@@ -147,12 +188,13 @@ static size_t countFilesInDir(const char *path)
   @param slot The expected slot in RegularFileInfo.
 */
 static void mustHaveRegularStat(PathNode *node, Backup *backup,
-                                uint8_t *hash, uint8_t slot)
+                                uint64_t size, uint8_t *hash,
+                                uint8_t slot)
 {
   struct stat stats = sStat(node->path.str);
   mustHaveRegular(node, backup, stats.st_uid, stats.st_gid,
-                  stats.st_mtime, stats.st_mode, stats.st_size,
-                  hash, slot);
+                  stats.st_mtime, stats.st_mode, size, hash,
+                  slot);
 }
 
 /** Simplified wrapper around mustHaveSymlink(). It extracts additional
@@ -178,70 +220,97 @@ static void mustHaveDirectoryStat(PathNode *node, Backup *backup)
                     stats.st_mtime, stats.st_mode);
 }
 
-/** Checks a metadata tree containing files found using
-  "generated-config-files/backup-search-test.txt".
-
-  @param metadata A valid metadata tree.
-  @param cwd The path to the current working directory.
-  @param cwd_depth The amount of elements in the given cwd.
-*/
-static void checkBackupSearchData(Metadata *metadata, String cwd,
-                                  size_t cwd_depth)
+/** Performs an initial backup. */
+static void runPhase1(String cwd_path, size_t cwd_depth)
 {
+  /* Generate dummy files. */
+  makeDir("tmp/files/foo");
+  makeDir("tmp/files/foo/bar");
+  makeDir("tmp/files/foo/dir");
+  makeDir("tmp/files/foo/dir/empty");
+  generateFile("tmp/files/foo/bar/1.txt", "A small file", 1);
+  generateFile("tmp/files/foo/bar/2.txt", "", 0);
+  generateFile("tmp/files/foo/bar/3.txt", "This is a test file\n", 20);
+  generateFile("tmp/files/foo/some file", "nano-backup ", 7);
+  generateFile("tmp/files/foo/dir/3.txt", "This is a test file\n", 20);
+  makeSymlink("../some file", "tmp/files/foo/dir/link");
+
+  /* Initiate the backup. */
+  Metadata *metadata = metadataNew();
+  SearchNode *root_node = searchTreeLoad("generated-config-files/backup-phase-1.txt");
+  initiateBackup(metadata, root_node);
+  assert_true(countFilesInDir("tmp/repo") == 0);
+
+  /* Check the initiated backup. */
   checkMetadata(metadata, 0, false);
-  assert_true(metadata->current_backup.ref_count == cwd_depth + 10);
+  assert_true(metadata->current_backup.ref_count == cwd_depth + 12);
   assert_true(metadata->backup_history_length == 0);
-  assert_true(metadata->total_path_count == cwd_depth + 10);
+  assert_true(metadata->total_path_count == cwd_depth + 12);
 
-  PathNode *data_dir = findCwdNode(metadata, cwd);
-  assert_true(data_dir->subnodes != NULL);
-  assert_true(data_dir->subnodes->next == NULL);
+  PathNode *cwd = findCwdNode(metadata, cwd_path);
+  assert_true(cwd->subnodes != NULL);
+  assert_true(cwd->subnodes->next == NULL);
 
-  PathNode *test_dir = findSubnode(data_dir, "test directory", BH_added, BPOL_none, 1, 5);
-  mustHaveDirectoryStat(test_dir, &metadata->current_backup);
+  PathNode *tmp = findSubnode(cwd, "tmp", BH_added, BPOL_none, 1, 1);
+  mustHaveDirectoryStat(tmp, &metadata->current_backup);
+  PathNode *files = findSubnode(tmp, "files", BH_added, BPOL_none, 1, 1);
+  mustHaveDirectoryStat(tmp, &metadata->current_backup);
 
-  PathNode *bar_a_txt = findSubnode(test_dir, "bar-a.txt", BH_added, BPOL_copy, 1, 0);
-  mustHaveRegularStat(bar_a_txt, &metadata->current_backup, NULL, 0);
+  PathNode *foo = findSubnode(files, "foo", BH_added, BPOL_none, 1, 3);
+  mustHaveDirectoryStat(foo, &metadata->current_backup);
 
-  PathNode *foobar_a1_txt = findSubnode(test_dir, "foobar a1.txt", BH_added, BPOL_copy, 1, 0);
-  mustHaveRegularStat(foobar_a1_txt, &metadata->current_backup, NULL, 0);
-
-  PathNode *empty_dir = findSubnode(test_dir, "empty-directory", BH_added, BPOL_mirror, 1, 0);
-  mustHaveSymlinkLStat(empty_dir, &metadata->current_backup, ".empty");
-
-  PathNode *euro_txt = findSubnode(test_dir, "€.txt", BH_added, BPOL_mirror, 1, 0);
-  mustHaveRegularStat(euro_txt, &metadata->current_backup, NULL, 0);
-
-  PathNode *foo_1 = findSubnode(test_dir, "foo 1", BH_added, BPOL_none, 1, 1);
-  mustHaveDirectoryStat(foo_1, &metadata->current_backup);
-
-  PathNode *bar = findSubnode(foo_1, "bar", BH_added, BPOL_track, 1, 3);
+  PathNode *bar = findSubnode(foo, "bar", BH_added, BPOL_track, 1, 3);
   mustHaveDirectoryStat(bar, &metadata->current_backup);
-
   PathNode *one_txt = findSubnode(bar, "1.txt", BH_added, BPOL_track, 1, 0);
-  mustHaveRegularStat(one_txt, &metadata->current_backup, NULL, 0);
-
+  mustHaveRegularStat(one_txt, &metadata->current_backup, 12, NULL, 0);
   PathNode *two_txt = findSubnode(bar, "2.txt", BH_added, BPOL_track, 1, 0);
-  mustHaveRegularStat(two_txt, &metadata->current_backup, NULL, 0);
-
+  mustHaveRegularStat(two_txt, &metadata->current_backup, 0, NULL, 0);
   PathNode *three_txt = findSubnode(bar, "3.txt", BH_added, BPOL_track, 1, 0);
-  mustHaveRegularStat(three_txt, &metadata->current_backup, NULL, 0);
+  mustHaveRegularStat(three_txt, &metadata->current_backup, 400, NULL, 0);
+
+  PathNode *dir = findSubnode(foo, "dir", BH_added, BPOL_copy, 1, 3);
+  mustHaveDirectoryStat(dir, &metadata->current_backup);
+  PathNode *dir_three_txt = findSubnode(dir, "3.txt", BH_added, BPOL_copy, 1, 0);
+  mustHaveRegularStat(dir_three_txt, &metadata->current_backup, 400, NULL, 0);
+  PathNode *empty = findSubnode(dir, "empty", BH_added, BPOL_copy, 1, 0);
+  mustHaveDirectoryStat(empty, &metadata->current_backup);
+  PathNode *link = findSubnode(dir, "link", BH_added, BPOL_copy, 1, 0);
+  mustHaveSymlinkLStat(link, &metadata->current_backup, "../some file");
+
+  PathNode *some_file = findSubnode(foo, "some file", BH_added, BPOL_copy, 1, 0);
+  mustHaveRegularStat(some_file, &metadata->current_backup, 84, NULL, 0);
+
+  /* Finish backup and perform additional checks. */
+  finishBackup(metadata,  "tmp/repo", "tmp/repo/tmp-file");
+  metadataWrite(metadata, "tmp/repo", "tmp/repo/tmp-file", "tmp/repo/metadata");
+
+  uint8_t three_hash[] =
+  {
+    0x46, 0xbc, 0x4f, 0x20, 0x4c, 0xe9, 0xd0, 0xcd, 0x59, 0xb4,
+    0x29, 0xb3, 0x80, 0x7b, 0x64, 0x94, 0xfe, 0x77, 0xf5, 0xfe
+  };
+  uint8_t some_file_hash[] =
+  {
+    0x5f, 0x0c, 0xd3, 0x9e, 0xf3, 0x62, 0xdc, 0x1f, 0xe6, 0xd9,
+    0x4f, 0xbb, 0x7f, 0xec, 0x8b, 0x9f, 0xb7, 0x86, 0x10, 0x54
+  };
+
+  assert_true(countFilesInDir("tmp/repo") == 3);
+  mustHaveRegularStat(one_txt,       &metadata->current_backup, 12,  (uint8_t *)"A small file", 0);
+  mustHaveRegularStat(two_txt,       &metadata->current_backup, 0,   (uint8_t *)"", 0);
+  mustHaveRegularStat(three_txt,     &metadata->current_backup, 400, three_hash, 0);
+  mustHaveRegularStat(dir_three_txt, &metadata->current_backup, 400, three_hash, 0);
+  mustHaveRegularStat(some_file,     &metadata->current_backup, 84,  some_file_hash, 0);
 }
 
 int main(void)
 {
-  testGroupStart("discovering new files");
+  testGroupStart("initial backup");
   String cwd = getCwd();
   size_t cwd_depth = countPathElements(cwd);
+  makeDir("tmp/repo");
+  makeDir("tmp/files");
 
-  Metadata *metadata = metadataNew();
-  SearchNode *root_node = searchTreeLoad("generated-config-files/backup-search-test.txt");
-
-  initiateBackup(metadata, root_node);
-  checkBackupSearchData(metadata, cwd, cwd_depth);
-  finishBackup(metadata, "tmp", "tmp/tmp-file");
-  checkBackupSearchData(metadata, cwd, cwd_depth);
-  assert_true(countFilesInDir("tmp/") == 0);
-
+  runPhase1(cwd, cwd_depth);
   testGroupEnd();
 }

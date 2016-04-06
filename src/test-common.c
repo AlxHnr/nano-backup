@@ -55,13 +55,18 @@ static size_t countSubnodes(PathNode *parent_node)
 }
 
 /** Returns true if the specified regular path state contains the given
-  values. */
+  values. If the given hash is NULL, both the hash and the slot are not
+  checked. */
 static bool checkRegularValues(PathState *state, uint64_t size,
                                uint8_t *hash, uint8_t slot)
 {
   if(state->metadata.reg.size != size)
   {
     return false;
+  }
+  else if(hash == NULL)
+  {
+    return true;
   }
   else if(size > FILE_HASH_SIZE)
   {

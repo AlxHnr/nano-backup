@@ -1,9 +1,0 @@
-[copy]
-/test directory//a1?\.txt$
-
-[mirror]
-/test directory/empty-directory
-/test directory/€.txt
-
-[track]
-/test directory/foo 1/bar

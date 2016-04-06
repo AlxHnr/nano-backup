@@ -1,0 +1,5 @@
+[track]
+/tmp/files/foo/bar
+
+[copy]
+/tmp/files/foo//^[sd]
