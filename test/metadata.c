@@ -59,16 +59,6 @@ static void initHistPoint(Metadata *metadata, size_t index,
   metadata->backup_history[index].ref_count = 0;
 }
 
-/** Counterpart to initHistPoint() which additionally takes the reference
-  count of the point. */
-static void checkHistPoint(Metadata *metadata, size_t index, size_t id,
-                           time_t timestamp, size_t ref_count)
-{
-  assert_true(metadata->backup_history[index].id == id);
-  assert_true(metadata->backup_history[index].timestamp == timestamp);
-  assert_true(metadata->backup_history[index].ref_count == ref_count);
-}
-
 /** Creates a new path node.
 
   @param path_str The node name, which will be appended to the parent nodes

@@ -311,6 +311,22 @@ void checkMetadata(Metadata *metadata, size_t config_history_length,
               checkPathTree(metadata->paths, metadata, check_path_table));
 }
 
+/** Performs some checks on the metadatas backup history.
+
+  @param metadata The metadata containing the backup history.
+  @param index The index of the history point to check.
+  @param id The id which the point must have.
+  @param timestamp The timestamp which the point must have.
+  @param ref_count The reference count which the point must have.
+*/
+void checkHistPoint(Metadata *metadata, size_t index, size_t id,
+                    time_t timestamp, size_t ref_count)
+{
+  assert_true(metadata->backup_history[index].id == id);
+  assert_true(metadata->backup_history[index].timestamp == timestamp);
+  assert_true(metadata->backup_history[index].ref_count == ref_count);
+}
+
 /** Assert that the given metadata contains a config history point with the
   specified properties. Counterpart to appendConfHist(). */
 void mustHaveConf(Metadata *metadata, Backup *backup, uint64_t size,

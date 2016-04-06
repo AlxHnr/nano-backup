@@ -36,6 +36,8 @@ extern String getCwd(void);
 extern void checkMetadata(Metadata *metadata,
                           size_t config_history_length,
                           bool check_path_table);
+extern void checkHistPoint(Metadata *metadata, size_t index, size_t id,
+                           time_t timestamp, size_t ref_count);
 extern void mustHaveConf(Metadata *metadata, Backup *backup,
                          uint64_t size, uint8_t *hash, uint8_t slot);
 
