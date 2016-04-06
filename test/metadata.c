@@ -119,9 +119,8 @@ static PathNode *findNode(PathNode *start_node, const char *path_str,
                           BackupPolicy policy, size_t history_length,
                           size_t subnode_count)
 {
-  return findPathNode(start_node, path_str, policy,
-                      history_length, subnode_count,
-                      BH_none);
+  return findPathNode(start_node, path_str, BH_none, policy,
+                      history_length, subnode_count);
 }
 
 /** Appends a new history point to the given node.

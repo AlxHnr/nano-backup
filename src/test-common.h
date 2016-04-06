@@ -40,8 +40,8 @@ extern void mustHaveConf(Metadata *metadata, Backup *backup,
                          uint64_t size, uint8_t *hash, uint8_t slot);
 
 extern PathNode *findPathNode(PathNode *start_node, const char *path_str,
-                              BackupPolicy policy, size_t history_length,
-                              size_t subnode_count, BackupHint hint);
+                              BackupHint hint, BackupPolicy policy,
+                              size_t history_length, size_t subnode_count);
 extern void mustHaveNonExisting(PathNode *node, Backup *backup);
 extern void mustHaveRegular(PathNode *node, Backup *backup, uid_t uid,
                             gid_t gid, time_t timestamp, mode_t mode,
