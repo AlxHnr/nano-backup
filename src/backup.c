@@ -102,6 +102,74 @@ static PathHistory *buildPathHistoryPoint(Metadata *metadata,
   return point;
 }
 
+/** Matches the given search node against the specified path tail.
+
+  @param node The node containing the data used for matching.
+  @param path_tail The last element of a path. This string should not
+  contain any slashes and must be null-terminated.
+
+  @return True, if the given node matches the specified path tail.
+*/
+static bool searchNodeMatches(SearchNode *node, String path_tail)
+{
+  if(node->regex)
+  {
+    return regexec(node->regex, path_tail.str, 0, NULL, 0) == 0;
+  }
+  else
+  {
+    return strCompare(node->name, path_tail);
+  }
+}
+
+/** Checks if a subnode of the given result node matches the path in the
+  specified PathNode.
+
+  @param path The path to match. Must be null-terminated.
+  @param result_node The result node containing the subnodes used for
+  matching. Can be NULL.
+
+  @return True or false.
+*/
+static bool matchesSearchSubnodes(String path, SearchNode *result_node)
+{
+  if(result_node != NULL)
+  {
+    String path_tail = strSplitPath(path).tail;
+    for(SearchNode *node = result_node->subnodes;
+        node != NULL; node = node->next)
+    {
+      if(searchNodeMatches(node, path_tail))
+      {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+/** Matches the given ignore expression list against the specified path.
+
+  @param path A null-terminated path which should be matched.
+  @param ignore_list A list of ignore expressions or NULL.
+
+  @return True, if one ignore expression matched the specified path.
+*/
+static bool matchesIgnoreList(String path, RegexList *ignore_list)
+{
+  for(RegexList *item = ignore_list;
+      item != NULL; item = item->next)
+  {
+    if(regexec(item->regex, path.str, 0, NULL, 0) == 0)
+    {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 /** Queries and processes the next search result recursively and updates
   the given metadata as described in the documentation of initiateBackup().
 
@@ -115,7 +183,8 @@ static PathHistory *buildPathHistoryPoint(Metadata *metadata,
 */
 static SearchResultType initiateMetadataRecursively(Metadata *metadata,
                                                     PathNode **node_list,
-                                                    SearchContext *context)
+                                                    SearchContext *context,
+                                                    RegexList *ignore_list)
 {
   SearchResult result = searchGetNext(context);
   if(result.type == SRT_end_of_directory ||
@@ -152,8 +221,31 @@ static SearchResultType initiateMetadataRecursively(Metadata *metadata,
 
   if(result.type == SRT_directory)
   {
-    while(initiateMetadataRecursively(metadata, &node->subnodes, context)
+    while(initiateMetadataRecursively(metadata, &node->subnodes,
+                                      context, ignore_list)
           != SRT_end_of_directory);
+  }
+
+  for(PathNode *subnode = node->subnodes;
+      subnode != NULL; subnode = subnode->next)
+  {
+    if(subnode->hint != BH_none)
+    {
+      continue;
+    }
+    else if(matchesSearchSubnodes(subnode->path, result.node))
+    {
+      subnode->hint = BH_removed;
+    }
+    else if(node->policy == BPOL_none ||
+            matchesIgnoreList(node->path, ignore_list))
+    {
+      subnode->hint = BH_not_part_of_repository;
+    }
+    else
+    {
+      subnode->hint = BH_removed;
+    }
   }
 
   return result.type;
@@ -391,7 +483,8 @@ static void finishBackupRecursively(Metadata *metadata,
 void initiateBackup(Metadata *metadata, SearchNode *root_node)
 {
   SearchContext *context = searchNew(root_node);
-  while(initiateMetadataRecursively(metadata, &metadata->paths, context)
+  while(initiateMetadataRecursively(metadata, &metadata->paths, context,
+                                    *root_node->ignore_expressions)
         != SRT_end_of_search);
 }
 
