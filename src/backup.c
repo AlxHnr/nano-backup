@@ -102,6 +102,19 @@ static PathHistory *buildPathHistoryPoint(Metadata *metadata,
   return point;
 }
 
+/** Safely reassigns the history points backup to the metadatas current
+  backup.
+
+  @param metadata The metadata containing the current backup point.
+  @param point The point to update.
+*/
+static void reassignPointToCurrent(Metadata *metadata, PathHistory *point)
+{
+  point->backup->ref_count--;
+  point->backup = &metadata->current_backup;
+  point->backup->ref_count = sSizeAdd(point->backup->ref_count, 1);
+}
+
 /** Matches the given search node against the specified path tail.
 
   @param node The node containing the data used for matching.
@@ -217,6 +230,10 @@ static SearchResultType initiateMetadataRecursively(Metadata *metadata,
   else
   {
     node->hint = BH_unchanged;
+    if(node->policy == BPOL_none)
+    {
+      reassignPointToCurrent(metadata, node->history);
+    }
   }
 
   if(result.type == SRT_directory)
