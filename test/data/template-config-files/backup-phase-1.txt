@@ -2,4 +2,8 @@
 /tmp/files/foo/bar
 
 [copy]
-/tmp/files/foo//^[sd]
+/tmp/files/foo//^(some|dir)
+
+[mirror]
+/tmp/files/foo/super.txt
+/tmp/files/foo/dummy/file
