@@ -572,7 +572,14 @@ FileContent sGetFilesContent(const char *path)
     FileStream *stream = sFopenRead(path);
     content = sMalloc(file_stats.st_size);
     sFread(content, file_stats.st_size, stream);
+    bool stream_not_at_end = sFbytesLeft(stream);
     sFclose(stream);
+
+    if(stream_not_at_end)
+    {
+      free(content);
+      die("file changed while reading: \"%s\"", path);
+    }
   }
 
   return (FileContent){ .content = content, .size = file_stats.st_size };
