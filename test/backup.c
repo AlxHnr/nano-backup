@@ -235,15 +235,6 @@ static void mustHaveSymlinkLStats(PathNode *node, const Backup *backup,
                   stats.st_mtime, sym_target);
 }
 
-/** Simplified wrapper around mustHaveSymlinkLstats(). It extracts
-  additional informations via lstat() and passes them to
-  mustHaveSymlinkLstats(). */
-static void mustHaveSymlinkLStat(PathNode *node, const Backup *backup,
-                                 const char *sym_target)
-{
-  mustHaveSymlinkLStats(node, backup, sym_target, sLStat(node->path.str));
-}
-
 /** Like mustHaveRegularStat(), but for mustHaveDirectory(). */
 static void mustHaveDirectoryStat(PathNode *node, const Backup *backup)
 {
@@ -424,7 +415,7 @@ static void runPhase2(String cwd_path, size_t cwd_depth,
   PathNode *empty = findSubnode(dir, "empty", BH_unchanged, BPOL_copy, 1, 0);
   mustHaveDirectoryStat(empty, &metadata->backup_history[0]);
   PathNode *link = findSubnode(dir, "link", BH_unchanged, BPOL_copy, 1, 0);
-  mustHaveSymlinkLStat(link, &metadata->backup_history[0], "../some file");
+  mustHaveSymlinkLStats(link, &metadata->backup_history[0], "../some file", link_stats);
 
   PathNode *some_file = findSubnode(foo, "some file", BH_unchanged, BPOL_copy, 1, 0);
   mustHaveRegularStat(some_file, &metadata->backup_history[0], 84, some_file_hash, 0);
@@ -459,11 +450,11 @@ static void runPhase3(String cwd_path, size_t cwd_depth,
 
   /* Check the initiated backup. */
   checkMetadata(metadata, 0, false);
-  assert_true(metadata->current_backup.ref_count == cwd_depth + 4);
+  assert_true(metadata->current_backup.ref_count == cwd_depth + 7);
   assert_true(metadata->backup_history_length == 2);
   assert_true(metadata->total_path_count == cwd_depth + 15);
-  checkHistPoint(metadata, 0, 0, phase_timestamps[0], 9);
-  checkHistPoint(metadata, 1, 1, phase_timestamps[1], 9);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[0], 2);
+  checkHistPoint(metadata, 1, 1, phase_timestamps[1], 8);
 
   PathNode *files = findFilesNode(metadata, cwd_path, BH_unchanged);
   PathNode *foo = findSubnode(files, "foo", BH_unchanged, BPOL_none, 1, 5);
@@ -473,30 +464,32 @@ static void runPhase3(String cwd_path, size_t cwd_depth,
   mustHaveDirectoryStat(bar, &metadata->backup_history[1]);
   PathNode *one_txt = findSubnode(bar, "1.txt", BH_unchanged, BPOL_track, 1, 0);
   mustHaveRegularStat(one_txt, &metadata->backup_history[1], 12, (uint8_t *)"A small file", 0);
-  PathNode *two_txt = findSubnode(bar, "2.txt", BH_removed, BPOL_track, 1, 0);
+  PathNode *two_txt = findSubnode(bar, "2.txt", BH_removed, BPOL_track, 2, 0);
+  mustHaveNonExisting(two_txt, &metadata->current_backup);
   mustHaveRegularStats(two_txt, &metadata->backup_history[1], 0, (uint8_t *)"", 0, two_txt_stats);
   PathNode *three_txt = findSubnode(bar, "3.txt", BH_not_part_of_repository, BPOL_track, 1, 0);
   mustHaveRegularStat(three_txt, &metadata->backup_history[1], 400, three_hash, 0);
 
-  PathNode *dir = findSubnode(foo, "dir", BH_unchanged, BPOL_copy, 1, 3);
-  mustHaveDirectoryStat(dir, &metadata->backup_history[1]);
+  PathNode *dir = findSubnode(foo, "dir", BH_unchanged, BPOL_none, 1, 3);
+  mustHaveDirectoryStat(dir, &metadata->current_backup);
   PathNode *dir_three_txt = findSubnode(dir, "3.txt", BH_not_part_of_repository, BPOL_copy, 1, 0);
   mustHaveRegularStat(dir_three_txt, &metadata->backup_history[1], 400, three_hash, 0);
   PathNode *empty = findSubnode(dir, "empty", BH_unchanged, BPOL_copy, 1, 0);
   mustHaveDirectoryStat(empty, &metadata->backup_history[1]);
-  PathNode *link = findSubnode(dir, "link", BH_removed, BPOL_copy, 1, 0);
-  mustHaveSymlinkLStat(link, &metadata->backup_history[1], "../some file");
+  PathNode *link = findSubnode(dir, "link", BH_removed, BPOL_copy, 2, 0);
+  mustHaveNonExisting(link, &metadata->current_backup);
+  mustHaveSymlinkLStats(link, &metadata->backup_history[1], "../some file", link_stats);
 
   PathNode *some_file = findSubnode(foo, "some file", BH_unchanged, BPOL_copy, 1, 0);
   mustHaveRegularStat(some_file, &metadata->backup_history[1], 84, some_file_hash, 0);
 
   PathNode *super = findSubnode(foo, "super.txt", BH_removed, BPOL_mirror, 1, 0);
-  mustHaveRegularStat(super, &metadata->current_backup, 2100, NULL, 0);
+  mustHaveRegularStats(super, &metadata->backup_history[0], 2100, NULL, 0, super_stats);
 
   PathNode *dummy = findSubnode(foo, "dummy", BH_unchanged, BPOL_none, 1, 1);
   mustHaveDirectoryStat(dummy, &metadata->current_backup);
   PathNode *file = findSubnode(dummy, "file", BH_not_part_of_repository, BPOL_mirror, 1, 0);
-  mustHaveRegularStat(file, &metadata->current_backup, 10, NULL, 0);
+  mustHaveRegularStat(file, &metadata->backup_history[0], 10, NULL, 0);
 
   /* Finish backup and perform additional checks. */
   completeBackup(metadata, 2);

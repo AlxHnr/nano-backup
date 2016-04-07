@@ -11,3 +11,4 @@ tmp/files/foo/bar/3\.txt$
 
 [mirror]
 /tmp/files/foo/super.txt
+/tmp/files/foo/dummy/non-existing

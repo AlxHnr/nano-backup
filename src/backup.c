@@ -135,31 +135,31 @@ static bool searchNodeMatches(SearchNode *node, String path_tail)
   }
 }
 
-/** Checks if a subnode of the given result node matches the path in the
-  specified PathNode.
+/** Checks if a subnode of the given result node matches the specified
+  path.
 
   @param path The path to match. Must be null-terminated.
-  @param result_node The result node containing the subnodes used for
-  matching. Can be NULL.
+  @param result The node containing the subnodes used for matching. Can be
+  NULL.
 
-  @return True or false.
+  @return The results subnode that has matched the given string, or NULL.
 */
-static bool matchesSearchSubnodes(String path, SearchNode *result_node)
+static SearchNode *matchesSearchSubnodes(String path, SearchNode *result)
 {
-  if(result_node != NULL)
+  if(result != NULL)
   {
     String path_tail = strSplitPath(path).tail;
-    for(SearchNode *node = result_node->subnodes;
+    for(SearchNode *node = result->subnodes;
         node != NULL; node = node->next)
     {
       if(searchNodeMatches(node, path_tail))
       {
-        return true;
+        return node;
       }
     }
   }
 
-  return false;
+  return NULL;
 }
 
 /** Matches the given ignore expression list against the specified path.
@@ -181,6 +181,29 @@ static bool matchesIgnoreList(String path, RegexList *ignore_list)
   }
 
   return false;
+}
+
+/** Handles a node, which path was removed from the users filesystem.
+
+  @param metadata The metadata of the current backup.
+  @param node The node representing the removed file.
+  @param policy The policy which the removed path is supposed to have.
+*/
+static void handleRemovedPath(Metadata *metadata, PathNode *node,
+                              BackupPolicy policy)
+{
+  node->hint = BH_removed;
+
+  if((policy == BPOL_track || policy == BPOL_copy) &&
+     node->history->state.type != PST_non_existing)
+  {
+    PathHistory *point = mpAlloc(sizeof *point);
+    point->backup = &metadata->current_backup;
+    point->backup->ref_count = sSizeAdd(point->backup->ref_count, 1);
+    point->state.type = PST_non_existing;
+    point->next = node->history;
+    node->history = point;
+  }
 }
 
 /** Queries and processes the next search result recursively and updates
@@ -250,18 +273,22 @@ static SearchResultType initiateMetadataRecursively(Metadata *metadata,
     {
       continue;
     }
-    else if(matchesSearchSubnodes(subnode->path, result.node))
+
+    /* Find the node in the search tree matching the current subnode. */
+    SearchNode *subnode_match =
+      matchesSearchSubnodes(subnode->path, result.node);
+    if(subnode_match != NULL)
     {
-      subnode->hint = BH_removed;
+      handleRemovedPath(metadata, subnode, subnode_match->policy);
     }
     else if(node->policy == BPOL_none ||
-            matchesIgnoreList(node->path, ignore_list))
+            matchesIgnoreList(subnode->path, ignore_list))
     {
       subnode->hint = BH_not_part_of_repository;
     }
     else
     {
-      subnode->hint = BH_removed;
+      handleRemovedPath(metadata, subnode, result.policy);
     }
   }
 
