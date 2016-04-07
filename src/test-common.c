@@ -57,8 +57,8 @@ static size_t countSubnodes(PathNode *parent_node)
 /** Returns true if the specified regular path state contains the given
   values. If the given hash is NULL, both the hash and the slot are not
   checked. */
-static bool checkRegularValues(PathState *state, uint64_t size,
-                               uint8_t *hash, uint8_t slot)
+static bool checkRegularValues(const PathState *state, uint64_t size,
+                               const uint8_t *hash, uint8_t slot)
 {
   if(state->metadata.reg.size != size)
   {
@@ -190,7 +190,7 @@ static size_t checkPathTree(PathNode *parent_node, Metadata *metadata,
   @return The requested history point, or NULL.
 */
 static PathHistory *searchHistoryPoint(PathHistory *start_point,
-                                       Backup *backup)
+                                       const Backup *backup)
 {
   for(PathHistory *point = start_point; point != NULL; point = point->next)
   {
@@ -211,7 +211,7 @@ static PathHistory *searchHistoryPoint(PathHistory *start_point,
 
   @return The requested history point containing the specified backup.
 */
-static PathHistory *findHistoryPoint(PathNode *node, Backup *backup)
+static PathHistory *findHistoryPoint(PathNode *node, const Backup *backup)
 {
   PathHistory *point = searchHistoryPoint(node->history, backup);
 
@@ -329,8 +329,8 @@ void checkHistPoint(Metadata *metadata, size_t index, size_t id,
 
 /** Assert that the given metadata contains a config history point with the
   specified properties. Counterpart to appendConfHist(). */
-void mustHaveConf(Metadata *metadata, Backup *backup, uint64_t size,
-                  uint8_t *hash, uint8_t slot)
+void mustHaveConf(Metadata *metadata, const Backup *backup, uint64_t size,
+                  const uint8_t *hash, uint8_t slot)
 {
   PathHistory *point =
     searchHistoryPoint(metadata->config_history, backup);
@@ -400,7 +400,7 @@ PathNode *findPathNode(PathNode *start_node, const char *path_str,
 
 /** Assert that the given node has a non-existing path state at the given
   backup point. */
-void mustHaveNonExisting(PathNode *node, Backup *backup)
+void mustHaveNonExisting(PathNode *node, const Backup *backup)
 {
   PathHistory *point = findHistoryPoint(node, backup);
   if(point->state.type != PST_non_existing)
@@ -412,9 +412,9 @@ void mustHaveNonExisting(PathNode *node, Backup *backup)
 
 /** Assert that the given node contains a history point with the specified
   properties. */
-void mustHaveRegular(PathNode *node, Backup *backup, uid_t uid, gid_t gid,
-                     time_t timestamp, mode_t mode, uint64_t size,
-                     uint8_t *hash, uint8_t slot)
+void mustHaveRegular(PathNode *node, const Backup *backup, uid_t uid,
+                     gid_t gid, time_t timestamp, mode_t mode,
+                     uint64_t size, const uint8_t *hash, uint8_t slot)
 {
   PathHistory *point = findHistoryPoint(node, backup);
   if(point->state.type != PST_regular)
@@ -438,8 +438,8 @@ void mustHaveRegular(PathNode *node, Backup *backup, uid_t uid, gid_t gid,
 
 /** Assert that the given node contains a symlink history point with the
   specified properties. */
-void mustHaveSymlink(PathNode *node, Backup *backup, uid_t uid, gid_t gid,
-                     time_t timestamp, const char *sym_target)
+void mustHaveSymlink(PathNode *node, const Backup *backup, uid_t uid,
+                     gid_t gid, time_t timestamp, const char *sym_target)
 {
   PathHistory *point = findHistoryPoint(node, backup);
   if(point->state.type != PST_symlink)
@@ -458,8 +458,9 @@ void mustHaveSymlink(PathNode *node, Backup *backup, uid_t uid, gid_t gid,
 
 /** Assert that the given node contains a directory history point with the
   specified properties. */
-void mustHaveDirectory(PathNode *node, Backup *backup, uid_t uid,
-                       gid_t gid, time_t timestamp, mode_t mode)
+void mustHaveDirectory(PathNode *node, const Backup *backup,
+                       uid_t uid, gid_t gid, time_t timestamp,
+                       mode_t mode)
 {
   PathHistory *point = findHistoryPoint(node, backup);
   if(point->state.type != PST_directory)

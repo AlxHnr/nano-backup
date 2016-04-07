@@ -193,8 +193,8 @@ static void generateFile(const char *path, const char *content,
   @param hash The expected hash in RegularFileInfo.
   @param slot The expected slot in RegularFileInfo.
 */
-static void mustHaveRegularStat(PathNode *node, Backup *backup,
-                                uint64_t size, uint8_t *hash,
+static void mustHaveRegularStat(PathNode *node, const Backup *backup,
+                                uint64_t size, const uint8_t *hash,
                                 uint8_t slot)
 {
   struct stat stats = sStat(node->path.str);
@@ -210,7 +210,7 @@ static void mustHaveRegularStat(PathNode *node, Backup *backup,
   @param backup The backup to which the given node must point.
   @param sym_target The target path of the symlink.
 */
-static void mustHaveSymlinkLStat(PathNode *node, Backup *backup,
+static void mustHaveSymlinkLStat(PathNode *node, const Backup *backup,
                                  const char *sym_target)
 {
   struct stat stats = sLStat(node->path.str);
@@ -219,7 +219,7 @@ static void mustHaveSymlinkLStat(PathNode *node, Backup *backup,
 }
 
 /** Like mustHaveRegularStat(), but for mustHaveDirectory(). */
-static void mustHaveDirectoryStat(PathNode *node, Backup *backup)
+static void mustHaveDirectoryStat(PathNode *node, const Backup *backup)
 {
   struct stat stats = sStat(node->path.str);
   mustHaveDirectory(node, backup, stats.st_uid, stats.st_gid,
@@ -272,14 +272,14 @@ static PathNode *findFilesNode(Metadata *metadata, String cwd_path,
 }
 
 /** The hash of "foo/bar/3.txt" */
-static uint8_t three_hash[] =
+static const uint8_t three_hash[] =
 {
   0x46, 0xbc, 0x4f, 0x20, 0x4c, 0xe9, 0xd0, 0xcd, 0x59, 0xb4,
   0x29, 0xb3, 0x80, 0x7b, 0x64, 0x94, 0xfe, 0x77, 0xf5, 0xfe
 };
 
 /** The hash of "foo/some file" */
-static uint8_t some_file_hash[] =
+static const uint8_t some_file_hash[] =
 {
   0x5f, 0x0c, 0xd3, 0x9e, 0xf3, 0x62, 0xdc, 0x1f, 0xe6, 0xd9,
   0x4f, 0xbb, 0x7f, 0xec, 0x8b, 0x9f, 0xb7, 0x86, 0x10, 0x54
