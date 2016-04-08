@@ -329,6 +329,28 @@ static SearchResultType initiateMetadataRecursively(Metadata *metadata,
     }
   }
 
+  /* Mark nodes without a policy and needed subnodes for purging. */
+  if(node->policy == BPOL_none)
+  {
+    bool has_needed_subnode = false;
+    for(PathNode *subnode = node->subnodes;
+        subnode != NULL; subnode = subnode->next)
+    {
+      if(subnode->hint != BH_not_part_of_repository)
+      {
+        has_needed_subnode = true;
+        break;
+      }
+    }
+
+    if(has_needed_subnode == false)
+    {
+      node->hint = BH_not_part_of_repository;
+      node->history->backup->ref_count--;
+      metadata->total_path_count--;
+    }
+  }
+
   return result.type;
 }
 

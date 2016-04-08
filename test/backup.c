@@ -450,9 +450,9 @@ static void runPhase3(String cwd_path, size_t cwd_depth,
 
   /* Check the initiated backup. */
   checkMetadata(metadata, 0, false);
-  assert_true(metadata->current_backup.ref_count == cwd_depth + 7);
+  assert_true(metadata->current_backup.ref_count == cwd_depth + 6);
   assert_true(metadata->backup_history_length == 2);
-  assert_true(metadata->total_path_count == cwd_depth + 11);
+  assert_true(metadata->total_path_count == cwd_depth + 10);
   checkHistPoint(metadata, 0, 0, phase_timestamps[0], 0);
   checkHistPoint(metadata, 1, 1, phase_timestamps[1], 6);
 
@@ -486,7 +486,7 @@ static void runPhase3(String cwd_path, size_t cwd_depth,
   PathNode *super = findSubnode(foo, "super.txt", BH_not_part_of_repository, BPOL_mirror, 1, 0);
   mustHaveRegularStats(super, &metadata->backup_history[0], 2100, NULL, 0, super_stats);
 
-  PathNode *dummy = findSubnode(foo, "dummy", BH_unchanged, BPOL_none, 1, 1);
+  PathNode *dummy = findSubnode(foo, "dummy", BH_not_part_of_repository, BPOL_none, 1, 1);
   mustHaveDirectoryStat(dummy, &metadata->current_backup);
   PathNode *file = findSubnode(dummy, "file", BH_not_part_of_repository, BPOL_mirror, 1, 0);
   mustHaveRegularStat(file, &metadata->backup_history[0], 10, NULL, 0);
