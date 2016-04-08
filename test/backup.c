@@ -452,7 +452,7 @@ static void runPhase3(String cwd_path, size_t cwd_depth,
   checkMetadata(metadata, 0, false);
   assert_true(metadata->current_backup.ref_count == cwd_depth + 7);
   assert_true(metadata->backup_history_length == 2);
-  assert_true(metadata->total_path_count == cwd_depth + 15);
+  assert_true(metadata->total_path_count == cwd_depth + 11);
   checkHistPoint(metadata, 0, 0, phase_timestamps[0], 0);
   checkHistPoint(metadata, 1, 1, phase_timestamps[1], 6);
 

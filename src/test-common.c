@@ -160,7 +160,11 @@ static size_t checkPathTree(PathNode *parent_node, Metadata *metadata,
 
   for(PathNode *node = parent_node; node != NULL; node = node->next)
   {
-    if(node->path.str[node->path.length] != '\0')
+    if(node->hint == BH_not_part_of_repository)
+    {
+      continue;
+    }
+    else if(node->path.str[node->path.length] != '\0')
     {
       die("unterminated path string in metadata: \"%s\"",
           strCopy(node->path).str);

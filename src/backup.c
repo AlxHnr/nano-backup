@@ -187,8 +187,9 @@ static bool matchesIgnoreList(String path, RegexList *ignore_list)
 
   @param node The node to process.
 */
-static void decrementAllRefCounts(PathNode *node)
+static void decrementAllRefCounts(Metadata *metadata, PathNode *node)
 {
+  metadata->total_path_count--;
   for(PathHistory *point = node->history;
       point != NULL; point = point->next)
   {
@@ -198,7 +199,7 @@ static void decrementAllRefCounts(PathNode *node)
   for(PathNode *subnode = node->subnodes;
       subnode != NULL; subnode = subnode->next)
   {
-    decrementAllRefCounts(subnode);
+    decrementAllRefCounts(metadata, subnode);
   }
 }
 
@@ -206,10 +207,10 @@ static void decrementAllRefCounts(PathNode *node)
 
   @param node The node to process.
 */
-static void handleNotPartOfRepository(PathNode *node)
+static void handleNotPartOfRepository(Metadata *metadata, PathNode *node)
 {
   node->hint = BH_not_part_of_repository;
-  decrementAllRefCounts(node);
+  decrementAllRefCounts(metadata, node);
 }
 
 /** Handles a node, which path was removed from the users filesystem.
@@ -223,7 +224,7 @@ static void handleRemovedPath(Metadata *metadata, PathNode *node,
 {
   if(policy == BPOL_mirror)
   {
-    handleNotPartOfRepository(node);
+    handleNotPartOfRepository(metadata, node);
   }
   else if(node->history->state.type == PST_non_existing)
   {
@@ -320,7 +321,7 @@ static SearchResultType initiateMetadataRecursively(Metadata *metadata,
     else if(node->policy == BPOL_none ||
             matchesIgnoreList(subnode->path, ignore_list))
     {
-      handleNotPartOfRepository(subnode);
+      handleNotPartOfRepository(metadata, subnode);
     }
     else
     {
