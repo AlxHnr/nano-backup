@@ -243,6 +243,49 @@ static void handleRemovedPath(Metadata *metadata, PathNode *node,
   }
 }
 
+/** Checks which nodes where not found during the backup and handles them.
+
+  @param metadata The metadata of the backup.
+  @param node_match The SearchNode which has matched/found the current
+  PathNode. Can be NULL.
+  @param node_policy The policy under which the current node was found.
+  @param subnode_list The list of the current nodes subnodes. Can be NULL.
+  @param ignore_list The ignore expression list of the current backups
+  search tree. Can be NULL.
+*/
+static void handleNotFoundSubnodes(Metadata *metadata,
+                                   SearchNode *node_match,
+                                   BackupPolicy node_policy,
+                                   PathNode *subnode_list,
+                                   RegexList *ignore_list)
+{
+  for(PathNode *subnode = subnode_list;
+      subnode != NULL; subnode = subnode->next)
+  {
+    if(subnode->hint != BH_none)
+    {
+      continue;
+    }
+
+    /* Find the node in the search tree matching the current subnode. */
+    SearchNode *subnode_match =
+      matchesSearchSubnodes(subnode->path, node_match);
+    if(subnode_match != NULL)
+    {
+      handleRemovedPath(metadata, subnode, subnode_match->policy);
+    }
+    else if(node_policy == BPOL_none ||
+            matchesIgnoreList(subnode->path, ignore_list))
+    {
+      handleNotPartOfRepository(metadata, subnode);
+    }
+    else
+    {
+      handleRemovedPath(metadata, subnode, node_policy);
+    }
+  }
+}
+
 /** Queries and processes the next search result recursively and updates
   the given metadata as described in the documentation of initiateBackup().
 
@@ -290,7 +333,7 @@ static SearchResultType initiateMetadataRecursively(Metadata *metadata,
   else
   {
     node->hint = BH_unchanged;
-    if(node->policy == BPOL_none)
+    if(result.policy == BPOL_none)
     {
       reassignPointToCurrent(metadata, node->history);
     }
@@ -303,34 +346,11 @@ static SearchResultType initiateMetadataRecursively(Metadata *metadata,
           != SRT_end_of_directory);
   }
 
-  for(PathNode *subnode = node->subnodes;
-      subnode != NULL; subnode = subnode->next)
-  {
-    if(subnode->hint != BH_none)
-    {
-      continue;
-    }
-
-    /* Find the node in the search tree matching the current subnode. */
-    SearchNode *subnode_match =
-      matchesSearchSubnodes(subnode->path, result.node);
-    if(subnode_match != NULL)
-    {
-      handleRemovedPath(metadata, subnode, subnode_match->policy);
-    }
-    else if(node->policy == BPOL_none ||
-            matchesIgnoreList(subnode->path, ignore_list))
-    {
-      handleNotPartOfRepository(metadata, subnode);
-    }
-    else
-    {
-      handleRemovedPath(metadata, subnode, result.policy);
-    }
-  }
+  handleNotFoundSubnodes(metadata, result.node, result.policy,
+                         node->subnodes, ignore_list);
 
   /* Mark nodes without a policy and needed subnodes for purging. */
-  if(node->policy == BPOL_none)
+  if(result.policy == BPOL_none)
   {
     bool has_needed_subnode = false;
     for(PathNode *subnode = node->subnodes;
@@ -589,6 +609,9 @@ void initiateBackup(Metadata *metadata, SearchNode *root_node)
   while(initiateMetadataRecursively(metadata, &metadata->paths, context,
                                     *root_node->ignore_expressions)
         != SRT_end_of_search);
+
+  handleNotFoundSubnodes(metadata, root_node, root_node->policy,
+                         metadata->paths, *root_node->ignore_expressions);
 }
 
 /** Completes a backup initiated with initiateBackup(). It copies
