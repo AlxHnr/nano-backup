@@ -182,35 +182,34 @@ static bool matchesIgnoreList(String path, RegexList *ignore_list)
   return false;
 }
 
-/** Decrements all reference counts in all history points of the given node
-  recursively.
+/** Marks the given node as BH_not_part_of_repository and decrements all
+  reference counts it causes.
 
+  @param metadata The metadata of the current backup.
   @param node The node to process.
 */
-static void decrementAllRefCounts(Metadata *metadata, PathNode *node)
+static void prepareNodeForWiping(Metadata *metadata, PathNode *node)
 {
+  node->hint = BH_not_part_of_repository;
   metadata->total_path_count--;
+
   for(PathHistory *point = node->history;
       point != NULL; point = point->next)
   {
     point->backup->ref_count--;
   }
+}
 
+/** Recursive version of prepareNodeForWiping(). */
+static void prepareNodeForWipingRecursively(Metadata *metadata,
+                                            PathNode *node)
+{
+  prepareNodeForWiping(metadata, node);
   for(PathNode *subnode = node->subnodes;
       subnode != NULL; subnode = subnode->next)
   {
-    decrementAllRefCounts(metadata, subnode);
+    prepareNodeForWipingRecursively(metadata, subnode);
   }
-}
-
-/** Handles a node, which is not part of the backup anymore.
-
-  @param node The node to process.
-*/
-static void handleNotPartOfRepository(Metadata *metadata, PathNode *node)
-{
-  node->hint = BH_not_part_of_repository;
-  decrementAllRefCounts(metadata, node);
 }
 
 /** Handles a node, which path was removed from the users filesystem.
@@ -224,7 +223,7 @@ static void handleRemovedPath(Metadata *metadata, PathNode *node,
 {
   if(policy == BPOL_mirror)
   {
-    handleNotPartOfRepository(metadata, node);
+    prepareNodeForWipingRecursively(metadata, node);
   }
   else if(node->history->state.type == PST_non_existing)
   {
@@ -277,7 +276,7 @@ static void handleNotFoundSubnodes(Metadata *metadata,
     else if(node_policy == BPOL_none ||
             matchesIgnoreList(subnode->path, ignore_list))
     {
-      handleNotPartOfRepository(metadata, subnode);
+      prepareNodeForWipingRecursively(metadata, subnode);
     }
     else
     {
@@ -365,9 +364,7 @@ static SearchResultType initiateMetadataRecursively(Metadata *metadata,
 
     if(has_needed_subnode == false)
     {
-      node->hint = BH_not_part_of_repository;
-      node->history->backup->ref_count--;
-      metadata->total_path_count--;
+      prepareNodeForWiping(metadata, node);
     }
   }
 
