@@ -171,8 +171,7 @@ static SearchNode *matchesSearchSubnodes(String path, SearchNode *result)
 */
 static bool matchesIgnoreList(String path, RegexList *ignore_list)
 {
-  for(RegexList *item = ignore_list;
-      item != NULL; item = item->next)
+  for(RegexList *item = ignore_list; item != NULL; item = item->next)
   {
     if(regexec(item->regex, path.str, 0, NULL, 0) == 0)
     {
@@ -181,6 +180,36 @@ static bool matchesIgnoreList(String path, RegexList *ignore_list)
   }
 
   return false;
+}
+
+/** Decrements all reference counts in all history points of the given node
+  recursively.
+
+  @param node The node to process.
+*/
+static void decrementAllRefCounts(PathNode *node)
+{
+  for(PathHistory *point = node->history;
+      point != NULL; point = point->next)
+  {
+    point->backup->ref_count--;
+  }
+
+  for(PathNode *subnode = node->subnodes;
+      subnode != NULL; subnode = subnode->next)
+  {
+    decrementAllRefCounts(subnode);
+  }
+}
+
+/** Handles a node, which is not part of the backup anymore.
+
+  @param node The node to process.
+*/
+static void handleNotPartOfRepository(PathNode *node)
+{
+  node->hint = BH_not_part_of_repository;
+  decrementAllRefCounts(node);
 }
 
 /** Handles a node, which path was removed from the users filesystem.
@@ -192,11 +221,18 @@ static bool matchesIgnoreList(String path, RegexList *ignore_list)
 static void handleRemovedPath(Metadata *metadata, PathNode *node,
                               BackupPolicy policy)
 {
-  node->hint = BH_removed;
-
-  if((policy == BPOL_track || policy == BPOL_copy) &&
-     node->history->state.type != PST_non_existing)
+  if(policy == BPOL_mirror)
   {
+    handleNotPartOfRepository(node);
+  }
+  else if(node->history->state.type == PST_non_existing)
+  {
+    node->hint = BH_unchanged;
+  }
+  else
+  {
+    node->hint = BH_removed;
+
     PathHistory *point = mpAlloc(sizeof *point);
     point->backup = &metadata->current_backup;
     point->backup->ref_count = sSizeAdd(point->backup->ref_count, 1);
@@ -284,7 +320,7 @@ static SearchResultType initiateMetadataRecursively(Metadata *metadata,
     else if(node->policy == BPOL_none ||
             matchesIgnoreList(subnode->path, ignore_list))
     {
-      subnode->hint = BH_not_part_of_repository;
+      handleNotPartOfRepository(subnode);
     }
     else
     {

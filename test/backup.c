@@ -453,8 +453,8 @@ static void runPhase3(String cwd_path, size_t cwd_depth,
   assert_true(metadata->current_backup.ref_count == cwd_depth + 7);
   assert_true(metadata->backup_history_length == 2);
   assert_true(metadata->total_path_count == cwd_depth + 15);
-  checkHistPoint(metadata, 0, 0, phase_timestamps[0], 2);
-  checkHistPoint(metadata, 1, 1, phase_timestamps[1], 8);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[0], 0);
+  checkHistPoint(metadata, 1, 1, phase_timestamps[1], 6);
 
   PathNode *files = findFilesNode(metadata, cwd_path, BH_unchanged);
   PathNode *foo = findSubnode(files, "foo", BH_unchanged, BPOL_none, 1, 5);
@@ -483,7 +483,7 @@ static void runPhase3(String cwd_path, size_t cwd_depth,
   PathNode *some_file = findSubnode(foo, "some file", BH_unchanged, BPOL_copy, 1, 0);
   mustHaveRegularStat(some_file, &metadata->backup_history[1], 84, some_file_hash, 0);
 
-  PathNode *super = findSubnode(foo, "super.txt", BH_removed, BPOL_mirror, 1, 0);
+  PathNode *super = findSubnode(foo, "super.txt", BH_not_part_of_repository, BPOL_mirror, 1, 0);
   mustHaveRegularStats(super, &metadata->backup_history[0], 2100, NULL, 0, super_stats);
 
   PathNode *dummy = findSubnode(foo, "dummy", BH_unchanged, BPOL_none, 1, 1);
