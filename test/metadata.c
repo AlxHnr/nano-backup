@@ -810,6 +810,90 @@ static void checkOnlyCurrentBackupData(Metadata *metadata)
                   0655, 0, (uint8_t *)"....................", 217);
 }
 
+/** Generates a metadata tree containing various nodes which are not part
+  of the repository anymore. After reloading this tree from disk, it can be
+  checked via checkWipedNodes(). */
+static Metadata *genNodesToWipe(void)
+{
+  Metadata *metadata = createEmptyMetadata(4);
+  initHistPoint(metadata, 0, 0, 1234);
+  initHistPoint(metadata, 1, 1, -1334953412);
+  initHistPoint(metadata, 2, 2, 7890);
+  initHistPoint(metadata, 3, 3, 9876);
+
+  appendConfHist(metadata, &metadata->backup_history[1],
+                 131, (uint8_t *)"9a2c1f8130eb0cdef201", 0);
+  appendConfHist(metadata, &metadata->backup_history[3],
+                 21,  (uint8_t *)"f8130eb0cdef2019a2c1", 98);
+
+  PathNode *etc = createPathNode("etc", BPOL_none, NULL, metadata);
+  appendHistDirectory(etc, &metadata->backup_history[3], 12, 8, INT32_MAX, 0777);
+  metadata->paths = etc;
+
+  PathNode *conf_d = createPathNode("conf.d", BPOL_none, etc, metadata);
+  appendHistDirectory(conf_d, &metadata->backup_history[3], 3, 5, 102934, 0123);
+  appendHistRegular(createPathNode("foo", BPOL_mirror, conf_d, metadata),
+                    &metadata->backup_history[3], 91, 47, 680123, 0223, 20,
+                    (uint8_t *)"66f69cd1998e54ae5533", 122);
+  appendHistRegular(createPathNode("bar", BPOL_mirror, conf_d, metadata),
+                    &metadata->backup_history[2], 89, 20, 310487, 0523, 48,
+                    (uint8_t *)"fffffcd1998e54ae5a70", 12);
+
+  PathNode *portage = createPathNode("portage", BPOL_track, etc, metadata);
+  appendHistDirectory(portage, &metadata->backup_history[2], 89, 98, 91234, 0321);
+  appendHistDirectory(portage, &metadata->backup_history[3], 7,  19, 12837, 0666);
+  PathNode *make_conf = createPathNode("make.conf", BPOL_track, portage, metadata);
+  appendHistSymlink(make_conf, &metadata->backup_history[0], 59, 23, 1248, "make.conf.backup");
+  appendHistNonExisting(make_conf, &metadata->backup_history[2]);
+  appendHistRegular(make_conf, &metadata->backup_history[3], 3, 4, 53238,
+                    0713, 192, (uint8_t *)"e78863d5e021dd60c1a2", 0);
+  PathNode *package_use = createPathNode("package.use", BPOL_copy, portage, metadata);
+  appendHistDirectory(package_use, &metadata->backup_history[3], 34, 25, 184912, 0754);
+  appendHistSymlink(createPathNode("packages", BPOL_mirror, package_use, metadata),
+                    &metadata->backup_history[1], 32, 28, 8649712, "../packages.txt");
+
+  /* Decrement wiped nodes reference count. */
+  conf_d->hint    = BH_not_part_of_repository;
+  make_conf->hint = BH_not_part_of_repository;
+  metadata->backup_history[3].ref_count -= 3;
+  metadata->backup_history[2].ref_count -= 2;
+  metadata->backup_history[0].ref_count -= 1;
+  metadata->total_path_count -= 4;
+
+  return metadata;
+}
+
+/** Checks if certain nodes got wiped properly from the tree generated via
+  genNodesToWipe(). */
+static void checkWipedNodes(Metadata *metadata)
+{
+  checkMetadata(metadata, 2, true);
+  assert_true(metadata->current_backup.ref_count == 0);
+  assert_true(metadata->backup_history_length == 3);
+  assert_true(metadata->total_path_count == 4);
+
+  checkHistPoint(metadata, 0, 0, -1334953412, 2);
+  checkHistPoint(metadata, 1, 1, 7890, 1);
+  checkHistPoint(metadata, 2, 2, 9876, 4);
+
+  mustHaveConf(metadata, &metadata->backup_history[0], 131,
+               (uint8_t *)"9a2c1f8130eb0cdef201", 0);
+  mustHaveConf(metadata, &metadata->backup_history[2], 21,
+               (uint8_t *)"f8130eb0cdef2019a2c1", 98);
+
+  PathNode *etc = findNode(metadata->paths, "/etc", BPOL_none, 1, 1);
+  mustHaveDirectory(etc, &metadata->backup_history[2], 12, 8, INT32_MAX, 0777);
+
+  PathNode *portage = findNode(etc->subnodes, "/etc/portage", BPOL_track, 2, 1);
+  mustHaveDirectory(portage, &metadata->backup_history[1], 89, 98, 91234, 0321);
+  mustHaveDirectory(portage, &metadata->backup_history[2], 7,  19, 12837, 0666);
+
+  PathNode *package_use = findNode(portage->subnodes, "/etc/portage/package.use", BPOL_copy, 1, 1);
+  mustHaveDirectory(package_use, &metadata->backup_history[2], 34, 25, 184912, 0754);
+  mustHaveSymlink(findNode(package_use->subnodes, "/etc/portage/package.use/packages", BPOL_mirror, 1, 0),
+                  &metadata->backup_history[0], 32, 28, 8649712, "../packages.txt");
+}
+
 int main(void)
 {
   testGroupStart("metadataNew()");
@@ -915,6 +999,11 @@ int main(void)
      should be discarded while writing. */
   writeMetadataToTmpDir(initOnlyCurrentBackupData(genWithOnlyBackupPoints()));
   checkOnlyCurrentBackupData(metadataLoad("tmp/metadata"));
+  testGroupEnd();
+
+  testGroupStart("wiping orphaned nodes");
+  writeMetadataToTmpDir(genNodesToWipe());
+  checkWipedNodes(metadataLoad("tmp/metadata"));
   testGroupEnd();
 
   testGroupStart("reject corrupted metadata");

@@ -504,20 +504,26 @@ static void writePathList(PathNode *node_list, RepoWriter *writer)
   size_t list_length = 0;
   for(PathNode *node = node_list; node != NULL; node = node->next)
   {
-    list_length = sSizeAdd(list_length, 1);
+    if(node->hint != BH_not_part_of_repository)
+    {
+      list_length = sSizeAdd(list_length, 1);
+    }
   }
 
   write64(list_length, writer);
 
   for(PathNode *node = node_list; node != NULL; node = node->next)
   {
-    String name = strSplitPath(node->path).tail;
-    write64(name.length, writer);
-    repoWriterWrite(name.str, name.length, writer);
+    if(node->hint != BH_not_part_of_repository)
+    {
+      String name = strSplitPath(node->path).tail;
+      write64(name.length, writer);
+      repoWriterWrite(name.str, name.length, writer);
 
-    write8(node->policy, writer);
-    writePathHistoryList(node->history, writer);
-    writePathList(node->subnodes, writer);
+      write8(node->policy, writer);
+      writePathHistoryList(node->history, writer);
+      writePathList(node->subnodes, writer);
+    }
   }
 }
 
