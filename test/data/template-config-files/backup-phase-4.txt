@@ -1,0 +1,13 @@
+[track]
+/tmp/files/foo/bar
+
+[ignore]
+tmp/files/foo/bar/3\.txt$
+
+[copy]
+/tmp/files/foo/some file
+/tmp/files/foo/dir//^link$
+/tmp/files/foo/dir/empty
+
+[mirror]
+/tmp/files/foo/super.txt

@@ -289,7 +289,7 @@ static struct stat link_stats;
 static struct stat super_stats;
 
 /** Contains the timestamp at which a phase finished. */
-static time_t phase_timestamps[3] = { 0 };
+static time_t phase_timestamps[4] = { 0 };
 
 /** Finishes a backup and writes the given metadata struct into "tmp/repo".
 
@@ -386,6 +386,8 @@ static void runPhase2(String cwd_path, size_t cwd_depth,
 
   /* Initiate the backup. */
   Metadata *metadata = metadataLoad("tmp/repo/metadata");
+  assert_true(metadata->total_path_count == cwd_depth + 12);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[0], cwd_depth + 12);
   initiateBackup(metadata, phase_1_node);
 
   /* Check the initiated backup. */
@@ -446,15 +448,18 @@ static void runPhase3(String cwd_path, size_t cwd_depth,
 
   /* Initiate the backup. */
   Metadata *metadata = metadataLoad("tmp/repo/metadata");
+  assert_true(metadata->total_path_count == cwd_depth + 15);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[1], cwd_depth + 7);
+  checkHistPoint(metadata, 1, 1, phase_timestamps[0], 8);
   initiateBackup(metadata, phase_3_node);
 
   /* Check the initiated backup. */
-  checkMetadata(metadata, 0, false);
+  checkMetadata(metadata, 0, true);
   assert_true(metadata->current_backup.ref_count == cwd_depth + 6);
   assert_true(metadata->backup_history_length == 2);
   assert_true(metadata->total_path_count == cwd_depth + 10);
-  checkHistPoint(metadata, 0, 0, phase_timestamps[0], 0);
-  checkHistPoint(metadata, 1, 1, phase_timestamps[1], 6);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[1], 0);
+  checkHistPoint(metadata, 1, 1, phase_timestamps[0], 6);
 
   PathNode *files = findFilesNode(metadata, cwd_path, BH_unchanged);
   PathNode *foo = findSubnode(files, "foo", BH_unchanged, BPOL_none, 1, 5);
@@ -496,6 +501,53 @@ static void runPhase3(String cwd_path, size_t cwd_depth,
   assert_true(countFilesInDir("tmp/repo") == 4);
 }
 
+/** Performs a fourth backup, which doesn't do anything. */
+static void runPhase4(String cwd_path, size_t cwd_depth,
+                      SearchNode *phase_4_node)
+{
+  /* Initiate the backup. */
+  Metadata *metadata = metadataLoad("tmp/repo/metadata");
+  assert_true(metadata->total_path_count == cwd_depth + 10);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[2], cwd_depth + 6);
+  checkHistPoint(metadata, 1, 1, phase_timestamps[0], 6);
+  initiateBackup(metadata, phase_4_node);
+
+  /* Check the initiated backup. */
+  checkMetadata(metadata, 0, true);
+  assert_true(metadata->current_backup.ref_count == cwd_depth + 4);
+  assert_true(metadata->backup_history_length == 2);
+  assert_true(metadata->total_path_count == cwd_depth + 10);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[2], 2);
+  checkHistPoint(metadata, 1, 1, phase_timestamps[0], 6);
+
+  PathNode *files = findFilesNode(metadata, cwd_path, BH_unchanged);
+  PathNode *foo = findSubnode(files, "foo", BH_unchanged, BPOL_none, 1, 3);
+  mustHaveDirectoryStat(foo, &metadata->current_backup);
+
+  PathNode *bar = findSubnode(foo, "bar", BH_unchanged, BPOL_track, 1, 2);
+  mustHaveDirectoryStat(bar, &metadata->backup_history[1]);
+  PathNode *one_txt = findSubnode(bar, "1.txt", BH_unchanged, BPOL_track, 1, 0);
+  mustHaveRegularStat(one_txt, &metadata->backup_history[1], 12, (uint8_t *)"A small file", 0);
+  PathNode *two_txt = findSubnode(bar, "2.txt", BH_unchanged, BPOL_track, 2, 0);
+  mustHaveNonExisting(two_txt, &metadata->backup_history[0]);
+  mustHaveRegularStats(two_txt, &metadata->backup_history[1], 0, (uint8_t *)"", 0, two_txt_stats);
+
+  PathNode *dir = findSubnode(foo, "dir", BH_unchanged, BPOL_none, 1, 2);
+  mustHaveDirectoryStat(dir, &metadata->current_backup);
+  PathNode *empty = findSubnode(dir, "empty", BH_unchanged, BPOL_copy, 1, 0);
+  mustHaveDirectoryStat(empty, &metadata->backup_history[1]);
+  PathNode *link = findSubnode(dir, "link", BH_unchanged, BPOL_copy, 2, 0);
+  mustHaveNonExisting(link, &metadata->backup_history[0]);
+  mustHaveSymlinkLStats(link, &metadata->backup_history[1], "../some file", link_stats);
+
+  PathNode *some_file = findSubnode(foo, "some file", BH_unchanged, BPOL_copy, 1, 0);
+  mustHaveRegularStat(some_file, &metadata->backup_history[1], 84, some_file_hash, 0);
+
+  /* Finish backup and perform additional checks. */
+  completeBackup(metadata, 3);
+  assert_true(countFilesInDir("tmp/repo") == 4);
+}
+
 int main(void)
 {
   testGroupStart("prepare backup");
@@ -503,6 +555,7 @@ int main(void)
   size_t cwd_depth = countPathElements(cwd);
   SearchNode *phase_1_node = searchTreeLoad("generated-config-files/backup-phase-1.txt");
   SearchNode *phase_3_node = searchTreeLoad("generated-config-files/backup-phase-3.txt");
+  SearchNode *phase_4_node = searchTreeLoad("generated-config-files/backup-phase-4.txt");
   makeDir("tmp/repo");
   makeDir("tmp/files");
   testGroupEnd();
@@ -517,5 +570,9 @@ int main(void)
 
   testGroupStart("removing files");
   runPhase3(cwd, cwd_depth, phase_3_node);
+  testGroupEnd();
+
+  testGroupStart("backup with no changes");
+  runPhase4(cwd, cwd_depth, phase_4_node);
   testGroupEnd();
 }
