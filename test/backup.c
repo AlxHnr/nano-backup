@@ -248,11 +248,12 @@ static void mustHaveDirectoryStat(PathNode *node, const Backup *backup)
   @param metadata The metadata containing the nodes.
   @param cwd The current working directory.
   @param hint The backup hint which all nodes in the path must have.
+  @param subnode_count The amount of subnodes in "files".
 
   @return The "files" node.
 */
 static PathNode *findFilesNode(Metadata *metadata, String cwd_path,
-                               BackupHint hint)
+                               BackupHint hint, size_t subnode_count)
 {
   PathNode *cwd = findCwdNode(metadata, cwd_path, hint);
   assert_true(cwd->subnodes != NULL);
@@ -260,7 +261,7 @@ static PathNode *findFilesNode(Metadata *metadata, String cwd_path,
 
   PathNode *tmp = findSubnode(cwd, "tmp", hint, BPOL_none, 1, 1);
   mustHaveDirectoryStat(tmp, &metadata->current_backup);
-  PathNode *files = findSubnode(tmp, "files", hint, BPOL_none, 1, 1);
+  PathNode *files = findSubnode(tmp, "files", hint, BPOL_none, 1, subnode_count);
   mustHaveDirectoryStat(files, &metadata->current_backup);
 
   return files;
@@ -339,7 +340,7 @@ static void runPhase1(String cwd_path, size_t cwd_depth,
   assert_true(metadata->backup_history_length == 0);
   assert_true(metadata->total_path_count == cwd_depth + 12);
 
-  PathNode *files = findFilesNode(metadata, cwd_path, BH_added);
+  PathNode *files = findFilesNode(metadata, cwd_path, BH_added, 1);
   PathNode *foo = findSubnode(files, "foo", BH_added, BPOL_none, 1, 3);
   mustHaveDirectoryStat(foo, &metadata->current_backup);
 
@@ -397,7 +398,7 @@ static void runPhase2(String cwd_path, size_t cwd_depth,
   assert_true(metadata->total_path_count == cwd_depth + 15);
   checkHistPoint(metadata, 0, 0, phase_timestamps[0], 8);
 
-  PathNode *files = findFilesNode(metadata, cwd_path, BH_unchanged);
+  PathNode *files = findFilesNode(metadata, cwd_path, BH_unchanged, 1);
   PathNode *foo = findSubnode(files, "foo", BH_unchanged, BPOL_none, 1, 5);
   mustHaveDirectoryStat(foo, &metadata->current_backup);
 
@@ -461,7 +462,7 @@ static void runPhase3(String cwd_path, size_t cwd_depth,
   checkHistPoint(metadata, 0, 0, phase_timestamps[1], 0);
   checkHistPoint(metadata, 1, 1, phase_timestamps[0], 6);
 
-  PathNode *files = findFilesNode(metadata, cwd_path, BH_unchanged);
+  PathNode *files = findFilesNode(metadata, cwd_path, BH_unchanged, 1);
   PathNode *foo = findSubnode(files, "foo", BH_unchanged, BPOL_none, 1, 5);
   mustHaveDirectoryStat(foo, &metadata->current_backup);
 
@@ -520,7 +521,7 @@ static void runPhase4(String cwd_path, size_t cwd_depth,
   checkHistPoint(metadata, 0, 0, phase_timestamps[2], 2);
   checkHistPoint(metadata, 1, 1, phase_timestamps[0], 6);
 
-  PathNode *files = findFilesNode(metadata, cwd_path, BH_unchanged);
+  PathNode *files = findFilesNode(metadata, cwd_path, BH_unchanged, 1);
   PathNode *foo = findSubnode(files, "foo", BH_unchanged, BPOL_none, 1, 3);
   mustHaveDirectoryStat(foo, &metadata->current_backup);
 
@@ -548,6 +549,95 @@ static void runPhase4(String cwd_path, size_t cwd_depth,
   assert_true(countFilesInDir("tmp/repo") == 4);
 }
 
+/** Performs a fifth backup by creating various deeply nested files and
+  directories. */
+static void runPhase5(String cwd_path, size_t cwd_depth,
+                      SearchNode *phase_5_node)
+{
+  /* Remove remains from previous phases. */
+  removePath("tmp/files/foo/bar/3.txt");
+  removePath("tmp/files/foo/dir/3.txt");
+  removePath("tmp/files/foo/dummy/file");
+  removePath("tmp/files/foo/dummy");
+
+  /* Generate dummy files. */
+  makeDir("tmp/files/foo/bar/subdir");
+  makeDir("tmp/files/foo/bar/subdir/a2");
+  makeDir("tmp/files/foo/bar/subdir/a2/b");
+  makeDir("tmp/files/foo/bar/subdir/a2/b/d");
+  makeDir("tmp/files/foo/bar/subdir/a2/b/d/e");
+  makeDir("tmp/files/data");
+  makeDir("tmp/files/data/a");
+  makeDir("tmp/files/data/a/b");
+  makeDir("tmp/files/data/a/b/c");
+  makeDir("tmp/files/data/a/1");
+  makeDir("tmp/files/data/a/1/2");
+  makeDir("tmp/files/data/a/1/2/3");
+  makeDir("tmp/files/nested");
+  makeDir("tmp/files/nested/a");
+  makeDir("tmp/files/nested/b");
+  makeDir("tmp/files/nested/c");
+  makeDir("tmp/files/nested/c/d");
+  makeDir("tmp/files/test");
+  makeDir("tmp/files/test/a");
+  makeDir("tmp/files/test/a/b");
+  makeDir("tmp/files/test/a/b/d");
+  generateFile("tmp/files/foo/bar/subdir/a1",         "1",            1);
+  generateFile("tmp/files/foo/bar/subdir/a2/b/c",     "1",            20);
+  generateFile("tmp/files/foo/bar/subdir/a2/b/d/e/f", "Test",         3);
+  generateFile("tmp/files/data/a/b/c/d",              "Large\n",      200);
+  generateFile("tmp/files/nested/b/1",                "nested-file ", 12);
+  generateFile("tmp/files/nested/b/2",                "nested ",      8);
+  generateFile("tmp/files/nested/c/d/e",              "Large\n",      200);
+  generateFile("tmp/files/test/a/b/c",                "a/b/c/",       7);
+  generateFile("tmp/files/test/a/b/d/e",              "FILE CONTENT", 1);
+  generateFile("tmp/files/test/a/b/d/f",              "CONTENT",      1);
+
+  /* Initiate the backup. */
+  Metadata *metadata = metadataLoad("tmp/repo/metadata");
+  assert_true(metadata->total_path_count == cwd_depth + 10);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[3], cwd_depth + 4);
+  checkHistPoint(metadata, 1, 1, phase_timestamps[2], 2);
+  checkHistPoint(metadata, 2, 2, phase_timestamps[0], 6);
+  initiateBackup(metadata, phase_5_node);
+
+  /* Check the initiated backup. */
+  checkMetadata(metadata, 0, false);
+  assert_true(metadata->current_backup.ref_count == cwd_depth + 35);
+  assert_true(metadata->backup_history_length == 3);
+  assert_true(metadata->total_path_count == cwd_depth + 41);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[3], 0);
+  checkHistPoint(metadata, 1, 1, phase_timestamps[2], 2);
+  checkHistPoint(metadata, 2, 2, phase_timestamps[0], 6);
+
+  PathNode *files = findFilesNode(metadata, cwd_path, BH_unchanged, 4);
+  PathNode *foo = findSubnode(files, "foo", BH_unchanged, BPOL_none, 1, 3);
+  mustHaveDirectoryStat(foo, &metadata->current_backup);
+
+  PathNode *bar = findSubnode(foo, "bar", BH_unchanged, BPOL_track, 1, 3);
+  mustHaveDirectoryStat(bar, &metadata->backup_history[2]);
+  PathNode *one_txt = findSubnode(bar, "1.txt", BH_unchanged, BPOL_track, 1, 0);
+  mustHaveRegularStat(one_txt, &metadata->backup_history[2], 12, (uint8_t *)"A small file", 0);
+  PathNode *two_txt = findSubnode(bar, "2.txt", BH_unchanged, BPOL_track, 2, 0);
+  mustHaveNonExisting(two_txt, &metadata->backup_history[1]);
+  mustHaveRegularStats(two_txt, &metadata->backup_history[2], 0, (uint8_t *)"", 0, two_txt_stats);
+
+  PathNode *dir = findSubnode(foo, "dir", BH_unchanged, BPOL_none, 1, 2);
+  mustHaveDirectoryStat(dir, &metadata->current_backup);
+  PathNode *empty = findSubnode(dir, "empty", BH_unchanged, BPOL_copy, 1, 0);
+  mustHaveDirectoryStat(empty, &metadata->backup_history[2]);
+  PathNode *link = findSubnode(dir, "link", BH_unchanged, BPOL_copy, 2, 0);
+  mustHaveNonExisting(link, &metadata->backup_history[1]);
+  mustHaveSymlinkLStats(link, &metadata->backup_history[2], "../some file", link_stats);
+
+  PathNode *some_file = findSubnode(foo, "some file", BH_unchanged, BPOL_copy, 1, 0);
+  mustHaveRegularStat(some_file, &metadata->backup_history[2], 84, some_file_hash, 0);
+
+  /* Finish backup and perform additional checks. */
+  completeBackup(metadata, 3);
+  assert_true(countFilesInDir("tmp/repo") == 8);
+}
+
 int main(void)
 {
   testGroupStart("prepare backup");
@@ -556,6 +646,7 @@ int main(void)
   SearchNode *phase_1_node = searchTreeLoad("generated-config-files/backup-phase-1.txt");
   SearchNode *phase_3_node = searchTreeLoad("generated-config-files/backup-phase-3.txt");
   SearchNode *phase_4_node = searchTreeLoad("generated-config-files/backup-phase-4.txt");
+  SearchNode *phase_5_node = searchTreeLoad("generated-config-files/backup-phase-5.txt");
   makeDir("tmp/repo");
   makeDir("tmp/files");
   testGroupEnd();
@@ -574,5 +665,9 @@ int main(void)
 
   testGroupStart("backup with no changes");
   runPhase4(cwd, cwd_depth, phase_4_node);
+  testGroupEnd();
+
+  testGroupStart("generating nested files and directories");
+  runPhase5(cwd, cwd_depth, phase_5_node);
   testGroupEnd();
 }
