@@ -290,7 +290,7 @@ static struct stat link_stats;
 static struct stat super_stats;
 
 /** Contains the timestamp at which a phase finished. */
-static time_t phase_timestamps[4] = { 0 };
+static time_t phase_timestamps[5] = { 0 };
 
 /** Finishes a backup and writes the given metadata struct into "tmp/repo".
 
@@ -634,7 +634,7 @@ static void runPhase5(String cwd_path, size_t cwd_depth,
   mustHaveRegularStat(some_file, &metadata->backup_history[2], 84, some_file_hash, 0);
 
   /* Finish backup and perform additional checks. */
-  completeBackup(metadata, 3);
+  completeBackup(metadata, 4);
   assert_true(countFilesInDir("tmp/repo") == 8);
 }
 
