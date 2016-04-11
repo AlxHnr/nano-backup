@@ -235,12 +235,18 @@ static void mustHaveSymlinkLStats(PathNode *node, const Backup *backup,
                   stats.st_mtime, sym_target);
 }
 
+/** Like mustHaveRegularStats(), but for mustHaveDirectory(). */
+static void mustHaveDirectoryStats(PathNode *node, const Backup *backup,
+                                   struct stat stats)
+{
+  mustHaveDirectory(node, backup, stats.st_uid, stats.st_gid,
+                    stats.st_mtime, stats.st_mode);
+}
+
 /** Like mustHaveRegularStat(), but for mustHaveDirectory(). */
 static void mustHaveDirectoryStat(PathNode *node, const Backup *backup)
 {
-  struct stat stats = sStat(node->path.str);
-  mustHaveDirectory(node, backup, stats.st_uid, stats.st_gid,
-                    stats.st_mtime, stats.st_mode);
+  mustHaveDirectoryStats(node, backup, sStat(node->path.str));
 }
 
 /** Finds the node "$PWD/tmp/files".
@@ -308,6 +314,19 @@ static const uint8_t test_c_hash[] =
 static struct stat two_txt_stats;
 static struct stat link_stats;
 static struct stat super_stats;
+static struct stat data_stats;
+static struct stat data_a_stats;
+static struct stat data_b_stats;
+static struct stat data_c_stats;
+static struct stat data_d_stats;
+static struct stat data_1_stats;
+static struct stat data_2_stats;
+static struct stat data_3_stats;
+static struct stat test_b_stats;
+static struct stat test_c_stats;
+static struct stat test_d_stats;
+static struct stat test_e_stats;
+static struct stat test_f_stats;
 
 /** Contains the timestamp at which a phase finished. */
 static time_t phase_timestamps[5] = { 0 };
@@ -612,6 +631,19 @@ static void runPhase5(String cwd_path, size_t cwd_depth,
   generateFile("tmp/files/test/a/b/c",                "a/b/c/",       7);
   generateFile("tmp/files/test/a/b/d/e",              "FILE CONTENT", 1);
   generateFile("tmp/files/test/a/b/d/f",              "CONTENT",      1);
+  data_stats   = sStat("tmp/files/data");
+  data_a_stats = sStat("tmp/files/data/a");
+  data_b_stats = sStat("tmp/files/data/a/b");
+  data_c_stats = sStat("tmp/files/data/a/b/c");
+  data_d_stats = sStat("tmp/files/data/a/b/c/d");
+  data_1_stats = sStat("tmp/files/data/a/1");
+  data_2_stats = sStat("tmp/files/data/a/1/2");
+  data_3_stats = sStat("tmp/files/data/a/1/2/3");
+  test_b_stats = sStat("tmp/files/test/a/b");
+  test_c_stats = sStat("tmp/files/test/a/b/c");
+  test_d_stats = sStat("tmp/files/test/a/b/d");
+  test_e_stats = sStat("tmp/files/test/a/b/d/e");
+  test_f_stats = sStat("tmp/files/test/a/b/d/f");
 
   /* Initiate the backup. */
   Metadata *metadata = metadataLoad("tmp/repo/metadata");
@@ -642,15 +674,15 @@ static void runPhase5(String cwd_path, size_t cwd_depth,
   mustHaveNonExisting(two_txt, &metadata->backup_history[1]);
   mustHaveRegularStats(two_txt, &metadata->backup_history[2], 0, (uint8_t *)"", 0, two_txt_stats);
 
-  PathNode *subdir    = findSubnode(bar, "subdir", BH_added, BPOL_track, 1, 2);
+  PathNode *subdir = findSubnode(bar, "subdir", BH_added, BPOL_track, 1, 2);
   mustHaveDirectoryStat(subdir, &metadata->current_backup);
   PathNode *subdir_a1 = findSubnode(subdir, "a1", BH_added, BPOL_track, 1, 0);
   mustHaveRegularStat(subdir_a1, &metadata->current_backup, 1, NULL, 0);
-  PathNode *subdir_a2 = findSubnode(subdir,    "a2", BH_added, BPOL_track, 1, 1);
+  PathNode *subdir_a2 = findSubnode(subdir, "a2", BH_added, BPOL_track, 1, 1);
   mustHaveDirectoryStat(subdir_a2, &metadata->current_backup);
-  PathNode *subdir_b  = findSubnode(subdir_a2, "b",  BH_added, BPOL_track, 1, 2);
+  PathNode *subdir_b = findSubnode(subdir_a2, "b", BH_added, BPOL_track, 1, 2);
   mustHaveDirectoryStat(subdir_b, &metadata->current_backup);
-  PathNode *subdir_c  = findSubnode(subdir_b, "c", BH_added, BPOL_track, 1, 0);
+  PathNode *subdir_c = findSubnode(subdir_b, "c", BH_added, BPOL_track, 1, 0);
   mustHaveRegularStat(subdir_c, &metadata->current_backup, 20, NULL, 0);
   PathNode *subdir_d = findSubnode(subdir_b, "d", BH_added, BPOL_track, 1, 1);
   mustHaveDirectoryStat(subdir_d, &metadata->current_backup);
@@ -670,22 +702,22 @@ static void runPhase5(String cwd_path, size_t cwd_depth,
   PathNode *some_file = findSubnode(foo, "some file", BH_unchanged, BPOL_copy, 1, 0);
   mustHaveRegularStat(some_file, &metadata->backup_history[2], 84, some_file_hash, 0);
 
-  PathNode *data   = findSubnode(files,  "data", BH_added, BPOL_mirror, 1, 1);
-  mustHaveDirectoryStat(data, &metadata->current_backup);
-  PathNode *data_a = findSubnode(data,   "a",    BH_added, BPOL_mirror, 1, 2);
-  mustHaveDirectoryStat(data_a, &metadata->current_backup);
-  PathNode *data_b = findSubnode(data_a, "b",    BH_added, BPOL_mirror, 1, 1);
-  mustHaveDirectoryStat(data_b, &metadata->current_backup);
-  PathNode *data_c = findSubnode(data_b, "c",    BH_added, BPOL_mirror, 1, 1);
-  mustHaveDirectoryStat(data_c, &metadata->current_backup);
+  PathNode *data = findSubnode(files, "data", BH_added, BPOL_mirror, 1, 1);
+  mustHaveDirectoryStats(data, &metadata->current_backup, data_stats);
+  PathNode *data_a = findSubnode(data, "a", BH_added, BPOL_mirror, 1, 2);
+  mustHaveDirectoryStats(data_a, &metadata->current_backup, data_a_stats);
+  PathNode *data_b = findSubnode(data_a, "b", BH_added, BPOL_mirror, 1, 1);
+  mustHaveDirectoryStats(data_b, &metadata->current_backup, data_b_stats);
+  PathNode *data_c = findSubnode(data_b, "c", BH_added, BPOL_mirror, 1, 1);
+  mustHaveDirectoryStats(data_c, &metadata->current_backup, data_c_stats);
   PathNode *data_d = findSubnode(data_c, "d", BH_added, BPOL_mirror, 1, 0);
-  mustHaveRegularStat(data_d, &metadata->current_backup, 1200, NULL, 0);
+  mustHaveRegularStats(data_d, &metadata->current_backup, 1200, NULL, 0, data_d_stats);
   PathNode *data_1 = findSubnode(data_a, "1", BH_added, BPOL_mirror, 1, 1);
-  mustHaveDirectoryStat(data_1, &metadata->current_backup);
+  mustHaveDirectoryStats(data_1, &metadata->current_backup, data_1_stats);
   PathNode *data_2 = findSubnode(data_1, "2", BH_added, BPOL_mirror, 1, 1);
-  mustHaveDirectoryStat(data_2, &metadata->current_backup);
+  mustHaveDirectoryStats(data_2, &metadata->current_backup, data_2_stats);
   PathNode *data_3 = findSubnode(data_2, "3", BH_added, BPOL_mirror, 1, 0);
-  mustHaveDirectoryStat(data_3, &metadata->current_backup);
+  mustHaveDirectoryStats(data_3, &metadata->current_backup, data_3_stats);
 
   PathNode *nested = findSubnode(files, "nested", BH_added, BPOL_copy, 1, 3);
   mustHaveDirectoryStat(nested, &metadata->current_backup);
@@ -697,27 +729,27 @@ static void runPhase5(String cwd_path, size_t cwd_depth,
   mustHaveRegularStat(nested_1, &metadata->current_backup, 144, NULL, 0);
   PathNode *nested_2 = findSubnode(nested_b, "2", BH_added, BPOL_copy, 1, 0);
   mustHaveRegularStat(nested_2, &metadata->current_backup, 56, NULL, 0);
-  PathNode *nested_c = findSubnode(nested,   "c", BH_added, BPOL_copy, 1, 1);
+  PathNode *nested_c = findSubnode(nested, "c", BH_added, BPOL_copy, 1, 1);
   mustHaveDirectoryStat(nested_c, &metadata->current_backup);
   PathNode *nested_d = findSubnode(nested_c, "d", BH_added, BPOL_copy, 1, 1);
   mustHaveDirectoryStat(nested_d, &metadata->current_backup);
   PathNode *nested_e = findSubnode(nested_d, "e", BH_added, BPOL_copy, 1, 0);
   mustHaveRegularStat(nested_e, &metadata->current_backup, 1200, NULL, 0);
 
-  PathNode *test   = findSubnode(files,  "test", BH_added, BPOL_mirror, 1, 1);
+  PathNode *test = findSubnode(files, "test", BH_added, BPOL_mirror, 1, 1);
   mustHaveDirectoryStat(test, &metadata->current_backup);
-  PathNode *test_a = findSubnode(test,   "a",    BH_added, BPOL_mirror, 1, 1);
+  PathNode *test_a = findSubnode(test, "a", BH_added, BPOL_mirror, 1, 1);
   mustHaveDirectoryStat(test_a, &metadata->current_backup);
-  PathNode *test_b = findSubnode(test_a, "b",    BH_added, BPOL_mirror, 1, 2);
-  mustHaveDirectoryStat(test_b, &metadata->current_backup);
+  PathNode *test_b = findSubnode(test_a, "b", BH_added, BPOL_mirror, 1, 2);
+  mustHaveDirectoryStats(test_b, &metadata->current_backup, test_b_stats);
   PathNode *test_c = findSubnode(test_b, "c", BH_added, BPOL_mirror, 1, 0);
-  mustHaveRegularStat(test_c, &metadata->current_backup, 42, NULL, 0);
+  mustHaveRegularStats(test_c, &metadata->current_backup, 42, NULL, 0, test_c_stats);
   PathNode *test_d = findSubnode(test_b, "d", BH_added, BPOL_mirror, 1, 2);
-  mustHaveDirectoryStat(test_d, &metadata->current_backup);
+  mustHaveDirectoryStats(test_d, &metadata->current_backup, test_d_stats);
   PathNode *test_e = findSubnode(test_d, "e", BH_added, BPOL_mirror, 1, 0);
-  mustHaveRegularStat(test_e, &metadata->current_backup, 12, NULL, 1);
+  mustHaveRegularStats(test_e, &metadata->current_backup, 12, NULL, 0, test_e_stats);
   PathNode *test_f = findSubnode(test_d, "f", BH_added, BPOL_mirror, 1, 0);
-  mustHaveRegularStat(test_f, &metadata->current_backup, 7, NULL, 1);
+  mustHaveRegularStats(test_f, &metadata->current_backup, 7, NULL, 0, test_f_stats);
 
   /* Finish backup and perform additional checks. */
   completeBackup(metadata, 4);
@@ -725,13 +757,13 @@ static void runPhase5(String cwd_path, size_t cwd_depth,
   mustHaveRegularStat(subdir_a1, &metadata->current_backup, 1,    (uint8_t *)"1???????????????????", 0);
   mustHaveRegularStat(subdir_c,  &metadata->current_backup, 20,   (uint8_t *)"11111111111111111111", 0);
   mustHaveRegularStat(subdir_f,  &metadata->current_backup, 12,   (uint8_t *)"TestTestTest????????", 0);
-  mustHaveRegularStat(data_d,    &metadata->current_backup, 1200, data_d_hash,                       0);
+  mustHaveRegularStats(data_d,   &metadata->current_backup, 1200, data_d_hash,                       0, data_d_stats);
   mustHaveRegularStat(nested_1,  &metadata->current_backup, 144,  nested_1_hash,                     0);
   mustHaveRegularStat(nested_2,  &metadata->current_backup, 56,   nested_2_hash,                     0);
   mustHaveRegularStat(nested_e,  &metadata->current_backup, 1200, data_d_hash,                       0);
-  mustHaveRegularStat(test_c,    &metadata->current_backup, 42,   test_c_hash,                       0);
-  mustHaveRegularStat(test_e,    &metadata->current_backup, 12,   (uint8_t *)"FILE CONTENT????????", 1);
-  mustHaveRegularStat(test_f,    &metadata->current_backup, 7,    (uint8_t *)"CONTENT?????????????", 1);
+  mustHaveRegularStats(test_c,   &metadata->current_backup, 42,   test_c_hash,                       0, test_c_stats);
+  mustHaveRegularStats(test_e,   &metadata->current_backup, 12,   (uint8_t *)"FILE CONTENT????????", 0, test_e_stats);
+  mustHaveRegularStats(test_f,   &metadata->current_backup, 7,    (uint8_t *)"CONTENT?????????????", 0, test_f_stats);
 }
 
 int main(void)
