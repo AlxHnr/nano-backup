@@ -27,6 +27,7 @@
 
 #include "backup.h"
 
+#include <utime.h>
 #include <unistd.h>
 
 #include "test.h"
@@ -146,22 +147,48 @@ static size_t countFilesInDir(const char *path)
   return counter;
 }
 
+/** Creates a backup of the given paths parent directories timestamps. */
+static struct utimbuf getParentTime(const char *path)
+{
+  struct stat stats = sStat(strCopy(strSplitPath(str(path)).head).str);
+
+  return (struct utimbuf)
+  {
+    .actime  = stats.st_atime,
+    .modtime = stats.st_mtime,
+  };
+}
+
+/** Counterpart to getParentTime(). */
+static void restoreParentTime(const char *path, const struct utimbuf time)
+{
+  const char *parent_path = strCopy(strSplitPath(str(path)).head).str;
+  if(utime(parent_path, &time) != 0)
+  {
+    dieErrno("failed to restore paths time: \"%s\"", parent_path);
+  }
+}
+
 /** Safe wrapper around mkdir(). */
 static void makeDir(const char *path)
 {
+  struct utimbuf parent_time = getParentTime(path);
   if(mkdir(path, 0755) != 0)
   {
     dieErrno("failed to create directory \"%s\"", path);
   }
+  restoreParentTime(path, parent_time);
 }
 
 /** Safe wrapper around symlink(). */
 static void makeSymlink(const char *target, const char *linkpath)
 {
+  struct utimbuf parent_time = getParentTime(linkpath);
   if(symlink(target, linkpath) != 0)
   {
     dieErrno("failed to create symlink \"%s\" -> \"%s\"", linkpath, target);
   }
+  restoreParentTime(linkpath, parent_time);
 }
 
 /** Generates a dummy file.
@@ -174,6 +201,7 @@ static void makeSymlink(const char *target, const char *linkpath)
 static void generateFile(const char *path, const char *content,
                          size_t repetitions)
 {
+  struct utimbuf parent_time = getParentTime(path);
   FileStream *stream = sFopenWrite(path);
   size_t content_length = strlen(content);
 
@@ -183,15 +211,18 @@ static void generateFile(const char *path, const char *content,
   }
 
   sFclose(stream);
+  restoreParentTime(path, parent_time);
 }
 
 /** Safe wrapper around remove(). */
 static void removePath(const char *path)
 {
+  struct utimbuf parent_time = getParentTime(path);
   if(remove(path) != 0)
   {
     dieErrno("failed to remove \"%s\"", path);
   }
+  restoreParentTime(path, parent_time);
 }
 
 /** Wrapper around mustHaveRegular() which takes a stat struct.
