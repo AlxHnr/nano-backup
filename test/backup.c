@@ -283,6 +283,26 @@ static const uint8_t super_hash[] =
   0xb7, 0x44, 0x39, 0x8d, 0x17, 0x9e, 0x9d, 0x86, 0x39, 0x3c,
   0x33, 0x49, 0xce, 0x24, 0x06, 0x67, 0x41, 0x89, 0xbb, 0x89,
 };
+static const uint8_t data_d_hash[] =
+{
+  0xd8, 0x26, 0xd3, 0x91, 0xc7, 0xdc, 0x38, 0xd3, 0x7f, 0x73,
+  0x79, 0x61, 0x68, 0xe5, 0x58, 0x1f, 0x7b, 0x99, 0x82, 0xd3,
+};
+static const uint8_t nested_1_hash[] =
+{
+  0xaf, 0x07, 0xcc, 0xfe, 0xf5, 0x5c, 0x44, 0x94, 0x7b, 0x63,
+  0x0f, 0x58, 0xe8, 0x2a, 0xb0, 0x42, 0xca, 0x68, 0x94, 0xb8,
+};
+static const uint8_t nested_2_hash[] =
+{
+  0x71, 0xe6, 0x14, 0x82, 0xbf, 0xd5, 0x93, 0x01, 0x41, 0x83,
+  0xa2, 0x5e, 0x66, 0x02, 0xa9, 0x0f, 0x8d, 0xbc, 0x74, 0x0f,
+};
+static const uint8_t test_c_hash[] =
+{
+  0x2b, 0x85, 0xa2, 0xb0, 0x6e, 0x49, 0x8c, 0x7b, 0x97, 0x6d,
+  0xa4, 0xff, 0x8d, 0x34, 0xed, 0x84, 0xcb, 0x42, 0xc7, 0xe0,
+};
 
 /** Contains the stats of various removed files. */
 static struct stat two_txt_stats;
@@ -622,6 +642,23 @@ static void runPhase5(String cwd_path, size_t cwd_depth,
   mustHaveNonExisting(two_txt, &metadata->backup_history[1]);
   mustHaveRegularStats(two_txt, &metadata->backup_history[2], 0, (uint8_t *)"", 0, two_txt_stats);
 
+  PathNode *subdir    = findSubnode(bar, "subdir", BH_added, BPOL_track, 1, 2);
+  mustHaveDirectoryStat(subdir, &metadata->current_backup);
+  PathNode *subdir_a1 = findSubnode(subdir, "a1", BH_added, BPOL_track, 1, 0);
+  mustHaveRegularStat(subdir_a1, &metadata->current_backup, 1, NULL, 0);
+  PathNode *subdir_a2 = findSubnode(subdir,    "a2", BH_added, BPOL_track, 1, 1);
+  mustHaveDirectoryStat(subdir_a2, &metadata->current_backup);
+  PathNode *subdir_b  = findSubnode(subdir_a2, "b",  BH_added, BPOL_track, 1, 2);
+  mustHaveDirectoryStat(subdir_b, &metadata->current_backup);
+  PathNode *subdir_c  = findSubnode(subdir_b, "c", BH_added, BPOL_track, 1, 0);
+  mustHaveRegularStat(subdir_c, &metadata->current_backup, 20, NULL, 0);
+  PathNode *subdir_d = findSubnode(subdir_b, "d", BH_added, BPOL_track, 1, 1);
+  mustHaveDirectoryStat(subdir_d, &metadata->current_backup);
+  PathNode *subdir_e = findSubnode(subdir_d, "e", BH_added, BPOL_track, 1, 1);
+  mustHaveDirectoryStat(subdir_e, &metadata->current_backup);
+  PathNode *subdir_f = findSubnode(subdir_e, "f", BH_added, BPOL_track, 1, 0);
+  mustHaveRegularStat(subdir_f, &metadata->current_backup, 12, NULL, 0);
+
   PathNode *dir = findSubnode(foo, "dir", BH_unchanged, BPOL_none, 1, 2);
   mustHaveDirectoryStat(dir, &metadata->current_backup);
   PathNode *empty = findSubnode(dir, "empty", BH_unchanged, BPOL_copy, 1, 0);
@@ -633,9 +670,68 @@ static void runPhase5(String cwd_path, size_t cwd_depth,
   PathNode *some_file = findSubnode(foo, "some file", BH_unchanged, BPOL_copy, 1, 0);
   mustHaveRegularStat(some_file, &metadata->backup_history[2], 84, some_file_hash, 0);
 
+  PathNode *data   = findSubnode(files,  "data", BH_added, BPOL_mirror, 1, 1);
+  mustHaveDirectoryStat(data, &metadata->current_backup);
+  PathNode *data_a = findSubnode(data,   "a",    BH_added, BPOL_mirror, 1, 2);
+  mustHaveDirectoryStat(data_a, &metadata->current_backup);
+  PathNode *data_b = findSubnode(data_a, "b",    BH_added, BPOL_mirror, 1, 1);
+  mustHaveDirectoryStat(data_b, &metadata->current_backup);
+  PathNode *data_c = findSubnode(data_b, "c",    BH_added, BPOL_mirror, 1, 1);
+  mustHaveDirectoryStat(data_c, &metadata->current_backup);
+  PathNode *data_d = findSubnode(data_c, "d", BH_added, BPOL_mirror, 1, 0);
+  mustHaveRegularStat(data_d, &metadata->current_backup, 1200, NULL, 0);
+  PathNode *data_1 = findSubnode(data_a, "1", BH_added, BPOL_mirror, 1, 1);
+  mustHaveDirectoryStat(data_1, &metadata->current_backup);
+  PathNode *data_2 = findSubnode(data_1, "2", BH_added, BPOL_mirror, 1, 1);
+  mustHaveDirectoryStat(data_2, &metadata->current_backup);
+  PathNode *data_3 = findSubnode(data_2, "3", BH_added, BPOL_mirror, 1, 0);
+  mustHaveDirectoryStat(data_3, &metadata->current_backup);
+
+  PathNode *nested = findSubnode(files, "nested", BH_added, BPOL_copy, 1, 3);
+  mustHaveDirectoryStat(nested, &metadata->current_backup);
+  PathNode *nested_a = findSubnode(nested, "a", BH_added, BPOL_copy, 1, 0);
+  mustHaveDirectoryStat(nested_a, &metadata->current_backup);
+  PathNode *nested_b = findSubnode(nested, "b", BH_added, BPOL_copy, 1, 2);
+  mustHaveDirectoryStat(nested_b, &metadata->current_backup);
+  PathNode *nested_1 = findSubnode(nested_b, "1", BH_added, BPOL_copy, 1, 0);
+  mustHaveRegularStat(nested_1, &metadata->current_backup, 144, NULL, 0);
+  PathNode *nested_2 = findSubnode(nested_b, "2", BH_added, BPOL_copy, 1, 0);
+  mustHaveRegularStat(nested_2, &metadata->current_backup, 56, NULL, 0);
+  PathNode *nested_c = findSubnode(nested,   "c", BH_added, BPOL_copy, 1, 1);
+  mustHaveDirectoryStat(nested_c, &metadata->current_backup);
+  PathNode *nested_d = findSubnode(nested_c, "d", BH_added, BPOL_copy, 1, 1);
+  mustHaveDirectoryStat(nested_d, &metadata->current_backup);
+  PathNode *nested_e = findSubnode(nested_d, "e", BH_added, BPOL_copy, 1, 0);
+  mustHaveRegularStat(nested_e, &metadata->current_backup, 1200, NULL, 0);
+
+  PathNode *test   = findSubnode(files,  "test", BH_added, BPOL_mirror, 1, 1);
+  mustHaveDirectoryStat(test, &metadata->current_backup);
+  PathNode *test_a = findSubnode(test,   "a",    BH_added, BPOL_mirror, 1, 1);
+  mustHaveDirectoryStat(test_a, &metadata->current_backup);
+  PathNode *test_b = findSubnode(test_a, "b",    BH_added, BPOL_mirror, 1, 2);
+  mustHaveDirectoryStat(test_b, &metadata->current_backup);
+  PathNode *test_c = findSubnode(test_b, "c", BH_added, BPOL_mirror, 1, 0);
+  mustHaveRegularStat(test_c, &metadata->current_backup, 42, NULL, 0);
+  PathNode *test_d = findSubnode(test_b, "d", BH_added, BPOL_mirror, 1, 2);
+  mustHaveDirectoryStat(test_d, &metadata->current_backup);
+  PathNode *test_e = findSubnode(test_d, "e", BH_added, BPOL_mirror, 1, 0);
+  mustHaveRegularStat(test_e, &metadata->current_backup, 12, NULL, 1);
+  PathNode *test_f = findSubnode(test_d, "f", BH_added, BPOL_mirror, 1, 0);
+  mustHaveRegularStat(test_f, &metadata->current_backup, 7, NULL, 1);
+
   /* Finish backup and perform additional checks. */
   completeBackup(metadata, 4);
   assert_true(countFilesInDir("tmp/repo") == 8);
+  mustHaveRegularStat(subdir_a1, &metadata->current_backup, 1,    (uint8_t *)"1???????????????????", 0);
+  mustHaveRegularStat(subdir_c,  &metadata->current_backup, 20,   (uint8_t *)"11111111111111111111", 0);
+  mustHaveRegularStat(subdir_f,  &metadata->current_backup, 12,   (uint8_t *)"TestTestTest????????", 0);
+  mustHaveRegularStat(data_d,    &metadata->current_backup, 1200, data_d_hash,                       0);
+  mustHaveRegularStat(nested_1,  &metadata->current_backup, 144,  nested_1_hash,                     0);
+  mustHaveRegularStat(nested_2,  &metadata->current_backup, 56,   nested_2_hash,                     0);
+  mustHaveRegularStat(nested_e,  &metadata->current_backup, 1200, data_d_hash,                       0);
+  mustHaveRegularStat(test_c,    &metadata->current_backup, 42,   test_c_hash,                       0);
+  mustHaveRegularStat(test_e,    &metadata->current_backup, 12,   (uint8_t *)"FILE CONTENT????????", 1);
+  mustHaveRegularStat(test_f,    &metadata->current_backup, 7,    (uint8_t *)"CONTENT?????????????", 1);
 }
 
 int main(void)
