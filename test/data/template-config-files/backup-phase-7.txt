@@ -1,0 +1,14 @@
+[track]
+/tmp/files/foo/bar/
+
+[copy]
+/tmp/files/foo/some file
+/tmp/files/foo/dir//.
+
+[mirror]
+/tmp/files/test/
+/tmp/files/unneeded/directory/a/b/c
+/tmp/files/unneeded/directory/a/e
+
+[copy]
+/tmp/files/unneeded/directory/a/g/h/i
