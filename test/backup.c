@@ -372,7 +372,7 @@ static struct stat directory_e_stats;
 static struct stat directory_f_stats;
 
 /** Contains the timestamp at which a phase finished. */
-static time_t phase_timestamps[7] = { 0 };
+static time_t phase_timestamps[8] = { 0 };
 
 /** Finishes a backup and writes the given metadata struct into "tmp/repo".
 
@@ -1036,7 +1036,7 @@ static void runPhase7(String cwd_path, size_t cwd_depth,
   PathNode *directory_c = findSubnode(directory_b, "c", BH_added, BPOL_mirror, 1, 0);
   mustHaveRegularStats(directory_c, &metadata->current_backup, 14, NULL, 0, directory_c_stats);
   PathNode *directory_e = findSubnode(directory_a, "e", BH_added, BPOL_mirror, 1, 1);
-  mustHaveDirectoryStat(directory_e, &metadata->current_backup);
+  mustHaveDirectoryStats(directory_e, &metadata->current_backup, directory_e_stats);
   PathNode *directory_f = findSubnode(directory_e, "f", BH_added, BPOL_mirror, 1, 0);
   mustHaveRegularStats(directory_f, &metadata->current_backup, 16, NULL, 0, directory_f_stats);
   PathNode *directory_g = findSubnode(directory_a, "g", BH_added, BPOL_none, 1, 1);
@@ -1055,6 +1055,106 @@ static void runPhase7(String cwd_path, size_t cwd_depth,
                        (uint8_t *)"FileFileFileFile????", 0, directory_f_stats);
 }
 
+static void runPhase8(String cwd_path, size_t cwd_depth,
+                      SearchNode *phase_8_node)
+{
+  /* Remove various files. */
+  removePath("tmp/files/unneeded/directory/a/b/c");
+  removePath("tmp/files/unneeded/directory/a/e/f");
+  removePath("tmp/files/unneeded/directory/a/e");
+  removePath("tmp/files/test/a");
+  removePath("tmp/files/test");
+
+  /* Generate dummy files. */
+  makeDir("tmp/files/home");
+  makeDir("tmp/files/home/user");
+  makeDir("tmp/files/unneeded/directory/a/d");
+  generateFile("tmp/files/home/user/text.txt", "0xff\n", 500);
+
+  /* Initiate the backup. */
+  Metadata *metadata = metadataLoad("tmp/repo/metadata");
+  assert_true(metadata->total_path_count == cwd_depth + 22);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[6], cwd_depth + 14);
+  checkHistPoint(metadata, 1, 1, phase_timestamps[4], 2);
+  checkHistPoint(metadata, 2, 2, phase_timestamps[2], 2);
+  checkHistPoint(metadata, 3, 3, phase_timestamps[0], 6);
+  initiateBackup(metadata, phase_8_node);
+
+  /* Check the initiated backup. */
+  checkMetadata(metadata, 0, false);
+  assert_true(metadata->current_backup.ref_count == cwd_depth + 4);
+  assert_true(metadata->backup_history_length == 4);
+  assert_true(metadata->total_path_count == cwd_depth + 10);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[6], 0);
+  checkHistPoint(metadata, 1, 1, phase_timestamps[4], 0);
+  checkHistPoint(metadata, 2, 2, phase_timestamps[2], 2);
+  checkHistPoint(metadata, 3, 3, phase_timestamps[0], 6);
+
+  PathNode *files = findFilesNode(metadata, cwd_path, BH_unchanged, 4);
+  PathNode *foo = findSubnode(files, "foo", BH_unchanged, BPOL_none, 1, 3);
+  mustHaveDirectoryStat(foo, &metadata->current_backup);
+
+  PathNode *bar = findSubnode(foo, "bar", BH_unchanged, BPOL_track, 1, 2);
+  mustHaveDirectoryStat(bar, &metadata->backup_history[3]);
+  PathNode *one_txt = findSubnode(bar, "1.txt", BH_unchanged, BPOL_track, 1, 0);
+  mustHaveRegularStat(one_txt, &metadata->backup_history[3], 12, (uint8_t *)"A small file", 0);
+  PathNode *two_txt = findSubnode(bar, "2.txt", BH_unchanged, BPOL_track, 2, 0);
+  mustHaveNonExisting(two_txt, &metadata->backup_history[2]);
+  mustHaveRegularStats(two_txt, &metadata->backup_history[3], 0, (uint8_t *)"???", 0, two_txt_stats);
+
+  PathNode *dir = findSubnode(foo, "dir", BH_unchanged, BPOL_none, 1, 2);
+  mustHaveDirectoryStat(dir, &metadata->current_backup);
+  PathNode *empty = findSubnode(dir, "empty", BH_unchanged, BPOL_copy, 1, 0);
+  mustHaveDirectoryStat(empty, &metadata->backup_history[3]);
+  PathNode *link = findSubnode(dir, "link", BH_unchanged, BPOL_copy, 2, 0);
+  mustHaveNonExisting(link, &metadata->backup_history[2]);
+  mustHaveSymlinkLStats(link, &metadata->backup_history[3], "../some file", link_stats);
+
+  PathNode *some_file = findSubnode(foo, "some file", BH_unchanged, BPOL_copy, 1, 0);
+  mustHaveRegularStat(some_file, &metadata->backup_history[3], 84, some_file_hash, 0);
+
+  PathNode *test = findSubnode(files, "test", BH_not_part_of_repository, BPOL_mirror, 1, 1);
+  mustHaveDirectoryStats(test, &metadata->backup_history[1], test_stats);
+  PathNode *test_a = findSubnode(test, "a", BH_not_part_of_repository, BPOL_mirror, 1, 0);
+  mustHaveDirectoryStats(test_a, &metadata->backup_history[1], test_a_stats);
+
+  PathNode *home = findSubnode(files, "home", BH_not_part_of_repository, BPOL_none, 1, 1);
+  mustHaveDirectoryStat(home, &metadata->current_backup);
+  PathNode *user = findSubnode(home, "user", BH_not_part_of_repository, BPOL_none, 1, 1);
+  mustHaveDirectoryStat(user, &metadata->current_backup);
+  PathNode *text_txt = findSubnode(user, "text.txt", BH_not_part_of_repository, BPOL_none, 1, 0);
+  mustHaveRegularStat(text_txt, &metadata->current_backup, 2500, NULL, 0);
+
+  PathNode *unneeded = findSubnode(files, "unneeded", BH_not_part_of_repository, BPOL_none, 1, 1);
+  mustHaveDirectoryStat(unneeded, &metadata->current_backup);
+  PathNode *directory = findSubnode(unneeded, "directory", BH_not_part_of_repository, BPOL_none, 1, 1);
+  mustHaveDirectoryStat(directory, &metadata->current_backup);
+  PathNode *directory_a = findSubnode(directory, "a", BH_not_part_of_repository, BPOL_none, 1, 4);
+  mustHaveDirectoryStat(directory_a, &metadata->current_backup);
+  PathNode *directory_b = findSubnode(directory_a, "b", BH_not_part_of_repository, BPOL_none, 1, 1);
+  mustHaveDirectoryStat(directory_b, &metadata->current_backup);
+  PathNode *directory_c = findSubnode(directory_b, "c", BH_not_part_of_repository, BPOL_mirror, 1, 0);
+  mustHaveRegularStats(directory_c, &metadata->backup_history[0], 14,
+                       (uint8_t *)"ContentContent??????", 0, directory_c_stats);
+  PathNode *directory_d = findSubnode(directory_a, "d", BH_not_part_of_repository, BPOL_none, 1, 0);
+  mustHaveDirectoryStat(directory_d, &metadata->current_backup);
+  PathNode *directory_e = findSubnode(directory_a, "e", BH_not_part_of_repository, BPOL_mirror, 1, 1);
+  mustHaveDirectoryStats(directory_e, &metadata->backup_history[0], directory_e_stats);
+  PathNode *directory_f = findSubnode(directory_e, "f", BH_not_part_of_repository, BPOL_mirror, 1, 0);
+  mustHaveRegularStats(directory_f, &metadata->backup_history[0], 16,
+                       (uint8_t *)"FileFileFileFile????", 0, directory_f_stats);
+  PathNode *directory_g = findSubnode(directory_a, "g", BH_not_part_of_repository, BPOL_none, 1, 1);
+  mustHaveDirectoryStat(directory_g, &metadata->current_backup);
+  PathNode *directory_h = findSubnode(directory_g, "h", BH_not_part_of_repository, BPOL_none, 1, 1);
+  mustHaveDirectoryStat(directory_h, &metadata->current_backup);
+  PathNode *directory_i = findSubnode(directory_h, "i", BH_not_part_of_repository, BPOL_copy, 1, 0);
+  mustHaveSymlinkLStat(directory_i, &metadata->backup_history[0], "../../b/c");
+
+  /* Finish backup and perform additional checks. */
+  completeBackup(metadata, 7);
+  assert_true(countFilesInDir("tmp/repo") == 8);
+}
+
 int main(void)
 {
   testGroupStart("prepare backup");
@@ -1066,6 +1166,7 @@ int main(void)
   SearchNode *phase_5_node = searchTreeLoad("generated-config-files/backup-phase-5.txt");
   SearchNode *phase_6_node = searchTreeLoad("generated-config-files/backup-phase-6.txt");
   SearchNode *phase_7_node = searchTreeLoad("generated-config-files/backup-phase-7.txt");
+  SearchNode *phase_8_node = searchTreeLoad("generated-config-files/backup-phase-8.txt");
   makeDir("tmp/repo");
   makeDir("tmp/files");
   testGroupEnd();
@@ -1096,5 +1197,9 @@ int main(void)
 
   testGroupStart("generate more nested files");
   runPhase7(cwd, cwd_depth, phase_7_node);
+  testGroupEnd();
+
+  testGroupStart("wiping of unneeded nodes");
+  runPhase8(cwd, cwd_depth, phase_8_node);
   testGroupEnd();
 }
