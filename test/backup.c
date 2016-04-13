@@ -538,7 +538,7 @@ static void runPhase3(String cwd_path, size_t cwd_depth,
 
   /* Check the initiated backup. */
   checkMetadata(metadata, 0, true);
-  assert_true(metadata->current_backup.ref_count == cwd_depth + 6);
+  assert_true(metadata->current_backup.ref_count == cwd_depth + 5);
   assert_true(metadata->backup_history_length == 2);
   assert_true(metadata->total_path_count == cwd_depth + 10);
   checkHistPoint(metadata, 0, 0, phase_timestamps[1], 0);
@@ -564,8 +564,7 @@ static void runPhase3(String cwd_path, size_t cwd_depth,
   mustHaveRegularStat(dir_three_txt, &metadata->backup_history[1], 400, three_hash, 0);
   PathNode *empty = findSubnode(dir, "empty", BH_unchanged, BPOL_copy, 1, 0);
   mustHaveDirectoryStat(empty, &metadata->backup_history[1]);
-  PathNode *link = findSubnode(dir, "link", BH_removed, BPOL_copy, 2, 0);
-  mustHaveNonExisting(link, &metadata->current_backup);
+  PathNode *link = findSubnode(dir, "link", BH_removed, BPOL_copy, 1, 0);
   mustHaveSymlinkLStats(link, &metadata->backup_history[1], "../some file", link_stats);
 
   PathNode *some_file = findSubnode(foo, "some file", BH_unchanged, BPOL_copy, 1, 0);
@@ -591,7 +590,7 @@ static void runPhase4(String cwd_path, size_t cwd_depth,
   /* Initiate the backup. */
   Metadata *metadata = metadataLoad("tmp/repo/metadata");
   assert_true(metadata->total_path_count == cwd_depth + 10);
-  checkHistPoint(metadata, 0, 0, phase_timestamps[2], cwd_depth + 6);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[2], cwd_depth + 5);
   checkHistPoint(metadata, 1, 1, phase_timestamps[0], 6);
   initiateBackup(metadata, phase_4_node);
 
@@ -600,7 +599,7 @@ static void runPhase4(String cwd_path, size_t cwd_depth,
   assert_true(metadata->current_backup.ref_count == cwd_depth + 4);
   assert_true(metadata->backup_history_length == 2);
   assert_true(metadata->total_path_count == cwd_depth + 10);
-  checkHistPoint(metadata, 0, 0, phase_timestamps[2], 2);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[2], 1);
   checkHistPoint(metadata, 1, 1, phase_timestamps[0], 6);
 
   PathNode *files = findFilesNode(metadata, cwd_path, BH_unchanged, 1);
@@ -619,8 +618,7 @@ static void runPhase4(String cwd_path, size_t cwd_depth,
   mustHaveDirectoryStat(dir, &metadata->current_backup);
   PathNode *empty = findSubnode(dir, "empty", BH_unchanged, BPOL_copy, 1, 0);
   mustHaveDirectoryStat(empty, &metadata->backup_history[1]);
-  PathNode *link = findSubnode(dir, "link", BH_unchanged, BPOL_copy, 2, 0);
-  mustHaveNonExisting(link, &metadata->backup_history[0]);
+  PathNode *link = findSubnode(dir, "link", BH_removed, BPOL_copy, 1, 0);
   mustHaveSymlinkLStats(link, &metadata->backup_history[1], "../some file", link_stats);
 
   PathNode *some_file = findSubnode(foo, "some file", BH_unchanged, BPOL_copy, 1, 0);
@@ -694,7 +692,7 @@ static void runPhase5(String cwd_path, size_t cwd_depth,
   Metadata *metadata = metadataLoad("tmp/repo/metadata");
   assert_true(metadata->total_path_count == cwd_depth + 10);
   checkHistPoint(metadata, 0, 0, phase_timestamps[3], cwd_depth + 4);
-  checkHistPoint(metadata, 1, 1, phase_timestamps[2], 2);
+  checkHistPoint(metadata, 1, 1, phase_timestamps[2], 1);
   checkHistPoint(metadata, 2, 2, phase_timestamps[0], 6);
   initiateBackup(metadata, phase_5_node);
 
@@ -704,7 +702,7 @@ static void runPhase5(String cwd_path, size_t cwd_depth,
   assert_true(metadata->backup_history_length == 3);
   assert_true(metadata->total_path_count == cwd_depth + 41);
   checkHistPoint(metadata, 0, 0, phase_timestamps[3], 0);
-  checkHistPoint(metadata, 1, 1, phase_timestamps[2], 2);
+  checkHistPoint(metadata, 1, 1, phase_timestamps[2], 1);
   checkHistPoint(metadata, 2, 2, phase_timestamps[0], 6);
 
   PathNode *files = findFilesNode(metadata, cwd_path, BH_unchanged, 4);
@@ -740,8 +738,7 @@ static void runPhase5(String cwd_path, size_t cwd_depth,
   mustHaveDirectoryStat(dir, &metadata->current_backup);
   PathNode *empty = findSubnode(dir, "empty", BH_unchanged, BPOL_copy, 1, 0);
   mustHaveDirectoryStat(empty, &metadata->backup_history[2]);
-  PathNode *link = findSubnode(dir, "link", BH_unchanged, BPOL_copy, 2, 0);
-  mustHaveNonExisting(link, &metadata->backup_history[1]);
+  PathNode *link = findSubnode(dir, "link", BH_removed, BPOL_copy, 1, 0);
   mustHaveSymlinkLStats(link, &metadata->backup_history[2], "../some file", link_stats);
 
   PathNode *some_file = findSubnode(foo, "some file", BH_unchanged, BPOL_copy, 1, 0);
@@ -834,7 +831,7 @@ static void runPhase6(String cwd_path, size_t cwd_depth,
   Metadata *metadata = metadataLoad("tmp/repo/metadata");
   assert_true(metadata->total_path_count == cwd_depth + 41);
   checkHistPoint(metadata, 0, 0, phase_timestamps[4], cwd_depth + 35);
-  checkHistPoint(metadata, 1, 1, phase_timestamps[2], 2);
+  checkHistPoint(metadata, 1, 1, phase_timestamps[2], 1);
   checkHistPoint(metadata, 2, 2, phase_timestamps[0], 6);
   initiateBackup(metadata, phase_6_node);
 
@@ -844,7 +841,7 @@ static void runPhase6(String cwd_path, size_t cwd_depth,
   assert_true(metadata->backup_history_length == 3);
   assert_true(metadata->total_path_count == cwd_depth + 12);
   checkHistPoint(metadata, 0, 0, phase_timestamps[4], 2);
-  checkHistPoint(metadata, 1, 1, phase_timestamps[2], 2);
+  checkHistPoint(metadata, 1, 1, phase_timestamps[2], 1);
   checkHistPoint(metadata, 2, 2, phase_timestamps[0], 6);
 
   PathNode *files = findFilesNode(metadata, cwd_path, BH_unchanged, 4);
@@ -880,8 +877,7 @@ static void runPhase6(String cwd_path, size_t cwd_depth,
   mustHaveDirectoryStat(dir, &metadata->current_backup);
   PathNode *empty = findSubnode(dir, "empty", BH_unchanged, BPOL_copy, 1, 0);
   mustHaveDirectoryStat(empty, &metadata->backup_history[2]);
-  PathNode *link = findSubnode(dir, "link", BH_unchanged, BPOL_copy, 2, 0);
-  mustHaveNonExisting(link, &metadata->backup_history[1]);
+  PathNode *link = findSubnode(dir, "link", BH_removed, BPOL_copy, 1, 0);
   mustHaveSymlinkLStats(link, &metadata->backup_history[2], "../some file", link_stats);
 
   PathNode *some_file = findSubnode(foo, "some file", BH_unchanged, BPOL_copy, 1, 0);
@@ -983,7 +979,7 @@ static void runPhase7(String cwd_path, size_t cwd_depth,
   assert_true(metadata->total_path_count == cwd_depth + 12);
   checkHistPoint(metadata, 0, 0, phase_timestamps[5], cwd_depth + 4);
   checkHistPoint(metadata, 1, 1, phase_timestamps[4], 2);
-  checkHistPoint(metadata, 2, 2, phase_timestamps[2], 2);
+  checkHistPoint(metadata, 2, 2, phase_timestamps[2], 1);
   checkHistPoint(metadata, 3, 3, phase_timestamps[0], 6);
   initiateBackup(metadata, phase_7_node);
 
@@ -994,7 +990,7 @@ static void runPhase7(String cwd_path, size_t cwd_depth,
   assert_true(metadata->total_path_count == cwd_depth + 22);
   checkHistPoint(metadata, 0, 0, phase_timestamps[5], 0);
   checkHistPoint(metadata, 1, 1, phase_timestamps[4], 2);
-  checkHistPoint(metadata, 2, 2, phase_timestamps[2], 2);
+  checkHistPoint(metadata, 2, 2, phase_timestamps[2], 1);
   checkHistPoint(metadata, 3, 3, phase_timestamps[0], 6);
 
   PathNode *files = findFilesNode(metadata, cwd_path, BH_unchanged, 3);
@@ -1013,8 +1009,7 @@ static void runPhase7(String cwd_path, size_t cwd_depth,
   mustHaveDirectoryStat(dir, &metadata->current_backup);
   PathNode *empty = findSubnode(dir, "empty", BH_unchanged, BPOL_copy, 1, 0);
   mustHaveDirectoryStat(empty, &metadata->backup_history[3]);
-  PathNode *link = findSubnode(dir, "link", BH_unchanged, BPOL_copy, 2, 0);
-  mustHaveNonExisting(link, &metadata->backup_history[2]);
+  PathNode *link = findSubnode(dir, "link", BH_removed, BPOL_copy, 1, 0);
   mustHaveSymlinkLStats(link, &metadata->backup_history[3], "../some file", link_stats);
 
   PathNode *some_file = findSubnode(foo, "some file", BH_unchanged, BPOL_copy, 1, 0);
@@ -1077,7 +1072,7 @@ static void runPhase8(String cwd_path, size_t cwd_depth,
   assert_true(metadata->total_path_count == cwd_depth + 22);
   checkHistPoint(metadata, 0, 0, phase_timestamps[6], cwd_depth + 14);
   checkHistPoint(metadata, 1, 1, phase_timestamps[4], 2);
-  checkHistPoint(metadata, 2, 2, phase_timestamps[2], 2);
+  checkHistPoint(metadata, 2, 2, phase_timestamps[2], 1);
   checkHistPoint(metadata, 3, 3, phase_timestamps[0], 6);
   initiateBackup(metadata, phase_8_node);
 
@@ -1088,7 +1083,7 @@ static void runPhase8(String cwd_path, size_t cwd_depth,
   assert_true(metadata->total_path_count == cwd_depth + 10);
   checkHistPoint(metadata, 0, 0, phase_timestamps[6], 0);
   checkHistPoint(metadata, 1, 1, phase_timestamps[4], 0);
-  checkHistPoint(metadata, 2, 2, phase_timestamps[2], 2);
+  checkHistPoint(metadata, 2, 2, phase_timestamps[2], 1);
   checkHistPoint(metadata, 3, 3, phase_timestamps[0], 6);
 
   PathNode *files = findFilesNode(metadata, cwd_path, BH_unchanged, 4);
@@ -1107,8 +1102,7 @@ static void runPhase8(String cwd_path, size_t cwd_depth,
   mustHaveDirectoryStat(dir, &metadata->current_backup);
   PathNode *empty = findSubnode(dir, "empty", BH_unchanged, BPOL_copy, 1, 0);
   mustHaveDirectoryStat(empty, &metadata->backup_history[3]);
-  PathNode *link = findSubnode(dir, "link", BH_unchanged, BPOL_copy, 2, 0);
-  mustHaveNonExisting(link, &metadata->backup_history[2]);
+  PathNode *link = findSubnode(dir, "link", BH_removed, BPOL_copy, 1, 0);
   mustHaveSymlinkLStats(link, &metadata->backup_history[3], "../some file", link_stats);
 
   PathNode *some_file = findSubnode(foo, "some file", BH_unchanged, BPOL_copy, 1, 0);

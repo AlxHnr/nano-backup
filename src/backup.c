@@ -221,7 +221,11 @@ static void prepareNodeForWipingRecursively(Metadata *metadata,
 static void handleRemovedPath(Metadata *metadata, PathNode *node,
                               BackupPolicy policy)
 {
-  if(policy == BPOL_mirror)
+  if(node->policy == BPOL_none || node->policy == BPOL_copy)
+  {
+    node->hint = BH_removed;
+  }
+  else if(policy == BPOL_mirror)
   {
     prepareNodeForWipingRecursively(metadata, node);
   }
