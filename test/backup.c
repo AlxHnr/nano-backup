@@ -1055,6 +1055,7 @@ static void runPhase7(String cwd_path, size_t cwd_depth,
                        (uint8_t *)"FileFileFileFile????", 0, directory_f_stats);
 }
 
+/** Tests how unneeded nodes get wiped. */
 static void runPhase8(String cwd_path, size_t cwd_depth,
                       SearchNode *phase_8_node)
 {
