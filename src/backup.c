@@ -571,8 +571,8 @@ static void finishBackupRecursively(Metadata *metadata,
   for(PathNode *node = node_list; node != NULL; node = node->next)
   {
     /* Handle only new regular files. */
-    if(node->history->backup == &metadata->current_backup &&
-       node->history->next == NULL &&
+    if(node->hint == BH_added &&
+       node->history->backup == &metadata->current_backup &&
        node->history->state.type == PST_regular &&
        node->history->state.metadata.reg.size > 0)
     {
