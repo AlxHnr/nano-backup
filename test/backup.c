@@ -32,8 +32,10 @@
 
 #include "test.h"
 #include "metadata.h"
+#include "memory-pool.h"
 #include "search-tree.h"
 #include "test-common.h"
+#include "string-table.h"
 #include "safe-wrappers.h"
 #include "error-handling.h"
 
@@ -225,66 +227,88 @@ static void removePath(const char *path)
   restoreParentTime(path, parent_time);
 }
 
-/** Wrapper around mustHaveRegular() which takes a stat struct.
+/** Stats a file and caches the result for subsequent runs.
 
-  @param node The node which should be checked.
-  @param backup The backup to which the given node must point.
-  @param hash The expected hash in RegularFileInfo.
-  @param slot The expected slot in RegularFileInfo.
-  @param stats The struct containing informations about the file.
+  @param path The path to the file to stat. Must contain a null-terminated
+  buffer.
+  @param stat_fun The stat function to use.
+
+  @return The stats which the given path had on its first access trough
+  this function.
 */
-static void mustHaveRegularStats(PathNode *node, const Backup *backup,
-                                 uint64_t size, const uint8_t *hash,
-                                 uint8_t slot, struct stat stats)
+static struct stat cachedStat(String path, struct stat (*stat_fun)(const char *))
 {
-  mustHaveRegular(node, backup, stats.st_uid, stats.st_gid, stats.st_mtime,
-                  stats.st_mode, size, hash, slot);
+  static StringTable *stat_cache = NULL;
+  if(stat_cache == NULL)
+  {
+    stat_cache = strtableNewFixed(100);
+  }
+
+  struct stat *cache = strtableGet(stat_cache, path);
+  if(cache == NULL)
+  {
+    cache = mpAlloc(sizeof *cache);
+    *cache = stat_fun(path.str);
+    strtableMap(stat_cache, path, cache);
+  }
+
+  return *cache;
 }
 
-/** Simplified wrapper around mustHaveRegularStats(). It extracts additional
-  informations via stat() and passes them to mustHaveRegularStats(). */
+/** Wrapper around mustHaveRegular(), which extracts additional
+  informations using sStat(). */
 static void mustHaveRegularStat(PathNode *node, const Backup *backup,
                                 uint64_t size, const uint8_t *hash,
                                 uint8_t slot)
 {
-  mustHaveRegularStats(node, backup, size, hash,
-                       slot, sStat(node->path.str));
+  struct stat stats = sStat(node->path.str);
+  mustHaveRegular(node, backup, stats.st_uid, stats.st_gid, stats.st_mtime,
+                  stats.st_mode, size, hash, slot);
 }
 
-/** Simplified wrapper around mustHaveSymlink() which takes a stat struct.
-
-  @param node The node which should be checked.
-  @param backup The backup to which the given node must point.
-  @param sym_target The target path of the symlink.
-  @param stats The struct containing informations about the symlink.
-*/
-static void mustHaveSymlinkLStats(PathNode *node, const Backup *backup,
-                                  const char *sym_target,
-                                  struct stat stats)
+/** Cached version of mustHaveRegularStat(). */
+static void mustHaveRegularCached(PathNode *node, const Backup *backup,
+                                  uint64_t size, const uint8_t *hash,
+                                  uint8_t slot)
 {
+  struct stat stats = cachedStat(node->path, sStat);
+  mustHaveRegular(node, backup, stats.st_uid, stats.st_gid, stats.st_mtime,
+                  stats.st_mode, size, hash, slot);
+}
+
+/** Like mustHaveRegularStat(), but for mustHaveSymlink(). */
+static void mustHaveSymlinkLStat(PathNode *node, const Backup *backup,
+                                  const char *sym_target)
+{
+  struct stat stats = sLStat(node->path.str);
   mustHaveSymlink(node, backup, stats.st_uid, stats.st_gid,
                   stats.st_mtime, sym_target);
 }
 
-/** Symlink counterpart to mustHaveRegularStat(). */
-static void mustHaveSymlinkLStat(PathNode *node, const Backup *backup,
-                                  const char *sym_target)
+/** Cached version of mustHaveSymlinkLStat(). */
+static void mustHaveSymlinkLCached(PathNode *node, const Backup *backup,
+                                   const char *sym_target)
 {
-  mustHaveSymlinkLStats(node, backup, sym_target, sLStat(node->path.str));
+  struct stat stats = cachedStat(node->path, sLStat);
+  mustHaveSymlink(node, backup, stats.st_uid, stats.st_gid,
+                  stats.st_mtime, sym_target);
 }
 
-/** Like mustHaveRegularStats(), but for mustHaveDirectory(). */
-static void mustHaveDirectoryStats(PathNode *node, const Backup *backup,
-                                   struct stat stats)
-{
-  mustHaveDirectory(node, backup, stats.st_uid, stats.st_gid,
-                    stats.st_mtime, stats.st_mode);
-}
 
 /** Like mustHaveRegularStat(), but for mustHaveDirectory(). */
 static void mustHaveDirectoryStat(PathNode *node, const Backup *backup)
 {
-  mustHaveDirectoryStats(node, backup, sStat(node->path.str));
+  struct stat stats = sStat(node->path.str);
+  mustHaveDirectory(node, backup, stats.st_uid, stats.st_gid,
+                    stats.st_mtime, stats.st_mode);
+}
+
+/** Cached version of mustHaveDirectoryStat(). */
+static void mustHaveDirectoryCached(PathNode *node, const Backup *backup)
+{
+  struct stat stats = cachedStat(node->path, sStat);
+  mustHaveDirectory(node, backup, stats.st_uid, stats.st_gid,
+                    stats.st_mtime, stats.st_mode);
 }
 
 /** Finds the node "$PWD/tmp/files".
@@ -348,29 +372,6 @@ static const uint8_t test_c_hash[] =
   0xa4, 0xff, 0x8d, 0x34, 0xed, 0x84, 0xcb, 0x42, 0xc7, 0xe0,
 };
 
-/** Contains the stats of various removed files. */
-static struct stat two_txt_stats;
-static struct stat link_stats;
-static struct stat super_stats;
-static struct stat data_stats;
-static struct stat data_a_stats;
-static struct stat data_b_stats;
-static struct stat data_c_stats;
-static struct stat data_d_stats;
-static struct stat data_1_stats;
-static struct stat data_2_stats;
-static struct stat data_3_stats;
-static struct stat test_stats;
-static struct stat test_a_stats;
-static struct stat test_b_stats;
-static struct stat test_c_stats;
-static struct stat test_d_stats;
-static struct stat test_e_stats;
-static struct stat test_f_stats;
-static struct stat directory_c_stats;
-static struct stat directory_e_stats;
-static struct stat directory_f_stats;
-
 /** Contains the timestamp at which a phase finished. */
 static time_t phase_timestamps[8] = { 0 };
 
@@ -408,8 +409,6 @@ static void runPhase1(String cwd_path, size_t cwd_depth,
   generateFile("tmp/files/foo/some file", "nano-backup ", 7);
   generateFile("tmp/files/foo/dir/3.txt", "This is a test file\n", 20);
   makeSymlink("../some file", "tmp/files/foo/dir/link");
-  two_txt_stats = sStat("tmp/files/foo/bar/2.txt");
-  link_stats = sLStat("tmp/files/foo/dir/link");
 
   /* Initiate the backup. */
   Metadata *metadata = metadataNew();
@@ -431,7 +430,7 @@ static void runPhase1(String cwd_path, size_t cwd_depth,
   PathNode *one_txt = findSubnode(bar, "1.txt", BH_added, BPOL_track, 1, 0);
   mustHaveRegularStat(one_txt, &metadata->current_backup, 12, NULL, 0);
   PathNode *two_txt = findSubnode(bar, "2.txt", BH_added, BPOL_track, 1, 0);
-  mustHaveRegularStats(two_txt, &metadata->current_backup, 0, NULL, 0, two_txt_stats);
+  mustHaveRegularCached(two_txt, &metadata->current_backup, 0, NULL, 0);
   PathNode *three_txt = findSubnode(bar, "3.txt", BH_added, BPOL_track, 1, 0);
   mustHaveRegularStat(three_txt, &metadata->current_backup, 400, NULL, 0);
 
@@ -442,7 +441,7 @@ static void runPhase1(String cwd_path, size_t cwd_depth,
   PathNode *empty = findSubnode(dir, "empty", BH_added, BPOL_copy, 1, 0);
   mustHaveDirectoryStat(empty, &metadata->current_backup);
   PathNode *link = findSubnode(dir, "link", BH_added, BPOL_copy, 1, 0);
-  mustHaveSymlinkLStats(link, &metadata->current_backup, "../some file", link_stats);
+  mustHaveSymlinkLCached(link, &metadata->current_backup, "../some file");
 
   PathNode *some_file = findSubnode(foo, "some file", BH_added, BPOL_copy, 1, 0);
   mustHaveRegularStat(some_file, &metadata->current_backup, 84, NULL, 0);
@@ -465,7 +464,6 @@ static void runPhase2(String cwd_path, size_t cwd_depth,
   makeDir("tmp/files/foo/dummy");
   generateFile("tmp/files/foo/super.txt",  "This is a super file\n", 100);
   generateFile("tmp/files/foo/dummy/file", "dummy file", 1);
-  super_stats = sStat("tmp/files/foo/super.txt");
 
   /* Initiate the backup. */
   Metadata *metadata = metadataLoad("tmp/repo/metadata");
@@ -500,13 +498,13 @@ static void runPhase2(String cwd_path, size_t cwd_depth,
   PathNode *empty = findSubnode(dir, "empty", BH_unchanged, BPOL_copy, 1, 0);
   mustHaveDirectoryStat(empty, &metadata->backup_history[0]);
   PathNode *link = findSubnode(dir, "link", BH_unchanged, BPOL_copy, 1, 0);
-  mustHaveSymlinkLStats(link, &metadata->backup_history[0], "../some file", link_stats);
+  mustHaveSymlinkLCached(link, &metadata->backup_history[0], "../some file");
 
   PathNode *some_file = findSubnode(foo, "some file", BH_unchanged, BPOL_copy, 1, 0);
   mustHaveRegularStat(some_file, &metadata->backup_history[0], 84, some_file_hash, 0);
 
   PathNode *super = findSubnode(foo, "super.txt", BH_added, BPOL_mirror, 1, 0);
-  mustHaveRegularStats(super, &metadata->current_backup, 2100, NULL, 0, super_stats);
+  mustHaveRegularCached(super, &metadata->current_backup, 2100, NULL, 0);
 
   PathNode *dummy = findSubnode(foo, "dummy", BH_added, BPOL_none, 1, 1);
   mustHaveDirectoryStat(dummy, &metadata->current_backup);
@@ -554,7 +552,7 @@ static void runPhase3(String cwd_path, size_t cwd_depth,
   mustHaveRegularStat(one_txt, &metadata->backup_history[1], 12, (uint8_t *)"A small file", 0);
   PathNode *two_txt = findSubnode(bar, "2.txt", BH_removed, BPOL_track, 2, 0);
   mustHaveNonExisting(two_txt, &metadata->current_backup);
-  mustHaveRegularStats(two_txt, &metadata->backup_history[1], 0, (uint8_t *)"", 0, two_txt_stats);
+  mustHaveRegularCached(two_txt, &metadata->backup_history[1], 0, (uint8_t *)"", 0);
   PathNode *three_txt = findSubnode(bar, "3.txt", BH_not_part_of_repository, BPOL_track, 1, 0);
   mustHaveRegularStat(three_txt, &metadata->backup_history[1], 400, three_hash, 0);
 
@@ -565,13 +563,13 @@ static void runPhase3(String cwd_path, size_t cwd_depth,
   PathNode *empty = findSubnode(dir, "empty", BH_unchanged, BPOL_copy, 1, 0);
   mustHaveDirectoryStat(empty, &metadata->backup_history[1]);
   PathNode *link = findSubnode(dir, "link", BH_removed, BPOL_copy, 1, 0);
-  mustHaveSymlinkLStats(link, &metadata->backup_history[1], "../some file", link_stats);
+  mustHaveSymlinkLCached(link, &metadata->backup_history[1], "../some file");
 
   PathNode *some_file = findSubnode(foo, "some file", BH_unchanged, BPOL_copy, 1, 0);
   mustHaveRegularStat(some_file, &metadata->backup_history[1], 84, some_file_hash, 0);
 
   PathNode *super = findSubnode(foo, "super.txt", BH_not_part_of_repository, BPOL_mirror, 1, 0);
-  mustHaveRegularStats(super, &metadata->backup_history[0], 2100, NULL, 0, super_stats);
+  mustHaveRegularCached(super, &metadata->backup_history[0], 2100, NULL, 0);
 
   PathNode *dummy = findSubnode(foo, "dummy", BH_not_part_of_repository, BPOL_none, 1, 1);
   mustHaveDirectoryStat(dummy, &metadata->current_backup);
@@ -612,14 +610,14 @@ static void runPhase4(String cwd_path, size_t cwd_depth,
   mustHaveRegularStat(one_txt, &metadata->backup_history[1], 12, (uint8_t *)"A small file", 0);
   PathNode *two_txt = findSubnode(bar, "2.txt", BH_unchanged, BPOL_track, 2, 0);
   mustHaveNonExisting(two_txt, &metadata->backup_history[0]);
-  mustHaveRegularStats(two_txt, &metadata->backup_history[1], 0, (uint8_t *)"", 0, two_txt_stats);
+  mustHaveRegularCached(two_txt, &metadata->backup_history[1], 0, (uint8_t *)"", 0);
 
   PathNode *dir = findSubnode(foo, "dir", BH_unchanged, BPOL_none, 1, 2);
   mustHaveDirectoryStat(dir, &metadata->current_backup);
   PathNode *empty = findSubnode(dir, "empty", BH_unchanged, BPOL_copy, 1, 0);
   mustHaveDirectoryStat(empty, &metadata->backup_history[1]);
   PathNode *link = findSubnode(dir, "link", BH_removed, BPOL_copy, 1, 0);
-  mustHaveSymlinkLStats(link, &metadata->backup_history[1], "../some file", link_stats);
+  mustHaveSymlinkLCached(link, &metadata->backup_history[1], "../some file");
 
   PathNode *some_file = findSubnode(foo, "some file", BH_unchanged, BPOL_copy, 1, 0);
   mustHaveRegularStat(some_file, &metadata->backup_history[1], 84, some_file_hash, 0);
@@ -672,21 +670,6 @@ static void runPhase5(String cwd_path, size_t cwd_depth,
   generateFile("tmp/files/test/a/b/c",                "a/b/c/",       7);
   generateFile("tmp/files/test/a/b/d/e",              "FILE CONTENT", 1);
   generateFile("tmp/files/test/a/b/d/f",              "CONTENT",      1);
-  data_stats   = sStat("tmp/files/data");
-  data_a_stats = sStat("tmp/files/data/a");
-  data_b_stats = sStat("tmp/files/data/a/b");
-  data_c_stats = sStat("tmp/files/data/a/b/c");
-  data_d_stats = sStat("tmp/files/data/a/b/c/d");
-  data_1_stats = sStat("tmp/files/data/a/1");
-  data_2_stats = sStat("tmp/files/data/a/1/2");
-  data_3_stats = sStat("tmp/files/data/a/1/2/3");
-  test_stats   = sStat("tmp/files/test");
-  test_a_stats = sStat("tmp/files/test/a");
-  test_b_stats = sStat("tmp/files/test/a/b");
-  test_c_stats = sStat("tmp/files/test/a/b/c");
-  test_d_stats = sStat("tmp/files/test/a/b/d");
-  test_e_stats = sStat("tmp/files/test/a/b/d/e");
-  test_f_stats = sStat("tmp/files/test/a/b/d/f");
 
   /* Initiate the backup. */
   Metadata *metadata = metadataLoad("tmp/repo/metadata");
@@ -715,7 +698,7 @@ static void runPhase5(String cwd_path, size_t cwd_depth,
   mustHaveRegularStat(one_txt, &metadata->backup_history[2], 12, (uint8_t *)"A small file", 0);
   PathNode *two_txt = findSubnode(bar, "2.txt", BH_unchanged, BPOL_track, 2, 0);
   mustHaveNonExisting(two_txt, &metadata->backup_history[1]);
-  mustHaveRegularStats(two_txt, &metadata->backup_history[2], 0, (uint8_t *)"", 0, two_txt_stats);
+  mustHaveRegularCached(two_txt, &metadata->backup_history[2], 0, (uint8_t *)"", 0);
 
   PathNode *subdir = findSubnode(bar, "subdir", BH_added, BPOL_track, 1, 2);
   mustHaveDirectoryStat(subdir, &metadata->current_backup);
@@ -739,27 +722,27 @@ static void runPhase5(String cwd_path, size_t cwd_depth,
   PathNode *empty = findSubnode(dir, "empty", BH_unchanged, BPOL_copy, 1, 0);
   mustHaveDirectoryStat(empty, &metadata->backup_history[2]);
   PathNode *link = findSubnode(dir, "link", BH_removed, BPOL_copy, 1, 0);
-  mustHaveSymlinkLStats(link, &metadata->backup_history[2], "../some file", link_stats);
+  mustHaveSymlinkLCached(link, &metadata->backup_history[2], "../some file");
 
   PathNode *some_file = findSubnode(foo, "some file", BH_unchanged, BPOL_copy, 1, 0);
   mustHaveRegularStat(some_file, &metadata->backup_history[2], 84, some_file_hash, 0);
 
   PathNode *data = findSubnode(files, "data", BH_added, BPOL_mirror, 1, 1);
-  mustHaveDirectoryStats(data, &metadata->current_backup, data_stats);
+  mustHaveDirectoryCached(data, &metadata->current_backup);
   PathNode *data_a = findSubnode(data, "a", BH_added, BPOL_mirror, 1, 2);
-  mustHaveDirectoryStats(data_a, &metadata->current_backup, data_a_stats);
+  mustHaveDirectoryCached(data_a, &metadata->current_backup);
   PathNode *data_b = findSubnode(data_a, "b", BH_added, BPOL_mirror, 1, 1);
-  mustHaveDirectoryStats(data_b, &metadata->current_backup, data_b_stats);
+  mustHaveDirectoryCached(data_b, &metadata->current_backup);
   PathNode *data_c = findSubnode(data_b, "c", BH_added, BPOL_mirror, 1, 1);
-  mustHaveDirectoryStats(data_c, &metadata->current_backup, data_c_stats);
+  mustHaveDirectoryCached(data_c, &metadata->current_backup);
   PathNode *data_d = findSubnode(data_c, "d", BH_added, BPOL_mirror, 1, 0);
-  mustHaveRegularStats(data_d, &metadata->current_backup, 1200, NULL, 0, data_d_stats);
+  mustHaveRegularCached(data_d, &metadata->current_backup, 1200, NULL, 0);
   PathNode *data_1 = findSubnode(data_a, "1", BH_added, BPOL_mirror, 1, 1);
-  mustHaveDirectoryStats(data_1, &metadata->current_backup, data_1_stats);
+  mustHaveDirectoryCached(data_1, &metadata->current_backup);
   PathNode *data_2 = findSubnode(data_1, "2", BH_added, BPOL_mirror, 1, 1);
-  mustHaveDirectoryStats(data_2, &metadata->current_backup, data_2_stats);
+  mustHaveDirectoryCached(data_2, &metadata->current_backup);
   PathNode *data_3 = findSubnode(data_2, "3", BH_added, BPOL_mirror, 1, 0);
-  mustHaveDirectoryStats(data_3, &metadata->current_backup, data_3_stats);
+  mustHaveDirectoryCached(data_3, &metadata->current_backup);
 
   PathNode *nested = findSubnode(files, "nested", BH_added, BPOL_copy, 1, 3);
   mustHaveDirectoryStat(nested, &metadata->current_backup);
@@ -779,19 +762,19 @@ static void runPhase5(String cwd_path, size_t cwd_depth,
   mustHaveRegularStat(nested_e, &metadata->current_backup, 1200, NULL, 0);
 
   PathNode *test = findSubnode(files, "test", BH_added, BPOL_mirror, 1, 1);
-  mustHaveDirectoryStats(test, &metadata->current_backup, test_stats);
+  mustHaveDirectoryCached(test, &metadata->current_backup);
   PathNode *test_a = findSubnode(test, "a", BH_added, BPOL_mirror, 1, 1);
-  mustHaveDirectoryStats(test_a, &metadata->current_backup, test_a_stats);
+  mustHaveDirectoryCached(test_a, &metadata->current_backup);
   PathNode *test_b = findSubnode(test_a, "b", BH_added, BPOL_mirror, 1, 2);
-  mustHaveDirectoryStats(test_b, &metadata->current_backup, test_b_stats);
+  mustHaveDirectoryCached(test_b, &metadata->current_backup);
   PathNode *test_c = findSubnode(test_b, "c", BH_added, BPOL_mirror, 1, 0);
-  mustHaveRegularStats(test_c, &metadata->current_backup, 42, NULL, 0, test_c_stats);
+  mustHaveRegularCached(test_c, &metadata->current_backup, 42, NULL, 0);
   PathNode *test_d = findSubnode(test_b, "d", BH_added, BPOL_mirror, 1, 2);
-  mustHaveDirectoryStats(test_d, &metadata->current_backup, test_d_stats);
+  mustHaveDirectoryCached(test_d, &metadata->current_backup);
   PathNode *test_e = findSubnode(test_d, "e", BH_added, BPOL_mirror, 1, 0);
-  mustHaveRegularStats(test_e, &metadata->current_backup, 12, NULL, 0, test_e_stats);
+  mustHaveRegularCached(test_e, &metadata->current_backup, 12, NULL, 0);
   PathNode *test_f = findSubnode(test_d, "f", BH_added, BPOL_mirror, 1, 0);
-  mustHaveRegularStats(test_f, &metadata->current_backup, 7, NULL, 0, test_f_stats);
+  mustHaveRegularCached(test_f, &metadata->current_backup, 7, NULL, 0);
 
   /* Finish backup and perform additional checks. */
   completeBackup(metadata, 4);
@@ -799,13 +782,13 @@ static void runPhase5(String cwd_path, size_t cwd_depth,
   mustHaveRegularStat(subdir_a1, &metadata->current_backup, 1,    (uint8_t *)"1???????????????????", 0);
   mustHaveRegularStat(subdir_c,  &metadata->current_backup, 20,   (uint8_t *)"11111111111111111111", 0);
   mustHaveRegularStat(subdir_f,  &metadata->current_backup, 12,   (uint8_t *)"TestTestTest????????", 0);
-  mustHaveRegularStats(data_d,   &metadata->current_backup, 1200, data_d_hash,                       0, data_d_stats);
+  mustHaveRegularCached(data_d,  &metadata->current_backup, 1200, data_d_hash,                       0);
   mustHaveRegularStat(nested_1,  &metadata->current_backup, 144,  nested_1_hash,                     0);
   mustHaveRegularStat(nested_2,  &metadata->current_backup, 56,   nested_2_hash,                     0);
   mustHaveRegularStat(nested_e,  &metadata->current_backup, 1200, data_d_hash,                       0);
-  mustHaveRegularStats(test_c,   &metadata->current_backup, 42,   test_c_hash,                       0, test_c_stats);
-  mustHaveRegularStats(test_e,   &metadata->current_backup, 12,   (uint8_t *)"FILE CONTENT????????", 0, test_e_stats);
-  mustHaveRegularStats(test_f,   &metadata->current_backup, 7,    (uint8_t *)"CONTENT?????????????", 0, test_f_stats);
+  mustHaveRegularCached(test_c,  &metadata->current_backup, 42,   test_c_hash,                       0);
+  mustHaveRegularCached(test_e,  &metadata->current_backup, 12,   (uint8_t *)"FILE CONTENT????????", 0);
+  mustHaveRegularCached(test_f,  &metadata->current_backup, 7,    (uint8_t *)"CONTENT?????????????", 0);
 }
 
 /** Performs a backup after removing various deeply nested files. */
@@ -854,7 +837,7 @@ static void runPhase6(String cwd_path, size_t cwd_depth,
   mustHaveRegularStat(one_txt, &metadata->backup_history[2], 12, (uint8_t *)"A small file", 0);
   PathNode *two_txt = findSubnode(bar, "2.txt", BH_unchanged, BPOL_track, 2, 0);
   mustHaveNonExisting(two_txt, &metadata->backup_history[1]);
-  mustHaveRegularStats(two_txt, &metadata->backup_history[2], 0, (uint8_t *)"???", 0, two_txt_stats);
+  mustHaveRegularCached(two_txt, &metadata->backup_history[2], 0, (uint8_t *)"???", 0);
 
   PathNode *subdir = findSubnode(bar, "subdir", BH_not_part_of_repository, BPOL_track, 1, 2);
   mustHaveDirectoryStat(subdir, &metadata->backup_history[0]);
@@ -878,27 +861,27 @@ static void runPhase6(String cwd_path, size_t cwd_depth,
   PathNode *empty = findSubnode(dir, "empty", BH_unchanged, BPOL_copy, 1, 0);
   mustHaveDirectoryStat(empty, &metadata->backup_history[2]);
   PathNode *link = findSubnode(dir, "link", BH_removed, BPOL_copy, 1, 0);
-  mustHaveSymlinkLStats(link, &metadata->backup_history[2], "../some file", link_stats);
+  mustHaveSymlinkLCached(link, &metadata->backup_history[2], "../some file");
 
   PathNode *some_file = findSubnode(foo, "some file", BH_unchanged, BPOL_copy, 1, 0);
   mustHaveRegularStat(some_file, &metadata->backup_history[2], 84, some_file_hash, 0);
 
   PathNode *data = findSubnode(files, "data", BH_not_part_of_repository, BPOL_mirror, 1, 1);
-  mustHaveDirectoryStats(data, &metadata->backup_history[0], data_stats);
+  mustHaveDirectoryCached(data, &metadata->backup_history[0]);
   PathNode *data_a = findSubnode(data, "a", BH_not_part_of_repository, BPOL_mirror, 1, 2);
-  mustHaveDirectoryStats(data_a, &metadata->backup_history[0], data_a_stats);
+  mustHaveDirectoryCached(data_a, &metadata->backup_history[0]);
   PathNode *data_b = findSubnode(data_a, "b", BH_not_part_of_repository, BPOL_mirror, 1, 1);
-  mustHaveDirectoryStats(data_b, &metadata->backup_history[0], data_b_stats);
+  mustHaveDirectoryCached(data_b, &metadata->backup_history[0]);
   PathNode *data_c = findSubnode(data_b, "c", BH_not_part_of_repository, BPOL_mirror, 1, 1);
-  mustHaveDirectoryStats(data_c, &metadata->backup_history[0], data_c_stats);
+  mustHaveDirectoryCached(data_c, &metadata->backup_history[0]);
   PathNode *data_d = findSubnode(data_c, "d", BH_not_part_of_repository, BPOL_mirror, 1, 0);
-  mustHaveRegularStats(data_d, &metadata->backup_history[0], 1200, data_d_hash, 0, data_d_stats);
+  mustHaveRegularCached(data_d, &metadata->backup_history[0], 1200, data_d_hash, 0);
   PathNode *data_1 = findSubnode(data_a, "1", BH_not_part_of_repository, BPOL_mirror, 1, 1);
-  mustHaveDirectoryStats(data_1, &metadata->backup_history[0], data_1_stats);
+  mustHaveDirectoryCached(data_1, &metadata->backup_history[0]);
   PathNode *data_2 = findSubnode(data_1, "2", BH_not_part_of_repository, BPOL_mirror, 1, 1);
-  mustHaveDirectoryStats(data_2, &metadata->backup_history[0], data_2_stats);
+  mustHaveDirectoryCached(data_2, &metadata->backup_history[0]);
   PathNode *data_3 = findSubnode(data_2, "3", BH_not_part_of_repository, BPOL_mirror, 1, 0);
-  mustHaveDirectoryStats(data_3, &metadata->backup_history[0], data_3_stats);
+  mustHaveDirectoryCached(data_3, &metadata->backup_history[0]);
 
   PathNode *nested = findSubnode(files, "nested", BH_not_part_of_repository, BPOL_copy, 1, 3);
   mustHaveDirectoryStat(nested, &metadata->backup_history[0]);
@@ -918,19 +901,19 @@ static void runPhase6(String cwd_path, size_t cwd_depth,
   mustHaveRegularStat(nested_e, &metadata->backup_history[0], 1200, data_d_hash, 0);
 
   PathNode *test = findSubnode(files, "test", BH_unchanged, BPOL_mirror, 1, 1);
-  mustHaveDirectoryStats(test, &metadata->backup_history[0], test_stats);
+  mustHaveDirectoryCached(test, &metadata->backup_history[0]);
   PathNode *test_a = findSubnode(test, "a", BH_unchanged, BPOL_mirror, 1, 1);
-  mustHaveDirectoryStats(test_a, &metadata->backup_history[0], test_a_stats);
+  mustHaveDirectoryCached(test_a, &metadata->backup_history[0]);
   PathNode *test_b = findSubnode(test_a, "b", BH_not_part_of_repository, BPOL_mirror, 1, 2);
-  mustHaveDirectoryStats(test_b, &metadata->backup_history[0], test_b_stats);
+  mustHaveDirectoryCached(test_b, &metadata->backup_history[0]);
   PathNode *test_c = findSubnode(test_b, "c", BH_not_part_of_repository, BPOL_mirror, 1, 0);
-  mustHaveRegularStats(test_c, &metadata->backup_history[0], 42, test_c_hash, 0, test_c_stats);
+  mustHaveRegularCached(test_c, &metadata->backup_history[0], 42, test_c_hash, 0);
   PathNode *test_d = findSubnode(test_b, "d", BH_not_part_of_repository, BPOL_mirror, 1, 2);
-  mustHaveDirectoryStats(test_d, &metadata->backup_history[0], test_d_stats);
+  mustHaveDirectoryCached(test_d, &metadata->backup_history[0]);
   PathNode *test_e = findSubnode(test_d, "e", BH_not_part_of_repository, BPOL_mirror, 1, 0);
-  mustHaveRegularStats(test_e, &metadata->backup_history[0], 12, (uint8_t *)"FILE CONTENT????????", 0, test_e_stats);
+  mustHaveRegularCached(test_e, &metadata->backup_history[0], 12, (uint8_t *)"FILE CONTENT????????", 0);
   PathNode *test_f = findSubnode(test_d, "f", BH_not_part_of_repository, BPOL_mirror, 1, 0);
-  mustHaveRegularStats(test_f, &metadata->backup_history[0], 7, (uint8_t *)"CONTENT?????????????", 0, test_f_stats);
+  mustHaveRegularCached(test_f, &metadata->backup_history[0], 7, (uint8_t *)"CONTENT?????????????", 0);
 
   /* Finish backup and perform additional checks. */
   completeBackup(metadata, 5);
@@ -970,9 +953,6 @@ static void runPhase7(String cwd_path, size_t cwd_depth,
   generateFile("tmp/files/unneeded/directory/a/b/c", "Content", 2);
   generateFile("tmp/files/unneeded/directory/a/e/f", "File",    4);
   makeSymlink("../../b/c", "tmp/files/unneeded/directory/a/g/h/i");
-  directory_c_stats = sStat("tmp/files/unneeded/directory/a/b/c");
-  directory_e_stats = sStat("tmp/files/unneeded/directory/a/e");
-  directory_f_stats = sStat("tmp/files/unneeded/directory/a/e/f");
 
   /* Initiate the backup. */
   Metadata *metadata = metadataLoad("tmp/repo/metadata");
@@ -1003,22 +983,22 @@ static void runPhase7(String cwd_path, size_t cwd_depth,
   mustHaveRegularStat(one_txt, &metadata->backup_history[3], 12, (uint8_t *)"A small file", 0);
   PathNode *two_txt = findSubnode(bar, "2.txt", BH_unchanged, BPOL_track, 2, 0);
   mustHaveNonExisting(two_txt, &metadata->backup_history[2]);
-  mustHaveRegularStats(two_txt, &metadata->backup_history[3], 0, (uint8_t *)"???", 0, two_txt_stats);
+  mustHaveRegularCached(two_txt, &metadata->backup_history[3], 0, (uint8_t *)"???", 0);
 
   PathNode *dir = findSubnode(foo, "dir", BH_unchanged, BPOL_none, 1, 2);
   mustHaveDirectoryStat(dir, &metadata->current_backup);
   PathNode *empty = findSubnode(dir, "empty", BH_unchanged, BPOL_copy, 1, 0);
   mustHaveDirectoryStat(empty, &metadata->backup_history[3]);
   PathNode *link = findSubnode(dir, "link", BH_removed, BPOL_copy, 1, 0);
-  mustHaveSymlinkLStats(link, &metadata->backup_history[3], "../some file", link_stats);
+  mustHaveSymlinkLCached(link, &metadata->backup_history[3], "../some file");
 
   PathNode *some_file = findSubnode(foo, "some file", BH_unchanged, BPOL_copy, 1, 0);
   mustHaveRegularStat(some_file, &metadata->backup_history[3], 84, some_file_hash, 0);
 
   PathNode *test = findSubnode(files, "test", BH_unchanged, BPOL_mirror, 1, 1);
-  mustHaveDirectoryStats(test, &metadata->backup_history[1], test_stats);
+  mustHaveDirectoryCached(test, &metadata->backup_history[1]);
   PathNode *test_a = findSubnode(test, "a", BH_unchanged, BPOL_mirror, 1, 0);
-  mustHaveDirectoryStats(test_a, &metadata->backup_history[1], test_a_stats);
+  mustHaveDirectoryCached(test_a, &metadata->backup_history[1]);
 
   PathNode *unneeded = findSubnode(files, "unneeded", BH_added, BPOL_none, 1, 1);
   mustHaveDirectoryStat(unneeded, &metadata->current_backup);
@@ -1029,11 +1009,11 @@ static void runPhase7(String cwd_path, size_t cwd_depth,
   PathNode *directory_b = findSubnode(directory_a, "b", BH_added, BPOL_none, 1, 1);
   mustHaveDirectoryStat(directory_b, &metadata->current_backup);
   PathNode *directory_c = findSubnode(directory_b, "c", BH_added, BPOL_mirror, 1, 0);
-  mustHaveRegularStats(directory_c, &metadata->current_backup, 14, NULL, 0, directory_c_stats);
+  mustHaveRegularCached(directory_c, &metadata->current_backup, 14, NULL, 0);
   PathNode *directory_e = findSubnode(directory_a, "e", BH_added, BPOL_mirror, 1, 1);
-  mustHaveDirectoryStats(directory_e, &metadata->current_backup, directory_e_stats);
+  mustHaveDirectoryCached(directory_e, &metadata->current_backup);
   PathNode *directory_f = findSubnode(directory_e, "f", BH_added, BPOL_mirror, 1, 0);
-  mustHaveRegularStats(directory_f, &metadata->current_backup, 16, NULL, 0, directory_f_stats);
+  mustHaveRegularCached(directory_f, &metadata->current_backup, 16, NULL, 0);
   PathNode *directory_g = findSubnode(directory_a, "g", BH_added, BPOL_none, 1, 1);
   mustHaveDirectoryStat(directory_g, &metadata->current_backup);
   PathNode *directory_h = findSubnode(directory_g, "h", BH_added, BPOL_none, 1, 1);
@@ -1044,10 +1024,10 @@ static void runPhase7(String cwd_path, size_t cwd_depth,
   /* Finish backup and perform additional checks. */
   completeBackup(metadata, 6);
   assert_true(countFilesInDir("tmp/repo") == 8);
-  mustHaveRegularStats(directory_c, &metadata->current_backup, 14,
-                       (uint8_t *)"ContentContent??????", 0, directory_c_stats);
-  mustHaveRegularStats(directory_f, &metadata->current_backup, 16,
-                       (uint8_t *)"FileFileFileFile????", 0, directory_f_stats);
+  mustHaveRegularCached(directory_c, &metadata->current_backup, 14,
+                       (uint8_t *)"ContentContent??????", 0);
+  mustHaveRegularCached(directory_f, &metadata->current_backup, 16,
+                       (uint8_t *)"FileFileFileFile????", 0);
 }
 
 /** Tests how unneeded nodes get wiped. */
@@ -1096,22 +1076,22 @@ static void runPhase8(String cwd_path, size_t cwd_depth,
   mustHaveRegularStat(one_txt, &metadata->backup_history[3], 12, (uint8_t *)"A small file", 0);
   PathNode *two_txt = findSubnode(bar, "2.txt", BH_unchanged, BPOL_track, 2, 0);
   mustHaveNonExisting(two_txt, &metadata->backup_history[2]);
-  mustHaveRegularStats(two_txt, &metadata->backup_history[3], 0, (uint8_t *)"???", 0, two_txt_stats);
+  mustHaveRegularCached(two_txt, &metadata->backup_history[3], 0, (uint8_t *)"???", 0);
 
   PathNode *dir = findSubnode(foo, "dir", BH_unchanged, BPOL_none, 1, 2);
   mustHaveDirectoryStat(dir, &metadata->current_backup);
   PathNode *empty = findSubnode(dir, "empty", BH_unchanged, BPOL_copy, 1, 0);
   mustHaveDirectoryStat(empty, &metadata->backup_history[3]);
   PathNode *link = findSubnode(dir, "link", BH_removed, BPOL_copy, 1, 0);
-  mustHaveSymlinkLStats(link, &metadata->backup_history[3], "../some file", link_stats);
+  mustHaveSymlinkLCached(link, &metadata->backup_history[3], "../some file");
 
   PathNode *some_file = findSubnode(foo, "some file", BH_unchanged, BPOL_copy, 1, 0);
   mustHaveRegularStat(some_file, &metadata->backup_history[3], 84, some_file_hash, 0);
 
   PathNode *test = findSubnode(files, "test", BH_not_part_of_repository, BPOL_mirror, 1, 1);
-  mustHaveDirectoryStats(test, &metadata->backup_history[1], test_stats);
+  mustHaveDirectoryCached(test, &metadata->backup_history[1]);
   PathNode *test_a = findSubnode(test, "a", BH_not_part_of_repository, BPOL_mirror, 1, 0);
-  mustHaveDirectoryStats(test_a, &metadata->backup_history[1], test_a_stats);
+  mustHaveDirectoryCached(test_a, &metadata->backup_history[1]);
 
   PathNode *home = findSubnode(files, "home", BH_not_part_of_repository, BPOL_none, 1, 1);
   mustHaveDirectoryStat(home, &metadata->current_backup);
@@ -1129,15 +1109,15 @@ static void runPhase8(String cwd_path, size_t cwd_depth,
   PathNode *directory_b = findSubnode(directory_a, "b", BH_not_part_of_repository, BPOL_none, 1, 1);
   mustHaveDirectoryStat(directory_b, &metadata->current_backup);
   PathNode *directory_c = findSubnode(directory_b, "c", BH_not_part_of_repository, BPOL_mirror, 1, 0);
-  mustHaveRegularStats(directory_c, &metadata->backup_history[0], 14,
-                       (uint8_t *)"ContentContent??????", 0, directory_c_stats);
+  mustHaveRegularCached(directory_c, &metadata->backup_history[0], 14,
+                       (uint8_t *)"ContentContent??????", 0);
   PathNode *directory_d = findSubnode(directory_a, "d", BH_not_part_of_repository, BPOL_none, 1, 0);
   mustHaveDirectoryStat(directory_d, &metadata->current_backup);
   PathNode *directory_e = findSubnode(directory_a, "e", BH_not_part_of_repository, BPOL_mirror, 1, 1);
-  mustHaveDirectoryStats(directory_e, &metadata->backup_history[0], directory_e_stats);
+  mustHaveDirectoryCached(directory_e, &metadata->backup_history[0]);
   PathNode *directory_f = findSubnode(directory_e, "f", BH_not_part_of_repository, BPOL_mirror, 1, 0);
-  mustHaveRegularStats(directory_f, &metadata->backup_history[0], 16,
-                       (uint8_t *)"FileFileFileFile????", 0, directory_f_stats);
+  mustHaveRegularCached(directory_f, &metadata->backup_history[0], 16,
+                       (uint8_t *)"FileFileFileFile????", 0);
   PathNode *directory_g = findSubnode(directory_a, "g", BH_not_part_of_repository, BPOL_none, 1, 1);
   mustHaveDirectoryStat(directory_g, &metadata->current_backup);
   PathNode *directory_h = findSubnode(directory_g, "h", BH_not_part_of_repository, BPOL_none, 1, 1);
