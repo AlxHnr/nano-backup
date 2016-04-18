@@ -1,6 +1,30 @@
 [track]
 /tmp/files/foo/bar/
+/tmp/files/foo/dir/a/b
+/tmp/files/one/two/three/b
+/tmp/files/nano/a1
+/tmp/files/nb/manual
+/tmp/files/nb/a/abc
+/tmp/files/bin
+/tmp/files/bin/a/b/c
+/tmp/files/bin/one/b
 
 [copy]
 /tmp/files/foo/some file
-/tmp/files/foo/dir//.
+/tmp/files/foo/dir//^(link|empty)$
+/tmp/files/one/two/three/a
+/tmp/files/backup dir
+/tmp/files/nano
+/tmp/files/nano/a2
+/tmp/files/nb/docs
+/tmp/files/bin/a
+/tmp/files/bin/two/four/a
+
+[mirror]
+/tmp/files/foo/dir/a/c
+/tmp/files/one/two/three/d
+/tmp/files/nano/a3
+/tmp/files/nb
+/tmp/files/nb/a/foo
+/tmp/files/bin/one
+/tmp/files/bin/two/five/0
