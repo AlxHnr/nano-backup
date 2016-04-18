@@ -388,7 +388,7 @@ static const uint8_t bin_c_1_hash[] =
 };
 
 /** Contains the timestamp at which a phase finished. */
-static time_t phase_timestamps[8] = { 0 };
+static time_t phase_timestamps[10] = { 0 };
 
 /** Finishes a backup and writes the given metadata struct into "tmp/repo".
 
@@ -1457,6 +1457,296 @@ static void runPhase9(String cwd_path, size_t cwd_depth,
   mustHaveRegularCached(bin_five_null,  &metadata->current_backup, 0,    (uint8_t *)"???",                  0);
 }
 
+/** Tests recursive removing of nested files with varying policies. */
+static void runPhase10(String cwd_path, size_t cwd_depth,
+                       SearchNode *phase_9_node)
+{
+  /* Remove various files. */
+  removePath("tmp/files/bin/two/three");
+  removePath("tmp/files/bin/one/b/2");
+  removePath("tmp/files/nb/a/abc/2");
+  removePath("tmp/files/nano/a2/b");
+  removePath("tmp/files/backup dir/c/1");
+  removePath("tmp/files/one/two/three/d/2");
+  removePath("tmp/files/bin/two/five/0/zero/null");
+  removePath("tmp/files/bin/two/four/a/b/c");
+  removePath("tmp/files/bin/one/d/e");
+  removePath("tmp/files/bin/one/b/1");
+  removePath("tmp/files/bin/one/a");
+  removePath("tmp/files/bin/1/2/3");
+  removePath("tmp/files/bin/a/b/d");
+  removePath("tmp/files/bin/a/b/c/1");
+  removePath("tmp/files/nb/a/abc/1");
+  removePath("tmp/files/nb/a/foo/bar");
+  removePath("tmp/files/nb/docs/1.txt");
+  removePath("tmp/files/nb/manual/b");
+  removePath("tmp/files/nb/manual/a/123.txt");
+  removePath("tmp/files/nano/a3/1/2");
+  removePath("tmp/files/nano/a2/a");
+  removePath("tmp/files/nano/a1/2");
+  removePath("tmp/files/nano/a1/1");
+  removePath("tmp/files/backup dir/c/2/3");
+  removePath("tmp/files/one/two/three/d/1");
+  removePath("tmp/files/one/two/three/b/c");
+  removePath("tmp/files/foo/dir/a/c");
+  removePath("tmp/files/foo/dir/a/b");
+  removePath("tmp/files/bin/two/five/0/zero");
+  removePath("tmp/files/bin/two/five/0");
+  removePath("tmp/files/bin/two/five");
+  removePath("tmp/files/bin/two/four/a/b");
+  removePath("tmp/files/bin/two/four/a");
+  removePath("tmp/files/bin/two/four");
+  removePath("tmp/files/bin/two");
+  removePath("tmp/files/bin/one/d");
+  removePath("tmp/files/bin/one/c");
+  removePath("tmp/files/bin/one/b");
+  removePath("tmp/files/bin/one");
+  removePath("tmp/files/bin/1/2");
+  removePath("tmp/files/bin/1");
+  removePath("tmp/files/bin/a/b/c/2");
+  removePath("tmp/files/bin/a/b/c");
+  removePath("tmp/files/bin/a/b");
+  removePath("tmp/files/bin/a");
+  removePath("tmp/files/bin");
+  removePath("tmp/files/nb/a/abc");
+  removePath("tmp/files/nb/a/foo");
+  removePath("tmp/files/nb/a");
+  removePath("tmp/files/nb/docs");
+  removePath("tmp/files/nb/manual/a");
+  removePath("tmp/files/nb/manual");
+  removePath("tmp/files/nb");
+  removePath("tmp/files/nano/a3/1/3");
+  removePath("tmp/files/nano/a3/1");
+  removePath("tmp/files/nano/a3");
+  removePath("tmp/files/nano/a2");
+  removePath("tmp/files/nano/a1");
+  removePath("tmp/files/nano");
+  removePath("tmp/files/backup dir/c/2");
+  removePath("tmp/files/backup dir/c");
+  removePath("tmp/files/backup dir/a/b");
+  removePath("tmp/files/backup dir/a");
+  removePath("tmp/files/backup dir");
+  removePath("tmp/files/one/two/three/d");
+  removePath("tmp/files/one/two/three/b");
+  removePath("tmp/files/one/two/three/a");
+  removePath("tmp/files/one/two/three");
+  removePath("tmp/files/one/two");
+  removePath("tmp/files/one");
+  removePath("tmp/files/foo/dir/a");
+  removePath("tmp/files/foo/bar/test/path/a");
+  removePath("tmp/files/foo/bar/test/path");
+  removePath("tmp/files/foo/bar/test");
+  removePath("tmp/files/foo/dir/empty");
+  removePath("tmp/files/foo/dir");
+
+  /* Initiate the backup. */
+  Metadata *metadata = metadataLoad("tmp/repo/metadata");
+  assert_true(metadata->total_path_count == cwd_depth + 84);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[8], cwd_depth + 78);
+  checkHistPoint(metadata, 1, 1, phase_timestamps[2], 1);
+  checkHistPoint(metadata, 2, 2, phase_timestamps[0], 6);
+  initiateBackup(metadata, phase_9_node);
+
+  /* Check the initiated backup. */
+  checkMetadata(metadata, 0, true);
+  assert_true(metadata->current_backup.ref_count == cwd_depth + 14);
+  assert_true(metadata->backup_history_length == 3);
+  assert_true(metadata->total_path_count == cwd_depth + 71);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[8], 62);
+  checkHistPoint(metadata, 1, 1, phase_timestamps[2], 1);
+  checkHistPoint(metadata, 2, 2, phase_timestamps[0], 6);
+
+  PathNode *files = findFilesNode(metadata, cwd_path, BH_unchanged, 6);
+  PathNode *foo = findSubnode(files, "foo", BH_unchanged, BPOL_none, 1, 3);
+  mustHaveDirectoryStat(foo, &metadata->current_backup);
+
+  PathNode *bar = findSubnode(foo, "bar", BH_unchanged, BPOL_track, 1, 3);
+  mustHaveDirectoryCached(bar, &metadata->backup_history[2]);
+  PathNode *bar_test = findSubnode(bar, "test", BH_removed, BPOL_track, 2, 1);
+  mustHaveNonExisting(bar_test, &metadata->current_backup);
+  mustHaveDirectoryCached(bar_test, &metadata->backup_history[0]);
+  PathNode *bar_path = findSubnode(bar_test, "path", BH_removed, BPOL_track, 2, 1);
+  mustHaveNonExisting(bar_path, &metadata->current_backup);
+  mustHaveDirectoryCached(bar_path, &metadata->backup_history[0]);
+  PathNode *bar_path_a = findSubnode(bar_path, "a", BH_removed, BPOL_track, 2, 0);
+  mustHaveNonExisting(bar_path_a, &metadata->current_backup);
+  mustHaveDirectoryCached(bar_path_a, &metadata->backup_history[0]);
+  PathNode *one_txt = findSubnode(bar, "1.txt", BH_unchanged, BPOL_track, 1, 0);
+  mustHaveRegularCached(one_txt, &metadata->backup_history[2], 12, (uint8_t *)"A small file", 0);
+  PathNode *two_txt = findSubnode(bar, "2.txt", BH_unchanged, BPOL_track, 2, 0);
+  mustHaveNonExisting(two_txt, &metadata->backup_history[1]);
+  mustHaveRegularCached(two_txt, &metadata->backup_history[2], 0, (uint8_t *)"???", 0);
+
+  PathNode *some_file = findSubnode(foo, "some file", BH_unchanged, BPOL_copy, 1, 0);
+  mustHaveRegularStat(some_file, &metadata->backup_history[2], 84, some_file_hash, 0);
+
+  PathNode *dir = findSubnode(foo, "dir", BH_removed, BPOL_none, 1, 3);
+  mustHaveDirectoryCached(dir, &metadata->backup_history[0]);
+  PathNode *link = findSubnode(dir, "link", BH_none, BPOL_copy, 1, 0);
+  mustHaveSymlinkLCached(link, &metadata->backup_history[2], "../some file");
+  PathNode *empty = findSubnode(dir, "empty", BH_none, BPOL_copy, 1, 0);
+  mustHaveDirectoryCached(empty, &metadata->backup_history[2]);
+  PathNode *dir_a = findSubnode(dir, "a", BH_none, BPOL_none, 1, 2);
+  mustHaveDirectoryCached(dir_a, &metadata->backup_history[0]);
+  PathNode *dir_b = findSubnode(dir_a, "b", BH_none, BPOL_track, 1, 0);
+  mustHaveRegularCached(dir_b, &metadata->backup_history[0], 8, (uint8_t *)"12321232", 0);
+  PathNode *dir_c = findSubnode(dir_a, "c", BH_none, BPOL_mirror, 1, 0);
+  mustHaveRegularCached(dir_c, &metadata->backup_history[0], 8, (uint8_t *)"abcdedcb", 0);
+
+  PathNode *one = findSubnode(files, "one", BH_removed, BPOL_none, 1, 1);
+  mustHaveDirectoryCached(one, &metadata->backup_history[0]);
+  PathNode *two = findSubnode(one, "two", BH_none, BPOL_none, 1, 1);
+  mustHaveDirectoryCached(two, &metadata->backup_history[0]);
+  PathNode *three = findSubnode(two, "three", BH_none, BPOL_none, 1, 3);
+  mustHaveDirectoryCached(three, &metadata->backup_history[0]);
+  PathNode *three_a = findSubnode(three, "a", BH_none, BPOL_copy, 1, 0);
+  mustHaveDirectoryCached(three_a, &metadata->backup_history[0]);
+  PathNode *three_b = findSubnode(three, "b", BH_none, BPOL_track, 1, 1);
+  mustHaveDirectoryCached(three_b, &metadata->backup_history[0]);
+  PathNode *three_c = findSubnode(three_b, "c", BH_none, BPOL_track, 1, 0);
+  mustHaveRegularCached(three_c, &metadata->backup_history[0], 12, (uint8_t *)"FooFooFooFoo", 0);
+  PathNode *three_d = findSubnode(three, "d", BH_none, BPOL_mirror, 1, 2);
+  mustHaveDirectoryCached(three_d, &metadata->backup_history[0]);
+  PathNode *three_1 = findSubnode(three_d, "1", BH_none, BPOL_mirror, 1, 0);
+  mustHaveRegularCached(three_1, &metadata->backup_history[0], 15, (uint8_t *)"BARBARBARBARBAR", 0);
+  PathNode *three_2 = findSubnode(three_d, "2", BH_none, BPOL_mirror, 1, 0);
+  mustHaveSymlinkLCached(three_2, &metadata->backup_history[0], "/dev/null");
+
+  PathNode *backup_dir = findSubnode(files, "backup dir", BH_removed, BPOL_copy, 1, 2);
+  mustHaveDirectoryCached(backup_dir, &metadata->backup_history[0]);
+  PathNode *backup_dir_a = findSubnode(backup_dir, "a", BH_none, BPOL_copy, 1, 1);
+  mustHaveDirectoryCached(backup_dir_a, &metadata->backup_history[0]);
+  PathNode *backup_dir_b = findSubnode(backup_dir_a, "b", BH_none, BPOL_copy, 1, 0);
+  mustHaveDirectoryCached(backup_dir_b, &metadata->backup_history[0]);
+  PathNode *backup_dir_c = findSubnode(backup_dir, "c", BH_none, BPOL_copy, 1, 2);
+  mustHaveDirectoryCached(backup_dir_c, &metadata->backup_history[0]);
+  PathNode *backup_dir_1 = findSubnode(backup_dir_c, "1", BH_none, BPOL_copy, 1, 0);
+  mustHaveSymlinkLCached(backup_dir_1, &metadata->backup_history[0], "/proc/cpuinfo");
+  PathNode *backup_dir_2 = findSubnode(backup_dir_c, "2", BH_none, BPOL_copy, 1, 1);
+  mustHaveDirectoryCached(backup_dir_2, &metadata->backup_history[0]);
+  PathNode *backup_dir_3 = findSubnode(backup_dir_2, "3", BH_none, BPOL_copy, 1, 0);
+  mustHaveRegularCached(backup_dir_3, &metadata->backup_history[0], 11, (uint8_t *)"Lorem Ipsum", 0);
+
+  PathNode *nano = findSubnode(files, "nano", BH_removed, BPOL_copy, 1, 3);
+  mustHaveDirectoryCached(nano, &metadata->backup_history[0]);
+  PathNode *nano_a1 = findSubnode(nano, "a1", BH_none, BPOL_track, 1, 2);
+  mustHaveDirectoryCached(nano_a1, &metadata->backup_history[0]);
+  PathNode *nano_a1_1 = findSubnode(nano_a1, "1", BH_none, BPOL_track, 1, 0);
+  mustHaveRegularCached(nano_a1_1, &metadata->backup_history[0], 0, (uint8_t *)"%%%%", 0);
+  PathNode *nano_a1_2 = findSubnode(nano_a1, "2", BH_none, BPOL_track, 1, 0);
+  mustHaveRegularCached(nano_a1_2, &metadata->backup_history[0], 20, (uint8_t *)"@@@@@@@@@@@@@@@@@@@@", 0);
+  PathNode *nano_a2 = findSubnode(nano, "a2", BH_none, BPOL_copy, 1, 2);
+  mustHaveDirectoryCached(nano_a2, &metadata->backup_history[0]);
+  PathNode *nano_a2_a = findSubnode(nano_a2, "a", BH_none, BPOL_copy, 1, 0);
+  mustHaveRegularCached(nano_a2_a, &metadata->backup_history[0], 20, (uint8_t *)"[][][][][][][][][][]", 0);
+  PathNode *nano_a2_b = findSubnode(nano_a2, "b", BH_none, BPOL_copy, 1, 0);
+  mustHaveSymlinkLCached(nano_a2_b, &metadata->backup_history[0], "../../non-existing.txt");
+  PathNode *nano_a3 = findSubnode(nano, "a3", BH_none, BPOL_mirror, 1, 1);
+  mustHaveDirectoryCached(nano_a3, &metadata->backup_history[0]);
+  PathNode *nano_a3_1 = findSubnode(nano_a3, "1", BH_none, BPOL_mirror, 1, 2);
+  mustHaveDirectoryCached(nano_a3_1, &metadata->backup_history[0]);
+  PathNode *nano_a3_2 = findSubnode(nano_a3_1, "2", BH_none, BPOL_mirror, 1, 0);
+  mustHaveRegularCached(nano_a3_2, &metadata->backup_history[0], 11, (uint8_t *) "^foo$\n^bar$", 0);
+  PathNode *nano_a3_3 = findSubnode(nano_a3_1, "3", BH_none, BPOL_mirror, 1, 0);
+  mustHaveDirectoryCached(nano_a3_3, &metadata->backup_history[0]);
+
+  PathNode *nb = findSubnode(files, "nb", BH_not_part_of_repository, BPOL_mirror, 1, 3);
+  mustHaveDirectoryCached(nb, &metadata->backup_history[0]);
+  PathNode *manual = findSubnode(nb, "manual", BH_not_part_of_repository, BPOL_track, 1, 2);
+  mustHaveDirectoryCached(manual, &metadata->backup_history[0]);
+  PathNode *manual_a = findSubnode(manual, "a", BH_not_part_of_repository, BPOL_track, 1, 1);
+  mustHaveDirectoryCached(manual_a, &metadata->backup_history[0]);
+  PathNode *manual_123_txt = findSubnode(manual_a, "123.txt", BH_not_part_of_repository, BPOL_mirror, 1, 0);
+  mustHaveRegularCached(manual_123_txt, &metadata->backup_history[0], 9, (uint8_t *)"-CONTENT-", 0);
+  PathNode *manual_b = findSubnode(manual, "b", BH_not_part_of_repository, BPOL_track, 1, 0);
+  mustHaveRegularCached(manual_b, &metadata->backup_history[0], 21, nb_manual_b_hash, 0);
+  PathNode *docs = findSubnode(nb, "docs", BH_not_part_of_repository, BPOL_copy, 1, 1);
+  mustHaveDirectoryCached(docs, &metadata->backup_history[0]);
+  PathNode *docs_1_txt = findSubnode(docs, "1.txt", BH_not_part_of_repository, BPOL_copy, 1, 0);
+  mustHaveRegularCached(docs_1_txt, &metadata->backup_history[0], 21, nb_manual_b_hash, 0);
+  PathNode *nb_a = findSubnode(nb, "a", BH_not_part_of_repository, BPOL_mirror, 1, 2);
+  mustHaveDirectoryCached(nb_a, &metadata->backup_history[0]);
+  PathNode *nb_a_foo = findSubnode(nb_a, "foo", BH_not_part_of_repository, BPOL_mirror, 1, 1);
+  mustHaveDirectoryCached(nb_a_foo, &metadata->backup_history[0]);
+  PathNode *nb_a_bar = findSubnode(nb_a_foo, "bar", BH_not_part_of_repository, BPOL_mirror, 1, 0);
+  mustHaveRegularCached(nb_a_bar, &metadata->backup_history[0], 20, (uint8_t *)"qqqqqqqqqqqqqqqqqqqq", 0);
+  PathNode *nb_a_abc = findSubnode(nb_a, "abc", BH_not_part_of_repository, BPOL_track, 1, 2);
+  mustHaveDirectoryCached(nb_a_abc, &metadata->backup_history[0]);
+  PathNode *nb_a_abc_1 = findSubnode(nb_a_abc, "1", BH_not_part_of_repository, BPOL_track, 1, 0);
+  mustHaveRegularCached(nb_a_abc_1, &metadata->backup_history[0], 24, nb_a_abc_1_hash, 0);
+  PathNode *nb_a_abc_2 = findSubnode(nb_a_abc, "2", BH_not_part_of_repository, BPOL_track, 1, 0);
+  mustHaveSymlinkLCached(nb_a_abc_2, &metadata->backup_history[0], "../non-existing-dir");
+
+  PathNode *bin = findSubnode(files, "bin", BH_removed, BPOL_track, 2, 4);
+  mustHaveNonExisting(bin, &metadata->current_backup);
+  mustHaveDirectoryCached(bin, &metadata->backup_history[0]);
+  PathNode *bin_a = findSubnode(bin, "a", BH_removed, BPOL_copy, 1, 1);
+  mustHaveDirectoryCached(bin_a, &metadata->backup_history[0]);
+  PathNode *bin_b = findSubnode(bin_a, "b", BH_none, BPOL_copy, 1, 2);
+  mustHaveDirectoryCached(bin_b, &metadata->backup_history[0]);
+  PathNode *bin_c = findSubnode(bin_b, "c", BH_none, BPOL_track, 1, 2);
+  mustHaveDirectoryCached(bin_c, &metadata->backup_history[0]);
+  PathNode *bin_c_1 = findSubnode(bin_c, "1", BH_none, BPOL_track, 1, 0);
+  mustHaveRegularCached(bin_c_1, &metadata->backup_history[0], 1200, bin_c_1_hash, 0);
+  PathNode *bin_c_2 = findSubnode(bin_c, "2", BH_none, BPOL_track, 1, 0);
+  mustHaveDirectoryCached(bin_c_2, &metadata->backup_history[0]);
+  PathNode *bin_d = findSubnode(bin_b, "d", BH_none, BPOL_copy, 1, 0);
+  mustHaveRegularCached(bin_d, &metadata->backup_history[0], 1200, data_d_hash, 0);
+  PathNode *bin_1 = findSubnode(bin, "1", BH_removed, BPOL_track, 2, 1);
+  mustHaveNonExisting(bin_1, &metadata->current_backup);
+  mustHaveDirectoryCached(bin_1, &metadata->backup_history[0]);
+  PathNode *bin_2 = findSubnode(bin_1, "2", BH_removed, BPOL_track, 2, 1);
+  mustHaveNonExisting(bin_2, &metadata->current_backup);
+  mustHaveDirectoryCached(bin_2, &metadata->backup_history[0]);
+  PathNode *bin_3 = findSubnode(bin_2, "3", BH_removed, BPOL_track, 2, 0);
+  mustHaveNonExisting(bin_3, &metadata->current_backup);
+  mustHaveRegularCached(bin_3, &metadata->backup_history[0], 144, nested_1_hash, 0);
+  PathNode *bin_one = findSubnode(bin, "one", BH_removed, BPOL_mirror, 1, 4);
+  mustHaveDirectoryCached(bin_one, &metadata->backup_history[0]);
+  PathNode *bin_one_a = findSubnode(bin_one, "a", BH_none, BPOL_mirror, 1, 0);
+  mustHaveRegularCached(bin_one_a, &metadata->backup_history[0], 400, three_hash, 0);
+  PathNode *bin_one_b = findSubnode(bin_one, "b", BH_none, BPOL_track, 1, 2);
+  mustHaveDirectoryCached(bin_one_b, &metadata->backup_history[0]);
+  PathNode *bin_one_1 = findSubnode(bin_one_b, "1", BH_none, BPOL_track, 1, 0);
+  mustHaveRegularCached(bin_one_1, &metadata->backup_history[0], 5, (uint8_t *)"dummy", 0);
+  PathNode *bin_one_2 = findSubnode(bin_one_b, "2", BH_none, BPOL_track, 1, 0);
+  mustHaveSymlinkLCached(bin_one_2, &metadata->backup_history[0], "/usr/share/doc");
+  PathNode *bin_one_c = findSubnode(bin_one, "c", BH_none, BPOL_mirror, 1, 0);
+  mustHaveDirectoryCached(bin_one_c, &metadata->backup_history[0]);
+  PathNode *bin_one_d = findSubnode(bin_one, "d", BH_none, BPOL_mirror, 1, 1);
+  mustHaveDirectoryCached(bin_one_d, &metadata->backup_history[0]);
+  PathNode *bin_one_e = findSubnode(bin_one_d, "e", BH_none, BPOL_mirror, 1, 0);
+  mustHaveRegularCached(bin_one_e, &metadata->backup_history[0], 2100, super_hash, 0);
+  PathNode *bin_two = findSubnode(bin, "two", BH_removed, BPOL_track, 2, 3);
+  mustHaveNonExisting(bin_two, &metadata->current_backup);
+  mustHaveDirectoryCached(bin_two, &metadata->backup_history[0]);
+  PathNode *bin_three = findSubnode(bin_two, "three", BH_removed, BPOL_track, 2, 0);
+  mustHaveNonExisting(bin_three, &metadata->current_backup);
+  mustHaveSymlinkLCached(bin_three, &metadata->backup_history[0], "/root/.vimrc");
+  PathNode *bin_four = findSubnode(bin_two, "four", BH_removed, BPOL_track, 2, 1);
+  mustHaveNonExisting(bin_four, &metadata->current_backup);
+  mustHaveDirectoryCached(bin_four, &metadata->backup_history[0]);
+  PathNode *bin_four_a = findSubnode(bin_four, "a", BH_removed, BPOL_copy, 1, 1);
+  mustHaveDirectoryCached(bin_four_a, &metadata->backup_history[0]);
+  PathNode *bin_four_b = findSubnode(bin_four_a, "b", BH_none, BPOL_copy, 1, 1);
+  mustHaveDirectoryCached(bin_four_b, &metadata->backup_history[0]);
+  PathNode *bin_four_c = findSubnode(bin_four_b, "c", BH_none, BPOL_copy, 1, 0);
+  mustHaveRegularCached(bin_four_c, &metadata->backup_history[0], 19, (uint8_t *)"###################", 0);
+  PathNode *bin_five = findSubnode(bin_two, "five", BH_removed, BPOL_track, 2, 1);
+  mustHaveNonExisting(bin_five, &metadata->current_backup);
+  mustHaveDirectoryCached(bin_five, &metadata->backup_history[0]);
+  PathNode *bin_five_0 = findSubnode(bin_five, "0", BH_removed, BPOL_mirror, 1, 1);
+  mustHaveDirectoryCached(bin_five_0, &metadata->backup_history[0]);
+  PathNode *bin_five_zero = findSubnode(bin_five_0, "zero", BH_none, BPOL_mirror, 1, 1);
+  mustHaveDirectoryCached(bin_five_zero, &metadata->backup_history[0]);
+  PathNode *bin_five_null = findSubnode(bin_five_zero, "null", BH_none, BPOL_mirror, 1, 0);
+  mustHaveRegularCached(bin_five_null, &metadata->backup_history[0], 0, (uint8_t *)"???", 0);
+
+  /* Finish backup and perform additional checks. */
+  completeBackup(metadata, 9);
+  assert_true(countFilesInDir("tmp/repo") == 11);
+}
+
 int main(void)
 {
   testGroupStart("prepare backup");
@@ -1508,5 +1798,9 @@ int main(void)
 
   testGroupStart("generate nested files with varying policies");
   runPhase9(cwd, cwd_depth, phase_9_node);
+  testGroupEnd();
+
+  testGroupStart("recursive removing of paths with varying policies");
+  runPhase10(cwd, cwd_depth, phase_9_node);
   testGroupEnd();
 }
