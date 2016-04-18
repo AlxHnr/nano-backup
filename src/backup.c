@@ -212,22 +212,17 @@ static void prepareNodeForWipingRecursively(Metadata *metadata,
   }
 }
 
-/** Handles a node, which path was removed from the users filesystem.
+/** Extends the history of all tracked nodes with a "removed" state.
 
   @param metadata The metadata of the current backup.
-  @param node The node representing the removed file.
-  @param policy The policy which the removed path is supposed to have.
+  @param node The tracked node, which should be updated.
 */
-static void handleRemovedPath(Metadata *metadata, PathNode *node,
-                              BackupPolicy policy)
+static void removeTrackedNodesRecursively(Metadata *metadata,
+                                          PathNode *node)
 {
-  if(node->policy == BPOL_none || node->policy == BPOL_copy)
+  if(node->policy != BPOL_track)
   {
     node->hint = BH_removed;
-  }
-  else if(policy == BPOL_mirror)
-  {
-    prepareNodeForWipingRecursively(metadata, node);
   }
   else if(node->history->state.type == PST_non_existing)
   {
@@ -243,6 +238,38 @@ static void handleRemovedPath(Metadata *metadata, PathNode *node,
     point->state.type = PST_non_existing;
     point->next = node->history;
     node->history = point;
+
+    for(PathNode *subnode = node->subnodes;
+        subnode != NULL; subnode = subnode->next)
+    {
+      removeTrackedNodesRecursively(metadata, subnode);
+    }
+  }
+}
+
+/** Handles a node, which path was removed from the users filesystem.
+
+  @param metadata The metadata of the current backup.
+  @param node The node representing the removed file.
+  @param policy The policy which the removed path is supposed to have.
+*/
+static void handleRemovedPath(Metadata *metadata, PathNode *node,
+                              BackupPolicy policy)
+{
+  switch(policy)
+  {
+    case BPOL_none:
+    case BPOL_copy:
+      node->hint = BH_removed;
+      break;
+    case BPOL_mirror:
+      prepareNodeForWipingRecursively(metadata, node);
+      break;
+    case BPOL_track:
+      removeTrackedNodesRecursively(metadata, node);
+      break;
+    case BPOL_ignore:
+      break;
   }
 }
 
