@@ -83,6 +83,32 @@ static bool checkRegularValues(const PathState *state, uint64_t size,
   }
 }
 
+/** Checks if the next node in the given history point is greater. This
+  can be used to determine if a history is ordered.
+
+  @param metadata The metadata to which the given point belongs.
+  @param point The point which should be compared to its follow up element,
+  that can be NULL. In this case true will be returned.
+
+  @return True, if the points follow up is in the correct order.
+*/
+static bool nextNodeGreater(Metadata *metadata, PathHistory *point)
+{
+  if(point->next == NULL)
+  {
+    return true;
+  }
+  else if(point->backup == &metadata->current_backup &&
+          point->next->backup != &metadata->current_backup)
+  {
+    return true;
+  }
+  else
+  {
+    return point->backup->id < point->next->backup->id;
+  }
+}
+
 /** Performs some basic checks on the given metadatas config history.
 
   @param metadata The metadata struct containing the config file history.
@@ -100,8 +126,7 @@ static size_t checkConfHist(Metadata *metadata)
     {
       die("config history point doesn't represent a regular file");
     }
-    else if(point->next != NULL &&
-            point->backup->id >= point->next->backup->id)
+    else if(!nextNodeGreater(metadata, point))
     {
       die("config history has an invalid order");
     }
@@ -112,31 +137,19 @@ static size_t checkConfHist(Metadata *metadata)
   return history_length;
 }
 
-/** Performs some basic checks on a path nodes history.
+/** Determines the length of the given nodes history.
 
   @param node The node containing the history.
 
   @return The length of the nodes history.
 */
-static size_t checkNodeHist(PathNode *node)
+static size_t getHistoryLength(PathNode *node)
 {
   size_t history_length = 0;
 
   for(PathHistory *point = node->history;
       point != NULL; point = point->next)
   {
-    if(point->next != NULL &&
-       point->backup->id >= point->next->backup->id)
-    {
-      die("path node history has an invalid order: \"%s\"",
-          node->path.str);
-    }
-    else if(point->state.type > PST_directory)
-    {
-      die("node history point has an invalid state type: \"%s\"",
-          node->path.str);
-    }
-
     history_length++;
   }
 
@@ -177,6 +190,20 @@ static size_t checkPathTree(PathNode *parent_node, Metadata *metadata,
     else if(node->history == NULL)
     {
       die("path has no history: \"%s\"", node->path.str);
+    }
+    else for(PathHistory *point = node->history;
+             point != NULL; point = point->next)
+    {
+      if(!nextNodeGreater(metadata, point))
+      {
+        die("path node history has an invalid order: \"%s\"",
+            node->path.str);
+      }
+      else if(point->state.type > PST_directory)
+      {
+        die("node history point has an invalid state type: \"%s\"",
+            node->path.str);
+      }
     }
 
     count += checkPathTree(node->subnodes, metadata, check_path_table);
@@ -390,7 +417,7 @@ PathNode *findPathNode(PathNode *start_node, const char *path_str,
   {
     die("requested node has wrong policy: \"%s\"", path_str);
   }
-  else if(checkNodeHist(requested_node) != history_length)
+  else if(getHistoryLength(requested_node) != history_length)
   {
     die("requested node has wrong history length: \"%s\"", path_str);
   }
