@@ -1130,6 +1130,145 @@ static void runPhase8(String cwd_path, size_t cwd_depth,
   assert_true(countFilesInDir("tmp/repo") == 8);
 }
 
+/** Generates deeply nested files with varying policies. */
+static void runPhase9(String cwd_path, size_t cwd_depth,
+                      SearchNode *phase_9_node)
+{
+  /* Remove residue from previous backups. */
+  removePath("tmp/files/home/user/text.txt");
+  removePath("tmp/files/home/user");
+  removePath("tmp/files/home");
+  removePath("tmp/files/unneeded/directory/a/b");
+  removePath("tmp/files/unneeded/directory/a/d");
+  removePath("tmp/files/unneeded/directory/a/g/h/i");
+  removePath("tmp/files/unneeded/directory/a/g/h");
+  removePath("tmp/files/unneeded/directory/a/g");
+  removePath("tmp/files/unneeded/directory/a");
+  removePath("tmp/files/unneeded/directory");
+  removePath("tmp/files/unneeded");
+
+  /* Generate various files. */
+  makeDir("tmp/files/foo/bar/test");
+  makeDir("tmp/files/foo/bar/test/path");
+  makeDir("tmp/files/foo/bar/test/path/a");
+  makeDir("tmp/files/foo/dir/a");
+  makeDir("tmp/files/one");
+  makeDir("tmp/files/one/two");
+  makeDir("tmp/files/one/two/three");
+  makeDir("tmp/files/one/two/three/a");
+  makeDir("tmp/files/one/two/three/b");
+  makeDir("tmp/files/one/two/three/d");
+  makeDir("tmp/files/backup dir");
+  makeDir("tmp/files/backup dir/a");
+  makeDir("tmp/files/backup dir/a/b");
+  makeDir("tmp/files/backup dir/c");
+  makeDir("tmp/files/backup dir/c/2");
+  makeDir("tmp/files/nano");
+  makeDir("tmp/files/nano/a1");
+  makeDir("tmp/files/nano/a2");
+  makeDir("tmp/files/nano/a3");
+  makeDir("tmp/files/nano/a3/1");
+  makeDir("tmp/files/nano/a3/1/3");
+  makeDir("tmp/files/nb");
+  makeDir("tmp/files/nb/manual");
+  makeDir("tmp/files/nb/manual/a");
+  makeDir("tmp/files/nb/docs");
+  makeDir("tmp/files/nb/a");
+  makeDir("tmp/files/nb/a/foo");
+  makeDir("tmp/files/nb/a/abc");
+  makeDir("tmp/files/bin");
+  makeDir("tmp/files/bin/a");
+  makeDir("tmp/files/bin/a/b");
+  makeDir("tmp/files/bin/a/b/c");
+  makeDir("tmp/files/bin/a/b/c/2");
+  makeDir("tmp/files/bin/1");
+  makeDir("tmp/files/bin/1/2");
+  makeDir("tmp/files/bin/one");
+  makeDir("tmp/files/bin/one/b");
+  makeDir("tmp/files/bin/one/c");
+  makeDir("tmp/files/bin/one/d");
+  makeDir("tmp/files/bin/two");
+  makeDir("tmp/files/bin/two/four");
+  makeDir("tmp/files/bin/two/four/a");
+  makeDir("tmp/files/bin/two/four/a/b");
+  makeDir("tmp/files/bin/two/five");
+  makeDir("tmp/files/bin/two/five/0");
+  makeDir("tmp/files/bin/two/five/0/zero");
+  generateFile("tmp/files/foo/dir/a/b", "1232", 2);
+  generateFile("tmp/files/foo/dir/a/c", "abcdedcb", 1);
+  generateFile("tmp/files/one/two/three/b/c", "Foo", 4);
+  generateFile("tmp/files/one/two/three/d/1", "BAR", 5);
+  generateFile("tmp/files/backup dir/c/2/3", "Lorem Ipsum", 1);
+  generateFile("tmp/files/nano/a1/1", "", 0);
+  generateFile("tmp/files/nano/a1/2", "@", 20);
+  generateFile("tmp/files/nano/a2/a", "[]", 10);
+  generateFile("tmp/files/nano/a3/1/2", "^foo$\n^bar$", 1);
+  generateFile("tmp/files/nb/manual/a/123.txt", "-CONTENT-", 1);
+  generateFile("tmp/files/nb/manual/b", "m", 21);
+  generateFile("tmp/files/nb/docs/1.txt", "m", 21);
+  generateFile("tmp/files/nb/a/foo/bar", "q", 20);
+  generateFile("tmp/files/nb/a/abc/1", "Hello world\n", 2);
+  generateFile("tmp/files/bin/a/b/c/1", "empty\n", 200);
+  generateFile("tmp/files/bin/a/b/d", "Large\n", 200);
+  generateFile("tmp/files/bin/1/2/3", "nested-file ", 12);
+  generateFile("tmp/files/bin/one/a", "This is a test file\n", 20);
+  generateFile("tmp/files/bin/one/b/1", "dummy", 1);
+  generateFile("tmp/files/bin/one/d/e", "This is a super file\n", 100);
+  generateFile("tmp/files/bin/two/four/a/b/c", "#", 19);
+  generateFile("tmp/files/bin/two/five/0/zero/null", "", 0);
+  makeSymlink("/dev/null",              "tmp/files/one/two/three/d/2");
+  makeSymlink("/proc/cpuinfo",          "tmp/files/backup dir/c/1");
+  makeSymlink("../../non-existing.txt", "tmp/files/nano/a2/b");
+  makeSymlink("../non-existing-dir",    "tmp/files/nb/a/abc/2");
+  makeSymlink("/usr/share/doc",         "tmp/files/bin/one/b/2");
+  makeSymlink("/root/.vimrc",           "tmp/files/bin/two/three");
+
+  /* Initiate the backup. */
+  Metadata *metadata = metadataLoad("tmp/repo/metadata");
+  assert_true(metadata->total_path_count == cwd_depth + 22);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[6], cwd_depth + 14);
+  checkHistPoint(metadata, 1, 1, phase_timestamps[4], 2);
+  checkHistPoint(metadata, 2, 2, phase_timestamps[2], 1);
+  checkHistPoint(metadata, 3, 3, phase_timestamps[0], 6);
+  initiateBackup(metadata, phase_9_node);
+
+  /* Check the initiated backup. */
+  checkMetadata(metadata, 0, false);
+  assert_true(metadata->current_backup.ref_count == cwd_depth + 4);
+  assert_true(metadata->backup_history_length == 4);
+  assert_true(metadata->total_path_count == cwd_depth + 10);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[6], 0);
+  checkHistPoint(metadata, 1, 1, phase_timestamps[4], 0);
+  checkHistPoint(metadata, 2, 2, phase_timestamps[2], 1);
+  checkHistPoint(metadata, 3, 3, phase_timestamps[0], 6);
+
+  PathNode *files = findFilesNode(metadata, cwd_path, BH_unchanged, 4);
+  PathNode *foo = findSubnode(files, "foo", BH_unchanged, BPOL_none, 1, 3);
+  mustHaveDirectoryStat(foo, &metadata->current_backup);
+
+  PathNode *bar = findSubnode(foo, "bar", BH_unchanged, BPOL_track, 1, 2);
+  mustHaveDirectoryCached(bar, &metadata->backup_history[3]);
+  PathNode *one_txt = findSubnode(bar, "1.txt", BH_unchanged, BPOL_track, 1, 0);
+  mustHaveRegularCached(one_txt, &metadata->backup_history[3], 12, (uint8_t *)"A small file", 0);
+  PathNode *two_txt = findSubnode(bar, "2.txt", BH_unchanged, BPOL_track, 2, 0);
+  mustHaveNonExisting(two_txt, &metadata->backup_history[2]);
+  mustHaveRegularCached(two_txt, &metadata->backup_history[3], 0, (uint8_t *)"???", 0);
+
+  PathNode *some_file = findSubnode(foo, "some file", BH_unchanged, BPOL_copy, 1, 0);
+  mustHaveRegularStat(some_file, &metadata->backup_history[3], 84, some_file_hash, 0);
+
+  PathNode *dir = findSubnode(foo, "dir", BH_unchanged, BPOL_none, 1, 2);
+  mustHaveDirectoryCached(dir, &metadata->current_backup);
+  PathNode *empty = findSubnode(dir, "empty", BH_unchanged, BPOL_copy, 1, 0);
+  mustHaveDirectoryCached(empty, &metadata->backup_history[3]);
+  PathNode *link = findSubnode(dir, "link", BH_removed, BPOL_copy, 1, 0);
+  mustHaveSymlinkLCached(link, &metadata->backup_history[3], "../some file");
+
+  /* Finish backup and perform additional checks. */
+  completeBackup(metadata, 8);
+  assert_true(countFilesInDir("tmp/repo") == 8);
+}
+
 int main(void)
 {
   testGroupStart("prepare backup");
@@ -1142,6 +1281,7 @@ int main(void)
   SearchNode *phase_6_node = searchTreeLoad("generated-config-files/backup-phase-6.txt");
   SearchNode *phase_7_node = searchTreeLoad("generated-config-files/backup-phase-7.txt");
   SearchNode *phase_8_node = searchTreeLoad("generated-config-files/backup-phase-8.txt");
+  SearchNode *phase_9_node = searchTreeLoad("generated-config-files/backup-phase-9.txt");
   makeDir("tmp/repo");
   makeDir("tmp/files");
   testGroupEnd();
@@ -1176,5 +1316,9 @@ int main(void)
 
   testGroupStart("wiping of unneeded nodes");
   runPhase8(cwd, cwd_depth, phase_8_node);
+  testGroupEnd();
+
+  testGroupStart("generate nested files with varying policies");
+  runPhase9(cwd, cwd_depth, phase_9_node);
   testGroupEnd();
 }

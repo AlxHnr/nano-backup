@@ -1,0 +1,6 @@
+[track]
+/tmp/files/foo/bar/
+
+[copy]
+/tmp/files/foo/some file
+/tmp/files/foo/dir//.
