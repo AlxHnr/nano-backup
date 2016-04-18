@@ -371,6 +371,21 @@ static const uint8_t test_c_hash[] =
   0x2b, 0x85, 0xa2, 0xb0, 0x6e, 0x49, 0x8c, 0x7b, 0x97, 0x6d,
   0xa4, 0xff, 0x8d, 0x34, 0xed, 0x84, 0xcb, 0x42, 0xc7, 0xe0,
 };
+static const uint8_t nb_manual_b_hash[] =
+{
+  0xcf, 0x71, 0xd9, 0x92, 0xf9, 0x69, 0xb2, 0x1d, 0x31, 0x94,
+  0x06, 0x46, 0xdc, 0x6e, 0x5d, 0xe6, 0xd4, 0xaf, 0x2f, 0xa1,
+};
+static const uint8_t nb_a_abc_1_hash[] =
+{
+  0x55, 0x71, 0x58, 0x4d, 0xeb, 0x0a, 0x98, 0xdc, 0xbd, 0xa1,
+  0x5d, 0xc9, 0xda, 0x9f, 0xfe, 0x10, 0x01, 0xe2, 0xb5, 0xfe,
+};
+static const uint8_t bin_c_1_hash[] =
+{
+  0xe8, 0xfb, 0x29, 0x61, 0x97, 0x00, 0xe5, 0xb6, 0x09, 0x30,
+  0x88, 0x6e, 0x94, 0x82, 0x2c, 0x66, 0xce, 0x2a, 0xd6, 0xbf,
+};
 
 /** Contains the timestamp at which a phase finished. */
 static time_t phase_timestamps[8] = { 0 };
@@ -1313,9 +1328,9 @@ static void runPhase9(String cwd_path, size_t cwd_depth,
   PathNode *nano_a1 = findSubnode(nano, "a1", BH_added, BPOL_track, 1, 2);
   mustHaveDirectoryCached(nano_a1, &metadata->current_backup);
   PathNode *nano_a1_1 = findSubnode(nano_a1, "1", BH_added, BPOL_track, 1, 0);
-  mustHaveRegularStat(nano_a1_1, &metadata->current_backup, 0, NULL, 0);
+  mustHaveRegularCached(nano_a1_1, &metadata->current_backup, 0, NULL, 0);
   PathNode *nano_a1_2 = findSubnode(nano_a1, "2", BH_added, BPOL_track, 1, 0);
-  mustHaveRegularStat(nano_a1_2, &metadata->current_backup, 20, NULL, 0);
+  mustHaveRegularCached(nano_a1_2, &metadata->current_backup, 20, NULL, 0);
   PathNode *nano_a2 = findSubnode(nano, "a2", BH_added, BPOL_copy, 1, 2);
   mustHaveDirectoryCached(nano_a2, &metadata->current_backup);
   PathNode *nano_a2_a = findSubnode(nano_a2, "a", BH_added, BPOL_copy, 1, 0);
@@ -1418,6 +1433,28 @@ static void runPhase9(String cwd_path, size_t cwd_depth,
   /* Finish backup and perform additional checks. */
   completeBackup(metadata, 8);
   assert_true(countFilesInDir("tmp/repo") == 11);
+  mustHaveRegularCached(dir_b,          &metadata->current_backup, 8,    (uint8_t *)"12321232",             0);
+  mustHaveRegularCached(dir_c,          &metadata->current_backup, 8,    (uint8_t *)"abcdedcb",             0);
+  mustHaveRegularCached(three_c,        &metadata->current_backup, 12,   (uint8_t *)"FooFooFooFoo",         0);
+  mustHaveRegularCached(three_1,        &metadata->current_backup, 15,   (uint8_t *)"BARBARBARBARBAR",      0);
+  mustHaveRegularCached(backup_dir_3,   &metadata->current_backup, 11,   (uint8_t *)"Lorem Ipsum",          0);
+  mustHaveRegularCached(nano_a1_1,      &metadata->current_backup, 0,    (uint8_t *)"%%%%",                 0);
+  mustHaveRegularCached(nano_a1_2,      &metadata->current_backup, 20,   (uint8_t *)"@@@@@@@@@@@@@@@@@@@@", 0);
+  mustHaveRegularCached(nano_a2_a,      &metadata->current_backup, 20,   (uint8_t *)"[][][][][][][][][][]", 0);
+  mustHaveRegularCached(nano_a3_2,      &metadata->current_backup, 11,   (uint8_t *) "^foo$\n^bar$",        0);
+  mustHaveRegularCached(manual_123_txt, &metadata->current_backup, 9,    (uint8_t *)"-CONTENT-",            0);
+  mustHaveRegularCached(manual_b,       &metadata->current_backup, 21,   nb_manual_b_hash,                  0);
+  mustHaveRegularCached(docs_1_txt,     &metadata->current_backup, 21,   nb_manual_b_hash,                  0);
+  mustHaveRegularCached(nb_a_bar,       &metadata->current_backup, 20,   (uint8_t *)"qqqqqqqqqqqqqqqqqqqq", 0);
+  mustHaveRegularCached(nb_a_abc_1,     &metadata->current_backup, 24,   nb_a_abc_1_hash,                   0);
+  mustHaveRegularCached(bin_c_1,        &metadata->current_backup, 1200, bin_c_1_hash,                      0);
+  mustHaveRegularCached(bin_d,          &metadata->current_backup, 1200, data_d_hash,                       0);
+  mustHaveRegularCached(bin_3,          &metadata->current_backup, 144,  nested_1_hash,                     0);
+  mustHaveRegularCached(bin_one_a,      &metadata->current_backup, 400,  three_hash,                        0);
+  mustHaveRegularCached(bin_one_1,      &metadata->current_backup, 5,    (uint8_t *)"dummy",                0);
+  mustHaveRegularCached(bin_one_e,      &metadata->current_backup, 2100, super_hash,                        0);
+  mustHaveRegularCached(bin_four_c,     &metadata->current_backup, 19,   (uint8_t *)"###################",  0);
+  mustHaveRegularCached(bin_five_null,  &metadata->current_backup, 0,    (uint8_t *)"???",                  0);
 }
 
 int main(void)
