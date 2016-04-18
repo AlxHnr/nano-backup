@@ -25,6 +25,7 @@
 /tmp/files/one/two/three/d
 /tmp/files/nano/a3
 /tmp/files/nb
+/tmp/files/nb/manual/a/123.txt
 /tmp/files/nb/a/foo
 /tmp/files/bin/one
 /tmp/files/bin/two/five/0
