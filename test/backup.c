@@ -1225,44 +1225,48 @@ static void runPhase9(String cwd_path, size_t cwd_depth,
 
   /* Initiate the backup. */
   Metadata *metadata = metadataLoad("tmp/repo/metadata");
-  assert_true(metadata->total_path_count == cwd_depth + 22);
-  checkHistPoint(metadata, 0, 0, phase_timestamps[6], cwd_depth + 14);
-  checkHistPoint(metadata, 1, 1, phase_timestamps[4], 2);
-  checkHistPoint(metadata, 2, 2, phase_timestamps[2], 1);
-  checkHistPoint(metadata, 3, 3, phase_timestamps[0], 6);
+  assert_true(metadata->total_path_count == cwd_depth + 10);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[7], cwd_depth + 4);
+  checkHistPoint(metadata, 1, 1, phase_timestamps[2], 1);
+  checkHistPoint(metadata, 2, 2, phase_timestamps[0], 6);
   initiateBackup(metadata, phase_9_node);
 
   /* Check the initiated backup. */
   checkMetadata(metadata, 0, false);
-  assert_true(metadata->current_backup.ref_count == cwd_depth + 4);
-  assert_true(metadata->backup_history_length == 4);
-  assert_true(metadata->total_path_count == cwd_depth + 10);
-  checkHistPoint(metadata, 0, 0, phase_timestamps[6], 0);
-  checkHistPoint(metadata, 1, 1, phase_timestamps[4], 0);
-  checkHistPoint(metadata, 2, 2, phase_timestamps[2], 1);
-  checkHistPoint(metadata, 3, 3, phase_timestamps[0], 6);
+  assert_true(metadata->current_backup.ref_count == cwd_depth + 78);
+  assert_true(metadata->backup_history_length == 3);
+  assert_true(metadata->total_path_count == cwd_depth + 84);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[7], 0);
+  checkHistPoint(metadata, 1, 1, phase_timestamps[2], 1);
+  checkHistPoint(metadata, 2, 2, phase_timestamps[0], 6);
 
-  PathNode *files = findFilesNode(metadata, cwd_path, BH_unchanged, 4);
+  PathNode *files = findFilesNode(metadata, cwd_path, BH_unchanged, 6);
   PathNode *foo = findSubnode(files, "foo", BH_unchanged, BPOL_none, 1, 3);
   mustHaveDirectoryStat(foo, &metadata->current_backup);
 
-  PathNode *bar = findSubnode(foo, "bar", BH_unchanged, BPOL_track, 1, 2);
-  mustHaveDirectoryCached(bar, &metadata->backup_history[3]);
+  PathNode *bar = findSubnode(foo, "bar", BH_unchanged, BPOL_track, 1, 3);
+  mustHaveDirectoryCached(bar, &metadata->backup_history[2]);
+  PathNode *bar_test = findSubnode(bar, "test", BH_added, BPOL_track, 1, 1);
+  mustHaveDirectoryCached(bar_test, &metadata->current_backup);
+  PathNode *bar_path = findSubnode(bar_test, "path", BH_added, BPOL_track, 1, 1);
+  mustHaveDirectoryCached(bar_path, &metadata->current_backup);
+  PathNode *bar_path_a = findSubnode(bar_path, "a", BH_added, BPOL_track, 1, 0);
+  mustHaveDirectoryCached(bar_path_a, &metadata->current_backup);
   PathNode *one_txt = findSubnode(bar, "1.txt", BH_unchanged, BPOL_track, 1, 0);
-  mustHaveRegularCached(one_txt, &metadata->backup_history[3], 12, (uint8_t *)"A small file", 0);
+  mustHaveRegularCached(one_txt, &metadata->backup_history[2], 12, (uint8_t *)"A small file", 0);
   PathNode *two_txt = findSubnode(bar, "2.txt", BH_unchanged, BPOL_track, 2, 0);
-  mustHaveNonExisting(two_txt, &metadata->backup_history[2]);
-  mustHaveRegularCached(two_txt, &metadata->backup_history[3], 0, (uint8_t *)"???", 0);
+  mustHaveNonExisting(two_txt, &metadata->backup_history[1]);
+  mustHaveRegularCached(two_txt, &metadata->backup_history[2], 0, (uint8_t *)"???", 0);
 
   PathNode *some_file = findSubnode(foo, "some file", BH_unchanged, BPOL_copy, 1, 0);
-  mustHaveRegularStat(some_file, &metadata->backup_history[3], 84, some_file_hash, 0);
+  mustHaveRegularStat(some_file, &metadata->backup_history[2], 84, some_file_hash, 0);
 
-  PathNode *dir = findSubnode(foo, "dir", BH_unchanged, BPOL_none, 1, 2);
+  PathNode *dir = findSubnode(foo, "dir", BH_unchanged, BPOL_none, 1, 3);
   mustHaveDirectoryCached(dir, &metadata->current_backup);
-  PathNode *empty = findSubnode(dir, "empty", BH_unchanged, BPOL_copy, 1, 0);
-  mustHaveDirectoryCached(empty, &metadata->backup_history[3]);
   PathNode *link = findSubnode(dir, "link", BH_removed, BPOL_copy, 1, 0);
-  mustHaveSymlinkLCached(link, &metadata->backup_history[3], "../some file");
+  mustHaveSymlinkLCached(link, &metadata->backup_history[2], "../some file");
+  PathNode *empty = findSubnode(dir, "empty", BH_unchanged, BPOL_copy, 1, 0);
+  mustHaveDirectoryCached(empty, &metadata->backup_history[2]);
 
   /* Finish backup and perform additional checks. */
   completeBackup(metadata, 8);
