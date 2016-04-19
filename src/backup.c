@@ -216,38 +216,41 @@ static void prepareNodeForWipingRecursively(Metadata *metadata,
   }
 }
 
-/** Extends the history of all tracked nodes with a "removed" state.
+/** Marks the given tree recursively as BH_removed. Tracked nodes which
+  where removed at the previous backup will be marked as BH_unchanged.
 
   @param metadata The metadata of the current backup.
-  @param node The tracked node, which should be updated.
+  @param node The node which should be updated recursively.
+  @param extend_tracked_histories True if a tracked nodes history should be
+  extended with a "removed" state. Must be true for the initial call.
 */
-static void removeTrackedNodesRecursively(Metadata *metadata,
-                                          PathNode *node)
+static void markAsRemovedRecursively(Metadata *metadata, PathNode *node,
+                                     bool extend_tracked_histories)
 {
-  if(node->policy != BPOL_track)
-  {
-    node->hint = BH_removed;
-  }
-  else if(node->history->state.type == PST_non_existing)
+  if(node->history->state.type == PST_non_existing)
   {
     node->hint = BH_unchanged;
   }
   else
   {
     node->hint = BH_removed;
+    extend_tracked_histories &= (node->policy == BPOL_track);
 
-    PathHistory *point = mpAlloc(sizeof *point);
-    point->backup = &metadata->current_backup;
-    point->backup->ref_count = sSizeAdd(point->backup->ref_count, 1);
-    point->state.type = PST_non_existing;
-    point->next = node->history;
-    node->history = point;
-
-    for(PathNode *subnode = node->subnodes;
-        subnode != NULL; subnode = subnode->next)
+    if(extend_tracked_histories)
     {
-      removeTrackedNodesRecursively(metadata, subnode);
+      PathHistory *point = mpAlloc(sizeof *point);
+      point->backup = &metadata->current_backup;
+      point->backup->ref_count = sSizeAdd(point->backup->ref_count, 1);
+      point->state.type = PST_non_existing;
+      point->next = node->history;
+      node->history = point;
     }
+  }
+
+  for(PathNode *subnode = node->subnodes;
+      subnode != NULL; subnode = subnode->next)
+  {
+    markAsRemovedRecursively(metadata, subnode, extend_tracked_histories);
   }
 }
 
@@ -260,20 +263,13 @@ static void removeTrackedNodesRecursively(Metadata *metadata,
 static void handleRemovedPath(Metadata *metadata, PathNode *node,
                               BackupPolicy policy)
 {
-  switch(policy)
+  if(policy == BPOL_mirror)
   {
-    case BPOL_none:
-    case BPOL_copy:
-      node->hint = BH_removed;
-      break;
-    case BPOL_mirror:
-      prepareNodeForWipingRecursively(metadata, node);
-      break;
-    case BPOL_track:
-      removeTrackedNodesRecursively(metadata, node);
-      break;
-    case BPOL_ignore:
-      break;
+    prepareNodeForWipingRecursively(metadata, node);
+  }
+  else
+  {
+    markAsRemovedRecursively(metadata, node, true);
   }
 }
 
