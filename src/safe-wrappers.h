@@ -26,8 +26,8 @@
   program with an error message.
 */
 
-#ifndef _NANO_BACKUP_SAFE_WRAPPERS_H_
-#define _NANO_BACKUP_SAFE_WRAPPERS_H_
+#ifndef NANO_BACKUP_SAFE_WRAPPERS_H
+#define NANO_BACKUP_SAFE_WRAPPERS_H
 
 #include <time.h>
 #include <stdio.h>

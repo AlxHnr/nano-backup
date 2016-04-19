@@ -25,8 +25,8 @@
   Declares functions for searching the filesystem.
 */
 
-#ifndef _NANO_BACKUP_SEARCH_H_
-#define _NANO_BACKUP_SEARCH_H_
+#ifndef NANO_BACKUP_SEARCH_H
+#define NANO_BACKUP_SEARCH_H
 
 #include <sys/stat.h>
 

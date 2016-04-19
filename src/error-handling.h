@@ -25,8 +25,8 @@
   Declares various functions for error handling.
 */
 
-#ifndef _NANO_BACKUP_ERROR_HANDLING_H_
-#define _NANO_BACKUP_ERROR_HANDLING_H_
+#ifndef NANO_BACKUP_ERROR_HANDLING_H
+#define NANO_BACKUP_ERROR_HANDLING_H
 
 #ifdef __GNUC__
 #define CHECK_FORMAT __attribute__((format(printf, 1, 2)))

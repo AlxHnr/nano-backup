@@ -25,8 +25,8 @@
   Declares functions for calculating the hash of a file.
 */
 
-#ifndef _NANO_BACKUP_FILE_HASH_H_
-#define _NANO_BACKUP_FILE_HASH_H_
+#ifndef NANO_BACKUP_FILE_HASH_H
+#define NANO_BACKUP_FILE_HASH_H
 
 #include <stdint.h>
 #include <sys/stat.h>

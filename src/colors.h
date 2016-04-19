@@ -25,8 +25,8 @@
   Declares functions for printing colored text.
 */
 
-#ifndef _NANO_BACKUP_COLORS_H_
-#define _NANO_BACKUP_COLORS_H_
+#ifndef NANO_BACKUP_COLORS_H
+#define NANO_BACKUP_COLORS_H
 
 #include <stdio.h>
 

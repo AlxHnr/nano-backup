@@ -26,8 +26,8 @@
   by tests.
 */
 
-#ifndef _NANO_BACKUP_TEST_H_
-#define _NANO_BACKUP_TEST_H_
+#ifndef NANO_BACKUP_TEST_H
+#define NANO_BACKUP_TEST_H
 
 #include <errno.h>
 #include <string.h>

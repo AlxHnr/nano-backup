@@ -25,8 +25,8 @@
   Declares a struct that can be used for searching the file system.
 */
 
-#ifndef _NANO_BACKUP_SEARCH_TREE_H_
-#define _NANO_BACKUP_SEARCH_TREE_H_
+#ifndef NANO_BACKUP_SEARCH_TREE_H
+#define NANO_BACKUP_SEARCH_TREE_H
 
 #include <stdbool.h>
 #include <regex.h>

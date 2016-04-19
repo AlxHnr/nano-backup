@@ -25,8 +25,8 @@
   Defines a tree structure which represents the metadata of a repository.
 */
 
-#ifndef _NANO_BACKUP_METADATA_H_
-#define _NANO_BACKUP_METADATA_H_
+#ifndef NANO_BACKUP_METADATA_H
+#define NANO_BACKUP_METADATA_H
 
 #include <stdint.h>
 #include <sys/types.h>

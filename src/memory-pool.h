@@ -27,8 +27,8 @@
   program.
 */
 
-#ifndef _NANO_BACKUP_MEMORY_POOL_H_
-#define _NANO_BACKUP_MEMORY_POOL_H_
+#ifndef NANO_BACKUP_MEMORY_POOL_H
+#define NANO_BACKUP_MEMORY_POOL_H
 
 #include <stddef.h>
 

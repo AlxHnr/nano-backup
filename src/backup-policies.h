@@ -25,8 +25,8 @@
   Defines various policies for tracking files.
 */
 
-#ifndef _NANO_BACKUP_BACKUP_POLICIES_H_
-#define _NANO_BACKUP_BACKUP_POLICIES_H_
+#ifndef NANO_BACKUP_BACKUP_POLICIES_H
+#define NANO_BACKUP_BACKUP_POLICIES_H
 
 /** Defines different backup policies. */
 typedef enum

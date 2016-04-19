@@ -25,8 +25,8 @@
   Declares functions for mapping strings to arbitrary data.
 */
 
-#ifndef _NANO_BACKUP_STRING_TABLE_H_
-#define _NANO_BACKUP_STRING_TABLE_H_
+#ifndef NANO_BACKUP_STRING_TABLE_H
+#define NANO_BACKUP_STRING_TABLE_H
 
 #include <stddef.h>
 

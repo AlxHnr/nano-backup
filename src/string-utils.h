@@ -25,8 +25,8 @@
   Declares various helper functions for manipulating strings.
 */
 
-#ifndef _NANO_BACKUP_STRING_UTILS_H_
-#define _NANO_BACKUP_STRING_UTILS_H_
+#ifndef NANO_BACKUP_STRING_UTILS_H
+#define NANO_BACKUP_STRING_UTILS_H
 
 #include <stddef.h>
 #include <stdint.h>

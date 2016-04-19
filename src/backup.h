@@ -25,8 +25,8 @@
   Declares functions to perform fundamental backup operations.
 */
 
-#ifndef _NANO_BACKUP_BACKUP_H_
-#define _NANO_BACKUP_BACKUP_H_
+#ifndef NANO_BACKUP_BACKUP_H
+#define NANO_BACKUP_BACKUP_H
 
 #include "metadata.h"
 #include "search-tree.h"

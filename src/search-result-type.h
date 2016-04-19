@@ -25,8 +25,8 @@
   Defines the result of a search query.
 */
 
-#ifndef _NANO_BACKUP_SEARCH_RESULT_TYPE_H_
-#define _NANO_BACKUP_SEARCH_RESULT_TYPE_H_
+#ifndef NANO_BACKUP_SEARCH_RESULT_TYPE_H
+#define NANO_BACKUP_SEARCH_RESULT_TYPE_H
 
 /** The type of a search result. */
 typedef enum

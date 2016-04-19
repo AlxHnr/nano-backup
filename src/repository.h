@@ -25,8 +25,8 @@
   Declares various helpers for working with repositories.
 */
 
-#ifndef _NANO_BACKUP_REPOSITORY_H_
-#define _NANO_BACKUP_REPOSITORY_H_
+#ifndef NANO_BACKUP_REPOSITORY_H
+#define NANO_BACKUP_REPOSITORY_H
 
 #include <stdbool.h>
 #include <sys/types.h>
