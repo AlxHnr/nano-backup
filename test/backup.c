@@ -314,7 +314,7 @@ static void mustHaveDirectoryCached(PathNode *node, const Backup *backup)
 /** Finds the node "$PWD/tmp/files".
 
   @param metadata The metadata containing the nodes.
-  @param cwd The current working directory.
+  @param cwd_path The current working directory.
   @param hint The backup hint which all nodes in the path must have.
   @param subnode_count The amount of subnodes in "files".
 

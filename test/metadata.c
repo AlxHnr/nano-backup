@@ -117,7 +117,6 @@ static PathNode *findNode(PathNode *start_node, const char *path_str,
 
   @param node The node to which the history point should be appended to.
   @param backup The backup, to which the history point belongs to.
-  @param metadata The metadata to which the node belongs to.
   @param state The state of the backup.
 */
 static void appendHist(PathNode *node, Backup *backup, PathState state)

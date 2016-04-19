@@ -110,7 +110,7 @@ uint32_t strHash(String string)
 
   while(bytes_left >= 4)
   {
-    uint32_t key = *(uint32_t *)data;
+    uint32_t key = *(const uint32_t *)data;
 
     key *= MURMUR2_MAGIC_NUMBER;
     key ^= key >> 24;

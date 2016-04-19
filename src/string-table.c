@@ -83,10 +83,9 @@ static void doubleTableCapaticy(StringTable *table)
   for(size_t index = 0; index < table->capacity; index++)
   {
     Bucket *bucket = table->buckets[index];
-    Bucket *bucket_to_move;
     while(bucket)
     {
-      bucket_to_move = bucket;
+      Bucket *bucket_to_move = bucket;
       bucket = bucket->next;
 
       size_t new_bucket_id = bucket_to_move->hash % new_capacity;
@@ -162,10 +161,9 @@ void strtableFree(StringTable *table)
   for(size_t index = 0; index < table->capacity; index++)
   {
     Bucket *bucket = table->buckets[index];
-    Bucket *bucket_to_free;
     while(bucket)
     {
-      bucket_to_free = bucket;
+      Bucket *bucket_to_free = bucket;
       bucket = bucket->next;
       free(bucket_to_free);
     }

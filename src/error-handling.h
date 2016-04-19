@@ -29,14 +29,15 @@
 #define NANO_BACKUP_ERROR_HANDLING_H
 
 #ifdef __GNUC__
-#define CHECK_FORMAT __attribute__((format(printf, 1, 2)))
+#define DIE_FUNCTION_ATTRIBUTES \
+  __attribute__((noreturn, format(printf, 1, 2)))
 #else
-#define CHECK_FORMAT
+#define DIE_FUNCTION_ATTRIBUTES
 #endif
 
-extern void die(const char *format, ...) CHECK_FORMAT;
-extern void dieErrno(const char *format, ...) CHECK_FORMAT;
+extern void die(const char *format, ...)      DIE_FUNCTION_ATTRIBUTES;
+extern void dieErrno(const char *format, ...) DIE_FUNCTION_ATTRIBUTES;
 
-#undef CHECK_FORMAT
+#undef DIE_FUNCTION_ATTRIBUTES
 
 #endif

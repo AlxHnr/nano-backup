@@ -74,7 +74,11 @@ extern jmp_buf test_jump_buffer;
 extern char *test_error_message;
 extern bool test_catch_die;
 
-extern void dieTest(const char *format, ...);
+extern void dieTest(const char *format, ...)
+#ifdef __GNUC__
+__attribute__((noreturn, format(printf, 1, 2)))
+#endif
+  ;
 
 extern void testGroupStart(const char *name);
 extern void testGroupEnd(void);

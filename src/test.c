@@ -38,6 +38,7 @@
 #include <limits.h>
 
 #include "colors.h"
+#include "error-handling.h"
 
 /** A global jump buffer. It should not be used directly. */
 jmp_buf test_jump_buffer;
@@ -58,13 +59,13 @@ static void freeTestErrorMessage(void)
 }
 
 /** Assigns allocated memory to test_error_message and uses it to store the
-  formated error message. If this function fails to do so, it will
+  formatted error message. If this function fails to do so, it will
   terminate the test suite with an error message.
 
   @param format A format string.
   @param arguments An initialised va_list containing all arguments
   specified in the format string.
-  @param length The length of the formated message without the terminating
+  @param length The length of the formatted message without the terminating
   null byte.
   @param buffer_length The length of the buffer that should be allocated.
   Must be at least the size of the given length plus 1.
@@ -135,7 +136,7 @@ void dieErrno(const char *format, ...)
 
   size_t errno_string_length = strlen(strerror(errno));
 
-  /* Ensure that the formated message, ": ", errnos translated string and
+  /* Ensure that the formatted message, ": ", errnos translated string and
      the terminating null byte fit into the string. */
   if(format_length < 0 ||
      errno_string_length > SIZE_MAX - format_length - 3)
@@ -166,7 +167,7 @@ void dieErrno(const char *format, ...)
   the same arguments as printf(). This function should not be called
   directly.
 
-  @param format A valid formating string. This string doesn't need to
+  @param format A valid formatting string. This string doesn't need to
   contain newlines.
   @param ... Additional arguments.
 */
