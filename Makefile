@@ -58,9 +58,9 @@ doc:
 
 clean:
 	- rm -rf build/ doc/ test/data/generated-*/ test/data/tmp/
-	@(for script in "test/full program tests"/*/*/clean.sh; do \
-	  echo "$$script"; \
-	  cd "$$(dirname "$$script")" && \
-	  sh -e "$$(basename "$$script")" || exit 1; \
+	@(for test_dir in "test/full program tests"/*/*; do \
+	  test -d "$$test_dir" || continue; \
+	  cd "$$test_dir" && \
+	  sh -e "../../fallback targets/clean.sh" || exit 1; \
 	  cd - >&/dev/null; \
 	  done)
