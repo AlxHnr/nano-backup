@@ -90,6 +90,7 @@ static PathNode *findCwdNode(Metadata *metadata, String cwd,
   @param node The node containing the requested subnode.
   @param subnode_name The name of the requested subnode. This should not be
   a full path.
+  @param hint The BackupHint which the requested node should have.
   @param policy The policy of the requested subnode.
   @param requested_history_length The history length of the requested
   subnode.

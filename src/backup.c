@@ -324,6 +324,8 @@ static void handleNotFoundSubnodes(Metadata *metadata,
   currently traversed directory.
   @param context The context from which the search result should be
   queried.
+  @param ignore_list The ignore list of the search tree used to build the
+  given search context. Can be NULL.
 
   @return The type of the processed result.
 */
