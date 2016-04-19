@@ -409,7 +409,7 @@ static void writePathHistoryList(PathHistory *starting_point,
       else if(point->state.metadata.reg.size > 0)
       {
         repoWriterWrite(point->state.metadata.reg.hash,
-                             point->state.metadata.reg.size, writer);
+                        point->state.metadata.reg.size, writer);
       }
     }
     else if(point->state.type == PST_symlink)

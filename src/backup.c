@@ -69,14 +69,18 @@ static PathHistory *buildPathHistoryPoint(Metadata *metadata,
   {
     point->state.type = PST_symlink;
 
-    char *buffer = mpAlloc(sSizeAdd(result.stats.st_size, 1));
+    uint64_t buffer_length = sUint64Add(result.stats.st_size, 1);
+    if(buffer_length > SIZE_MAX)
+    {
+      die("symlink does not fit in memory: \"%s\"", result.path.str);
+    }
+
+    char *buffer = mpAlloc(buffer_length);
 
     /* Although st_size bytes are enough to store the symlinks target path,
-       +1 is added to make use of the full buffer. This allows to detect
-       whether the symlink has increased in size since its last lstat() or
-       not. */
-    ssize_t read_bytes =
-      readlink(result.path.str, buffer, result.stats.st_size + 1);
+       the full buffer is used. This allows to detect whether the symlink
+       has increased in size since its last lstat() or not. */
+    ssize_t read_bytes = readlink(result.path.str, buffer, buffer_length);
 
     if(read_bytes == -1)
     {
@@ -418,7 +422,7 @@ static void copyFileIntoRepo(PathNode *node, const char *repo_path,
                              struct stat stats)
 {
   RegularFileInfo *reg = &node->history->state.metadata.reg;
-  uint64_t blocksize  = stats.st_blksize;
+  size_t blocksize = stats.st_blksize;
   uint64_t bytes_left = reg->size;
 
   FileStream *reader = sFopenRead(node->path.str);
@@ -466,7 +470,7 @@ static bool equalsToStoredFile(PathNode *node, const char *repo_path,
                                struct stat stats)
 {
   RegularFileInfo *reg = &node->history->state.metadata.reg;
-  uint64_t blocksize  = stats.st_blksize;
+  size_t blocksize = stats.st_blksize;
   uint64_t bytes_left = reg->size;
 
   FileStream *stream = sFopenRead(node->path.str);

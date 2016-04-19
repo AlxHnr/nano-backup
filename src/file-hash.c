@@ -43,7 +43,7 @@
 */
 void fileHash(const char *path, struct stat stats, uint8_t *hash)
 {
-  uint64_t blocksize  = stats.st_blksize;
+  size_t blocksize    = stats.st_blksize;
   uint64_t bytes_left = stats.st_size;
   FileStream *stream  = sFopenRead(path);
   char *buffer        = sMalloc(blocksize);

@@ -174,7 +174,7 @@ static MetadataChanges printPathListRecursively(Metadata *metadata,
     }
     else if(node->history->state.type == PST_symlink)
     {
-      changes.new_items_count = sUint64Add(changes.new_items_count, 1);
+      changes.new_items_count = sSizeAdd(changes.new_items_count, 1);
 
       if(print)
       {
@@ -203,7 +203,7 @@ static MetadataChanges printPathListRecursively(Metadata *metadata,
 
       if(node->policy != BPOL_none || subnode_changes.new_items_count > 0)
       {
-        changes.new_items_count = sUint64Add(changes.new_items_count, 1);
+        changes.new_items_count = sSizeAdd(changes.new_items_count, 1);
       }
 
       changes.new_items_count =
