@@ -29,6 +29,7 @@
 
 #include <utime.h>
 #include <unistd.h>
+#include <stdlib.h>
 
 #include "test.h"
 #include "metadata.h"
@@ -389,16 +390,22 @@ static const uint8_t bin_c_1_hash[] =
 };
 
 /** Contains the timestamp at which a phase finished. */
-static time_t phase_timestamps[10] = { 0 };
+static time_t *phase_timestamps = NULL;
+static size_t backup_counter = 0;
 
 /** Finishes a backup and writes the given metadata struct into "tmp/repo".
+  It additionally stores the backup timestamp in "phase_timestamps".
 
   @param metadata The metadata which should be used to finish the backup.
-  @param phase The number of the current backup phase minus 1. Needed for
-  storing the backup timestamp.
 */
-static void completeBackup(Metadata *metadata, size_t phase)
+static void completeBackup(Metadata *metadata)
 {
+  size_t phase = backup_counter;
+  backup_counter++;
+
+  phase_timestamps =
+    sRealloc(phase_timestamps, sizeof *phase_timestamps * backup_counter);
+
   time_t before_finishing = sTime();
   finishBackup(metadata,  "tmp/repo", "tmp/repo/tmp-file");
   time_t after_finishing = sTime();
@@ -463,7 +470,7 @@ static void runPhase1(String cwd_path, size_t cwd_depth,
   mustHaveRegularStat(some_file, &metadata->current_backup, 84, NULL, 0);
 
   /* Finish backup and perform additional checks. */
-  completeBackup(metadata, 0);
+  completeBackup(metadata);
   mustHaveRegularStat(one_txt,       &metadata->current_backup, 12,  (uint8_t *)"A small file", 0);
   mustHaveRegularStat(two_txt,       &metadata->current_backup, 0,   (uint8_t *)"", 0);
   mustHaveRegularStat(three_txt,     &metadata->current_backup, 400, three_hash, 0);
@@ -528,7 +535,7 @@ static void runPhase2(String cwd_path, size_t cwd_depth,
   mustHaveRegularStat(file, &metadata->current_backup, 10, NULL, 0);
 
   /* Finish backup and perform additional checks. */
-  completeBackup(metadata, 1);
+  completeBackup(metadata);
   mustHaveRegularStat(super, &metadata->current_backup, 2100, super_hash, 0);
   mustHaveRegularStat(file,  &metadata->current_backup, 10, (uint8_t *)"dummy file", 0);
   assert_true(countFilesInDir("tmp/repo") == 4);
@@ -593,7 +600,7 @@ static void runPhase3(String cwd_path, size_t cwd_depth,
   mustHaveRegularStat(file, &metadata->backup_history[0], 10, NULL, 0);
 
   /* Finish backup and perform additional checks. */
-  completeBackup(metadata, 2);
+  completeBackup(metadata);
   assert_true(countFilesInDir("tmp/repo") == 4);
 }
 
@@ -639,7 +646,7 @@ static void runPhase4(String cwd_path, size_t cwd_depth,
   mustHaveRegularStat(some_file, &metadata->backup_history[1], 84, some_file_hash, 0);
 
   /* Finish backup and perform additional checks. */
-  completeBackup(metadata, 3);
+  completeBackup(metadata);
   assert_true(countFilesInDir("tmp/repo") == 4);
 }
 
@@ -793,7 +800,7 @@ static void runPhase5(String cwd_path, size_t cwd_depth,
   mustHaveRegularCached(test_f, &metadata->current_backup, 7, NULL, 0);
 
   /* Finish backup and perform additional checks. */
-  completeBackup(metadata, 4);
+  completeBackup(metadata);
   assert_true(countFilesInDir("tmp/repo") == 8);
   mustHaveRegularStat(subdir_a1, &metadata->current_backup, 1,    (uint8_t *)"1???????????????????", 0);
   mustHaveRegularStat(subdir_c,  &metadata->current_backup, 20,   (uint8_t *)"11111111111111111111", 0);
@@ -932,7 +939,7 @@ static void runPhase6(String cwd_path, size_t cwd_depth,
   mustHaveRegularCached(test_f, &metadata->backup_history[0], 7, (uint8_t *)"CONTENT?????????????", 0);
 
   /* Finish backup and perform additional checks. */
-  completeBackup(metadata, 5);
+  completeBackup(metadata);
   assert_true(countFilesInDir("tmp/repo") == 8);
 }
 
@@ -1038,7 +1045,7 @@ static void runPhase7(String cwd_path, size_t cwd_depth,
   mustHaveSymlinkLStat(directory_i, &metadata->current_backup, "../../b/c");
 
   /* Finish backup and perform additional checks. */
-  completeBackup(metadata, 6);
+  completeBackup(metadata);
   assert_true(countFilesInDir("tmp/repo") == 8);
   mustHaveRegularCached(directory_c, &metadata->current_backup, 14,
                        (uint8_t *)"ContentContent??????", 0);
@@ -1142,7 +1149,7 @@ static void runPhase8(String cwd_path, size_t cwd_depth,
   mustHaveSymlinkLStat(directory_i, &metadata->backup_history[0], "../../b/c");
 
   /* Finish backup and perform additional checks. */
-  completeBackup(metadata, 7);
+  completeBackup(metadata);
   assert_true(countFilesInDir("tmp/repo") == 8);
 }
 
@@ -1432,7 +1439,7 @@ static void runPhase9(String cwd_path, size_t cwd_depth,
   mustHaveRegularCached(bin_five_null, &metadata->current_backup, 0, NULL, 0);
 
   /* Finish backup and perform additional checks. */
-  completeBackup(metadata, 8);
+  completeBackup(metadata);
   assert_true(countFilesInDir("tmp/repo") == 11);
   mustHaveRegularCached(dir_b,          &metadata->current_backup, 8,    (uint8_t *)"12321232",             0);
   mustHaveRegularCached(dir_c,          &metadata->current_backup, 8,    (uint8_t *)"abcdedcb",             0);
@@ -1744,7 +1751,7 @@ static void runPhase10(String cwd_path, size_t cwd_depth,
   mustHaveRegularCached(bin_five_null, &metadata->backup_history[0], 0, (uint8_t *)"???", 0);
 
   /* Finish backup and perform additional checks. */
-  completeBackup(metadata, 9);
+  completeBackup(metadata);
   assert_true(countFilesInDir("tmp/repo") == 11);
 }
 
@@ -1931,7 +1938,7 @@ static void runPhase11(String cwd_path, size_t cwd_depth,
   mustHaveRegularCached(bin_five_null, &metadata->backup_history[1], 0, (uint8_t *)"???", 0);
 
   /* Finish backup and perform additional checks. */
-  completeBackup(metadata, 10);
+  completeBackup(metadata);
   assert_true(countFilesInDir("tmp/repo") == 11);
 }
 
@@ -1995,4 +2002,6 @@ int main(void)
   testGroupStart("backup with no changes");
   runPhase11(cwd, cwd_depth, phase_9_node);
   testGroupEnd();
+
+  free(phase_timestamps);
 }
