@@ -151,6 +151,15 @@ static size_t countFilesInDir(const char *path)
   return counter;
 }
 
+/** Safe wrapper around utime(). */
+static void sUtime(const char *path, struct utimbuf time)
+{
+  if(utime(path, &time) != 0)
+  {
+    dieErrno("failed to restore paths time: \"%s\"", path);
+  }
+}
+
 /** Creates a backup of the given paths parent directories timestamps. */
 static struct utimbuf getParentTime(const char *path)
 {
@@ -164,13 +173,22 @@ static struct utimbuf getParentTime(const char *path)
 }
 
 /** Counterpart to getParentTime(). */
-static void restoreParentTime(const char *path, const struct utimbuf time)
+static void restoreParentTime(const char *path, struct utimbuf time)
 {
   const char *parent_path = strCopy(strSplitPath(str(path)).head).str;
-  if(utime(parent_path, &time) != 0)
+  sUtime(parent_path, time);
+}
+
+/** Sets the modification timestamp of the given path. */
+static void setTimestamp(const char *path, time_t timestamp)
+{
+  struct utimbuf time =
   {
-    dieErrno("failed to restore paths time: \"%s\"", parent_path);
-  }
+    .actime  = timestamp,
+    .modtime = timestamp,
+  };
+
+  sUtime(path, time);
 }
 
 /** Safe wrapper around mkdir(). */
@@ -227,6 +245,92 @@ static void removePath(const char *path)
     dieErrno("failed to remove \"%s\"", path);
   }
   restoreParentTime(path, parent_time);
+}
+
+/** Finds the first point in the nodes history, which is not
+  PST_non_existing. */
+static PathHistory *findExistingHistPoint(PathNode *node)
+{
+  for(PathHistory *point = node->history;
+      point != NULL; point = point->next)
+  {
+    if(point->state.type != PST_non_existing)
+    {
+      return point;
+    }
+  }
+
+  die("failed to find existing path state type for \"%s\"",
+      node->path.str);
+  return NULL;
+}
+
+/** Restores only the content of a regular file.
+
+  @param path The path to the file.
+  @param info The file info of the state to which the file should be
+  restored to.
+*/
+static void restoreRegularFile(const char *path,
+                               const RegularFileInfo *info)
+{
+  RepoReader *reader = repoReaderOpenFile("tmp/repo", path, info);
+  FileStream *writer = sFopenWrite(path);
+  uint64_t bytes_left = info->size;
+  char *buffer = sMalloc(4096);
+
+  while(bytes_left > 0)
+  {
+    size_t bytes_to_read = bytes_left > 4096 ? 4096 : bytes_left;
+
+    repoReaderRead(buffer, bytes_to_read, reader);
+    sFwrite(buffer, bytes_to_read, writer);
+
+    bytes_left -= bytes_to_read;
+  }
+
+  free(buffer);
+  repoReaderClose(reader);
+  sFclose(writer);
+}
+
+/** Restores the files in the given PathNode recursively to their last
+  existing state. It also restores modification timestamps.
+
+  @param node The node to restore.
+*/
+static void restoreWithTimeRecursively(PathNode *node)
+{
+  if(sPathExists(node->path.str) == false)
+  {
+    PathHistory *point = findExistingHistPoint(node);
+    switch(point->state.type)
+    {
+      case PST_regular:
+        restoreRegularFile(node->path.str, &point->state.metadata.reg);
+        break;
+      case PST_symlink:
+        makeSymlink(point->state.metadata.sym_target, node->path.str);
+        break;
+      case PST_directory:
+        makeDir(node->path.str);
+        break;
+      default:
+        die("unable to restore \"%s\"", node->path.str);
+        break;
+    }
+
+    setTimestamp(node->path.str, point->state.timestamp);
+  }
+
+  if(S_ISDIR(sLStat(node->path.str).st_mode))
+  {
+    for(PathNode *subnode = node->subnodes;
+        subnode != NULL; subnode = subnode->next)
+    {
+      restoreWithTimeRecursively(subnode);
+    }
+  }
 }
 
 /** Stats a file and caches the result for subsequent runs.
