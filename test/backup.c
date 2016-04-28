@@ -265,14 +265,9 @@ static PathHistory *findExistingHistPoint(PathNode *node)
   return NULL;
 }
 
-/** Restores only the content of a regular file.
-
-  @param path The path to the file.
-  @param info The file info of the state to which the file should be
-  restored to.
-*/
-static void restoreRegularFile(const char *path,
-                               const RegularFileInfo *info)
+/** like restoreRegularFile(), but for files larger than FILE_HASH_SIZE. */
+static void restoreLargeRegularFile(const char *path,
+                                    const RegularFileInfo *info)
 {
   RepoReader *reader = repoReaderOpenFile("tmp/repo", path, info);
   FileStream *writer = sFopenWrite(path);
@@ -294,6 +289,27 @@ static void restoreRegularFile(const char *path,
   sFclose(writer);
 }
 
+/** Restores only the content of a regular file.
+
+  @param path The path to the file.
+  @param info The file info of the state to which the file should be
+  restored to.
+*/
+static void restoreRegularFile(const char *path,
+                               const RegularFileInfo *info)
+{
+  if(info->size <= FILE_HASH_SIZE)
+  {
+    FileStream *stream = sFopenWrite(path);
+    sFwrite(info->hash, info->size, stream);
+    sFclose(stream);
+  }
+  else
+  {
+    restoreLargeRegularFile(path, info);
+  }
+}
+
 /** Restores the files in the given PathNode recursively to their last
   existing state. It also restores modification timestamps.
 
@@ -308,19 +324,19 @@ static void restoreWithTimeRecursively(PathNode *node)
     {
       case PST_regular:
         restoreRegularFile(node->path.str, &point->state.metadata.reg);
+        setTimestamp(node->path.str, point->state.timestamp);
         break;
       case PST_symlink:
         makeSymlink(point->state.metadata.sym_target, node->path.str);
         break;
       case PST_directory:
         makeDir(node->path.str);
+        setTimestamp(node->path.str, point->state.timestamp);
         break;
       default:
         die("unable to restore \"%s\"", node->path.str);
         break;
     }
-
-    setTimestamp(node->path.str, point->state.timestamp);
   }
 
   if(S_ISDIR(sLStat(node->path.str).st_mode))
