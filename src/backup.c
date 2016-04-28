@@ -369,6 +369,16 @@ static SearchResultType initiateMetadataRecursively(Metadata *metadata,
     {
       reassignPointToCurrent(metadata, node->history);
     }
+    else if(result.policy == BPOL_track &&
+            node->history->state.type == PST_non_existing)
+    {
+      node->hint = BH_added;
+
+      PathHistory *point = buildPathHistoryPoint(metadata, result);
+
+      point->next = node->history;
+      node->history = point;
+    }
   }
 
   if(result.type == SRT_directory)
