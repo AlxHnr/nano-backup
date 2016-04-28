@@ -335,7 +335,6 @@ static void restoreWithTimeRecursively(PathNode *node)
         break;
       default:
         die("unable to restore \"%s\"", node->path.str);
-        break;
     }
   }
 
