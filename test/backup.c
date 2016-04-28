@@ -298,6 +298,8 @@ static void restoreLargeRegularFile(const char *path,
 static void restoreRegularFile(const char *path,
                                const RegularFileInfo *info)
 {
+  struct utimbuf parent_time = getParentTime(path);
+
   if(info->size <= FILE_HASH_SIZE)
   {
     FileStream *stream = sFopenWrite(path);
@@ -308,6 +310,8 @@ static void restoreRegularFile(const char *path,
   {
     restoreLargeRegularFile(path, info);
   }
+
+  restoreParentTime(path, parent_time);
 }
 
 /** Restores the files in the given PathNode recursively to their last
