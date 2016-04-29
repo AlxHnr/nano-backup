@@ -1588,17 +1588,14 @@ static void runPhase9(String cwd_path, size_t cwd_depth,
   mustHaveRegularCached(bin_five_null,  &metadata->current_backup, 0,    (uint8_t *)"???",                  0);
 }
 
-/** Tests recursive removing of nested files with varying policies. */
-static void runPhase10(String cwd_path, size_t cwd_depth,
-                       SearchNode *phase_9_node)
+/** Removes various files, which are expected to get removed during phase
+  10. */
+static void phase10RemoveFiles(void)
 {
-  /* Remove various files. */
   removePath("tmp/files/bin/two/three");
   removePath("tmp/files/bin/one/b/2");
-  removePath("tmp/files/nb/a/abc/2");
   removePath("tmp/files/nano/a2/b");
   removePath("tmp/files/backup dir/c/1");
-  removePath("tmp/files/one/two/three/d/2");
   removePath("tmp/files/bin/two/five/0/zero/null");
   removePath("tmp/files/bin/two/four/a/b/c");
   removePath("tmp/files/bin/one/d/e");
@@ -1607,18 +1604,11 @@ static void runPhase10(String cwd_path, size_t cwd_depth,
   removePath("tmp/files/bin/1/2/3");
   removePath("tmp/files/bin/a/b/d");
   removePath("tmp/files/bin/a/b/c/1");
-  removePath("tmp/files/nb/a/abc/1");
-  removePath("tmp/files/nb/a/foo/bar");
-  removePath("tmp/files/nb/docs/1.txt");
-  removePath("tmp/files/nb/manual/b");
-  removePath("tmp/files/nb/manual/a/123.txt");
   removePath("tmp/files/nano/a3/1/2");
   removePath("tmp/files/nano/a2/a");
   removePath("tmp/files/nano/a1/2");
   removePath("tmp/files/nano/a1/1");
   removePath("tmp/files/backup dir/c/2/3");
-  removePath("tmp/files/one/two/three/d/1");
-  removePath("tmp/files/one/two/three/b/c");
   removePath("tmp/files/foo/dir/a/c");
   removePath("tmp/files/foo/dir/a/b");
   removePath("tmp/files/bin/two/five/0/zero");
@@ -1639,13 +1629,6 @@ static void runPhase10(String cwd_path, size_t cwd_depth,
   removePath("tmp/files/bin/a/b");
   removePath("tmp/files/bin/a");
   removePath("tmp/files/bin");
-  removePath("tmp/files/nb/a/abc");
-  removePath("tmp/files/nb/a/foo");
-  removePath("tmp/files/nb/a");
-  removePath("tmp/files/nb/docs");
-  removePath("tmp/files/nb/manual/a");
-  removePath("tmp/files/nb/manual");
-  removePath("tmp/files/nb");
   removePath("tmp/files/nano/a3/1/3");
   removePath("tmp/files/nano/a3/1");
   removePath("tmp/files/nano/a3");
@@ -1654,21 +1637,45 @@ static void runPhase10(String cwd_path, size_t cwd_depth,
   removePath("tmp/files/nano");
   removePath("tmp/files/backup dir/c/2");
   removePath("tmp/files/backup dir/c");
-  removePath("tmp/files/backup dir/a/b");
-  removePath("tmp/files/backup dir/a");
-  removePath("tmp/files/backup dir");
-  removePath("tmp/files/one/two/three/d");
-  removePath("tmp/files/one/two/three/b");
-  removePath("tmp/files/one/two/three/a");
-  removePath("tmp/files/one/two/three");
-  removePath("tmp/files/one/two");
-  removePath("tmp/files/one");
   removePath("tmp/files/foo/dir/a");
   removePath("tmp/files/foo/bar/test/path/a");
   removePath("tmp/files/foo/bar/test/path");
   removePath("tmp/files/foo/bar/test");
   removePath("tmp/files/foo/dir/empty");
   removePath("tmp/files/foo/dir");
+}
+
+/** Tests recursive removing of nested files with varying policies. */
+static void runPhase10(String cwd_path, size_t cwd_depth,
+                       SearchNode *phase_9_node)
+{
+  /* Remove various files. */
+  phase10RemoveFiles();
+  removePath("tmp/files/one/two/three/d/2");
+  removePath("tmp/files/one/two/three/d/1");
+  removePath("tmp/files/one/two/three/d");
+  removePath("tmp/files/one/two/three/b/c");
+  removePath("tmp/files/one/two/three/b");
+  removePath("tmp/files/one/two/three/a");
+  removePath("tmp/files/one/two/three");
+  removePath("tmp/files/one/two");
+  removePath("tmp/files/one");
+  removePath("tmp/files/backup dir/a/b");
+  removePath("tmp/files/backup dir/a");
+  removePath("tmp/files/backup dir");
+  removePath("tmp/files/nb/a/abc/2");
+  removePath("tmp/files/nb/a/abc/1");
+  removePath("tmp/files/nb/a/foo/bar");
+  removePath("tmp/files/nb/docs/1.txt");
+  removePath("tmp/files/nb/manual/b");
+  removePath("tmp/files/nb/manual/a/123.txt");
+  removePath("tmp/files/nb/a/abc");
+  removePath("tmp/files/nb/a/foo");
+  removePath("tmp/files/nb/a");
+  removePath("tmp/files/nb/docs");
+  removePath("tmp/files/nb/manual/a");
+  removePath("tmp/files/nb/manual");
+  removePath("tmp/files/nb");
 
   /* Initiate the backup. */
   Metadata *metadata = metadataLoad("tmp/repo/metadata");
@@ -2326,6 +2333,10 @@ int main(void)
   runPhase10(cwd, cwd_depth, phase_9_node);
   testGroupEnd();
 
+  /* Create a backup of the current metadata. */
+  metadataWrite(metadataLoad("tmp/repo/metadata"), "tmp",
+                "tmp/tmp-file", "tmp/metadata-backup");
+
   testGroupStart("backup with no changes");
   runPhase11(cwd, cwd_depth, phase_9_node);
   testGroupEnd();
@@ -2333,6 +2344,9 @@ int main(void)
   testGroupStart("recreating nested files with varying policies");
   runPhase12(cwd, cwd_depth, phase_9_node);
   testGroupEnd();
+
+  /* Restore metadata from phase 10. */
+  sRename("tmp/metadata-backup", "tmp/repo/metadata");
 
   free(phase_timestamps);
 }
