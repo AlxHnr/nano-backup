@@ -1,0 +1,27 @@
+[track]
+/tmp/files/foo/bar/
+/tmp/files/one/two/three/b
+/tmp/files/nb/manual
+/tmp/files/nb/a/abc
+/tmp/files/bin
+/tmp/files/bin/a/b/c
+/tmp/files/bin/one/b
+
+[ignore]
+tmp/files/foo/bar/test$
+tmp/files/backup dir/c$
+tmp/files/one/two/(three|four|five)$
+
+[copy]
+/tmp/files/one/two/three/a
+/tmp/files/backup dir
+/tmp/files/nb/docs
+/tmp/files/bin/a
+/tmp/files/bin/two/four/a
+
+[mirror]
+/tmp/files/nb
+/tmp/files/nb/manual/a/123.txt
+/tmp/files/nb/a/foo
+/tmp/files/bin/one
+/tmp/files/bin/two/five/0
