@@ -2479,6 +2479,25 @@ static void runPhase13(String cwd_path, size_t cwd_depth,
   mustHaveRegularStat(bin, &metadata->current_backup, 2123, bin_hash, 0);
 }
 
+/** Runs a backup phase.
+
+  @param test_name The name/description of the phase.
+  @param phase_fun The function to run.
+  @param search_tree The search tree which should be passed to the test
+  function.
+  @param cwd_path The path to the current working directory.
+  @param cwd_depth The recursion depth of the current working directory.
+*/
+static void phase(const char *test_name,
+                  void (*phase_fun)(String, size_t, SearchNode *),
+                  SearchNode *search_tree, String cwd_path,
+                  size_t cwd_depth)
+{
+  testGroupStart(test_name);
+  phase_fun(cwd_path, cwd_depth, search_tree);
+  testGroupEnd();
+}
+
 int main(void)
 {
   testGroupStart("prepare backup");
@@ -2497,68 +2516,33 @@ int main(void)
   makeDir("tmp/files");
   testGroupEnd();
 
-  testGroupStart("initial backup");
-  runPhase1(cwd, cwd_depth, phase_1_node);
-  testGroupEnd();
-
-  testGroupStart("discovering new files");
-  runPhase2(cwd, cwd_depth, phase_1_node);
-  testGroupEnd();
-
-  testGroupStart("removing files");
-  runPhase3(cwd, cwd_depth, phase_3_node);
-  testGroupEnd();
-
-  testGroupStart("backup with no changes");
-  runPhase4(cwd, cwd_depth, phase_4_node);
-  testGroupEnd();
-
-  testGroupStart("generating nested files and directories");
-  runPhase5(cwd, cwd_depth, phase_5_node);
-  testGroupEnd();
-
-  testGroupStart("recursive wiping of path nodes");
-  runPhase6(cwd, cwd_depth, phase_6_node);
-  testGroupEnd();
-
-  testGroupStart("generate more nested files");
-  runPhase7(cwd, cwd_depth, phase_7_node);
-  testGroupEnd();
-
-  testGroupStart("wiping of unneeded nodes");
-  runPhase8(cwd, cwd_depth, phase_8_node);
-  testGroupEnd();
-
-  testGroupStart("generate nested files with varying policies");
-  runPhase9(cwd, cwd_depth, phase_9_node);
-  testGroupEnd();
-
-  testGroupStart("recursive removing of paths with varying policies");
-  runPhase10(cwd, cwd_depth, phase_9_node);
-  testGroupEnd();
+  phase("initial backup",                                    runPhase1,  phase_1_node, cwd, cwd_depth);
+  phase("discovering new files",                             runPhase2,  phase_1_node, cwd, cwd_depth);
+  phase("removing files",                                    runPhase3,  phase_3_node, cwd, cwd_depth);
+  phase("backup with no changes",                            runPhase4,  phase_4_node, cwd, cwd_depth);
+  phase("generating nested files and directories",           runPhase5,  phase_5_node, cwd, cwd_depth);
+  phase("recursive wiping of path nodes",                    runPhase6,  phase_6_node, cwd, cwd_depth);
+  phase("generate more nested files",                        runPhase7,  phase_7_node, cwd, cwd_depth);
+  phase("wiping of unneeded nodes",                          runPhase8,  phase_8_node, cwd, cwd_depth);
+  phase("generate nested files with varying policies",       runPhase9,  phase_9_node, cwd, cwd_depth);
+  phase("recursive removing of paths with varying policies", runPhase10, phase_9_node, cwd, cwd_depth);
 
   /* Create a backup of the current metadata. */
   time_t tmp_timestamp = sStat("tmp").st_mtime;
-  metadataWrite(metadataLoad("tmp/repo/metadata"), "tmp",
-                "tmp/tmp-file", "tmp/metadata-backup");
+  metadataWrite(metadataLoad("tmp/repo/metadata"), "tmp", "tmp/tmp-file", "tmp/metadata-backup");
   setTimestamp("tmp", tmp_timestamp);
 
-  testGroupStart("backup with no changes");
-  runPhase11(cwd, cwd_depth, phase_9_node);
-  testGroupEnd();
-
-  testGroupStart("recreating nested files with varying policies");
-  runPhase12(cwd, cwd_depth, phase_9_node);
-  testGroupEnd();
+  /* Run some backup phases. */
+  phase("backup with no changes",                        runPhase11, phase_9_node, cwd, cwd_depth);
+  phase("recreating nested files with varying policies", runPhase12, phase_9_node, cwd, cwd_depth);
 
   /* Restore metadata from phase 10. */
   tmp_timestamp = sStat("tmp").st_mtime;
   sRename("tmp/metadata-backup", "tmp/repo/metadata");
   setTimestamp("tmp", tmp_timestamp);
 
-  testGroupStart("a variation of the previous backup");
-  runPhase13(cwd, cwd_depth, phase_13_node);
-  testGroupEnd();
+  /* Run more backup phases. */
+  phase("a variation of the previous backup", runPhase13, phase_13_node, cwd, cwd_depth);
 
   free(phase_timestamps);
 }
