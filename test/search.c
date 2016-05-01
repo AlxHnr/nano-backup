@@ -280,8 +280,6 @@ static void checkHasIgnoredProperly(StringTable *table)
   assert_true(strtableGet(table, str("broken-config-files"))       == NULL);
   assert_true(strtableGet(table, str("template-config-files"))     == NULL);
   assert_true(strtableGet(table, str("generated-config-files"))    == NULL);
-  assert_true(strtableGet(table, str("generated-broken-metadata")) == NULL);
-  assert_true(strtableGet(table, str("dummy-metadata"))            == NULL);
   assert_true(strtableGet(table, str("tmp"))                       == NULL);
 }
 

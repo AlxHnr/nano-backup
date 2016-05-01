@@ -77,35 +77,35 @@ int main(void)
   fileHashWrapper("broken-config-files/BOM-simple-error.txt", hash);
   assert_true(memcmp(hash, bom_hash, FILE_HASH_SIZE) == 0);
 
-  const uint8_t invalid_hash[FILE_HASH_SIZE] =
+  const uint8_t redefine_2[FILE_HASH_SIZE] =
   {
-    0x49, 0x09, 0x32, 0xa0, 0x11, 0x92, 0x26, 0x45, 0x8b, 0xff,
-    0xae, 0x08, 0x2d, 0x08, 0x66, 0x9a, 0x9c, 0x95, 0x24, 0x0d,
+    0x0e, 0x44, 0xcb, 0x8f, 0x04, 0xac, 0x37, 0x5e, 0x20, 0x92,
+    0xa4, 0x3b, 0x7e, 0x69, 0xf4, 0x7d, 0xbb, 0xab, 0x2d, 0x73,
   };
-  fileHashWrapper("dummy-metadata/invalid-path-state-type", hash);
-  assert_true(memcmp(hash, invalid_hash, FILE_HASH_SIZE) == 0);
+  fileHashWrapper("broken-config-files/redefine-2.txt", hash);
+  assert_true(memcmp(hash, redefine_2, FILE_HASH_SIZE) == 0);
 
-  const uint8_t test_hash[FILE_HASH_SIZE] =
+  const uint8_t inheritance_1[FILE_HASH_SIZE] =
   {
-    0xa5, 0xaf, 0xcc, 0xaa, 0x41, 0x7c, 0x7c, 0x92, 0xf5, 0x12,
-    0x90, 0xce, 0xb0, 0x99, 0xf8, 0xbe, 0xa7, 0xc4, 0x7f, 0xd9,
+    0x16, 0x50, 0xc8, 0x28, 0xc5, 0x4d, 0x5f, 0xdf, 0xc3, 0xc3,
+    0xf1, 0xc2, 0x98, 0xdc, 0x57, 0xf5, 0x84, 0x33, 0x12, 0x8c,
   };
-  fileHashWrapper("dummy-metadata/test-data-1", hash);
-  assert_true(memcmp(hash, test_hash, FILE_HASH_SIZE) == 0);
+  fileHashWrapper("valid-config-files/inheritance-1.txt", hash);
+  assert_true(memcmp(hash, inheritance_1, FILE_HASH_SIZE) == 0);
 
-  stats = sStat("dummy-metadata/test-data-1");
+  stats = sStat("valid-config-files/inheritance-1.txt");
   stats.st_size += 1;
-  assert_error(fileHash("dummy-metadata/test-data-1", stats, hash),
-               "reading \"dummy-metadata/test-data-1\": reached end of file unexpectedly");
+  assert_error(fileHash("valid-config-files/inheritance-1.txt", stats, hash),
+               "reading \"valid-config-files/inheritance-1.txt\": reached end of file unexpectedly");
 
   stats.st_size -= 2;
-  assert_error(fileHash("dummy-metadata/test-data-1", stats, hash),
-               "file changed while calculating hash: \"dummy-metadata/test-data-1\"");
+  assert_error(fileHash("valid-config-files/inheritance-1.txt", stats, hash),
+               "file changed while calculating hash: \"valid-config-files/inheritance-1.txt\"");
 
   stats.st_size += 1;
   stats.st_blksize = 1;
-  fileHash("dummy-metadata/test-data-1", stats, hash);
-  assert_true(memcmp(hash, test_hash, FILE_HASH_SIZE) == 0);
+  fileHash("valid-config-files/inheritance-1.txt", stats, hash);
+  assert_true(memcmp(hash, inheritance_1, FILE_HASH_SIZE) == 0);
 
   testGroupEnd();
 }
