@@ -328,14 +328,14 @@ static void restoreWithTimeRecursively(PathNode *node)
     {
       case PST_regular:
         restoreRegularFile(node->path.str, &point->state.metadata.reg);
-        setTimestamp(node->path.str, point->state.timestamp);
+        setTimestamp(node->path.str, point->state.metadata.reg.timestamp);
         break;
       case PST_symlink:
         makeSymlink(point->state.metadata.sym_target, node->path.str);
         break;
       case PST_directory:
         makeDir(node->path.str);
-        setTimestamp(node->path.str, point->state.timestamp);
+        setTimestamp(node->path.str, point->state.metadata.dir.timestamp);
         break;
       default:
         die("unable to restore \"%s\"", node->path.str);
@@ -406,8 +406,7 @@ static void mustHaveSymlinkLStat(PathNode *node, const Backup *backup,
                                   const char *sym_target)
 {
   struct stat stats = sLStat(node->path.str);
-  mustHaveSymlink(node, backup, stats.st_uid, stats.st_gid,
-                  stats.st_mtime, sym_target);
+  mustHaveSymlink(node, backup, stats.st_uid, stats.st_gid, sym_target);
 }
 
 /** Cached version of mustHaveSymlinkLStat(). */
@@ -415,8 +414,7 @@ static void mustHaveSymlinkLCached(PathNode *node, const Backup *backup,
                                    const char *sym_target)
 {
   struct stat stats = cachedStat(node->path, sLStat);
-  mustHaveSymlink(node, backup, stats.st_uid, stats.st_gid,
-                  stats.st_mtime, sym_target);
+  mustHaveSymlink(node, backup, stats.st_uid, stats.st_gid, sym_target);
 }
 
 

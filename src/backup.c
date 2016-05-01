@@ -57,12 +57,12 @@ static PathHistory *buildPathHistoryPoint(Metadata *metadata,
 
   point->state.uid = result.stats.st_uid;
   point->state.gid = result.stats.st_gid;
-  point->state.timestamp = result.stats.st_mtime;
 
   if(result.type == SRT_regular)
   {
     point->state.type = PST_regular;
     point->state.metadata.reg.mode = result.stats.st_mode;
+    point->state.metadata.reg.timestamp = result.stats.st_mtime;
     point->state.metadata.reg.size = result.stats.st_size;
   }
   else if(result.type == SRT_symlink)
@@ -98,7 +98,8 @@ static PathHistory *buildPathHistoryPoint(Metadata *metadata,
   else if(result.type == SRT_directory)
   {
     point->state.type = PST_directory;
-    point->state.metadata.dir_mode = result.stats.st_mode;
+    point->state.metadata.dir.mode = result.stats.st_mode;
+    point->state.metadata.dir.timestamp = result.stats.st_mtime;
   }
 
   point->next = NULL;
@@ -568,8 +569,7 @@ static void addNewFileToRepo(PathNode *node, const char *repo_path,
 
   /* Die if the file has changed since the metadata was initiated. */
   struct stat stats = sStat(node->path.str);
-  if(node->history->state.timestamp != stats.st_mtime ||
-     reg->size != (uint64_t)stats.st_size)
+  if(node->history->state.metadata.reg.timestamp != stats.st_mtime)
   {
     die("file has changed during backup: \"%s\"", node->path.str);
   }

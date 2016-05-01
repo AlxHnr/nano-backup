@@ -277,13 +277,14 @@ static PathHistory *readPathHistory(FileContent content,
   point->state.type = read8(content, reader_position, metadata_path);
   point->state.uid = read32(content, reader_position, metadata_path);
   point->state.gid = read32(content, reader_position, metadata_path);
-  point->state.timestamp =
-    readTime(content, reader_position, metadata_path);
 
   if(point->state.type == PST_regular)
   {
     point->state.metadata.reg.mode =
       read32(content, reader_position, metadata_path);
+
+    point->state.metadata.reg.timestamp =
+      readTime(content, reader_position, metadata_path);
 
     point->state.metadata.reg.size =
       read64(content, reader_position, metadata_path);
@@ -319,8 +320,10 @@ static PathHistory *readPathHistory(FileContent content,
   }
   else if(point->state.type == PST_directory)
   {
-    point->state.metadata.dir_mode =
+    point->state.metadata.dir.mode =
       read32(content, reader_position, metadata_path);
+    point->state.metadata.dir.timestamp =
+      readTime(content, reader_position, metadata_path);
   }
   else if(point->state.type != PST_non_existing)
   {
@@ -393,11 +396,11 @@ static void writePathHistoryList(PathHistory *starting_point,
     write8(point->state.type,  writer);
     write32(point->state.uid,  writer);
     write32(point->state.gid,  writer);
-    write64(point->state.timestamp, writer);
 
     if(point->state.type == PST_regular)
     {
       write32(point->state.metadata.reg.mode, writer);
+      write64(point->state.metadata.reg.timestamp, writer);
       write64(point->state.metadata.reg.size, writer);
 
       if(point->state.metadata.reg.size > FILE_HASH_SIZE)
@@ -421,7 +424,8 @@ static void writePathHistoryList(PathHistory *starting_point,
     }
     else if(point->state.type == PST_directory)
     {
-      write32(point->state.metadata.dir_mode, writer);
+      write32(point->state.metadata.dir.mode, writer);
+      write64(point->state.metadata.dir.timestamp, writer);
     }
   }
 }

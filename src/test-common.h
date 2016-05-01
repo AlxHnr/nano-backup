@@ -50,8 +50,7 @@ extern void mustHaveRegular(PathNode *node, const Backup *backup,
                             mode_t mode, uint64_t size,
                             const uint8_t *hash, uint8_t slot);
 extern void mustHaveSymlink(PathNode *node, const Backup *backup,
-                            uid_t uid, gid_t gid, time_t timestamp,
-                            const char *sym_target);
+                            uid_t uid, gid_t gid, const char *sym_target);
 extern void mustHaveDirectory(PathNode *node, const Backup *backup,
                               uid_t uid, gid_t gid, time_t timestamp,
                               mode_t mode);

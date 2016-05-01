@@ -155,10 +155,13 @@ static void appendHist(PathNode *node, Backup *backup, PathState state)
   @param slot The slot number of the file in the repository. Will be
   ignored if the files size is not greater than FILE_HASH_SIZE.
 */
-static void assignRegularValues(PathState *state, uint64_t size,
+static void assignRegularValues(PathState *state, mode_t mode,
+                                time_t timestamp, uint64_t size,
                                 uint8_t *hash ,uint8_t slot)
 {
-  state->metadata.reg.size = size;
+  state->metadata.reg.mode      = mode;
+  state->metadata.reg.timestamp = timestamp;
+  state->metadata.reg.size      = size;
 
   if(size > FILE_HASH_SIZE)
   {
@@ -201,11 +204,9 @@ static void appendHistRegular(PathNode *node, Backup *backup, uid_t uid,
     .type = PST_regular,
     .uid = uid,
     .gid = gid,
-    .timestamp = timestamp,
   };
 
-  state.metadata.reg.mode = mode;
-  assignRegularValues(&state, size, hash, slot);
+  assignRegularValues(&state, mode, timestamp, size, hash, slot);
   appendHist(node, backup, state);
 }
 
@@ -218,15 +219,13 @@ static void appendHistRegular(PathNode *node, Backup *backup, uid_t uid,
   as long as the history point is in use.
 */
 static void appendHistSymlink(PathNode *node, Backup *backup, uid_t uid,
-                              gid_t gid, time_t timestamp,
-                              const char *sym_target)
+                              gid_t gid, const char *sym_target)
 {
   PathState state =
   {
     .type = PST_symlink,
     .uid = uid,
     .gid = gid,
-    .timestamp = timestamp,
     .metadata.sym_target = sym_target,
   };
 
@@ -242,10 +241,10 @@ static void appendHistDirectory(PathNode *node, Backup *backup, uid_t uid,
     .type = PST_directory,
     .uid = uid,
     .gid = gid,
-    .timestamp = timestamp,
-    .metadata.dir_mode = mode,
   };
 
+  state.metadata.dir.mode = mode;
+  state.metadata.dir.timestamp = timestamp;
   appendHist(node, backup, state);
 }
 
@@ -290,11 +289,9 @@ static void appendConfHist(Metadata *metadata, Backup *backup,
       .type = PST_regular,
       .uid = 0,
       .gid = 0,
-      .timestamp = 0,
     };
 
-  history_point->state.metadata.reg.mode = 0;
-  assignRegularValues(&history_point->state, size, hash, slot);
+  assignRegularValues(&history_point->state, 0, 0, size, hash, slot);
   history_point->next = NULL;
 }
 
@@ -372,7 +369,7 @@ static Metadata *genTestData1(void)
   PathNode *make_conf =
     createPathNode("make.conf", BPOL_track, portage, metadata);
 
-  appendHistSymlink(make_conf, &metadata->backup_history[0], 59, 23, 1248,
+  appendHistSymlink(make_conf, &metadata->backup_history[0], 59, 23,
                     "make.conf.backup");
   appendHistNonExisting(make_conf, &metadata->backup_history[2]);
   appendHistRegular(make_conf, &metadata->backup_history[3], 3, 4, 53238,
@@ -424,7 +421,7 @@ static void checkTestData1(Metadata *metadata)
   PathNode *make_conf =
     findNode(portage->subnodes, "/etc/portage/make.conf", BPOL_track, 3, 0);
   mustHaveSymlink(make_conf, &metadata->backup_history[0],
-                  59, 23, 1248, "make.conf.backup");
+                  59, 23, "make.conf.backup");
   mustHaveNonExisting(make_conf, &metadata->backup_history[2]);
   mustHaveRegular(make_conf, &metadata->backup_history[3], 3, 4, 53238,
                   0713, 192, (uint8_t *)"e78863d5e021dd60c1a2", 0);
@@ -842,14 +839,14 @@ static Metadata *genNodesToWipe(void)
   appendHistDirectory(portage, &metadata->backup_history[2], 89, 98, 91234, 0321);
   appendHistDirectory(portage, &metadata->backup_history[3], 7,  19, 12837, 0666);
   PathNode *make_conf = createPathNode("make.conf", BPOL_track, portage, metadata);
-  appendHistSymlink(make_conf, &metadata->backup_history[0], 59, 23, 1248, "make.conf.backup");
+  appendHistSymlink(make_conf, &metadata->backup_history[0], 59, 23, "make.conf.backup");
   appendHistNonExisting(make_conf, &metadata->backup_history[2]);
   appendHistRegular(make_conf, &metadata->backup_history[3], 3, 4, 53238,
                     0713, 192, (uint8_t *)"e78863d5e021dd60c1a2", 0);
   PathNode *package_use = createPathNode("package.use", BPOL_copy, portage, metadata);
   appendHistDirectory(package_use, &metadata->backup_history[3], 34, 25, 184912, 0754);
   appendHistSymlink(createPathNode("packages", BPOL_mirror, package_use, metadata),
-                    &metadata->backup_history[1], 32, 28, 8649712, "../packages.txt");
+                    &metadata->backup_history[1], 32, 28, "../packages.txt");
 
   /* Decrement wiped nodes reference count. */
   conf_d->hint    = BH_not_part_of_repository;
@@ -890,7 +887,7 @@ static void checkWipedNodes(Metadata *metadata)
   PathNode *package_use = findNode(portage->subnodes, "/etc/portage/package.use", BPOL_copy, 1, 1);
   mustHaveDirectory(package_use, &metadata->backup_history[2], 34, 25, 184912, 0754);
   mustHaveSymlink(findNode(package_use->subnodes, "/etc/portage/package.use/packages", BPOL_mirror, 1, 0),
-                  &metadata->backup_history[0], 32, 28, 8649712, "../packages.txt");
+                  &metadata->backup_history[0], 32, 28, "../packages.txt");
 }
 
 int main(void)

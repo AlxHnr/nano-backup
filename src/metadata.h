@@ -45,6 +45,13 @@ typedef enum
   PST_directory,    /**< The path represent a directory. */
 }PathStateType;
 
+/** Stores the metadata of a directory. */
+typedef struct
+{
+  mode_t mode; /**< The directories permission bits. */
+  time_t timestamp; /**< The directories last modification time. */
+}DirectoryInfo;
+
 /** Represents the state a path can have at a specific backup. */
 typedef struct
 {
@@ -54,14 +61,13 @@ typedef struct
 
   uid_t uid; /**< The user id of the paths owner. */
   gid_t gid; /**< The group id of the paths owner. */
-  time_t timestamp; /**< The paths last modification time. */
 
   /** Optional metadata, depending on the PathStateType. */
   union
   {
     RegularFileInfo reg;    /**< The metadata of a regular file. */
     const char *sym_target; /**< The target path of a symlink. */
-    mode_t dir_mode;        /**< The permission bits of a directory. */
+    DirectoryInfo dir;     /**< The permission bits of a directory. */
   }metadata;
 }PathState;
 
@@ -72,7 +78,7 @@ typedef struct Backup Backup;
 struct Backup
 {
   /** The id of the backup. It is only used as a helper variable for
-    reading/writing metadata and may not be unique. */
+    reading/writing metadata. */
   size_t id;
 
   /** The time at which the backup was completed. */
@@ -148,9 +154,9 @@ struct PathNode
 /** Represents the metadata of a repository. */
 typedef struct
 {
-  /** The current backup. Its id will always be 0 and its timestamp will be
-    undefined. This variable is shared across all newly created backup
-    states. */
+  /** The current backup. Its id will always be 0 and its timestamp will
+    contain the time when the backup has finished. This variable is shared
+    across all newly created backup states. */
   Backup current_backup;
 
   /** The amount of elements in the backup history. */
@@ -161,9 +167,9 @@ typedef struct
 
   /** The history of the repositories config file. Its path states will
     have always the type PST_regular and all its variables will be
-    undefined, with the exception of metadata.reg. In metadata.reg the
-    "mode" variable will be undefined. If this metadata doesn't have a
-    config history, it will point to NULL. */
+    undefined, with the exception of metadata.reg. In metadata.reg only
+    "size", "hash" and "slot" will be defined. If this metadata doesn't
+    have a config history, it will point to NULL. */
   PathHistory *config_history;
 
   /** The amount of paths in the tree. It is only used as a helper variable

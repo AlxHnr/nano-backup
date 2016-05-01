@@ -258,7 +258,7 @@ static PathHistory *findHistoryPoint(PathNode *node, const Backup *backup)
 /** Asserts that the node at the given history point contains the specified
   values. */
 static void checkPathState(PathNode *node, PathHistory *point,
-                           uid_t uid, gid_t gid, time_t timestamp)
+                           uid_t uid, gid_t gid)
 {
   if(point->state.uid != uid)
   {
@@ -268,11 +268,6 @@ static void checkPathState(PathNode *node, PathHistory *point,
   else if(point->state.gid != gid)
   {
     die("backup point %zu in node \"%s\" contains invalid gid",
-        point->backup->id, node->path.str);
-  }
-  else if(point->state.timestamp != timestamp)
-  {
-    die("backup point %zu in node \"%s\" contains invalid timestamp",
         point->backup->id, node->path.str);
   }
 }
@@ -458,19 +453,24 @@ void mustHaveRegular(PathNode *node, const Backup *backup, uid_t uid,
     die("backup point %zu in node \"%s\" contains invalid permission bits",
         backup->id, node->path.str);
   }
+  else if(point->state.metadata.reg.timestamp != timestamp)
+  {
+    die("backup point %zu in node \"%s\" contains invalid timestamp",
+        backup->id, node->path.str);
+  }
   else if(checkRegularValues(&point->state, size, hash, slot) == false)
   {
     die("backup point %zu in node \"%s\" contains invalid values",
         backup->id, node->path.str);
   }
 
-  checkPathState(node, point, uid, gid, timestamp);
+  checkPathState(node, point, uid, gid);
 }
 
 /** Assert that the given node contains a symlink history point with the
   specified properties. */
 void mustHaveSymlink(PathNode *node, const Backup *backup, uid_t uid,
-                     gid_t gid, time_t timestamp, const char *sym_target)
+                     gid_t gid, const char *sym_target)
 {
   PathHistory *point = findHistoryPoint(node, backup);
   if(point->state.type != PST_symlink)
@@ -484,7 +484,7 @@ void mustHaveSymlink(PathNode *node, const Backup *backup, uid_t uid,
         backup->id, node->path.str, sym_target);
   }
 
-  checkPathState(node, point, uid, gid, timestamp);
+  checkPathState(node, point, uid, gid);
 }
 
 /** Assert that the given node contains a directory history point with the
@@ -499,11 +499,16 @@ void mustHaveDirectory(PathNode *node, const Backup *backup,
     die("backup point %zu in node \"%s\" doesn't have the state PST_directory",
         backup->id, node->path.str);
   }
-  else if(point->state.metadata.reg.mode != mode)
+  else if(point->state.metadata.dir.mode != mode)
   {
     die("backup point %zu in node \"%s\" contains invalid permission bits",
         backup->id, node->path.str);
   }
+  else if(point->state.metadata.dir.timestamp != timestamp)
+  {
+    die("backup point %zu in node \"%s\" contains invalid timestamp",
+        backup->id, node->path.str);
+  }
 
-  checkPathState(node, point, uid, gid, timestamp);
+  checkPathState(node, point, uid, gid);
 }
