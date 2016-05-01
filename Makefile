@@ -27,7 +27,7 @@ build/%.o:
 	$(CC) $(CFLAGS) -Isrc/ -c $< -o $@
 
 test: build/nb $(TESTS) $(GENERATED_CONFIGS) \
-  test/data/test\ directory/.empty/ test/data/generated-broken-metadata/
+  test/data/test\ directory/.empty/
 	@(cd test/data/ && \
 	  for test in $(TESTS); do \
 	  rm -rf tmp/; \
@@ -46,9 +46,6 @@ build/test/%: build/test/%.o \
 
 test/data/generated-config-files/%: test/data/template-config-files/%
 	mkdir -p "$(dir $@)" && sed -r "s,^/,$$PWD/test/data/,g" "$<" > "$@"
-
-test/data/generated-broken-metadata/:
-	./test/generate-broken-metadata.sh
 
 test/data/test\ directory/.empty/:
 	mkdir -p "$@"
