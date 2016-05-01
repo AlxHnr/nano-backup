@@ -149,6 +149,8 @@ static void appendHist(PathNode *node, Backup *backup, PathState state)
   documentation of RegularMetadata.
 
   @param state A path state which must have the type PST_regular.
+  @param mode The permission bits of the file.
+  @param timestamp The modification timestamp of the file.
   @param size The size of the file described by the path state.
   @param hash The hash of the file or the files entire content, depending
   on the files size.

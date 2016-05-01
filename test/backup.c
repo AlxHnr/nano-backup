@@ -265,7 +265,8 @@ static PathHistory *findExistingHistPoint(PathNode *node)
   return NULL;
 }
 
-/** like restoreRegularFile(), but for files larger than FILE_HASH_SIZE. */
+/** like restoreRegularFile(), but for files larger than FILE_HASH_SIZE.
+  This function does not restore the files modification timestamp. */
 static void restoreLargeRegularFile(const char *path,
                                     const RegularFileInfo *info)
 {
@@ -289,7 +290,7 @@ static void restoreLargeRegularFile(const char *path,
   sFclose(writer);
 }
 
-/** Restores only the content of a regular file.
+/** Restores a regular file with its modification timestamp.
 
   @param path The path to the file.
   @param info The file info of the state to which the file should be
@@ -311,6 +312,7 @@ static void restoreRegularFile(const char *path,
     restoreLargeRegularFile(path, info);
   }
 
+  setTimestamp(path, info->timestamp);
   restoreParentTime(path, parent_time);
 }
 
@@ -328,7 +330,6 @@ static void restoreWithTimeRecursively(PathNode *node)
     {
       case PST_regular:
         restoreRegularFile(node->path.str, &point->state.metadata.reg);
-        setTimestamp(node->path.str, point->state.metadata.reg.timestamp);
         break;
       case PST_symlink:
         makeSymlink(point->state.metadata.sym_target, node->path.str);
