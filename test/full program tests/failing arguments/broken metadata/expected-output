@@ -1,1 +1,1 @@
-nb: invalid PathStateType in "generated/repo/metadata"
+nb: corrupted metadata: expected 8 bytes, got 2: "generated/repo/metadata"

@@ -1,5 +1,3 @@
-broken_metadata="$PROJECT_PATH/test/data/dummy-metadata/invalid-path-state-type"
-
 mkdir -p generated/repo
 touch generated/repo/config
-cp "$broken_metadata" generated/repo/metadata
+printf '\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' > generated/repo/metadata
