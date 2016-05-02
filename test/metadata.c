@@ -916,22 +916,22 @@ static void generateBrokenMetadata(void)
   assert_true(portage != NULL);
 
   /* Truncate metadata file to provoke errors. */
-  writeBytesToFile(651, test_data, "tmp/missing-byte");
-  writeBytesToFile(614, test_data, "tmp/missing-slot");
+  writeBytesToFile(643, test_data, "tmp/missing-byte");
+  writeBytesToFile(606, test_data, "tmp/missing-slot");
   writeBytesToFile(402, test_data, "tmp/missing-path-state-type");
-  writeBytesToFile(655, test_data, "tmp/incomplete-32-bit-value");
+  writeBytesToFile(647, test_data, "tmp/incomplete-32-bit-value");
   writeBytesToFile(217, test_data, "tmp/missing-32-bit-value");
   writeBytesToFile(3,   test_data, "tmp/incomplete-size");
   writeBytesToFile(327, test_data, "tmp/missing-size");
-  writeBytesToFile(528, test_data, "tmp/incomplete-time");
-  writeBytesToFile(664, test_data, "tmp/missing-time");
+  writeBytesToFile(520, test_data, "tmp/incomplete-time");
+  writeBytesToFile(656, test_data, "tmp/missing-time");
   writeBytesToFile(148, test_data, "tmp/incomplete-hash");
   writeBytesToFile(85,  test_data, "tmp/missing-hash");
   writeBytesToFile(249, test_data, "tmp/incomplete-path");
   writeBytesToFile(188, test_data, "tmp/missing-path");
   writeBytesToFile(384, test_data, "tmp/incomplete-symlink-target-path");
   writeBytesToFile(378, test_data, "tmp/missing-symlink-target-path");
-  writeBytesToFile(707, test_data, "tmp/last-byte-missing");
+  writeBytesToFile(699, test_data, "tmp/last-byte-missing");
 
   /* Generate files with out-of-range backup IDs. */
   Backup broken_backup = { .id = 4 };
@@ -955,12 +955,12 @@ static void generateBrokenMetadata(void)
 
   /* Generate file with unneeded trailing bytes. */
   FileStream *stream = sFopenWrite("tmp/unneeded-trailing-bytes");
-  sFwrite(test_data, 708, stream);
+  sFwrite(test_data, 700, stream);
   sFwrite("   ", 3, stream);
   sFclose(stream);
 
   test_data[172] = 0;
-  writeBytesToFile(708, test_data, "tmp/path-count-zero");
+  writeBytesToFile(700, test_data, "tmp/path-count-zero");
   test_data[172] = 1;
 
   free(test_data);

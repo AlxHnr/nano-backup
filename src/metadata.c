@@ -275,8 +275,12 @@ static PathHistory *readPathHistory(FileContent content,
   point->backup->ref_count = sSizeAdd(point->backup->ref_count, 1);
 
   point->state.type = read8(content, reader_position, metadata_path);
-  point->state.uid = read32(content, reader_position, metadata_path);
-  point->state.gid = read32(content, reader_position, metadata_path);
+
+  if(point->state.type != PST_non_existing)
+  {
+    point->state.uid = read32(content, reader_position, metadata_path);
+    point->state.gid = read32(content, reader_position, metadata_path);
+  }
 
   if(point->state.type == PST_regular)
   {
@@ -394,8 +398,12 @@ static void writePathHistoryList(PathHistory *starting_point,
   {
     write64(point->backup->id, writer);
     write8(point->state.type,  writer);
-    write32(point->state.uid,  writer);
-    write32(point->state.gid,  writer);
+
+    if(point->state.type != PST_non_existing)
+    {
+      write32(point->state.uid,  writer);
+      write32(point->state.gid,  writer);
+    }
 
     if(point->state.type == PST_regular)
     {
