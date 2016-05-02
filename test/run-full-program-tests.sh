@@ -19,11 +19,11 @@ fi
 # $1 The name of the test.
 print_running_test()
 {
-  echo -n "  Testing $1"
+  printf "  Testing %s" "$1"
   dots_to_print=$((61 - ${#1}))
   test $dots_to_print -gt 0 &&
     for i in $(seq $dots_to_print); do
-      echo -n "."
+      printf "."
     done
 }
 
