@@ -287,6 +287,26 @@ static void removePath(const char *path)
   restoreParentTime(path, parent_time);
 }
 
+/** Counterpart to generateCollidingFiles(). */
+static void removeCollidingFiles(const uint8_t *hash, size_t size,
+                                 size_t files_to_remove)
+{
+  assert_true(files_to_remove <= UINT8_MAX + 1);
+
+  char hash_string[FILE_HASH_SIZE * 2 + 1];
+  for(size_t index = 0; index < FILE_HASH_SIZE; index++)
+  {
+    sprintf(&hash_string[index * 2], "%02x", hash[index]);
+  }
+
+  char buffer[64];
+  for(size_t slot = 0; slot < files_to_remove; slot++)
+  {
+    sprintf(buffer, "tmp/repo/%zu-%s-%zu", slot, hash_string, size);
+    removePath(buffer);
+  }
+}
+
 /** Finds the first point in the nodes history, which is not
   PST_non_existing. */
 static PathHistory *findExistingHistPoint(PathNode *node)
@@ -2639,6 +2659,28 @@ static void runPhase14(String cwd_path, size_t cwd_depth,
   mustHaveRegularStat(test,      &metadata->current_backup, 80,   hash_test, 0);
   mustHaveRegularStat(important, &metadata->current_backup, 2006, hash_3,    3);
   mustHaveRegularStat(nano,      &metadata->current_backup, 1572, hash_255,  255);
+
+  /* Clean up test. */
+  removePath("tmp/files/dir/foo.txt");
+  removePath("tmp/files/dir/bar.txt");
+  removePath("tmp/files/dir/a/test");
+  removePath("tmp/files/dir/a/2");
+  removePath("tmp/files/dir/a/1");
+  removePath("tmp/files/dir/a");
+  removePath("tmp/files/dir");
+  removePath("tmp/files/backup/nano");
+  removePath("tmp/files/backup/important");
+  removePath("tmp/files/backup");
+  assert_true(countFilesInDir("tmp/files") == 0);
+
+  removePath("tmp/repo/metadata");
+  removePath("tmp/repo/0-14d1a208351dc71c2d568d8fc5110660cdca7ca5-80");
+  removeCollidingFiles(hash_1,   4007, 2);
+  removeCollidingFiles(hash_3,   2006, 4);
+  removeCollidingFiles(hash_19,  297,  20);
+  removeCollidingFiles(hash_255, 1572, 256);
+  assert_true(countFilesInDir("tmp/repo") == 0);
+  assert_true(countFilesInDir("tmp") == 2);
 }
 
 /** Runs a backup phase.
