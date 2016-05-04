@@ -1649,12 +1649,9 @@ static void phase10RemoveFiles(void)
   removePath("tmp/files/foo/dir");
 }
 
-/** Tests recursive removing of nested files with varying policies. */
-static void runPhase10(String cwd_path, size_t cwd_depth,
-                       SearchNode *phase_9_node)
+/** Removes additional files expected to be removed in phase 10. */
+static void phase10RemoveExtraFiles(void)
 {
-  /* Remove various files. */
-  phase10RemoveFiles();
   removePath("tmp/files/one/two/three/d/2");
   removePath("tmp/files/one/two/three/d/1");
   removePath("tmp/files/one/two/three/d");
@@ -1667,6 +1664,15 @@ static void runPhase10(String cwd_path, size_t cwd_depth,
   removePath("tmp/files/backup dir/a/b");
   removePath("tmp/files/backup dir/a");
   removePath("tmp/files/backup dir");
+}
+
+/** Tests recursive removing of nested files with varying policies. */
+static void runPhase10(String cwd_path, size_t cwd_depth,
+                       SearchNode *phase_9_node)
+{
+  /* Remove various files. */
+  phase10RemoveFiles();
+  phase10RemoveExtraFiles();
   removePath("tmp/files/nb/a/abc/2");
   removePath("tmp/files/nb/a/abc/1");
   removePath("tmp/files/nb/a/foo/bar");
@@ -2478,6 +2484,40 @@ static void runPhase13(String cwd_path, size_t cwd_depth,
   mustHaveRegularStat(bin, &metadata->current_backup, 2123, bin_hash, 0);
 }
 
+/** Wipes files created by all preceding backup phases. */
+static void runPhase14(String cwd_path, size_t cwd_depth,
+                       SearchNode *node)
+{
+  /* Ignore arguments. */
+  (void)cwd_path;
+  (void)cwd_depth;
+  (void)node;
+
+  /* Remove various files remaining from previous phases. */
+  phase10RemoveExtraFiles();
+  removePath("tmp/files/bin");
+  removePath("tmp/files/foo/bar/1.txt");
+  removePath("tmp/files/foo/bar");
+  removePath("tmp/files/foo/some file");
+  removePath("tmp/files/foo");
+  removePath("tmp/repo/0-2b85a2b06e498c7b976da4ff8d34ed84cb42c7e0-42");
+  removePath("tmp/repo/0-46bc4f204ce9d0cd59b429b3807b6494fe77f5fe-400");
+  removePath("tmp/repo/0-5571584deb0a98dcbda15dc9da9ffe1001e2b5fe-24");
+  removePath("tmp/repo/0-5f0cd39ef362dc1fe6d94fbb7fec8b9fb7861054-84");
+  removePath("tmp/repo/0-6c88db41c1b2b26aa7a8d5d94abdf20b3976d961-2123");
+  removePath("tmp/repo/0-71e61482bfd593014183a25e6602a90f8dbc740f-56");
+  removePath("tmp/repo/0-af07ccfef55c44947b630f58e82ab042ca6894b8-144");
+  removePath("tmp/repo/0-b744398d179e9d86393c3349ce2406674189bb89-2100");
+  removePath("tmp/repo/0-cf71d992f969b21d31940646dc6e5de6d4af2fa1-21");
+  removePath("tmp/repo/0-d826d391c7dc38d37f73796168e5581f7b9982d3-1200");
+  removePath("tmp/repo/0-e8fb29619700e5b60930886e94822c66ce2ad6bf-1200");
+  removePath("tmp/repo/metadata");
+
+  assert_true(countFilesInDir("tmp") == 2);
+  assert_true(countFilesInDir("tmp/repo") == 0);
+  assert_true(countFilesInDir("tmp/files") == 0);
+}
+
 /** Runs a backup phase.
 
   @param test_name The name/description of the phase.
@@ -2542,6 +2582,7 @@ int main(void)
 
   /* Run more backup phases. */
   phase("a variation of the previous backup", runPhase13, phase_13_node, cwd, cwd_depth);
+  phase("cleaning up test directory",         runPhase14, NULL,          cwd, cwd_depth);
 
   free(phase_timestamps);
 }
