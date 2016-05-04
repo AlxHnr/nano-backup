@@ -236,6 +236,46 @@ static void generateFile(const char *path, const char *content,
   restoreParentTime(path, parent_time);
 }
 
+/** Generates dummy files and stores them with an invalid unique name in
+  "tmp/repo". This causes hash collisions.
+
+  @param hash The hash for which the collisions should be generated.
+  @param size The size of the colliding file.
+  @param files_to_create The amount of files to create. Can't be greater
+  than 256.
+*/
+static void generateCollidingFiles(const uint8_t *hash, size_t size,
+                                   size_t files_to_create)
+{
+  assert_true(files_to_create <= UINT8_MAX + 1);
+
+  RegularFileInfo info;
+  memcpy(info.hash, hash, FILE_HASH_SIZE);
+  info.size = size;
+
+  for(size_t slot = 0; slot < files_to_create; slot++)
+  {
+    info.slot = (uint8_t)slot;
+    RepoWriter *writer =
+      repoWriterOpenFile("tmp/repo", "tmp/repo/tmp-file",
+                         "generated colliding file", &info);
+
+    const uint8_t bytes_to_write[] = { info.slot, 0 };
+    size_t bytes_left = size;
+    while(bytes_left >= 2)
+    {
+      repoWriterWrite(bytes_to_write, 2, writer);
+      bytes_left -= 2;
+    }
+    if(bytes_left)
+    {
+      repoWriterWrite(bytes_to_write, 1, writer);
+    }
+
+    repoWriterClose(writer);
+  }
+}
+
 /** Safe wrapper around remove(). */
 static void removePath(const char *path)
 {
@@ -2484,15 +2524,10 @@ static void runPhase13(String cwd_path, size_t cwd_depth,
   mustHaveRegularStat(bin, &metadata->current_backup, 2123, bin_hash, 0);
 }
 
-/** Wipes files created by all preceding backup phases. */
+/** Tests the handling of hash collisions. */
 static void runPhase14(String cwd_path, size_t cwd_depth,
-                       SearchNode *node)
+                       SearchNode *phase_14_node)
 {
-  /* Ignore arguments. */
-  (void)cwd_path;
-  (void)cwd_depth;
-  (void)node;
-
   /* Remove various files remaining from previous phases. */
   phase10RemoveExtraFiles();
   removePath("tmp/files/bin");
@@ -2516,6 +2551,94 @@ static void runPhase14(String cwd_path, size_t cwd_depth,
   assert_true(countFilesInDir("tmp") == 2);
   assert_true(countFilesInDir("tmp/repo") == 0);
   assert_true(countFilesInDir("tmp/files") == 0);
+
+  /* Generate various dummy files. */
+  makeDir("tmp/files/dir");
+  makeDir("tmp/files/dir/a");
+  makeDir("tmp/files/backup");
+  generateFile("tmp/files/dir/foo.txt",      "0",     4007);
+  generateFile("tmp/files/dir/bar.txt",      "ab",    1003);
+  generateFile("tmp/files/dir/a/1",          "@",     297);
+  generateFile("tmp/files/dir/a/2",          "ab",    1003);
+  generateFile("tmp/files/dir/a/test",       "???\n", 20);
+  generateFile("tmp/files/backup/important", "ab",    1003);
+  generateFile("tmp/files/backup/nano",      "%",     1572);
+
+  const uint8_t hash_1[] =
+  {
+    0xef, 0x07, 0xd2, 0x3d, 0xae, 0x32, 0xbd, 0xb6, 0xbd, 0x55,
+    0x1b, 0x28, 0x30, 0x12, 0x3c, 0x32, 0x41, 0x6e, 0x5e, 0xa4,
+  };
+  const uint8_t hash_3[] =
+  {
+    0xcc, 0x90, 0x70, 0xc2, 0x38, 0xf7, 0x4f, 0x58, 0xb4, 0xc7,
+    0x6d, 0x79, 0x1f, 0x19, 0x9c, 0xb8, 0xa9, 0xae, 0x83, 0xe8,
+  };
+  const uint8_t hash_19[] =
+  {
+    0x13, 0xa9, 0xd1, 0x6d, 0xec, 0xb2, 0x5b, 0xc1, 0xa8, 0x14,
+    0x23, 0x91, 0xf0, 0x94, 0x7a, 0xd3, 0x4a, 0xc4, 0xb9, 0xd6,
+  };
+  const uint8_t hash_255[] =
+  {
+    0x1f, 0xd8, 0x4a, 0xc5, 0xa2, 0x87, 0x7e, 0x7b, 0xa9, 0x59,
+    0xaf, 0x33, 0x91, 0xc9, 0x5e, 0xa4, 0xee, 0x81, 0xf7, 0x9a,
+  };
+  const uint8_t hash_test[] =
+  {
+    0x14, 0xd1, 0xa2, 0x08, 0x35, 0x1d, 0xc7, 0x1c, 0x2d, 0x56,
+    0x8d, 0x8f, 0xc5, 0x11, 0x06, 0x60, 0xcd, 0xca, 0x7c, 0xa5,
+  };
+
+  generateCollidingFiles(hash_1,   4007, 1);
+  generateCollidingFiles(hash_3,   2006, 3);
+  generateCollidingFiles(hash_19,  297,  19);
+  generateCollidingFiles(hash_255, 1572, 255);
+
+  /* Initiate the backup. */
+  Metadata *metadata = metadataNew();
+  initiateBackup(metadata, phase_14_node);
+
+  /* Check the initiated backup. */
+  checkMetadata(metadata, 0, false);
+  assert_true(metadata->current_backup.ref_count == cwd_depth + 12);
+  assert_true(metadata->backup_history_length == 0);
+  assert_true(metadata->total_path_count == cwd_depth + 12);
+
+  PathNode *files = findFilesNode(metadata, cwd_path, BH_added, 2);
+
+  PathNode *dir = findSubnode(files, "dir", BH_added, BPOL_copy, 1, 3);
+  mustHaveDirectoryStat(dir, &metadata->current_backup);
+  PathNode *foo = findSubnode(dir, "foo.txt", BH_added, BPOL_copy, 1, 0);
+  mustHaveRegularStat(foo, &metadata->current_backup, 4007, NULL, 0);
+  PathNode *bar = findSubnode(dir, "bar.txt", BH_added, BPOL_copy, 1, 0);
+  mustHaveRegularStat(bar, &metadata->current_backup, 2006, NULL, 0);
+  PathNode *a = findSubnode(dir, "a", BH_added, BPOL_track, 1, 3);
+  mustHaveDirectoryStat(a, &metadata->current_backup);
+  PathNode *a_1 = findSubnode(a, "1", BH_added, BPOL_track, 1, 0);
+  mustHaveRegularStat(a_1, &metadata->current_backup, 297, NULL, 0);
+  PathNode *a_2 = findSubnode(a, "2", BH_added, BPOL_track, 1, 0);
+  mustHaveRegularStat(a_2, &metadata->current_backup, 2006, NULL, 0);
+  PathNode *test = findSubnode(a, "test", BH_added, BPOL_track, 1, 0);
+  mustHaveRegularStat(test, &metadata->current_backup, 80, NULL, 0);
+
+  PathNode *backup = findSubnode(files, "backup", BH_added, BPOL_mirror, 1, 2);
+  mustHaveDirectoryStat(backup, &metadata->current_backup);
+  PathNode *important = findSubnode(backup, "important", BH_added, BPOL_mirror, 1, 0);
+  mustHaveRegularStat(important, &metadata->current_backup, 2006, NULL, 0);
+  PathNode *nano = findSubnode(backup, "nano", BH_added, BPOL_mirror, 1, 0);
+  mustHaveRegularStat(nano, &metadata->current_backup, 1572, NULL, 0);
+
+  /* Finish backup and perform additional checks. */
+  completeBackup(metadata);
+  assert_true(countFilesInDir("tmp/repo") == 284);
+  mustHaveRegularStat(foo,       &metadata->current_backup, 4007, hash_1,    1);
+  mustHaveRegularStat(bar,       &metadata->current_backup, 2006, hash_3,    3);
+  mustHaveRegularStat(a_1,       &metadata->current_backup, 297,  hash_19,   19);
+  mustHaveRegularStat(a_2,       &metadata->current_backup, 2006, hash_3,    3);
+  mustHaveRegularStat(test,      &metadata->current_backup, 80,   hash_test, 0);
+  mustHaveRegularStat(important, &metadata->current_backup, 2006, hash_3,    3);
+  mustHaveRegularStat(nano,      &metadata->current_backup, 1572, hash_255,  255);
 }
 
 /** Runs a backup phase.
@@ -2551,6 +2674,7 @@ int main(void)
   SearchNode *phase_8_node = searchTreeLoad("generated-config-files/backup-phase-8.txt");
   SearchNode *phase_9_node = searchTreeLoad("generated-config-files/backup-phase-9.txt");
   SearchNode *phase_13_node = searchTreeLoad("generated-config-files/backup-phase-13.txt");
+  SearchNode *phase_14_node = searchTreeLoad("generated-config-files/backup-phase-14.txt");
   makeDir("tmp/repo");
   makeDir("tmp/files");
   testGroupEnd();
@@ -2582,7 +2706,7 @@ int main(void)
 
   /* Run more backup phases. */
   phase("a variation of the previous backup", runPhase13, phase_13_node, cwd, cwd_depth);
-  phase("cleaning up test directory",         runPhase14, NULL,          cwd, cwd_depth);
+  phase("file hash collision handling",       runPhase14, phase_14_node, cwd, cwd_depth);
 
   free(phase_timestamps);
 }
