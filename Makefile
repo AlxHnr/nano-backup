@@ -29,12 +29,14 @@ build/%.o:
 test: build/nb $(TESTS) $(GENERATED_CONFIGS) \
   test/data/test\ directory/.empty/
 	@(cd test/data/ && \
-	  for test in $(TESTS); do \
+	  for test in safe-wrappers memory-pool file-hash colors \
+	  string-utils string-table search-tree search repository \
+	  metadata backup; do \
 	  rm -rf tmp/; \
 	  mkdir -p tmp/; \
 	  test -t 1 && echo -e "Running \033[0;33m$$test\033[0m:" || \
 	  echo "Running $$test:"; \
-	  "../../$$test" || exit 1; \
+	  "../../build/test/$$test" || exit 1; \
 	  echo; \
 	  done && \
 	  rm -rf tmp/)
