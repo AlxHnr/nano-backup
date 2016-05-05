@@ -2545,8 +2545,8 @@ static void runPhase13(String cwd_path, size_t cwd_depth,
 }
 
 /** Tests the handling of hash collisions. */
-static void runPhase14(String cwd_path, size_t cwd_depth,
-                       SearchNode *phase_14_node)
+static void runPhaseCollision(String cwd_path, size_t cwd_depth,
+                              SearchNode *phase_collision_node)
 {
   /* Remove various files remaining from previous phases. */
   phase10RemoveExtraFiles();
@@ -2617,7 +2617,7 @@ static void runPhase14(String cwd_path, size_t cwd_depth,
 
   /* Initiate the backup. */
   Metadata *metadata = metadataNew();
-  initiateBackup(metadata, phase_14_node);
+  initiateBackup(metadata, phase_collision_node);
 
   /* Check the initiated backup. */
   checkMetadata(metadata, 0, false);
@@ -2716,7 +2716,8 @@ int main(void)
   SearchNode *phase_8_node = searchTreeLoad("generated-config-files/backup-phase-8.txt");
   SearchNode *phase_9_node = searchTreeLoad("generated-config-files/backup-phase-9.txt");
   SearchNode *phase_13_node = searchTreeLoad("generated-config-files/backup-phase-13.txt");
-  SearchNode *phase_14_node = searchTreeLoad("generated-config-files/backup-phase-14.txt");
+
+  SearchNode *phase_collision_node = searchTreeLoad("generated-config-files/backup-phase-collision.txt");
   makeDir("tmp/repo");
   makeDir("tmp/files");
   testGroupEnd();
@@ -2748,7 +2749,9 @@ int main(void)
 
   /* Run more backup phases. */
   phase("a variation of the previous backup", runPhase13, phase_13_node, cwd, cwd_depth);
-  phase("file hash collision handling",       runPhase14, phase_14_node, cwd, cwd_depth);
+
+  /* Run special backup phases. */
+  phase("file hash collision handling",       runPhaseCollision, phase_collision_node, cwd, cwd_depth);
 
   free(phase_timestamps);
 }
