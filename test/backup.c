@@ -2598,25 +2598,77 @@ static void runPhase14(String cwd_path, size_t cwd_depth,
 
   PathNode *files = findFilesNode(metadata, cwd_path, BH_added, 4);
   PathNode *a = findSubnode(files, "a", BH_added, BPOL_copy, 1, 0);
-  mustHaveRegularStat(a, &metadata->current_backup, 14, NULL, 0);
+  mustHaveRegularCached(a, &metadata->current_backup, 14, NULL, 0);
   PathNode *b = findSubnode(files, "b", BH_added, BPOL_copy, 1, 0);
-  mustHaveSymlinkLStat(b, &metadata->current_backup, "/dev/null");
+  mustHaveSymlinkLCached(b, &metadata->current_backup, "/dev/null");
   PathNode *c = findSubnode(files, "c", BH_added, BPOL_copy, 1, 0);
-  mustHaveDirectoryStat(c, &metadata->current_backup);
+  mustHaveDirectoryCached(c, &metadata->current_backup);
   PathNode *d = findSubnode(files, "d", BH_added, BPOL_copy, 1, 3);
-  mustHaveDirectoryStat(d, &metadata->current_backup);
+  mustHaveDirectoryCached(d, &metadata->current_backup);
   PathNode *d_1 = findSubnode(d, "1", BH_added, BPOL_copy, 1, 0);
-  mustHaveRegularStat(d_1, &metadata->current_backup, 14, NULL, 0);
+  mustHaveRegularCached(d_1, &metadata->current_backup, 14, NULL, 0);
   PathNode *d_2 = findSubnode(d, "2", BH_added, BPOL_copy, 1, 0);
-  mustHaveSymlinkLStat(d_2, &metadata->current_backup, "invalid target");
+  mustHaveSymlinkLCached(d_2, &metadata->current_backup, "invalid target");
   PathNode *d_3 = findSubnode(d, "3", BH_added, BPOL_copy, 1, 0);
-  mustHaveDirectoryStat(d_3, &metadata->current_backup);
+  mustHaveDirectoryCached(d_3, &metadata->current_backup);
 
   /* Finish the backup and perform additional checks. */
   completeBackup(metadata);
   assert_true(countFilesInDir("tmp/repo") == 1);
-  mustHaveRegularStat(a,   &metadata->current_backup, 14, (uint8_t *)"This file is a", 0);
-  mustHaveRegularStat(d_1, &metadata->current_backup, 14, (uint8_t *)"This file is 1", 0);
+  mustHaveRegularCached(a,   &metadata->current_backup, 14, (uint8_t *)"This file is a", 0);
+  mustHaveRegularCached(d_1, &metadata->current_backup, 14, (uint8_t *)"This file is 1", 0);
+}
+
+/** Removes various files which are expected to be removed in phase 15. */
+static void phase15RemoveFiles(void)
+{
+  removePath("tmp/files/d/3");
+  removePath("tmp/files/d/2");
+  removePath("tmp/files/d/1");
+  removePath("tmp/files/c");
+  removePath("tmp/files/b");
+  removePath("tmp/files/a");
+}
+
+/** Removes some files generated in phase 14 and performs a backup. */
+static void runPhase15(String cwd_path, size_t cwd_depth,
+                       SearchNode *phase_14_node)
+{
+  /* Remove various files. */
+  phase15RemoveFiles();
+
+  /* Initiate the backup. */
+  Metadata *metadata = metadataLoad("tmp/repo/metadata");
+  assert_true(metadata->total_path_count == cwd_depth + 9);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[13], cwd_depth + 9);
+  initiateBackup(metadata, phase_14_node);
+
+  /* Check the initiated backup. */
+  checkMetadata(metadata, 0, true);
+  assert_true(metadata->current_backup.ref_count == cwd_depth + 2);
+  assert_true(metadata->backup_history_length == 1);
+  assert_true(metadata->total_path_count == cwd_depth + 9);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[13], 7);
+
+  PathNode *files = findFilesNode(metadata, cwd_path, BH_unchanged, 4);
+  PathNode *a = findSubnode(files, "a", BH_removed, BPOL_copy, 1, 0);
+  mustHaveRegularCached(a, &metadata->backup_history[0], 14, (uint8_t *)"This file is a", 0);
+  PathNode *b = findSubnode(files, "b", BH_removed, BPOL_copy, 1, 0);
+  mustHaveSymlinkLCached(b, &metadata->backup_history[0], "/dev/null");
+  PathNode *c = findSubnode(files, "c", BH_removed, BPOL_copy, 1, 0);
+  mustHaveDirectoryCached(c, &metadata->backup_history[0]);
+  PathNode *d = findSubnode(files, "d", BH_unchanged, BPOL_copy, 1, 3);
+  mustHaveDirectoryCached(d, &metadata->backup_history[0]);
+  PathNode *d_1 = findSubnode(d, "1", BH_removed, BPOL_copy, 1, 0);
+  mustHaveRegularCached(d_1, &metadata->backup_history[0], 14, (uint8_t *)"This file is 1", 0);
+  PathNode *d_2 = findSubnode(d, "2", BH_removed, BPOL_copy, 1, 0);
+  mustHaveSymlinkLCached(d_2, &metadata->backup_history[0], "invalid target");
+  PathNode *d_3 = findSubnode(d, "3", BH_removed, BPOL_copy, 1, 0);
+  mustHaveDirectoryCached(d_3, &metadata->backup_history[0]);
+
+  /* Finish the backup and perform additional checks. */
+  completeBackup(metadata);
+  assert_true(countFilesInDir("tmp/repo") == 1);
 }
 
 /** Tests the handling of hash collisions. */
@@ -2863,6 +2915,7 @@ int main(void)
 
   testGroupStart("non-recursive re-adding of copied files");
   runPhase14(cwd, cwd_depth, phase_14_node);
+  runPhase15(cwd, cwd_depth, phase_14_node);
   testGroupEnd();
 
   /* Run special backup phases. */
