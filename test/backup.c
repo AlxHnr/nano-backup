@@ -2688,6 +2688,65 @@ static void runPhaseCollision(String cwd_path, size_t cwd_depth,
   assert_true(countFilesInDir("tmp") == 2);
 }
 
+/** Tests the handling of a hash collision slot overflow. */
+static void runPhaseSlotOverflow(String cwd_path, size_t cwd_depth,
+                                 SearchNode *phase_collision_node)
+{
+  /* Generate various files. */
+  makeDir("tmp/files/backup");
+  makeDir("tmp/files/backup/a");
+  generateFile("tmp/files/backup/test", "x",  39);
+  generateFile("tmp/files/backup/a/b",  "[]", 107);
+
+  const uint8_t hash_256[] =
+  {
+    0x38, 0x36, 0xaa, 0x06, 0x87, 0xa0, 0x67, 0xef, 0x4e, 0x38,
+    0x99, 0x3f, 0x97, 0x0d, 0x19, 0x90, 0x63, 0xb5, 0x9b, 0xfd,
+  };
+
+  generateCollidingFiles(hash_256, 214, 256);
+
+  /* Initiate the backup. */
+  Metadata *metadata = metadataNew();
+  initiateBackup(metadata, phase_collision_node);
+
+  /* Check the initiated backup. */
+  checkMetadata(metadata, 0, false);
+  assert_true(metadata->current_backup.ref_count == cwd_depth + 6);
+  assert_true(metadata->backup_history_length == 0);
+  assert_true(metadata->total_path_count == cwd_depth + 6);
+
+  PathNode *files = findFilesNode(metadata, cwd_path, BH_added, 1);
+  PathNode *backup = findSubnode(files, "backup", BH_added, BPOL_mirror, 1, 2);
+  mustHaveDirectoryStat(backup, &metadata->current_backup);
+  PathNode *test = findSubnode(backup, "test", BH_added, BPOL_mirror, 1, 0);
+  mustHaveRegularStat(test, &metadata->current_backup, 39, NULL, 0);
+  PathNode *a = findSubnode(backup, "a", BH_added, BPOL_mirror, 1, 1);
+  mustHaveDirectoryStat(a, &metadata->current_backup);
+  PathNode *b = findSubnode(a, "b", BH_added, BPOL_mirror, 1, 0);
+  mustHaveRegularStat(b, &metadata->current_backup, 214, NULL, 0);
+
+  /* Finish backup. */
+  assert_error(finishBackup(metadata, "tmp/repo", "tmp/repo/tmp-file"),
+               "overflow calculating slot number");
+
+  /* Clean up generated files. */
+  removePath("tmp/files/backup/test");
+  removePath("tmp/files/backup/a/b");
+  removePath("tmp/files/backup/a");
+  removePath("tmp/files/backup");
+  removeCollidingFiles(hash_256, 214, 256);
+
+  if(sPathExists("tmp/repo/0-931293b3347b83ce52911c47277a612d7d92f99a-39"))
+  {
+    removePath("tmp/repo/0-931293b3347b83ce52911c47277a612d7d92f99a-39");
+  }
+
+  assert_true(countFilesInDir("tmp") == 2);
+  assert_true(countFilesInDir("tmp/repo") == 0);
+  assert_true(countFilesInDir("tmp/files") == 0);
+}
+
 /** Runs a backup phase.
 
   @param test_name The name/description of the phase.
@@ -2756,7 +2815,8 @@ int main(void)
   phase("a variation of the previous backup", runPhase13, phase_13_node, cwd, cwd_depth);
 
   /* Run special backup phases. */
-  phase("file hash collision handling",       runPhaseCollision, phase_collision_node, cwd, cwd_depth);
+  phase("file hash collision handling",     runPhaseCollision,    phase_collision_node, cwd, cwd_depth);
+  phase("collision slot overflow handling", runPhaseSlotOverflow, phase_collision_node, cwd, cwd_depth);
 
   free(phase_timestamps);
 }
