@@ -223,6 +223,11 @@ static void makeSymlink(const char *target, const char *linkpath)
 static void generateFile(const char *path, const char *content,
                          size_t repetitions)
 {
+  if(sPathExists(path))
+  {
+    die("failed to generate file: Already existing: \"%s\"", path);
+  }
+
   struct utimbuf parent_time = getParentTime(path);
   FileStream *stream = sFopenWrite(path);
   size_t content_length = strlen(content);
