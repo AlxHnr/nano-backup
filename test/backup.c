@@ -2549,9 +2549,9 @@ static void runPhase13(String cwd_path, size_t cwd_depth,
   mustHaveRegularStat(bin, &metadata->current_backup, 2123, bin_hash, 0);
 }
 
-/** Tests the handling of hash collisions. */
-static void runPhaseCollision(String cwd_path, size_t cwd_depth,
-                              SearchNode *phase_collision_node)
+/** Creates and backups various simple files with the copy policy. */
+static void runPhase14(String cwd_path, size_t cwd_depth,
+                       SearchNode *phase_14_node)
 {
   /* Remove various files remaining from previous phases. */
   phase10RemoveExtraFiles();
@@ -2577,6 +2577,52 @@ static void runPhaseCollision(String cwd_path, size_t cwd_depth,
   assert_true(countFilesInDir("tmp/repo") == 0);
   assert_true(countFilesInDir("tmp/files") == 0);
 
+  /* Generate various files. */
+  makeDir("tmp/files/c");
+  makeDir("tmp/files/d");
+  makeDir("tmp/files/d/3");
+  generateFile("tmp/files/a",   "This file is a", 1);
+  generateFile("tmp/files/d/1", "This file is 1", 1);
+  makeSymlink("/dev/null",      "tmp/files/b");
+  makeSymlink("invalid target", "tmp/files/d/2");
+
+  /* Initiate the backup. */
+  Metadata *metadata = metadataNew();
+  initiateBackup(metadata, phase_14_node);
+
+  /* Check the initiated backup. */
+  checkMetadata(metadata, 0, false);
+  assert_true(metadata->current_backup.ref_count == cwd_depth + 9);
+  assert_true(metadata->backup_history_length == 0);
+  assert_true(metadata->total_path_count == cwd_depth + 9);
+
+  PathNode *files = findFilesNode(metadata, cwd_path, BH_added, 4);
+  PathNode *a = findSubnode(files, "a", BH_added, BPOL_copy, 1, 0);
+  mustHaveRegularStat(a, &metadata->current_backup, 14, NULL, 0);
+  PathNode *b = findSubnode(files, "b", BH_added, BPOL_copy, 1, 0);
+  mustHaveSymlinkLStat(b, &metadata->current_backup, "/dev/null");
+  PathNode *c = findSubnode(files, "c", BH_added, BPOL_copy, 1, 0);
+  mustHaveDirectoryStat(c, &metadata->current_backup);
+  PathNode *d = findSubnode(files, "d", BH_added, BPOL_copy, 1, 3);
+  mustHaveDirectoryStat(d, &metadata->current_backup);
+  PathNode *d_1 = findSubnode(d, "1", BH_added, BPOL_copy, 1, 0);
+  mustHaveRegularStat(d_1, &metadata->current_backup, 14, NULL, 0);
+  PathNode *d_2 = findSubnode(d, "2", BH_added, BPOL_copy, 1, 0);
+  mustHaveSymlinkLStat(d_2, &metadata->current_backup, "invalid target");
+  PathNode *d_3 = findSubnode(d, "3", BH_added, BPOL_copy, 1, 0);
+  mustHaveDirectoryStat(d_3, &metadata->current_backup);
+
+  /* Finish the backup and perform additional checks. */
+  completeBackup(metadata);
+  assert_true(countFilesInDir("tmp/repo") == 1);
+  mustHaveRegularStat(a,   &metadata->current_backup, 14, (uint8_t *)"This file is a", 0);
+  mustHaveRegularStat(d_1, &metadata->current_backup, 14, (uint8_t *)"This file is 1", 0);
+}
+
+/** Tests the handling of hash collisions. */
+static void runPhaseCollision(String cwd_path, size_t cwd_depth,
+                              SearchNode *phase_collision_node)
+{
   /* Generate various dummy files. */
   makeDir("tmp/files/dir");
   makeDir("tmp/files/dir/a");
@@ -2780,6 +2826,7 @@ int main(void)
   SearchNode *phase_8_node = searchTreeLoad("generated-config-files/backup-phase-8.txt");
   SearchNode *phase_9_node = searchTreeLoad("generated-config-files/backup-phase-9.txt");
   SearchNode *phase_13_node = searchTreeLoad("generated-config-files/backup-phase-13.txt");
+  SearchNode *phase_14_node = searchTreeLoad("generated-config-files/backup-phase-14.txt");
 
   SearchNode *phase_collision_node = searchTreeLoad("generated-config-files/backup-phase-collision.txt");
   makeDir("tmp/repo");
@@ -2813,6 +2860,10 @@ int main(void)
 
   /* Run more backup phases. */
   phase("a variation of the previous backup", runPhase13, phase_13_node, cwd, cwd_depth);
+
+  testGroupStart("non-recursive re-adding of copied files");
+  runPhase14(cwd, cwd_depth, phase_14_node);
+  testGroupEnd();
 
   /* Run special backup phases. */
   phase("file hash collision handling",     runPhaseCollision,    phase_collision_node, cwd, cwd_depth);

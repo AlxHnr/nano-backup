@@ -1,0 +1,5 @@
+[copy]
+/tmp/files/a
+/tmp/files/b
+/tmp/files/c
+/tmp/files/d
