@@ -2671,6 +2671,57 @@ static void runPhase15(String cwd_path, size_t cwd_depth,
   assert_true(countFilesInDir("tmp/repo") == 1);
 }
 
+/** Restores all files previously deleted and checks the result. */
+static void runPhase16(String cwd_path, size_t cwd_depth,
+                       SearchNode *phase_14_node)
+{
+  /* Initiate the backup. */
+  Metadata *metadata = metadataLoad("tmp/repo/metadata");
+  assert_true(metadata->total_path_count == cwd_depth + 9);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[14], cwd_depth + 2);
+  checkHistPoint(metadata, 1, 1, phase_timestamps[13], 7);
+
+  restoreWithTimeRecursively(metadata->paths);
+  initiateBackup(metadata, phase_14_node);
+
+  /* Check the initiated backup. */
+  checkMetadata(metadata, 0, true);
+  assert_true(metadata->current_backup.ref_count == cwd_depth + 2);
+  assert_true(metadata->backup_history_length == 2);
+  assert_true(metadata->total_path_count == cwd_depth + 9);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[14], 0);
+  checkHistPoint(metadata, 1, 1, phase_timestamps[13], 7);
+
+  PathNode *files = findFilesNode(metadata, cwd_path, BH_unchanged, 4);
+  PathNode *a = findSubnode(files, "a", BH_unchanged, BPOL_copy, 1, 0);
+  mustHaveRegularCached(a, &metadata->backup_history[1], 14, (uint8_t *)"This file is a", 0);
+  PathNode *b = findSubnode(files, "b", BH_unchanged, BPOL_copy, 1, 0);
+  mustHaveSymlinkLCached(b, &metadata->backup_history[1], "/dev/null");
+  PathNode *c = findSubnode(files, "c", BH_unchanged, BPOL_copy, 1, 0);
+  mustHaveDirectoryCached(c, &metadata->backup_history[1]);
+  PathNode *d = findSubnode(files, "d", BH_unchanged, BPOL_copy, 1, 3);
+  mustHaveDirectoryCached(d, &metadata->backup_history[1]);
+  PathNode *d_1 = findSubnode(d, "1", BH_unchanged, BPOL_copy, 1, 0);
+  mustHaveRegularCached(d_1, &metadata->backup_history[1], 14, (uint8_t *)"This file is 1", 0);
+  PathNode *d_2 = findSubnode(d, "2", BH_unchanged, BPOL_copy, 1, 0);
+  mustHaveSymlinkLCached(d_2, &metadata->backup_history[1], "invalid target");
+  PathNode *d_3 = findSubnode(d, "3", BH_unchanged, BPOL_copy, 1, 0);
+  mustHaveDirectoryCached(d_3, &metadata->backup_history[1]);
+
+  /* Finish the backup and perform additional checks. */
+  completeBackup(metadata);
+  assert_true(countFilesInDir("tmp/repo") == 1);
+
+  /* Clean up test directory. */
+  phase15RemoveFiles();
+  removePath("tmp/files/d");
+  removePath("tmp/repo/metadata");
+
+  assert_true(countFilesInDir("tmp") == 2);
+  assert_true(countFilesInDir("tmp/repo") == 0);
+  assert_true(countFilesInDir("tmp/files") == 0);
+}
+
 /** Tests the handling of hash collisions. */
 static void runPhaseCollision(String cwd_path, size_t cwd_depth,
                               SearchNode *phase_collision_node)
@@ -2916,6 +2967,7 @@ int main(void)
   testGroupStart("non-recursive re-adding of copied files");
   runPhase14(cwd, cwd_depth, phase_14_node);
   runPhase15(cwd, cwd_depth, phase_14_node);
+  runPhase16(cwd, cwd_depth, phase_14_node);
   testGroupEnd();
 
   /* Run special backup phases. */
