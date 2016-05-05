@@ -426,6 +426,9 @@ static void restoreWithTimeRecursively(PathNode *node)
   }
 }
 
+/** Associates a file path with its stats. */
+static StringTable *stat_cache = NULL;
+
 /** Stats a file and caches the result for subsequent runs.
 
   @param path The path to the file to stat. Must contain a null-terminated
@@ -437,12 +440,6 @@ static void restoreWithTimeRecursively(PathNode *node)
 */
 static struct stat cachedStat(String path, struct stat (*stat_fun)(const char *))
 {
-  static StringTable *stat_cache = NULL;
-  if(stat_cache == NULL)
-  {
-    stat_cache = strtableNewFixed(100);
-  }
-
   struct stat *cache = strtableGet(stat_cache, path);
   if(cache == NULL)
   {
@@ -2931,6 +2928,8 @@ int main(void)
   SearchNode *phase_14_node = searchTreeLoad("generated-config-files/backup-phase-14.txt");
 
   SearchNode *phase_collision_node = searchTreeLoad("generated-config-files/backup-phase-collision.txt");
+
+  stat_cache = strtableNew();
   makeDir("tmp/repo");
   makeDir("tmp/files");
   testGroupEnd();
@@ -2963,6 +2962,10 @@ int main(void)
   /* Run more backup phases. */
   phase("a variation of the previous backup", runPhase13, phase_13_node, cwd, cwd_depth);
 
+  /* Reset stat table. */
+  strtableFree(stat_cache);
+  stat_cache = strtableNew();
+
   testGroupStart("non-recursive re-adding of copied files");
   runPhase14(cwd, cwd_depth, phase_14_node);
   runPhase15(cwd, cwd_depth, phase_14_node);
@@ -2974,4 +2977,5 @@ int main(void)
   phase("collision slot overflow handling", runPhaseSlotOverflow, phase_collision_node, cwd, cwd_depth);
 
   free(phase_timestamps);
+  strtableFree(stat_cache);
 }
