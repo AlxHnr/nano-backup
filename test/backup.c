@@ -312,6 +312,14 @@ static void removeCollidingFiles(const uint8_t *hash, size_t size,
   }
 }
 
+/** Asserts that "tmp" contains only "repo" and "files". */
+static void assertTmpIsCleared(void)
+{
+  assert_true(countFilesInDir("tmp") == 2);
+  assert_true(countFilesInDir("tmp/repo") == 0);
+  assert_true(countFilesInDir("tmp/files") == 0);
+}
+
 /** Finds the first point in the nodes history, which is not
   PST_non_existing. */
 static PathHistory *findExistingHistPoint(PathNode *node)
@@ -2572,10 +2580,7 @@ static void runPhase14(String cwd_path, size_t cwd_depth,
   removePath("tmp/repo/0-d826d391c7dc38d37f73796168e5581f7b9982d3-1200");
   removePath("tmp/repo/0-e8fb29619700e5b60930886e94822c66ce2ad6bf-1200");
   removePath("tmp/repo/metadata");
-
-  assert_true(countFilesInDir("tmp") == 2);
-  assert_true(countFilesInDir("tmp/repo") == 0);
-  assert_true(countFilesInDir("tmp/files") == 0);
+  assertTmpIsCleared();
 
   /* Generate various files. */
   makeDir("tmp/files/c");
@@ -2716,10 +2721,7 @@ static void runPhase16(String cwd_path, size_t cwd_depth,
   phase15RemoveFiles();
   removePath("tmp/files/d");
   removePath("tmp/repo/metadata");
-
-  assert_true(countFilesInDir("tmp") == 2);
-  assert_true(countFilesInDir("tmp/repo") == 0);
-  assert_true(countFilesInDir("tmp/files") == 0);
+  assertTmpIsCleared();
 }
 
 /** Tests the handling of hash collisions. */
@@ -2890,10 +2892,7 @@ static void runPhaseSlotOverflow(String cwd_path, size_t cwd_depth,
   {
     removePath("tmp/repo/0-931293b3347b83ce52911c47277a612d7d92f99a-39");
   }
-
-  assert_true(countFilesInDir("tmp") == 2);
-  assert_true(countFilesInDir("tmp/repo") == 0);
-  assert_true(countFilesInDir("tmp/files") == 0);
+  assertTmpIsCleared();
 }
 
 /** Runs a backup phase.
