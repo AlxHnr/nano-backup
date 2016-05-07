@@ -454,7 +454,7 @@ static void copyFileIntoRepo(PathNode *node, const char *repo_path,
 
   if(stream_not_at_end)
   {
-    die("file changed during backup: \"%s\"", node->path.str);
+    die("file has changed during backup: \"%s\"", node->path.str);
   }
 
   repoWriterClose(writer);
@@ -509,7 +509,8 @@ static bool equalsToStoredFile(PathNode *node, const char *repo_path,
 
   if(stream_not_at_end)
   {
-    die("file changed while comparing to backup: \"%s\"", node->path.str);
+    die("file has changed while comparing to backup: \"%s\"",
+        node->path.str);
   }
 
   return files_equal;
