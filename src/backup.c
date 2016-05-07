@@ -291,9 +291,9 @@ static void handleRemovedPath(Metadata *metadata, PathNode *node,
   backup. This function will update the node if the file has changed.
   @param result The search result which has found the given node.
 */
-static void checkFileContentChanges(PathNode *node, SearchResult result)
+static void checkFileContentChanges(PathNode *node, PathState *state,
+                                    SearchResult result)
 {
-  PathState *state = &node->history->state;
   uint8_t hash[FILE_HASH_SIZE];
   size_t bytes_used = FILE_HASH_SIZE;
 
@@ -324,6 +324,75 @@ static void checkFileContentChanges(PathNode *node, SearchResult result)
   }
 }
 
+/** Checks what has changed in the path described by the given node.
+
+  @param node The node representing the path to check.
+  @param state The path state which will be updated with the changes.
+  @param result The search result which found the given node.
+*/
+static void handleNodeChanges(PathNode *node, PathState *state,
+                              SearchResult result)
+{
+  if(state->uid != result.stats.st_uid ||
+     state->gid != result.stats.st_gid)
+  {
+    node->hint |= BH_owner_changed;
+    state->uid = result.stats.st_uid;
+    state->gid = result.stats.st_gid;
+  }
+
+  /* Path state specific change checks. */
+  if(state->type == PST_regular)
+  {
+    if(state->metadata.reg.mode != result.stats.st_mode)
+    {
+      node->hint |= BH_permissions_changed;
+      state->metadata.reg.mode = result.stats.st_mode;
+    }
+
+    if(state->metadata.reg.timestamp != result.stats.st_mtime)
+    {
+      node->hint |= BH_timestamp_changed;
+      state->metadata.reg.timestamp = result.stats.st_mtime;
+    }
+
+    if(state->metadata.reg.size != (uint64_t)result.stats.st_size)
+    {
+      node->hint |= BH_content_changed;
+      state->metadata.reg.size = result.stats.st_size;
+    }
+    else if(node->hint & BH_timestamp_changed &&
+            state->metadata.reg.size > 0)
+    {
+      checkFileContentChanges(node, state, result);
+    }
+  }
+  else if(state->type == PST_symlink)
+  {
+    const char *sym_target = readSymlink(result);
+
+    if(strcmp(state->metadata.sym_target, sym_target) != 0)
+    {
+      state->metadata.sym_target = sym_target;
+      node->hint |= BH_content_changed;
+    }
+  }
+  else if(state->type == PST_directory)
+  {
+    if(state->metadata.dir.mode != result.stats.st_mode)
+    {
+      node->hint |= BH_permissions_changed;
+      state->metadata.dir.mode = result.stats.st_mode;
+    }
+
+    if(state->metadata.dir.timestamp != result.stats.st_mtime)
+    {
+      node->hint |= BH_timestamp_changed;
+      state->metadata.dir.timestamp = result.stats.st_mtime;
+    }
+  }
+}
+
 /** Checks changes in a node which already existed at the previous backup.
 
   @param metadata The metadata of the current backup.
@@ -335,66 +404,7 @@ static void handleFoundNode(Metadata *metadata, PathNode *node,
 {
   if(result.policy != BPOL_track)
   {
-    PathState *state = &node->history->state;
-
-    if(state->uid != result.stats.st_uid ||
-       state->gid != result.stats.st_gid)
-    {
-      node->hint |= BH_owner_changed;
-      state->uid = result.stats.st_uid;
-      state->gid = result.stats.st_gid;
-    }
-
-    /* Path state specific change checks. */
-    if(state->type == PST_regular)
-    {
-      if(state->metadata.reg.mode != result.stats.st_mode)
-      {
-        node->hint |= BH_permissions_changed;
-        state->metadata.reg.mode = result.stats.st_mode;
-      }
-
-      if(state->metadata.reg.timestamp != result.stats.st_mtime)
-      {
-        node->hint |= BH_timestamp_changed;
-        state->metadata.reg.timestamp = result.stats.st_mtime;
-      }
-
-      if(state->metadata.reg.size != (uint64_t)result.stats.st_size)
-      {
-        node->hint |= BH_content_changed;
-        state->metadata.reg.size = result.stats.st_size;
-      }
-      else if(node->hint & BH_timestamp_changed &&
-              state->metadata.reg.size > 0)
-      {
-        checkFileContentChanges(node, result);
-      }
-    }
-    else if(state->type == PST_symlink)
-    {
-      const char *sym_target = readSymlink(result);
-
-      if(strcmp(state->metadata.sym_target, sym_target) != 0)
-      {
-        state->metadata.sym_target = sym_target;
-        node->hint |= BH_content_changed;
-      }
-    }
-    else if(state->type == PST_directory)
-    {
-      if(state->metadata.dir.mode != result.stats.st_mode)
-      {
-        node->hint |= BH_permissions_changed;
-        state->metadata.dir.mode = result.stats.st_mode;
-      }
-
-      if(state->metadata.dir.timestamp != result.stats.st_mtime)
-      {
-        node->hint |= BH_timestamp_changed;
-        state->metadata.dir.timestamp = result.stats.st_mtime;
-      }
-    }
+    handleNodeChanges(node, &node->history->state, result);
 
     if(node->hint != BH_none)
     {
@@ -420,7 +430,23 @@ static void handleFoundNode(Metadata *metadata, PathNode *node,
   }
   else
   {
-    node->hint = BH_unchanged;
+    PathHistory *point = mpAlloc(sizeof *point);
+    point->state = node->history->state;
+
+    handleNodeChanges(node, &point->state, result);
+
+    if(node->hint == BH_none)
+    {
+      node->hint = BH_unchanged;
+    }
+    else
+    {
+      point->backup = &metadata->current_backup;
+      point->backup->ref_count = sSizeAdd(point->backup->ref_count, 1);
+
+      point->next = node->history;
+      node->history = point;
+    }
   }
 }
 
