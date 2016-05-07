@@ -38,6 +38,41 @@
 #include "safe-wrappers.h"
 #include "error-handling.h"
 
+/** Reads the content of a symlink.
+
+  @param result The result trough which the symlink was discovered.
+
+  @return The content of the symlink. Should not be freed by the caller.
+*/
+static const char *readSymlink(SearchResult result)
+{
+  uint64_t buffer_length = sUint64Add(result.stats.st_size, 1);
+  if(buffer_length > SIZE_MAX)
+  {
+    die("symlink does not fit in memory: \"%s\"", result.path.str);
+  }
+
+  char *buffer = mpAlloc(buffer_length);
+
+  /* Although st_size bytes are enough to store the symlinks target path,
+     the full buffer is used. This allows to detect whether the symlink
+     has increased in size since its last lstat() or not. */
+  ssize_t read_bytes = readlink(result.path.str, buffer, buffer_length);
+
+  if(read_bytes == -1)
+  {
+    dieErrno("failed to read symlink: \"%s\"", result.path.str);
+  }
+  else if(read_bytes != result.stats.st_size)
+  {
+    die("symlink changed while reading: \"%s\"", result.path.str);
+  }
+
+  buffer[result.stats.st_size] = '\0';
+
+  return buffer;
+}
+
 /** Constructs a path history point from the given data.
 
   @param metadata The metadata to which the point belongs to.
@@ -68,32 +103,7 @@ static PathHistory *buildPathHistoryPoint(Metadata *metadata,
   else if(result.type == SRT_symlink)
   {
     point->state.type = PST_symlink;
-
-    uint64_t buffer_length = sUint64Add(result.stats.st_size, 1);
-    if(buffer_length > SIZE_MAX)
-    {
-      die("symlink does not fit in memory: \"%s\"", result.path.str);
-    }
-
-    char *buffer = mpAlloc(buffer_length);
-
-    /* Although st_size bytes are enough to store the symlinks target path,
-       the full buffer is used. This allows to detect whether the symlink
-       has increased in size since its last lstat() or not. */
-    ssize_t read_bytes = readlink(result.path.str, buffer, buffer_length);
-
-    if(read_bytes == -1)
-    {
-      dieErrno("failed to read symlink: \"%s\"", result.path.str);
-    }
-    else if(read_bytes != result.stats.st_size)
-    {
-      die("symlink changed while reading: \"%s\"", result.path.str);
-    }
-
-    buffer[result.stats.st_size] = '\0';
-
-    point->state.metadata.sym_target = buffer;
+    point->state.metadata.sym_target = readSymlink(result);
   }
   else if(result.type == SRT_directory)
   {
@@ -359,6 +369,16 @@ static void handleFoundNode(Metadata *metadata, PathNode *node,
               state->metadata.reg.size > 0)
       {
         checkFileContentChanges(node, result);
+      }
+    }
+    else if(state->type == PST_symlink)
+    {
+      const char *sym_target = readSymlink(result);
+
+      if(strcmp(state->metadata.sym_target, sym_target) != 0)
+      {
+        state->metadata.sym_target = sym_target;
+        node->hint |= BH_content_changed;
       }
     }
 
