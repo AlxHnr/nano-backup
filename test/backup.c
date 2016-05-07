@@ -56,7 +56,7 @@ static PathNode *findCwdNode(Metadata *metadata, String cwd,
 {
   for(PathNode *node = metadata->paths; node != NULL; node = node->subnodes)
   {
-    if(node->hint != hint)
+    if((node->hint & ~BH_timestamp_changed) != hint)
     {
       die("path has wrong backup hint: \"%s\"", node->path.str);
     }
