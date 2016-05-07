@@ -381,6 +381,20 @@ static void handleFoundNode(Metadata *metadata, PathNode *node,
         node->hint |= BH_content_changed;
       }
     }
+    else if(state->type == PST_directory)
+    {
+      if(state->metadata.dir.mode != result.stats.st_mode)
+      {
+        node->hint |= BH_permissions_changed;
+        state->metadata.dir.mode = result.stats.st_mode;
+      }
+
+      if(state->metadata.dir.timestamp != result.stats.st_mtime)
+      {
+        node->hint |= BH_timestamp_changed;
+        state->metadata.dir.timestamp = result.stats.st_mtime;
+      }
+    }
 
     if(node->hint != BH_none)
     {
