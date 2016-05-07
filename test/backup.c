@@ -48,6 +48,7 @@
   metadata structure, so make sure to pass it to checkMetadata() first.
   @param cwd The current working directory.
   @param hint The backup hint which all the parent nodes must have.
+  Timestamp changes will be ignored.
 
   @return The found node.
 */
