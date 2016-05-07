@@ -690,7 +690,7 @@ static bool searchFileDuplicates(PathNode *node, const char *repo_path,
   return false;
 }
 
-/** Adds/copies a new file to the repository.
+/** Adds/copies a file to the repository.
 
   @param node A PathNode which represents a regular file at its current
   history point. Its hash and slot number will be set by this function. In
@@ -699,8 +699,8 @@ static bool searchFileDuplicates(PathNode *node, const char *repo_path,
   @param repo_path The path to the repository.
   @param repo_tmp_file_path The path to the repositories temporary file.
 */
-static void addNewFileToRepo(PathNode *node, const char *repo_path,
-                             const char *repo_tmp_file_path)
+static void addFileToRepo(PathNode *node, const char *repo_path,
+                          const char *repo_tmp_file_path)
 {
   RegularFileInfo *reg = &node->history->state.metadata.reg;
 
@@ -710,7 +710,19 @@ static void addNewFileToRepo(PathNode *node, const char *repo_path,
   {
     die("file has changed during backup: \"%s\"", node->path.str);
   }
-  else if(reg->size <= FILE_HASH_SIZE)
+  else if(reg->size > FILE_HASH_SIZE)
+  {
+    if((node->hint & BH_fresh_hash) == false)
+    {
+      fileHash(node->path.str, stats, reg->hash);
+    }
+
+    if(searchFileDuplicates(node, repo_path, stats) == false)
+    {
+      copyFileIntoRepo(node, repo_path, repo_tmp_file_path, stats);
+    }
+  }
+  else if((node->hint & BH_fresh_hash) == false)
   {
     /* Store small files directly in its hash buffer. */
     FileStream *stream = sFopenRead(node->path.str);
@@ -721,14 +733,6 @@ static void addNewFileToRepo(PathNode *node, const char *repo_path,
     if(stream_not_at_end)
     {
       die("file has changed during backup: \"%s\"", node->path.str);
-    }
-  }
-  else
-  {
-    fileHash(node->path.str, stats, reg->hash);
-    if(searchFileDuplicates(node, repo_path, stats) == false)
-    {
-      copyFileIntoRepo(node, repo_path, repo_tmp_file_path, stats);
     }
   }
 }
@@ -751,12 +755,11 @@ static void finishBackupRecursively(Metadata *metadata,
   for(PathNode *node = node_list; node != NULL; node = node->next)
   {
     /* Handle only new regular files. */
-    if(node->hint == BH_added &&
-       node->history->backup == &metadata->current_backup &&
-       node->history->state.type == PST_regular &&
-       node->history->state.metadata.reg.size > 0)
+    if(node->history->state.type == PST_regular &&
+       node->history->state.metadata.reg.size > 0 &&
+       (node->hint == BH_added || (node->hint & BH_content_changed)))
     {
-      addNewFileToRepo(node, repo_path, repo_tmp_file_path);
+      addFileToRepo(node, repo_path, repo_tmp_file_path);
     }
 
     finishBackupRecursively(metadata, node->subnodes,
