@@ -120,6 +120,24 @@ typedef enum
 
   /** The path is not part of the backup anymore and will be wiped. */
   BH_not_part_of_repository,
+
+  /* The following values can be combined using the or operator. */
+
+  /** The owner of the path has changed. */
+  BH_owner_changed = 1 << 3,
+
+  /** The permission bits of a file/directory have changed. */
+  BH_permissions_changed = 1 << 4,
+
+  /** The modification time of a file/directory has changed. */
+  BH_timestamp_changed = 1 << 5,
+
+  /** The content of a file/symlink has changed. */
+  BH_content_changed = 1 << 6,
+
+  /** The hash of a RegularFileInfo was set while checking for changes.
+    This can be used to save unneeded hash computations. */
+  BH_fresh_hash = 1 << 7,
 }BackupHint;
 
 /** A node representing a path in the filetree. */

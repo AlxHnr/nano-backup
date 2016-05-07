@@ -274,6 +274,122 @@ static void handleRemovedPath(Metadata *metadata, PathNode *node,
   }
 }
 
+/** Checks if the content of a regular file has changed.
+
+  @param node A node representing a file with a size greater than 0 at its
+  current history point. Its size should not have changed since the last
+  backup. This function will update the node if the file has changed.
+  @param result The search result which has found the given node.
+*/
+static void checkFileContentChanges(PathNode *node, SearchResult result)
+{
+  PathState *state = &node->history->state;
+  uint8_t hash[FILE_HASH_SIZE];
+  size_t bytes_used = FILE_HASH_SIZE;
+
+  if(state->metadata.reg.size > FILE_HASH_SIZE)
+  {
+    fileHash(node->path.str, result.stats, hash);
+  }
+  else
+  {
+    bytes_used = state->metadata.reg.size;
+
+    FileStream *stream = sFopenRead(node->path.str);
+    sFread(hash, bytes_used, stream);
+    bool stream_not_at_end = sFbytesLeft(stream);
+    sFclose(stream);
+
+    if(stream_not_at_end)
+    {
+      die("file has changed while checking for changes: \"%s\"",
+          node->path.str);
+    }
+  }
+
+  if(memcmp(state->metadata.reg.hash, hash, bytes_used) != 0)
+  {
+    node->hint |= BH_content_changed | BH_fresh_hash;
+    memcpy(state->metadata.reg.hash, hash, bytes_used);
+  }
+}
+
+/** Checks changes in a node which already existed at the previous backup.
+
+  @param metadata The metadata of the current backup.
+  @param node The node to check for changes.
+  @param result The search result which has matched the given node.
+*/
+static void handleFoundNode(Metadata *metadata, PathNode *node,
+                            SearchResult result)
+{
+  if(result.policy != BPOL_track)
+  {
+    PathState *state = &node->history->state;
+
+    if(state->uid != result.stats.st_uid ||
+       state->gid != result.stats.st_gid)
+    {
+      node->hint |= BH_owner_changed;
+      state->uid = result.stats.st_uid;
+      state->gid = result.stats.st_gid;
+    }
+
+    /* Path state specific change checks. */
+    if(state->type == PST_regular)
+    {
+      if(state->metadata.reg.mode != result.stats.st_mode)
+      {
+        node->hint |= BH_permissions_changed;
+        state->metadata.reg.mode = result.stats.st_mode;
+      }
+
+      if(state->metadata.reg.timestamp != result.stats.st_mtime)
+      {
+        node->hint |= BH_timestamp_changed;
+        state->metadata.reg.timestamp = result.stats.st_mtime;
+      }
+
+      if(state->metadata.reg.size != (uint64_t)result.stats.st_size)
+      {
+        node->hint |= BH_content_changed;
+        state->metadata.reg.size = result.stats.st_size;
+      }
+      else if(node->hint & BH_timestamp_changed &&
+              state->metadata.reg.size > 0)
+      {
+        checkFileContentChanges(node, result);
+      }
+    }
+
+    if(node->hint != BH_none)
+    {
+      reassignPointToCurrent(metadata, node->history);
+    }
+    else
+    {
+      node->hint = BH_unchanged;
+      if(result.policy == BPOL_none)
+      {
+        reassignPointToCurrent(metadata, node->history);
+      }
+    }
+  }
+  else if(node->history->state.type == PST_non_existing)
+  {
+    node->hint = BH_added;
+
+    PathHistory *point = buildPathHistoryPoint(metadata, result);
+
+    point->next = node->history;
+    node->history = point;
+  }
+  else
+  {
+    node->hint = BH_unchanged;
+  }
+}
+
 /** Checks which nodes where not found during the backup and handles them.
 
   @param metadata The metadata of the backup.
@@ -365,21 +481,7 @@ static SearchResultType initiateMetadataRecursively(Metadata *metadata,
   }
   else
   {
-    node->hint = BH_unchanged;
-    if(result.policy == BPOL_none)
-    {
-      reassignPointToCurrent(metadata, node->history);
-    }
-    else if(result.policy == BPOL_track &&
-            node->history->state.type == PST_non_existing)
-    {
-      node->hint = BH_added;
-
-      PathHistory *point = buildPathHistoryPoint(metadata, result);
-
-      point->next = node->history;
-      node->history = point;
-    }
+    handleFoundNode(metadata, node, result);
   }
 
   if(result.type == SRT_directory)
