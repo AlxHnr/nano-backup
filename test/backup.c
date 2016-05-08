@@ -452,6 +452,13 @@ static struct stat cachedStat(String path, struct stat (*stat_fun)(const char *)
   return *cache;
 }
 
+/** Resets the stat cache. */
+static void resetStatCache(void)
+{
+  strtableFree(stat_cache);
+  stat_cache = strtableNew();
+}
+
 /** Wrapper around mustHaveRegular(), which extracts additional
   informations using sStat(). */
 static void mustHaveRegularStat(PathNode *node, const Backup *backup,
@@ -2962,10 +2969,7 @@ int main(void)
 
   /* Run more backup phases. */
   phase("a variation of the previous backup", runPhase13, phase_13_node, cwd, cwd_depth);
-
-  /* Reset stat table. */
-  strtableFree(stat_cache);
-  stat_cache = strtableNew();
+  resetStatCache();
 
   testGroupStart("non-recursive re-adding of copied files");
   runPhase14(cwd, cwd_depth, phase_14_node);
