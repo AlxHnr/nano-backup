@@ -1,0 +1,15 @@
+[copy]
+/tmp/files/a/b/dummy
+
+[track]
+/tmp/files/a/c/dummy
+
+[mirror]
+/tmp/files/d/e/dummy
+
+[track]
+/tmp/files/d/f/dummy
+/tmp/files/g/dummy
+
+[copy]
+/tmp/files/h/dummy

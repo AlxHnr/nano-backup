@@ -2729,6 +2729,87 @@ static void runPhase16(String cwd_path, size_t cwd_depth,
   assertTmpIsCleared();
 }
 
+/** Asserts that the given node contains a "dummy" subnode with the
+  specified properties. The hash can be NULL. */
+static void mustHaveDummy(PathNode *node, BackupHint hint,
+                          BackupPolicy policy, Backup *backup,
+                          const char *hash)
+{
+  PathNode *dummy = findSubnode(node, "dummy", hint, policy, 1, 0);
+  mustHaveRegularStat(dummy, backup, 5, (uint8_t *)hash, 0);
+}
+
+/** Creates various dummy files for testing change detection in nodes
+  without a policy. */
+static void runPhase17(String cwd_path, size_t cwd_depth,
+                       SearchNode *phase_17_node)
+{
+  /* Generate various files. */
+  assertTmpIsCleared();
+  makeDir("tmp/files/a");
+  makeDir("tmp/files/a/b");
+  makeDir("tmp/files/a/c");
+  makeDir("tmp/files/d");
+  makeDir("tmp/files/d/e");
+  makeDir("tmp/files/d/f");
+  makeDir("tmp/files/g");
+  makeDir("tmp/files/h");
+  generateFile("tmp/files/a/b/dummy", "dummy", 1);
+  generateFile("tmp/files/a/c/dummy", "dummy", 1);
+  generateFile("tmp/files/d/e/dummy", "dummy", 1);
+  generateFile("tmp/files/d/f/dummy", "dummy", 1);
+  generateFile("tmp/files/g/dummy",   "dummy", 1);
+  generateFile("tmp/files/h/dummy",   "dummy", 1);
+
+  /* Initiate the backup. */
+  Metadata *metadata = metadataNew();
+  initiateBackup(metadata, phase_17_node);
+
+  /* Check the initiated backup. */
+  checkMetadata(metadata, 0, false);
+  assert_true(metadata->current_backup.ref_count == cwd_depth + 16);
+  assert_true(metadata->backup_history_length == 0);
+  assert_true(metadata->total_path_count == cwd_depth + 16);
+
+  PathNode *files = findFilesNode(metadata, cwd_path, BH_added, 4);
+
+  PathNode *a = findSubnode(files, "a", BH_added, BPOL_none, 1, 2);
+  mustHaveDirectoryStat(a, &metadata->current_backup);
+  PathNode *b = findSubnode(a, "b", BH_added, BPOL_none, 1, 1);
+  mustHaveDirectoryStat(b, &metadata->current_backup);
+  mustHaveDummy(b, BH_added, BPOL_copy, &metadata->current_backup, NULL);
+  PathNode *c = findSubnode(a, "c", BH_added, BPOL_none, 1, 1);
+  mustHaveDirectoryStat(c, &metadata->current_backup);
+  mustHaveDummy(c, BH_added, BPOL_track, &metadata->current_backup, NULL);
+
+  PathNode *d = findSubnode(files, "d", BH_added, BPOL_none, 1, 2);
+  mustHaveDirectoryStat(d, &metadata->current_backup);
+  PathNode *e = findSubnode(d, "e", BH_added, BPOL_none, 1, 1);
+  mustHaveDirectoryStat(e, &metadata->current_backup);
+  mustHaveDummy(e, BH_added, BPOL_mirror, &metadata->current_backup, NULL);
+  PathNode *f = findSubnode(d, "f", BH_added, BPOL_none, 1, 1);
+  mustHaveDirectoryStat(f, &metadata->current_backup);
+  mustHaveDummy(f, BH_added, BPOL_track, &metadata->current_backup, NULL);
+
+  PathNode *g = findSubnode(files, "g", BH_added, BPOL_none, 1, 1);
+  mustHaveDirectoryStat(g, &metadata->current_backup);
+  mustHaveDummy(g, BH_added, BPOL_track, &metadata->current_backup, NULL);
+
+  PathNode *h = findSubnode(files, "h", BH_added, BPOL_none, 1, 1);
+  mustHaveDirectoryStat(h, &metadata->current_backup);
+  mustHaveDummy(h, BH_added, BPOL_copy, &metadata->current_backup, NULL);
+
+  /* Finish the backup and perform additional checks. */
+  completeBackup(metadata);
+  assert_true(countFilesInDir("tmp/repo") == 1);
+  mustHaveDummy(b, BH_added, BPOL_copy,   &metadata->current_backup, "dummy");
+  mustHaveDummy(c, BH_added, BPOL_track,  &metadata->current_backup, "dummy");
+  mustHaveDummy(e, BH_added, BPOL_mirror, &metadata->current_backup, "dummy");
+  mustHaveDummy(f, BH_added, BPOL_track,  &metadata->current_backup, "dummy");
+  mustHaveDummy(g, BH_added, BPOL_track,  &metadata->current_backup, "dummy");
+  mustHaveDummy(h, BH_added, BPOL_copy,   &metadata->current_backup, "dummy");
+}
+
 /** Tests the handling of hash collisions. */
 static void runPhaseCollision(String cwd_path, size_t cwd_depth,
                               SearchNode *phase_collision_node)
@@ -2934,6 +3015,7 @@ int main(void)
   SearchNode *phase_9_node = searchTreeLoad("generated-config-files/backup-phase-9.txt");
   SearchNode *phase_13_node = searchTreeLoad("generated-config-files/backup-phase-13.txt");
   SearchNode *phase_14_node = searchTreeLoad("generated-config-files/backup-phase-14.txt");
+  SearchNode *phase_17_node = searchTreeLoad("generated-config-files/backup-phase-17.txt");
 
   SearchNode *phase_collision_node = searchTreeLoad("generated-config-files/backup-phase-collision.txt");
 
@@ -2975,6 +3057,10 @@ int main(void)
   runPhase14(cwd, cwd_depth, phase_14_node);
   runPhase15(cwd, cwd_depth, phase_14_node);
   runPhase16(cwd, cwd_depth, phase_14_node);
+  testGroupEnd();
+
+  testGroupStart("detecting changes in nodes with no policy");
+  runPhase17(cwd, cwd_depth, phase_17_node);
   testGroupEnd();
 
   /* Run special backup phases. */
