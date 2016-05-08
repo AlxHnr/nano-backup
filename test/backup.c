@@ -2736,7 +2736,7 @@ static void mustHaveDummy(PathNode *node, BackupHint hint,
                           const char *hash)
 {
   PathNode *dummy = findSubnode(node, "dummy", hint, policy, 1, 0);
-  mustHaveRegularStat(dummy, backup, 5, (uint8_t *)hash, 0);
+  mustHaveRegularStat(dummy, backup, 5, (const uint8_t *)hash, 0);
 }
 
 /** Creates various dummy files for testing change detection in nodes
