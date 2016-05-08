@@ -2810,6 +2810,76 @@ static void runPhase17(String cwd_path, size_t cwd_depth,
   mustHaveDummy(h, BH_added, BPOL_copy,   &metadata->current_backup, "dummy");
 }
 
+/** Modifies the current metadata in such a way, that a subsequent
+  initiation will find changes in nodes without a policy. */
+static void runPhase18(String cwd_path, size_t cwd_depth,
+                       SearchNode *phase_17_node)
+{
+  /* Initiate the backup. */
+  Metadata *metadata = metadataLoad("tmp/repo/metadata");
+  assert_true(metadata->total_path_count == cwd_depth + 16);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[16], cwd_depth + 16);
+  initiateBackup(metadata, phase_17_node);
+
+  /* Check the initiated backup. */
+  checkMetadata(metadata, 0, true);
+  assert_true(metadata->current_backup.ref_count == cwd_depth + 10);
+  assert_true(metadata->backup_history_length == 1);
+  assert_true(metadata->total_path_count == cwd_depth + 16);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[16], 6);
+
+  PathNode *files = findFilesNode(metadata, cwd_path, BH_unchanged, 4);
+
+  PathNode *a = findSubnode(files, "a", BH_unchanged, BPOL_none, 1, 2);
+  mustHaveDirectoryStat(a, &metadata->current_backup);
+  PathNode *b = findSubnode(a, "b", BH_unchanged, BPOL_none, 1, 1);
+  mustHaveDirectoryStat(b, &metadata->current_backup);
+  mustHaveDummy(b, BH_unchanged, BPOL_copy, &metadata->backup_history[0], "dummy");
+  PathNode *c = findSubnode(a, "c", BH_unchanged, BPOL_none, 1, 1);
+  mustHaveDirectoryStat(c, &metadata->current_backup);
+  mustHaveDummy(c, BH_unchanged, BPOL_track, &metadata->backup_history[0], "dummy");
+
+  PathNode *d = findSubnode(files, "d", BH_unchanged, BPOL_none, 1, 2);
+  mustHaveDirectoryStat(d, &metadata->current_backup);
+  PathNode *e = findSubnode(d, "e", BH_unchanged, BPOL_none, 1, 1);
+  mustHaveDirectoryStat(e, &metadata->current_backup);
+  mustHaveDummy(e, BH_unchanged, BPOL_mirror, &metadata->backup_history[0], "dummy");
+  PathNode *f = findSubnode(d, "f", BH_unchanged, BPOL_none, 1, 1);
+  mustHaveDirectoryStat(f, &metadata->current_backup);
+  mustHaveDummy(f, BH_unchanged, BPOL_track, &metadata->backup_history[0], "dummy");
+
+  PathNode *g = findSubnode(files, "g", BH_unchanged, BPOL_none, 1, 1);
+  mustHaveDirectoryStat(g, &metadata->current_backup);
+  mustHaveDummy(g, BH_unchanged, BPOL_track, &metadata->backup_history[0], "dummy");
+
+  PathNode *h = findSubnode(files, "h", BH_unchanged, BPOL_none, 1, 1);
+  mustHaveDirectoryStat(h, &metadata->current_backup);
+  mustHaveDummy(h, BH_unchanged, BPOL_copy, &metadata->backup_history[0], "dummy");
+
+  /* Modify various path nodes. */
+  a->history->state.uid++;
+  b->history->state.gid++;
+  c->history->state.metadata.dir.mode++;
+  d->history->state.metadata.dir.timestamp++;
+
+  e->history->state.uid++;
+  e->history->state.metadata.dir.mode++;
+
+  f->history->state.gid++;
+  f->history->state.metadata.dir.timestamp++;
+
+  g->history->state.metadata.dir.mode++;
+  g->history->state.metadata.dir.timestamp++;
+
+  h->history->state.gid++;
+  h->history->state.metadata.dir.mode++;
+  h->history->state.metadata.dir.timestamp++;
+
+  /* Finish the backup and perform additional checks. */
+  completeBackup(metadata);
+  assert_true(countFilesInDir("tmp/repo") == 1);
+}
+
 /** Tests the handling of hash collisions. */
 static void runPhaseCollision(String cwd_path, size_t cwd_depth,
                               SearchNode *phase_collision_node)
@@ -3061,6 +3131,7 @@ int main(void)
 
   testGroupStart("detecting changes in nodes with no policy");
   runPhase17(cwd, cwd_depth, phase_17_node);
+  runPhase18(cwd, cwd_depth, phase_17_node);
   testGroupEnd();
 
   /* Run special backup phases. */
