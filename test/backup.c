@@ -2880,6 +2880,59 @@ static void runPhase18(String cwd_path, size_t cwd_depth,
   assert_true(countFilesInDir("tmp/repo") == 1);
 }
 
+/** Tests detection of changes in nodes without a policy. */
+static void runPhase19(String cwd_path, size_t cwd_depth,
+                       SearchNode *phase_17_node)
+{
+  /* Initiate the backup. */
+  Metadata *metadata = metadataLoad("tmp/repo/metadata");
+  assert_true(metadata->total_path_count == cwd_depth + 16);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[17], cwd_depth + 10);
+  checkHistPoint(metadata, 1, 1, phase_timestamps[16], 6);
+  initiateBackup(metadata, phase_17_node);
+
+  /* Check the initiated backup. */
+  checkMetadata(metadata, 0, true);
+  assert_true(metadata->current_backup.ref_count == cwd_depth + 10);
+  assert_true(metadata->backup_history_length == 2);
+  assert_true(metadata->total_path_count == cwd_depth + 16);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[17], 0);
+  checkHistPoint(metadata, 1, 1, phase_timestamps[16], 6);
+
+  PathNode *files = findFilesNode(metadata, cwd_path, BH_unchanged, 4);
+
+  PathNode *a = findSubnode(files, "a", BH_owner_changed, BPOL_none, 1, 2);
+  mustHaveDirectoryStat(a, &metadata->current_backup);
+  PathNode *b = findSubnode(a, "b", BH_owner_changed, BPOL_none, 1, 1);
+  mustHaveDirectoryStat(b, &metadata->current_backup);
+  mustHaveDummy(b, BH_unchanged, BPOL_copy, &metadata->backup_history[1], "dummy");
+  PathNode *c = findSubnode(a, "c", BH_permissions_changed, BPOL_none, 1, 1);
+  mustHaveDirectoryStat(c, &metadata->current_backup);
+  mustHaveDummy(c, BH_unchanged, BPOL_track, &metadata->backup_history[1], "dummy");
+
+  PathNode *d = findSubnode(files, "d", BH_timestamp_changed, BPOL_none, 1, 2);
+  mustHaveDirectoryStat(d, &metadata->current_backup);
+  PathNode *e = findSubnode(d, "e", BH_owner_changed | BH_permissions_changed, BPOL_none, 1, 1);
+  mustHaveDirectoryStat(e, &metadata->current_backup);
+  mustHaveDummy(e, BH_unchanged, BPOL_mirror, &metadata->backup_history[1], "dummy");
+  PathNode *f = findSubnode(d, "f", BH_owner_changed | BH_timestamp_changed, BPOL_none, 1, 1);
+  mustHaveDirectoryStat(f, &metadata->current_backup);
+  mustHaveDummy(f, BH_unchanged, BPOL_track, &metadata->backup_history[1], "dummy");
+
+  PathNode *g = findSubnode(files, "g", BH_permissions_changed | BH_timestamp_changed, BPOL_none, 1, 1);
+  mustHaveDirectoryStat(g, &metadata->current_backup);
+  mustHaveDummy(g, BH_unchanged, BPOL_track, &metadata->backup_history[1], "dummy");
+
+  PathNode *h = findSubnode(files, "h", BH_owner_changed | BH_permissions_changed | BH_timestamp_changed,
+                            BPOL_none, 1, 1);
+  mustHaveDirectoryStat(h, &metadata->current_backup);
+  mustHaveDummy(h, BH_unchanged, BPOL_copy, &metadata->backup_history[1], "dummy");
+
+  /* Finish the backup and perform additional checks. */
+  completeBackup(metadata);
+  assert_true(countFilesInDir("tmp/repo") == 1);
+}
+
 /** Tests the handling of hash collisions. */
 static void runPhaseCollision(String cwd_path, size_t cwd_depth,
                               SearchNode *phase_collision_node)
@@ -3132,6 +3185,7 @@ int main(void)
   testGroupStart("detecting changes in nodes with no policy");
   runPhase17(cwd, cwd_depth, phase_17_node);
   runPhase18(cwd, cwd_depth, phase_17_node);
+  runPhase19(cwd, cwd_depth, phase_17_node);
   testGroupEnd();
 
   /* Run special backup phases. */
