@@ -2587,6 +2587,7 @@ static void runPhase14(String cwd_path, size_t cwd_depth,
                        SearchNode *phase_14_node)
 {
   /* Generate various files. */
+  resetStatCache();
   assertTmpIsCleared();
   makeDir("tmp/files/c");
   makeDir("tmp/files/d");
@@ -3291,7 +3292,6 @@ int main(void)
 
   /* Run more backup phases. */
   phase("a variation of the previous backup", runPhase13, phase_13_node, cwd, cwd_depth);
-  resetStatCache();
 
   testGroupStart("non-recursive re-adding of copied files");
   runPhase14(cwd, cwd_depth, phase_14_node);
