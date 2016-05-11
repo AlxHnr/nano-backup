@@ -853,6 +853,12 @@ static void runPhase4(String cwd_path, size_t cwd_depth,
   /* Finish backup and perform additional checks. */
   completeBackup(metadata);
   assert_true(countFilesInDir("tmp/repo") == 4);
+
+  /* Clean up after test. */
+  removePath("tmp/files/foo/bar/3.txt");
+  removePath("tmp/files/foo/dir/3.txt");
+  removePath("tmp/files/foo/dummy/file");
+  removePath("tmp/files/foo/dummy");
 }
 
 /** Performs a fifth backup by creating various deeply nested files and
@@ -860,12 +866,6 @@ static void runPhase4(String cwd_path, size_t cwd_depth,
 static void runPhase5(String cwd_path, size_t cwd_depth,
                       SearchNode *phase_5_node)
 {
-  /* Remove remains from previous phases. */
-  removePath("tmp/files/foo/bar/3.txt");
-  removePath("tmp/files/foo/dir/3.txt");
-  removePath("tmp/files/foo/dummy/file");
-  removePath("tmp/files/foo/dummy");
-
   /* Generate dummy files. */
   makeDir("tmp/files/foo/bar/subdir");
   makeDir("tmp/files/foo/bar/subdir/a2");
@@ -1146,13 +1146,8 @@ static void runPhase6(String cwd_path, size_t cwd_depth,
   /* Finish backup and perform additional checks. */
   completeBackup(metadata);
   assert_true(countFilesInDir("tmp/repo") == 8);
-}
 
-/** Creates more nested files. */
-static void runPhase7(String cwd_path, size_t cwd_depth,
-                      SearchNode *phase_7_node)
-{
-  /* Remove remains from previous backups. */
+  /* Clean up after test. */
   removePath("tmp/files/foo/bar/subdir/a1");
   removePath("tmp/files/foo/bar/subdir/a2/b/c");
   removePath("tmp/files/foo/bar/subdir/a2/b/d/e/f");
@@ -1169,7 +1164,12 @@ static void runPhase7(String cwd_path, size_t cwd_depth,
   removePath("tmp/files/nested/c/d");
   removePath("tmp/files/nested/c");
   removePath("tmp/files/nested");
+}
 
+/** Creates more nested files. */
+static void runPhase7(String cwd_path, size_t cwd_depth,
+                      SearchNode *phase_7_node)
+{
   /* Generate dummy files. */
   makeDir("tmp/files/unneeded");
   makeDir("tmp/files/unneeded/directory");
@@ -1356,13 +1356,8 @@ static void runPhase8(String cwd_path, size_t cwd_depth,
   /* Finish backup and perform additional checks. */
   completeBackup(metadata);
   assert_true(countFilesInDir("tmp/repo") == 8);
-}
 
-/** Generates deeply nested files with varying policies. */
-static void runPhase9(String cwd_path, size_t cwd_depth,
-                      SearchNode *phase_9_node)
-{
-  /* Remove residue from previous backups. */
+  /* Clean up after test. */
   removePath("tmp/files/home/user/text.txt");
   removePath("tmp/files/home/user");
   removePath("tmp/files/home");
@@ -1374,7 +1369,12 @@ static void runPhase9(String cwd_path, size_t cwd_depth,
   removePath("tmp/files/unneeded/directory/a");
   removePath("tmp/files/unneeded/directory");
   removePath("tmp/files/unneeded");
+}
 
+/** Generates deeply nested files with varying policies. */
+static void runPhase9(String cwd_path, size_t cwd_depth,
+                      SearchNode *phase_9_node)
+{
   /* Generate various files. */
   makeDir("tmp/files/foo/bar/test");
   makeDir("tmp/files/foo/bar/test/path");
@@ -2560,13 +2560,8 @@ static void runPhase13(String cwd_path, size_t cwd_depth,
   completeBackup(metadata);
   assert_true(countFilesInDir("tmp/repo") == 12);
   mustHaveRegularStat(bin, &metadata->current_backup, 2123, bin_hash, 0);
-}
 
-/** Creates and backups various simple files with the copy policy. */
-static void runPhase14(String cwd_path, size_t cwd_depth,
-                       SearchNode *phase_14_node)
-{
-  /* Remove various files remaining from previous phases. */
+  /* Clean up after tests. */
   phase10RemoveExtraFiles();
   removePath("tmp/files/bin");
   removePath("tmp/files/foo/bar/1.txt");
@@ -2585,9 +2580,14 @@ static void runPhase14(String cwd_path, size_t cwd_depth,
   removePath("tmp/repo/0-d826d391c7dc38d37f73796168e5581f7b9982d3-1200");
   removePath("tmp/repo/0-e8fb29619700e5b60930886e94822c66ce2ad6bf-1200");
   removePath("tmp/repo/metadata");
-  assertTmpIsCleared();
+}
 
+/** Creates and backups various simple files with the copy policy. */
+static void runPhase14(String cwd_path, size_t cwd_depth,
+                       SearchNode *phase_14_node)
+{
   /* Generate various files. */
+  assertTmpIsCleared();
   makeDir("tmp/files/c");
   makeDir("tmp/files/d");
   makeDir("tmp/files/d/3");
@@ -2726,7 +2726,6 @@ static void runPhase16(String cwd_path, size_t cwd_depth,
   phase15RemoveFiles();
   removePath("tmp/files/d");
   removePath("tmp/repo/metadata");
-  assertTmpIsCleared();
 }
 
 /** Asserts that the given node contains a "dummy" subnode with the
@@ -3000,7 +2999,6 @@ static void runPhase20(String cwd_path, size_t cwd_depth,
   removePath("tmp/files/a/b/dummy");
   removePath("tmp/files/a/b");
   removePath("tmp/files/a");
-  assertTmpIsCleared();
 }
 
 /** Generates various files for testing the detection of changes. */
@@ -3060,6 +3058,7 @@ static void runPhaseCollision(String cwd_path, size_t cwd_depth,
                               SearchNode *phase_collision_node)
 {
   /* Generate various dummy files. */
+  assertTmpIsCleared();
   makeDir("tmp/files/dir");
   makeDir("tmp/files/dir/a");
   makeDir("tmp/files/backup");
@@ -3158,16 +3157,12 @@ static void runPhaseCollision(String cwd_path, size_t cwd_depth,
   removePath("tmp/files/backup/nano");
   removePath("tmp/files/backup/important");
   removePath("tmp/files/backup");
-  assert_true(countFilesInDir("tmp/files") == 0);
-
   removePath("tmp/repo/metadata");
   removePath("tmp/repo/0-14d1a208351dc71c2d568d8fc5110660cdca7ca5-80");
   removeCollidingFiles(hash_1,   4007, 2);
   removeCollidingFiles(hash_3,   2006, 4);
   removeCollidingFiles(hash_19,  297,  20);
   removeCollidingFiles(hash_255, 1572, 256);
-  assert_true(countFilesInDir("tmp/repo") == 0);
-  assert_true(countFilesInDir("tmp") == 2);
 }
 
 /** Tests the handling of a hash collision slot overflow. */
@@ -3175,6 +3170,7 @@ static void runPhaseSlotOverflow(String cwd_path, size_t cwd_depth,
                                  SearchNode *phase_collision_node)
 {
   /* Generate various files. */
+  assertTmpIsCleared();
   makeDir("tmp/files/backup");
   makeDir("tmp/files/backup/a");
   generateFile("tmp/files/backup/test", "x",  39);
@@ -3223,7 +3219,6 @@ static void runPhaseSlotOverflow(String cwd_path, size_t cwd_depth,
   {
     removePath("tmp/repo/0-931293b3347b83ce52911c47277a612d7d92f99a-39");
   }
-  assertTmpIsCleared();
 }
 
 /** Runs a backup phase.
