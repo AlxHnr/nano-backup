@@ -3003,6 +3003,58 @@ static void runPhase20(String cwd_path, size_t cwd_depth,
   assertTmpIsCleared();
 }
 
+/** Generates various files for testing the detection of changes. */
+static void generateFilesToDetectChanges(void)
+{
+  makeDir("tmp/files/0");
+  makeDir("tmp/files/0/1");
+  makeDir("tmp/files/2");
+  makeDir("tmp/files/3");
+  makeDir("tmp/files/4");
+  makeDir("tmp/files/5");
+  makeDir("tmp/files/8");
+  makeDir("tmp/files/13");
+  makeDir("tmp/files/14");
+  makeSymlink("/dev/non-existing",    "tmp/files/5/6");
+  makeSymlink("uid changing symlink", "tmp/files/15");
+  makeSymlink("gid changing symlink", "tmp/files/16");
+  makeSymlink("symlink content",      "tmp/files/17");
+  makeSymlink("symlink content",      "tmp/files/18");
+  makeSymlink("gid + content",        "tmp/files/19");
+  makeSymlink("content, uid, gid",    "tmp/files/20");
+  generateFile("tmp/files/5/7", "This is a test file\n",  20);
+  generateFile("tmp/files/9",   "This is a file\n",       1);
+  generateFile("tmp/files/10",  "GID and UID",            1);
+  generateFile("tmp/files/11",  "",                       0);
+  generateFile("tmp/files/12",  "nano-backup ",           7);
+  generateFile("tmp/files/21",  "This is a super file\n", 100);
+  generateFile("tmp/files/22",  "Large\n",                200);
+  generateFile("tmp/files/23",  "nested-file ",           12);
+  generateFile("tmp/files/24",  "nested ",                8);
+  generateFile("tmp/files/25",  "a/b/c/",                 7);
+  generateFile("tmp/files/26",  "Hello world\n",          2);
+  generateFile("tmp/files/27",  "m",                      21);
+  generateFile("tmp/files/28",  "0",                      2123);
+  generateFile("tmp/files/29",  "empty\n",                200);
+  generateFile("tmp/files/30",  "This is a test file\n",  20);
+  generateFile("tmp/files/31",  "This is a super file\n", 100);
+  generateFile("tmp/files/32",  "A small file",           1);
+  generateFile("tmp/files/33",  "Another file",           1);
+  generateFile("tmp/files/34",  "Some dummy text",        1);
+  generateFile("tmp/files/35",  "abcdefghijkl",           1);
+  generateFile("tmp/files/36",  "Nano Backup",            1);
+  generateFile("tmp/files/37",  "nested ",                8);
+  generateFile("tmp/files/38",  "",                       0);
+  generateFile("tmp/files/39",  "",                       0);
+  generateFile("tmp/files/40",  "",                       0);
+  generateFile("tmp/files/41",  "random file",            1);
+  generateFile("tmp/files/42",  "",                       0);
+  generateFile("tmp/files/43",  "Large\n",                200);
+  generateFile("tmp/files/44",  "nested-file ",           12);
+  generateFile("tmp/files/45",  "Small file",             1);
+  generateFile("tmp/files/46",  "Test file",              1);
+}
+
 /** Tests the handling of hash collisions. */
 static void runPhaseCollision(String cwd_path, size_t cwd_depth,
                               SearchNode *phase_collision_node)
