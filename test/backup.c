@@ -3206,6 +3206,13 @@ static void initChangeDetectionTest(String cwd_path, size_t cwd_depth,
   mustHaveRegularStat(node_46, &metadata->current_backup, 9,    (uint8_t *)"Test file",        0);
 }
 
+/** Modifies the current metadata in such a way, that a subsequent
+  initiation will find changes in nodes. It takes the following additional
+  argument:
+
+  @param phase_id The ID of the current backup phase. Needed for
+  accessing preceding timestamps.
+*/
 static void modifyChangeDetectionTest(String cwd_path, size_t cwd_depth,
                                       SearchNode *change_detection_node,
                                       BackupPolicy policy, size_t phase_id)
@@ -3333,6 +3340,7 @@ static void runPhase21(String cwd_path, size_t cwd_depth,
                           BPOL_copy);
 }
 
+/** Injects changes into the current metadata. */
 static void runPhase22(String cwd_path, size_t cwd_depth,
                        SearchNode *copy_detection_node)
 {
