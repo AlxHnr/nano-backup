@@ -3206,12 +3206,138 @@ static void initChangeDetectionTest(String cwd_path, size_t cwd_depth,
   mustHaveRegularStat(node_46, &metadata->current_backup, 9,    (uint8_t *)"Test file",        0);
 }
 
+static void modifyChangeDetectionTest(String cwd_path, size_t cwd_depth,
+                                      SearchNode *change_detection_node,
+                                      BackupPolicy policy, size_t phase_id)
+{
+  /* Initiate the backup. */
+  Metadata *metadata = metadataLoad("tmp/repo/metadata");
+  assert_true(metadata->total_path_count == cwd_depth + 49);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[phase_id - 2], cwd_depth + 49);
+  initiateBackup(metadata, change_detection_node);
+
+  /* Check the initiated backup. */
+  checkMetadata(metadata, 0, true);
+  assert_true(metadata->current_backup.ref_count == cwd_depth + 2);
+  assert_true(metadata->backup_history_length == 1);
+  assert_true(metadata->total_path_count == cwd_depth + 49);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[phase_id - 2], 47);
+
+  PathNode *files = findFilesNode(metadata, cwd_path, BH_unchanged, 40);
+
+  PathNode *node_0 = findSubnode(files, "0", BH_unchanged, policy, 1, 1);
+  mustHaveDirectoryStat(node_0, &metadata->backup_history[0]);
+  PathNode *node_1 = findSubnode(node_0, "1", BH_unchanged, policy, 1, 0);
+  mustHaveDirectoryStat(node_1, &metadata->backup_history[0]);
+  PathNode *node_2 = findSubnode(files, "2", BH_unchanged, policy, 1, 0);
+  mustHaveDirectoryStat(node_2, &metadata->backup_history[0]);
+  PathNode *node_3 = findSubnode(files, "3", BH_unchanged, policy, 1, 0);
+  mustHaveDirectoryStat(node_3, &metadata->backup_history[0]);
+  PathNode *node_4 = findSubnode(files, "4", BH_unchanged, policy, 1, 0);
+  mustHaveDirectoryStat(node_4, &metadata->backup_history[0]);
+  PathNode *node_5 = findSubnode(files, "5", BH_unchanged, policy, 1, 2);
+  mustHaveDirectoryStat(node_5, &metadata->backup_history[0]);
+  PathNode *node_6 = findSubnode(node_5, "6", BH_unchanged, policy, 1, 0);
+  mustHaveSymlinkLStat(node_6, &metadata->backup_history[0], "/dev/non-existing");
+  PathNode *node_7 = findSubnode(node_5, "7", BH_unchanged, policy, 1, 0);
+  mustHaveRegularStat(node_7, &metadata->backup_history[0], 400, three_hash, 0);
+  PathNode *node_8 = findSubnode(files, "8", BH_unchanged, policy, 1, 4);
+  mustHaveDirectoryStat(node_8, &metadata->backup_history[0]);
+  PathNode *node_9 = findSubnode(node_8, "9", BH_unchanged, policy, 1, 0);
+  mustHaveRegularStat(node_9, &metadata->backup_history[0], 15, (uint8_t *)"This is a file\n", 0);
+  PathNode *node_10 = findSubnode(node_8, "10", BH_unchanged, policy, 1, 0);
+  mustHaveRegularStat(node_10, &metadata->backup_history[0], 11, (uint8_t *)"GID and UID", 0);
+  PathNode *node_11 = findSubnode(node_8, "11", BH_unchanged, policy, 1, 0);
+  mustHaveRegularStat(node_11, &metadata->backup_history[0], 0, (uint8_t *)"", 0);
+  PathNode *node_12 = findSubnode(node_8, "12", BH_unchanged, policy, 1, 0);
+  mustHaveRegularStat(node_12, &metadata->backup_history[0], 84, some_file_hash, 0);
+  PathNode *node_13 = findSubnode(files, "13", BH_unchanged, policy, 1, 0);
+  mustHaveDirectoryStat(node_13, &metadata->backup_history[0]);
+  PathNode *node_14 = findSubnode(files, "14", BH_unchanged, policy, 1, 0);
+  mustHaveDirectoryStat(node_14, &metadata->backup_history[0]);
+  PathNode *node_15 = findSubnode(files, "15", BH_unchanged, policy, 1, 0);
+  mustHaveSymlinkLStat(node_15, &metadata->backup_history[0], "uid changing symlink");
+  PathNode *node_16 = findSubnode(files, "16", BH_unchanged, policy, 1, 0);
+  mustHaveSymlinkLStat(node_16, &metadata->backup_history[0], "gid changing symlink");
+  PathNode *node_17 = findSubnode(files, "17", BH_unchanged, policy, 1, 0);
+  mustHaveSymlinkLStat(node_17, &metadata->backup_history[0], "symlink content");
+  PathNode *node_18 = findSubnode(files, "18", BH_unchanged, policy, 1, 0);
+  mustHaveSymlinkLStat(node_18, &metadata->backup_history[0], "symlink content");
+  PathNode *node_19 = findSubnode(files, "19", BH_unchanged, policy, 1, 0);
+  mustHaveSymlinkLStat(node_19, &metadata->backup_history[0], "gid + content");
+  PathNode *node_20 = findSubnode(files, "20", BH_unchanged, policy, 1, 0);
+  mustHaveSymlinkLStat(node_20, &metadata->backup_history[0], "content, uid, gid");
+  PathNode *node_21 = findSubnode(files, "21", BH_unchanged, policy, 1, 0);
+  mustHaveRegularStat(node_21, &metadata->backup_history[0], 2100, super_hash, 0);
+  PathNode *node_22 = findSubnode(files, "22", BH_unchanged, policy, 1, 0);
+  mustHaveRegularStat(node_22, &metadata->backup_history[0], 1200, data_d_hash, 0);
+  PathNode *node_23 = findSubnode(files, "23", BH_unchanged, policy, 1, 0);
+  mustHaveRegularStat(node_23, &metadata->backup_history[0], 144, nested_1_hash, 0);
+  PathNode *node_24 = findSubnode(files, "24", BH_unchanged, policy, 1, 0);
+  mustHaveRegularStat(node_24, &metadata->backup_history[0], 56, nested_2_hash, 0);
+  PathNode *node_25 = findSubnode(files, "25", BH_unchanged, policy, 1, 0);
+  mustHaveRegularStat(node_25, &metadata->backup_history[0], 42, test_c_hash, 0);
+  PathNode *node_26 = findSubnode(files, "26", BH_unchanged, policy, 1, 0);
+  mustHaveRegularStat(node_26, &metadata->backup_history[0], 24, nb_a_abc_1_hash, 0);
+  PathNode *node_27 = findSubnode(files, "27", BH_unchanged, policy, 1, 0);
+  mustHaveRegularStat(node_27, &metadata->backup_history[0], 21, nb_manual_b_hash, 0);
+  PathNode *node_28 = findSubnode(files, "28", BH_unchanged, policy, 1, 0);
+  mustHaveRegularStat(node_28, &metadata->backup_history[0], 2123, bin_hash, 0);
+  PathNode *node_29 = findSubnode(files, "29", BH_unchanged, policy, 1, 0);
+  mustHaveRegularStat(node_29, &metadata->backup_history[0], 1200, bin_c_1_hash, 0);
+  PathNode *node_30 = findSubnode(files, "30", BH_unchanged, policy, 1, 0);
+  mustHaveRegularStat(node_30, &metadata->backup_history[0], 400, three_hash, 0);
+  PathNode *node_31 = findSubnode(files, "31", BH_unchanged, policy, 1, 0);
+  mustHaveRegularStat(node_31, &metadata->backup_history[0], 2100, super_hash, 0);
+  PathNode *node_32 = findSubnode(files, "32", BH_unchanged, policy, 1, 0);
+  mustHaveRegularStat(node_32, &metadata->backup_history[0], 12, (uint8_t *)"A small file", 0);
+  PathNode *node_33 = findSubnode(files, "33", BH_unchanged, policy, 1, 0);
+  mustHaveRegularStat(node_33, &metadata->backup_history[0], 12, (uint8_t *)"Another file", 0);
+  PathNode *node_34 = findSubnode(files, "34", BH_unchanged, policy, 1, 0);
+  mustHaveRegularStat(node_34, &metadata->backup_history[0], 15, (uint8_t *)"Some dummy text", 0);
+  PathNode *node_35 = findSubnode(files, "35", BH_unchanged, policy, 1, 0);
+  mustHaveRegularStat(node_35, &metadata->backup_history[0], 12, (uint8_t *)"abcdefghijkl", 0);
+  PathNode *node_36 = findSubnode(files, "36", BH_unchanged, policy, 1, 0);
+  mustHaveRegularStat(node_36, &metadata->backup_history[0], 11, (uint8_t *)"Nano Backup", 0);
+  PathNode *node_37 = findSubnode(files, "37", BH_unchanged, policy, 1, 0);
+  mustHaveRegularStat(node_37, &metadata->backup_history[0], 56, nested_2_hash, 0);
+  PathNode *node_38 = findSubnode(files, "38", BH_unchanged, policy, 1, 0);
+  mustHaveRegularStat(node_38, &metadata->backup_history[0], 0, (uint8_t *)"", 0);
+  PathNode *node_39 = findSubnode(files, "39", BH_unchanged, policy, 1, 0);
+  mustHaveRegularStat(node_39, &metadata->backup_history[0], 0, (uint8_t *)"", 0);
+  PathNode *node_40 = findSubnode(files, "40", BH_unchanged, policy, 1, 0);
+  mustHaveRegularStat(node_40, &metadata->backup_history[0], 0, (uint8_t *)"", 0);
+  PathNode *node_41 = findSubnode(files, "41", BH_unchanged, policy, 1, 0);
+  mustHaveRegularStat(node_41, &metadata->backup_history[0], 11, (uint8_t *)"random file", 0);
+  PathNode *node_42 = findSubnode(files, "42", BH_unchanged, policy, 1, 0);
+  mustHaveRegularStat(node_42, &metadata->backup_history[0], 0, (uint8_t *)"", 0);
+  PathNode *node_43 = findSubnode(files, "43", BH_unchanged, policy, 1, 0);
+  mustHaveRegularStat(node_43, &metadata->backup_history[0], 1200, data_d_hash, 0);
+  PathNode *node_44 = findSubnode(files, "44", BH_unchanged, policy, 1, 0);
+  mustHaveRegularStat(node_44, &metadata->backup_history[0], 144, nested_1_hash, 0);
+  PathNode *node_45 = findSubnode(files, "45", BH_unchanged, policy, 1, 0);
+  mustHaveRegularStat(node_45, &metadata->backup_history[0], 10, (uint8_t *)"Small file", 0);
+  PathNode *node_46 = findSubnode(files, "46", BH_unchanged, policy, 1, 0);
+  mustHaveRegularStat(node_46, &metadata->backup_history[0], 9, (uint8_t *)"Test file", 0);
+
+  /* Finish the backup and perform additional checks. */
+  completeBackup(metadata);
+  assert_true(countFilesInDir("tmp/repo") == 12);
+}
+
 /** Prepares the test for detecting changes in copied nodes. */
 static void runPhase21(String cwd_path, size_t cwd_depth,
                        SearchNode *copy_detection_node)
 {
   initChangeDetectionTest(cwd_path, cwd_depth, copy_detection_node,
                           BPOL_copy);
+}
+
+static void runPhase22(String cwd_path, size_t cwd_depth,
+                       SearchNode *copy_detection_node)
+{
+  modifyChangeDetectionTest(cwd_path, cwd_depth, copy_detection_node,
+                            BPOL_copy, 22);
 }
 
 /** Tests the handling of hash collisions. */
@@ -3469,6 +3595,7 @@ int main(void)
 
   testGroupStart("change detection with the copy policy");
   runPhase21(cwd, cwd_depth, copy_detection_node);
+  runPhase22(cwd, cwd_depth, copy_detection_node);
   testGroupEnd();
 
   /* Run special backup phases. */
