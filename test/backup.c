@@ -3001,6 +3001,14 @@ static void runPhase20(String cwd_path, size_t cwd_depth,
   removePath("tmp/files/a");
 }
 
+/** Prepares files and metadata for testing detection of changes in files.
+
+  @param cwd_path The path to the current working directory.
+  @param cwd_depth The recursion depth of the current working directory.
+  @param change_detection_node The search tree to use for preparing the
+  test.
+  @param policy The policy to test.
+*/
 static void initChangeDetectionTest(String cwd_path, size_t cwd_depth,
                                     SearchNode *change_detection_node,
                                     BackupPolicy policy)
@@ -3196,6 +3204,14 @@ static void initChangeDetectionTest(String cwd_path, size_t cwd_depth,
   mustHaveRegularStat(node_44, &metadata->current_backup, 144,  nested_1_hash,                 0);
   mustHaveRegularStat(node_45, &metadata->current_backup, 10,   (uint8_t *)"Small file",       0);
   mustHaveRegularStat(node_46, &metadata->current_backup, 9,    (uint8_t *)"Test file",        0);
+}
+
+/** Prepares the test for detecting changes in copied nodes. */
+static void runPhase21(String cwd_path, size_t cwd_depth,
+                       SearchNode *copy_detection_node)
+{
+  initChangeDetectionTest(cwd_path, cwd_depth, copy_detection_node,
+                          BPOL_copy);
 }
 
 /** Tests the handling of hash collisions. */
@@ -3452,7 +3468,7 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("change detection with the copy policy");
-  initChangeDetectionTest(cwd, cwd_depth, copy_detection_node, BPOL_copy);
+  runPhase21(cwd, cwd_depth, copy_detection_node);
   testGroupEnd();
 
   /* Run special backup phases. */
