@@ -313,6 +313,36 @@ static void removeCollidingFiles(const uint8_t *hash, size_t size,
   }
 }
 
+/** Like generateFile(), but overwrites an existing file without affecting
+  its modification timestamp.
+
+  @param node The node containing the path to update. It must represent a
+  regular file at its current backup point.
+  @param content The content of the file to generate.
+  @param repetitions Contains how many times the given content should be
+  repeated.
+*/
+static void regenerateFile(PathNode *node, const char *content,
+                           size_t repetitions)
+{
+  assert_true(node->history->state.type == PST_regular);
+
+  removePath(node->path.str);
+  generateFile(node->path.str, content, repetitions);
+  setTimestamp(node->path.str, node->history->state.metadata.reg.timestamp);
+}
+
+/** Changes the path to which a symlink points.
+
+  @param new_target The new target path to which the symlink points.
+  @param linkpath The path to the symlink to update.
+*/
+static void remakeSymlink(const char *new_target, const char *linkpath)
+{
+  removePath(linkpath);
+  makeSymlink(new_target, linkpath);
+}
+
 /** Asserts that "tmp" contains only "repo" and "files". */
 static void assertTmpIsCleared(void)
 {
@@ -3326,6 +3356,108 @@ static void modifyChangeDetectionTest(String cwd_path, size_t cwd_depth,
   mustHaveRegularStat(node_45, &metadata->backup_history[0], 10, (uint8_t *)"Small file", 0);
   PathNode *node_46 = findSubnode(files, "46", BH_unchanged, policy, 1, 0);
   mustHaveRegularStat(node_46, &metadata->backup_history[0], 9, (uint8_t *)"Test file", 0);
+
+  /* Modify various path nodes. */
+  node_0->history->state.uid++;
+  node_1->history->state.gid++;
+  node_2->history->state.metadata.dir.mode++;
+  node_3->history->state.metadata.dir.timestamp++;
+  node_4->history->state.metadata.dir.mode++;
+  node_4->history->state.metadata.dir.timestamp++;
+  node_5->history->state.uid++;
+  node_5->history->state.metadata.dir.mode++;
+
+  remakeSymlink("/dev/null", "tmp/files/5/6");
+  node_6->history->state.uid++;
+
+  node_7->history->state.uid++;
+  node_8->history->state.gid++;
+  node_8->history->state.metadata.dir.timestamp++;
+
+  regenerateFile(node_9, "This is test", 1);
+  node_9->history->state.uid++;
+
+  node_10->history->state.metadata.reg.timestamp++;
+  node_11->history->state.uid++;
+  node_11->history->state.metadata.reg.mode++;
+
+  regenerateFile(node_12, "a short string", 1);
+  node_12->history->state.gid++;
+  node_12->history->state.metadata.reg.mode++;
+
+  node_13->history->state.gid++;
+  node_13->history->state.metadata.dir.mode++;
+  node_13->history->state.metadata.dir.timestamp++;
+  node_14->history->state.uid++;
+  node_14->history->state.metadata.dir.timestamp++;
+  node_15->history->state.uid++;
+  node_16->history->state.gid++;
+  remakeSymlink("tmp/files/17", "symlink-content");
+  remakeSymlink("tmp/files/18", "symlink content string");
+
+  remakeSymlink("tmp/files/19", "uid + content");
+  node_19->history->state.gid++;
+
+  remakeSymlink("tmp/files/20", "content, uid, gid ");
+  node_20->history->state.uid++;
+  node_20->history->state.gid++;
+
+  node_21->history->state.gid++;
+  node_22->history->state.metadata.reg.mode++;
+  node_23->history->state.metadata.reg.timestamp++;
+  regenerateFile(node_24, "nested ", 9);
+  regenerateFile(node_25, "a/B/c/",  7);
+
+  regenerateFile(node_26, "Hello\n", 3);
+  node_26->history->state.gid++;
+
+  regenerateFile(node_27, "M", 21);
+  node_27->history->state.metadata.reg.mode++;
+
+  regenerateFile(node_28, "0", 2124);
+  node_28->history->state.metadata.reg.timestamp++;
+
+  regenerateFile(node_29, "Empty\n", 200);
+  node_29->history->state.uid++;
+  node_29->history->state.metadata.reg.timestamp++;
+
+  node_30->history->state.uid++;
+  node_30->history->state.metadata.reg.mode++;
+  node_30->history->state.metadata.reg.timestamp++;
+  node_31->history->state.uid++;
+  node_31->history->state.gid++;
+  regenerateFile(node_32, "A small file.", 1);
+  regenerateFile(node_33, "another file", 1);
+
+  regenerateFile(node_34, "some dummy text", 1);
+  node_34->history->state.metadata.reg.timestamp++;
+
+  regenerateFile(node_35, "?", 1);
+  node_35->history->state.metadata.reg.mode++;
+
+  regenerateFile(node_36, "nano backup", 1);
+  node_36->history->state.gid++;
+  node_36->history->state.metadata.reg.mode++;
+
+  regenerateFile(node_37, "",  0);
+  regenerateFile(node_38, "@", 1);
+  node_39->history->state.gid++;
+  node_40->history->state.metadata.reg.timestamp++;
+
+  regenerateFile(node_41, "", 0);
+  node_41->history->state.metadata.reg.mode++;
+
+  regenerateFile(node_42, "Backup\n", 74);
+  node_42->history->state.gid++;
+
+  regenerateFile(node_43, "Large\n", 2);
+  node_43->history->state.metadata.reg.timestamp++;
+
+  regenerateFile(node_44, "Q", 20);
+  regenerateFile(node_45, "q", 21);
+
+  regenerateFile(node_46, "test\n", 123);
+  node_46->history->state.uid++;
 
   /* Finish the backup and perform additional checks. */
   completeBackup(metadata);
