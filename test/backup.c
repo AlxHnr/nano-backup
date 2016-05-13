@@ -3464,6 +3464,129 @@ static void modifyChangeDetectionTest(String cwd_path, size_t cwd_depth,
   assert_true(countFilesInDir("tmp/repo") == 12);
 }
 
+/** Tests the changes injected by modifyChangeDetectionTest(). */
+static void changeDetectionTest(String cwd_path, size_t cwd_depth,
+                                SearchNode *change_detection_node,
+                                BackupPolicy policy, size_t phase_id)
+{
+  /* Initiate the backup. */
+  Metadata *metadata = metadataLoad("tmp/repo/metadata");
+  assert_true(metadata->total_path_count == cwd_depth + 49);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[phase_id - 2], cwd_depth + 2);
+  checkHistPoint(metadata, 1, 1, phase_timestamps[phase_id - 3], 47);
+  initiateBackup(metadata, change_detection_node);
+
+  /* Check the initiated backup. */
+  checkMetadata(metadata, 0, true);
+  assert_true(metadata->current_backup.ref_count == cwd_depth + 47);
+  assert_true(metadata->backup_history_length == 2);
+  assert_true(metadata->total_path_count == cwd_depth + 49);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[phase_id - 2], 0);
+  checkHistPoint(metadata, 1, 1, phase_timestamps[phase_id - 3], 2);
+
+  PathNode *files = findFilesNode(metadata, cwd_path, BH_unchanged, 40);
+
+  PathNode *node_0 = findSubnode(files, "0", BH_owner_changed, policy, 1, 1);
+  mustHaveDirectoryStat(node_0, &metadata->current_backup);
+  PathNode *node_1 = findSubnode(node_0, "1", BH_owner_changed, policy, 1, 0);
+  mustHaveDirectoryStat(node_1, &metadata->current_backup);
+  PathNode *node_2 = findSubnode(files, "2", BH_permissions_changed, policy, 1, 0);
+  mustHaveDirectoryStat(node_2, &metadata->current_backup);
+  PathNode *node_3 = findSubnode(files, "3", BH_timestamp_changed, policy, 1, 0);
+  mustHaveDirectoryStat(node_3, &metadata->current_backup);
+  PathNode *node_4 = findSubnode(files, "4", BH_permissions_changed | BH_timestamp_changed, policy, 1, 0);
+  mustHaveDirectoryStat(node_4, &metadata->current_backup);
+  PathNode *node_5 = findSubnode(files, "5", BH_owner_changed | BH_permissions_changed, policy, 1, 2);
+  mustHaveDirectoryStat(node_5, &metadata->current_backup);
+  PathNode *node_6 = findSubnode(node_5, "6", BH_owner_changed | BH_content_changed, policy, 1, 0);
+  mustHaveSymlinkLStat(node_6, &metadata->current_backup, "/dev/null");
+  PathNode *node_7 = findSubnode(node_5, "7", BH_owner_changed, policy, 1, 0);
+  mustHaveRegularStat(node_7, &metadata->current_backup, 400, three_hash, 0);
+  PathNode *node_8 = findSubnode(files, "8", BH_owner_changed | BH_timestamp_changed, policy, 1, 4);
+  mustHaveDirectoryStat(node_8, &metadata->current_backup);
+  PathNode *node_9 = findSubnode(node_8, "9", BH_owner_changed | BH_content_changed, policy, 1, 0);
+  mustHaveRegularStat(node_9, &metadata->current_backup, 12, (uint8_t *)"This is a file\n", 0);
+  PathNode *node_10 = findSubnode(node_8, "10", BH_timestamp_changed, policy, 1, 0);
+  mustHaveRegularStat(node_10, &metadata->current_backup, 11, (uint8_t *)"GID and UID", 0);
+  PathNode *node_11 = findSubnode(node_8, "11", BH_owner_changed | BH_permissions_changed, policy, 1, 0);
+  mustHaveRegularStat(node_11, &metadata->current_backup, 0, (uint8_t *)"", 0);
+  PathNode *node_12 = findSubnode(node_8, "12", BH_owner_changed | BH_permissions_changed |
+                                  BH_content_changed, policy, 1, 0);
+  mustHaveRegularStat(node_12, &metadata->current_backup, 14,  some_file_hash, 0);
+  PathNode *node_13 = findSubnode(files, "13", BH_owner_changed | BH_permissions_changed |
+                                  BH_timestamp_changed, policy, 1, 0);
+  mustHaveDirectoryStat(node_13, &metadata->current_backup);
+  PathNode *node_14 = findSubnode(files, "14", BH_owner_changed | BH_timestamp_changed, policy, 1, 0);
+  mustHaveDirectoryStat(node_14, &metadata->current_backup);
+  PathNode *node_15 = findSubnode(files, "15", BH_owner_changed, policy, 1, 0);
+  mustHaveSymlinkLStat(node_15, &metadata->current_backup, "uid changing symlink");
+  PathNode *node_16 = findSubnode(files, "16", BH_owner_changed, policy, 1, 0);
+  mustHaveSymlinkLStat(node_16, &metadata->current_backup, "gid changing symlink");
+  PathNode *node_17 = findSubnode(files, "17", BH_content_changed, policy, 1, 0);
+  mustHaveSymlinkLStat(node_17, &metadata->current_backup, "symlink-content");
+  PathNode *node_18 = findSubnode(files, "18", BH_content_changed, policy, 1, 0);
+  mustHaveSymlinkLStat(node_18, &metadata->current_backup, "symlink content string");
+  PathNode *node_19 = findSubnode(files, "19", BH_owner_changed | BH_content_changed, policy, 1, 0);
+  mustHaveSymlinkLStat(node_19, &metadata->current_backup, "uid + content");
+  PathNode *node_20 = findSubnode(files, "20", BH_owner_changed | BH_content_changed, policy, 1, 0);
+  mustHaveSymlinkLStat(node_20, &metadata->current_backup, "content, uid, gid ");
+  PathNode *node_21 = findSubnode(files, "21", BH_owner_changed, policy, 1, 0);
+  mustHaveRegularStat(node_21, &metadata->current_backup, 2100, super_hash, 0);
+  PathNode *node_22 = findSubnode(files, "22", BH_permissions_changed, policy, 1, 0);
+  mustHaveRegularStat(node_22, &metadata->current_backup, 1200, data_d_hash, 0);
+  PathNode *node_23 = findSubnode(files, "23", BH_timestamp_changed, policy, 1, 0);
+  mustHaveRegularStat(node_23, &metadata->current_backup, 144, nested_1_hash, 0);
+  PathNode *node_24 = findSubnode(files, "24", BH_content_changed, policy, 1, 0);
+  mustHaveRegularStat(node_24, &metadata->current_backup, 63, nested_2_hash, 0);
+  PathNode *node_25 = findSubnode(files, "25", BH_unchanged, policy, 1, 0);
+  mustHaveRegularStat(node_25, &metadata->backup_history[1], 42, test_c_hash, 0);
+  PathNode *node_26 = findSubnode(files, "26", BH_owner_changed | BH_content_changed, policy, 1, 0);
+  mustHaveRegularStat(node_26, &metadata->current_backup, 18, nb_a_abc_1_hash, 0);
+  PathNode *node_27 = findSubnode(files, "27", BH_permissions_changed, policy, 1, 0);
+  mustHaveRegularStat(node_27, &metadata->current_backup, 21, nb_manual_b_hash, 0);
+  PathNode *node_28 = findSubnode(files, "28", BH_timestamp_changed | BH_content_changed, policy, 1, 0);
+  mustHaveRegularStat(node_28, &metadata->current_backup, 2124, bin_hash, 0);
+  PathNode *node_29 = findSubnode(files, "29", BH_owner_changed | BH_timestamp_changed |
+                                  BH_content_changed | BH_fresh_hash, policy, 1, 0);
+  mustHaveRegularStat(node_29, &metadata->current_backup, 1200, bin_c_1_hash, 0);
+  PathNode *node_30 = findSubnode(files, "30", BH_owner_changed | BH_permissions_changed |
+                                  BH_timestamp_changed, policy, 1, 0);
+  mustHaveRegularStat(node_30, &metadata->current_backup, 400, three_hash, 0);
+  PathNode *node_31 = findSubnode(files, "31", BH_owner_changed, policy, 1, 0);
+  mustHaveRegularStat(node_31, &metadata->current_backup, 2100, super_hash, 0);
+  PathNode *node_32 = findSubnode(files, "32", BH_content_changed, policy, 1, 0);
+  mustHaveRegularStat(node_32, &metadata->current_backup, 13, (uint8_t *)"A small file", 0);
+  PathNode *node_33 = findSubnode(files, "33", BH_unchanged, policy, 1, 0);
+  mustHaveRegularStat(node_33, &metadata->backup_history[1], 12, (uint8_t *)"Another file", 0);
+  PathNode *node_34 = findSubnode(files, "34", BH_timestamp_changed | BH_content_changed |
+                                  BH_fresh_hash, policy, 1, 0);
+  mustHaveRegularStat(node_34, &metadata->current_backup, 15, (uint8_t *)"Some dummy text", 0);
+  PathNode *node_35 = findSubnode(files, "35", BH_permissions_changed | BH_content_changed, policy, 1, 0);
+  mustHaveRegularStat(node_35, &metadata->current_backup, 1, (uint8_t *)"abcdefghijkl", 0);
+  PathNode *node_36 = findSubnode(files, "36", BH_owner_changed | BH_permissions_changed, policy, 1, 0);
+  mustHaveRegularStat(node_36, &metadata->current_backup, 11, (uint8_t *)"Nano Backup", 0);
+  PathNode *node_37 = findSubnode(files, "37", BH_content_changed, policy, 1, 0);
+  mustHaveRegularStat(node_37, &metadata->current_backup, 0, nested_2_hash, 0);
+  PathNode *node_38 = findSubnode(files, "38", BH_content_changed, policy, 1, 0);
+  mustHaveRegularStat(node_38, &metadata->current_backup, 1, (uint8_t *)"", 0);
+  PathNode *node_39 = findSubnode(files, "39", BH_owner_changed, policy, 1, 0);
+  mustHaveRegularStat(node_39, &metadata->current_backup, 0, (uint8_t *)"", 0);
+  PathNode *node_40 = findSubnode(files, "40", BH_timestamp_changed, policy, 1, 0);
+  mustHaveRegularStat(node_40, &metadata->current_backup, 0, (uint8_t *)"", 0);
+  PathNode *node_41 = findSubnode(files, "41", BH_permissions_changed | BH_content_changed, policy, 1, 0);
+  mustHaveRegularStat(node_41, &metadata->current_backup, 0, (uint8_t *)"random file", 0);
+  PathNode *node_42 = findSubnode(files, "42", BH_owner_changed | BH_content_changed, policy, 1, 0);
+  mustHaveRegularStat(node_42, &metadata->current_backup, 518, (uint8_t *)"", 0);
+  PathNode *node_43 = findSubnode(files, "43", BH_timestamp_changed | BH_content_changed, policy, 1, 0);
+  mustHaveRegularStat(node_43, &metadata->current_backup, 12, data_d_hash, 0);
+  PathNode *node_44 = findSubnode(files, "44", BH_content_changed, policy, 1, 0);
+  mustHaveRegularStat(node_44, &metadata->current_backup, 20, nested_1_hash, 0);
+  PathNode *node_45 = findSubnode(files, "45", BH_content_changed, policy, 1, 0);
+  mustHaveRegularStat(node_45, &metadata->current_backup, 21, (uint8_t *)"Small file", 0);
+  PathNode *node_46 = findSubnode(files, "46", BH_owner_changed | BH_content_changed, policy, 1, 0);
+  mustHaveRegularStat(node_46, &metadata->current_backup, 615, (uint8_t *)"Test file", 0);
+}
+
 /** Prepares the test for detecting changes in copied nodes. */
 static void runPhase21(String cwd_path, size_t cwd_depth,
                        SearchNode *copy_detection_node)
@@ -3478,6 +3601,14 @@ static void runPhase22(String cwd_path, size_t cwd_depth,
 {
   modifyChangeDetectionTest(cwd_path, cwd_depth, copy_detection_node,
                             BPOL_copy, 22);
+}
+
+/** Tests change detection in copied nodes. */
+static void runPhase23(String cwd_path, size_t cwd_depth,
+                       SearchNode *copy_detection_node)
+{
+  changeDetectionTest(cwd_path, cwd_depth, copy_detection_node,
+                      BPOL_copy, 23);
 }
 
 /** Tests the handling of hash collisions. */
@@ -3736,6 +3867,7 @@ int main(void)
   testGroupStart("change detection with the copy policy");
   runPhase21(cwd, cwd_depth, copy_detection_node);
   runPhase22(cwd, cwd_depth, copy_detection_node);
+  runPhase23(cwd, cwd_depth, copy_detection_node);
   testGroupEnd();
 
   /* Run special backup phases. */
