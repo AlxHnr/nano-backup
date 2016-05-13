@@ -3392,13 +3392,13 @@ static void modifyChangeDetectionTest(String cwd_path, size_t cwd_depth,
   node_14->history->state.metadata.dir.timestamp++;
   node_15->history->state.uid++;
   node_16->history->state.gid++;
-  remakeSymlink("tmp/files/17", "symlink-content");
-  remakeSymlink("tmp/files/18", "symlink content string");
+  remakeSymlink("symlink-content",        "tmp/files/17");
+  remakeSymlink("symlink content string", "tmp/files/18");
 
-  remakeSymlink("tmp/files/19", "uid + content");
+  remakeSymlink("uid + content", "tmp/files/19");
   node_19->history->state.gid++;
 
-  remakeSymlink("tmp/files/20", "content, uid, gid ");
+  remakeSymlink("content, uid, gid ", "tmp/files/20");
   node_20->history->state.uid++;
   node_20->history->state.gid++;
 
