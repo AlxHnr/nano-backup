@@ -622,6 +622,11 @@ static const uint8_t bin_c_1_hash[] =
   0xe8, 0xfb, 0x29, 0x61, 0x97, 0x00, 0xe5, 0xb6, 0x09, 0x30,
   0x88, 0x6e, 0x94, 0x82, 0x2c, 0x66, 0xce, 0x2a, 0xd6, 0xbf,
 };
+static const uint8_t node_29_hash[] =
+{
+  0xd1, 0x56, 0x90, 0xc2, 0x79, 0x90, 0x92, 0xdd, 0x2f, 0x5d,
+  0x58, 0x60, 0x39, 0x18, 0x07, 0x11, 0xe5, 0xa3, 0x13, 0x5a,
+};
 
 /** Contains the timestamp at which a phase finished. */
 static time_t *phase_timestamps = NULL;
@@ -3548,7 +3553,7 @@ static void changeDetectionTest(String cwd_path, size_t cwd_depth,
   mustHaveRegularStat(node_28, &metadata->current_backup, 2124, bin_hash, 0);
   PathNode *node_29 = findSubnode(files, "29", BH_owner_changed | BH_timestamp_changed |
                                   BH_content_changed | BH_fresh_hash, policy, 1, 0);
-  mustHaveRegularStat(node_29, &metadata->current_backup, 1200, bin_c_1_hash, 0);
+  mustHaveRegularStat(node_29, &metadata->current_backup, 1200, node_29_hash, 0);
   PathNode *node_30 = findSubnode(files, "30", BH_owner_changed | BH_permissions_changed |
                                   BH_timestamp_changed, policy, 1, 0);
   mustHaveRegularStat(node_30, &metadata->current_backup, 400, three_hash, 0);
@@ -3561,7 +3566,7 @@ static void changeDetectionTest(String cwd_path, size_t cwd_depth,
   mustHaveRegularStat(node_33, &metadata->backup_history[1], 12, (uint8_t *)"Another file", 0);
   PathNode *node_34 = findSubnode(files, "34", BH_timestamp_changed | BH_content_changed |
                                   BH_fresh_hash, policy, 1, 0);
-  mustHaveRegularStat(node_34, &metadata->current_backup, 15, (uint8_t *)"Some dummy text", 0);
+  mustHaveRegularStat(node_34, &metadata->current_backup, 15, (uint8_t *)"some dummy text", 0);
   PathNode *node_35 = findSubnode(files, "35", BH_permissions_changed | BH_content_changed, policy, 1, 0);
   mustHaveRegularStat(node_35, &metadata->current_backup, 1, (uint8_t *)"abcdefghijkl", 0);
   PathNode *node_36 = findSubnode(files, "36", BH_owner_changed | BH_permissions_changed, policy, 1, 0);
