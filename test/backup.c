@@ -622,10 +622,40 @@ static const uint8_t bin_c_1_hash[] =
   0xe8, 0xfb, 0x29, 0x61, 0x97, 0x00, 0xe5, 0xb6, 0x09, 0x30,
   0x88, 0x6e, 0x94, 0x82, 0x2c, 0x66, 0xce, 0x2a, 0xd6, 0xbf,
 };
+static const uint8_t node_24_hash[] =
+{
+  0x18, 0x3b, 0x8a, 0x27, 0xe5, 0xc0, 0xc6, 0x0c, 0x60, 0x1a,
+  0xb8, 0x0b, 0xb5, 0x50, 0xa3, 0x8c, 0x0b, 0xd1, 0x42, 0x6a,
+};
+static const uint8_t node_26_hash[] =
+{
+  0x07, 0x8c, 0x51, 0x64, 0x00, 0x36, 0xaa, 0x01, 0x6e, 0x40,
+  0xef, 0x9f, 0x1f, 0xd6, 0x0e, 0xfe, 0xe3, 0xac, 0xa6, 0xdb,
+};
+static const uint8_t node_28_hash[] =
+{
+  0x24, 0xf1, 0x18, 0x86, 0x65, 0x5f, 0xba, 0xec, 0x06, 0x5d,
+  0x80, 0xcb, 0xfe, 0x62, 0x19, 0x95, 0x3c, 0x8c, 0x1a, 0xa4,
+};
 static const uint8_t node_29_hash[] =
 {
   0xd1, 0x56, 0x90, 0xc2, 0x79, 0x90, 0x92, 0xdd, 0x2f, 0x5d,
   0x58, 0x60, 0x39, 0x18, 0x07, 0x11, 0xe5, 0xa3, 0x13, 0x5a,
+};
+static const uint8_t node_42_hash[] =
+{
+  0x10, 0xec, 0x41, 0x8f, 0xd4, 0xd4, 0x55, 0x1d, 0xfe, 0x9c,
+  0xe1, 0x3a, 0x99, 0x6e, 0x9b, 0x30, 0x62, 0x39, 0x42, 0xe9,
+};
+static const uint8_t node_45_hash[] =
+{
+  0x78, 0xa5, 0x60, 0xf4, 0x74, 0x2d, 0xfe, 0x37, 0x32, 0x4c,
+  0x2b, 0x66, 0x80, 0x1f, 0x3f, 0x45, 0xce, 0x03, 0xe2, 0xef,
+};
+static const uint8_t node_46_hash[] =
+{
+  0x21, 0x1d, 0x56, 0xce, 0xad, 0xb7, 0xe7, 0x81, 0x1e, 0x08,
+  0x2d, 0x09, 0x57, 0x4e, 0x5c, 0x02, 0x15, 0x47, 0xa8, 0xf5,
 };
 
 /** Contains the timestamp at which a phase finished. */
@@ -3595,6 +3625,41 @@ static void changeDetectionTest(String cwd_path, size_t cwd_depth,
   PathNode *node_46 = findSubnode(files, "46", BH_owner_changed | BH_content_changed, policy, 1, 0);
   memset(&node_46->history->state.metadata.reg.hash[9], '=', 11);
   mustHaveRegularStat(node_46, &metadata->current_backup, 615, (uint8_t *)"Test file===========", 0);
+
+  /* Finish the backup and perform additional checks. */
+  completeBackup(metadata);
+  assert_true(countFilesInDir("tmp/repo") == 19);
+  mustHaveRegularStat(node_7,  &metadata->current_backup,    400,  three_hash,                        0);
+  mustHaveRegularStat(node_9,  &metadata->current_backup,    12,   (uint8_t *)"This is test",         0);
+  mustHaveRegularStat(node_10, &metadata->current_backup,    11,   (uint8_t *)"GID and UID",          0);
+  mustHaveRegularStat(node_11, &metadata->current_backup,    0,    (uint8_t *)"",                     0);
+  mustHaveRegularStat(node_12, &metadata->current_backup,    14,   (uint8_t *)"a short string",       0);
+  mustHaveRegularStat(node_21, &metadata->current_backup,    2100, super_hash,                        0);
+  mustHaveRegularStat(node_22, &metadata->current_backup,    1200, data_d_hash,                       0);
+  mustHaveRegularStat(node_23, &metadata->current_backup,    144,  nested_1_hash,                     0);
+  mustHaveRegularStat(node_24, &metadata->current_backup,    63,   node_24_hash,                      0);
+  mustHaveRegularStat(node_25, &metadata->backup_history[1], 42,   test_c_hash,                       0);
+  mustHaveRegularStat(node_26, &metadata->current_backup,    22,   node_26_hash,                      0);
+  mustHaveRegularStat(node_27, &metadata->current_backup,    21,   nb_manual_b_hash,                  0);
+  mustHaveRegularStat(node_28, &metadata->current_backup,    2124, node_28_hash,                      0);
+  mustHaveRegularStat(node_29, &metadata->current_backup,    1200, node_29_hash,                      0);
+  mustHaveRegularStat(node_30, &metadata->current_backup,    400,  three_hash,                        0);
+  mustHaveRegularStat(node_31, &metadata->current_backup,    2100, super_hash,                        0);
+  mustHaveRegularStat(node_32, &metadata->current_backup,    13,   (uint8_t *)"A small file.",        0);
+  mustHaveRegularStat(node_33, &metadata->backup_history[1], 12,   (uint8_t *)"Another file",         0);
+  mustHaveRegularStat(node_34, &metadata->current_backup,    15,   (uint8_t *)"some dummy text",      0);
+  mustHaveRegularStat(node_35, &metadata->current_backup,    1,    (uint8_t *)"?",                    0);
+  mustHaveRegularStat(node_36, &metadata->current_backup,    11,   (uint8_t *)"Nano Backup",          0);
+  mustHaveRegularStat(node_37, &metadata->current_backup,    0,    (uint8_t *)"",                     0);
+  mustHaveRegularStat(node_38, &metadata->current_backup,    1,    (uint8_t *)"@",                    0);
+  mustHaveRegularStat(node_39, &metadata->current_backup,    0,    (uint8_t *)"",                     0);
+  mustHaveRegularStat(node_40, &metadata->current_backup,    0,    (uint8_t *)"",                     0);
+  mustHaveRegularStat(node_41, &metadata->current_backup,    0,    (uint8_t *)"",                     0);
+  mustHaveRegularStat(node_42, &metadata->current_backup,    518,  node_42_hash,                      0);
+  mustHaveRegularStat(node_43, &metadata->current_backup,    12,   (uint8_t *)"Large\nLarge\n",       0);
+  mustHaveRegularStat(node_44, &metadata->current_backup,    20,   (uint8_t *)"QQQQQQQQQQQQQQQQQQQQ", 0);
+  mustHaveRegularStat(node_45, &metadata->current_backup,    21,   node_45_hash,                      0);
+  mustHaveRegularStat(node_46, &metadata->current_backup,    615,  node_46_hash,                      0);
 }
 
 /** Prepares the test for detecting changes in copied nodes. */
