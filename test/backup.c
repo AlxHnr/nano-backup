@@ -3408,7 +3408,7 @@ static void modifyChangeDetectionTest(String cwd_path, size_t cwd_depth,
   regenerateFile(node_24, "nested ", 9);
   regenerateFile(node_25, "a/B/c/",  7);
 
-  regenerateFile(node_26, "Hello\n", 3);
+  regenerateFile(node_26, "Hello world", 2);
   node_26->history->state.gid++;
 
   regenerateFile(node_27, "M", 21);
@@ -3541,7 +3541,7 @@ static void changeDetectionTest(String cwd_path, size_t cwd_depth,
   PathNode *node_25 = findSubnode(files, "25", BH_unchanged, policy, 1, 0);
   mustHaveRegularStat(node_25, &metadata->backup_history[1], 42, test_c_hash, 0);
   PathNode *node_26 = findSubnode(files, "26", BH_owner_changed | BH_content_changed, policy, 1, 0);
-  mustHaveRegularStat(node_26, &metadata->current_backup, 18, nb_a_abc_1_hash, 0);
+  mustHaveRegularStat(node_26, &metadata->current_backup, 22, nb_a_abc_1_hash, 0);
   PathNode *node_27 = findSubnode(files, "27", BH_permissions_changed, policy, 1, 0);
   mustHaveRegularStat(node_27, &metadata->current_backup, 21, nb_manual_b_hash, 0);
   PathNode *node_28 = findSubnode(files, "28", BH_timestamp_changed | BH_content_changed, policy, 1, 0);
@@ -3555,7 +3555,8 @@ static void changeDetectionTest(String cwd_path, size_t cwd_depth,
   PathNode *node_31 = findSubnode(files, "31", BH_owner_changed, policy, 1, 0);
   mustHaveRegularStat(node_31, &metadata->current_backup, 2100, super_hash, 0);
   PathNode *node_32 = findSubnode(files, "32", BH_content_changed, policy, 1, 0);
-  mustHaveRegularStat(node_32, &metadata->current_backup, 13, (uint8_t *)"A small file", 0);
+  node_32->history->state.metadata.reg.hash[12] = '?';
+  mustHaveRegularStat(node_32, &metadata->current_backup, 13, (uint8_t *)"A small file??", 0);
   PathNode *node_33 = findSubnode(files, "33", BH_unchanged, policy, 1, 0);
   mustHaveRegularStat(node_33, &metadata->backup_history[1], 12, (uint8_t *)"Another file", 0);
   PathNode *node_34 = findSubnode(files, "34", BH_timestamp_changed | BH_content_changed |
@@ -3568,7 +3569,8 @@ static void changeDetectionTest(String cwd_path, size_t cwd_depth,
   PathNode *node_37 = findSubnode(files, "37", BH_content_changed, policy, 1, 0);
   mustHaveRegularStat(node_37, &metadata->current_backup, 0, nested_2_hash, 0);
   PathNode *node_38 = findSubnode(files, "38", BH_content_changed, policy, 1, 0);
-  mustHaveRegularStat(node_38, &metadata->current_backup, 1, (uint8_t *)"", 0);
+  node_38->history->state.metadata.reg.hash[0] = 'P';
+  mustHaveRegularStat(node_38, &metadata->current_backup, 1, (uint8_t *)"PPP", 0);
   PathNode *node_39 = findSubnode(files, "39", BH_owner_changed, policy, 1, 0);
   mustHaveRegularStat(node_39, &metadata->current_backup, 0, (uint8_t *)"", 0);
   PathNode *node_40 = findSubnode(files, "40", BH_timestamp_changed, policy, 1, 0);
@@ -3576,15 +3578,18 @@ static void changeDetectionTest(String cwd_path, size_t cwd_depth,
   PathNode *node_41 = findSubnode(files, "41", BH_permissions_changed | BH_content_changed, policy, 1, 0);
   mustHaveRegularStat(node_41, &metadata->current_backup, 0, (uint8_t *)"random file", 0);
   PathNode *node_42 = findSubnode(files, "42", BH_owner_changed | BH_content_changed, policy, 1, 0);
-  mustHaveRegularStat(node_42, &metadata->current_backup, 518, (uint8_t *)"", 0);
+  memset(node_42->history->state.metadata.reg.hash, 'X', FILE_HASH_SIZE);
+  mustHaveRegularStat(node_42, &metadata->current_backup, 518, (uint8_t *)"XXXXXXXXXXXXXXXXXXXX", 0);
   PathNode *node_43 = findSubnode(files, "43", BH_timestamp_changed | BH_content_changed, policy, 1, 0);
   mustHaveRegularStat(node_43, &metadata->current_backup, 12, data_d_hash, 0);
   PathNode *node_44 = findSubnode(files, "44", BH_content_changed, policy, 1, 0);
   mustHaveRegularStat(node_44, &metadata->current_backup, 20, nested_1_hash, 0);
   PathNode *node_45 = findSubnode(files, "45", BH_content_changed, policy, 1, 0);
-  mustHaveRegularStat(node_45, &metadata->current_backup, 21, (uint8_t *)"Small file", 0);
+  memset(&node_45->history->state.metadata.reg.hash[10], 'J', 10);
+  mustHaveRegularStat(node_45, &metadata->current_backup, 21, (uint8_t *)"Small fileJJJJJJJJJJ", 0);
   PathNode *node_46 = findSubnode(files, "46", BH_owner_changed | BH_content_changed, policy, 1, 0);
-  mustHaveRegularStat(node_46, &metadata->current_backup, 615, (uint8_t *)"Test file", 0);
+  memset(&node_46->history->state.metadata.reg.hash[9], '=', 11);
+  mustHaveRegularStat(node_46, &metadata->current_backup, 615, (uint8_t *)"Test file===========", 0);
 }
 
 /** Prepares the test for detecting changes in copied nodes. */
