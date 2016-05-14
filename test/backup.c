@@ -3866,6 +3866,38 @@ static void runPhase24(String cwd_path, size_t cwd_depth,
                     BPOL_copy, 24);
 }
 
+/** Prepares the test for detecting changes in mirrored nodes. */
+static void runPhase25(String cwd_path, size_t cwd_depth,
+                       SearchNode *mirror_detection_node)
+{
+  initChangeDetectionTest(cwd_path, cwd_depth, mirror_detection_node,
+                          BPOL_mirror);
+}
+
+/** Injects changes into the current metadata. */
+static void runPhase26(String cwd_path, size_t cwd_depth,
+                       SearchNode *mirror_detection_node)
+{
+  modifyChangeDetectionTest(cwd_path, cwd_depth, mirror_detection_node,
+                            BPOL_mirror, 26);
+}
+
+/** Tests change detection in mirrored nodes. */
+static void runPhase27(String cwd_path, size_t cwd_depth,
+                       SearchNode *mirror_detection_node)
+{
+  changeDetectionTest(cwd_path, cwd_depth, mirror_detection_node,
+                      BPOL_mirror, 27);
+}
+
+/** Tests the metadata written by phase 27 and cleans up. */
+static void runPhase28(String cwd_path, size_t cwd_depth,
+                       SearchNode *mirror_detection_node)
+{
+  postDetectionTest(cwd_path, cwd_depth, mirror_detection_node,
+                    BPOL_mirror, 28);
+}
+
 /** Tests the handling of hash collisions. */
 static void runPhaseCollision(String cwd_path, size_t cwd_depth,
                               SearchNode *phase_collision_node)
@@ -4070,8 +4102,9 @@ int main(void)
   SearchNode *phase_14_node = searchTreeLoad("generated-config-files/backup-phase-14.txt");
   SearchNode *phase_17_node = searchTreeLoad("generated-config-files/backup-phase-17.txt");
 
-  SearchNode *copy_detection_node  = searchTreeLoad("generated-config-files/change-detection-copy.txt");
-  SearchNode *phase_collision_node = searchTreeLoad("generated-config-files/backup-phase-collision.txt");
+  SearchNode *copy_detection_node   = searchTreeLoad("generated-config-files/change-detection-copy.txt");
+  SearchNode *mirror_detection_node = searchTreeLoad("generated-config-files/change-detection-mirror.txt");
+  SearchNode *phase_collision_node  = searchTreeLoad("generated-config-files/backup-phase-collision.txt");
 
   stat_cache = strtableNew();
   makeDir("tmp/repo");
@@ -4119,11 +4152,18 @@ int main(void)
   runPhase20(cwd, cwd_depth, phase_17_node);
   testGroupEnd();
 
-  testGroupStart("change detection with the copy policy");
+  testGroupStart("change detection of copied files");
   runPhase21(cwd, cwd_depth, copy_detection_node);
   runPhase22(cwd, cwd_depth, copy_detection_node);
   runPhase23(cwd, cwd_depth, copy_detection_node);
   runPhase24(cwd, cwd_depth, copy_detection_node);
+  testGroupEnd();
+
+  testGroupStart("change detection of mirrored files");
+  runPhase25(cwd, cwd_depth, mirror_detection_node);
+  runPhase26(cwd, cwd_depth, mirror_detection_node);
+  runPhase27(cwd, cwd_depth, mirror_detection_node);
+  runPhase28(cwd, cwd_depth, mirror_detection_node);
   testGroupEnd();
 
   /* Run special backup phases. */
