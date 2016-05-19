@@ -3850,7 +3850,6 @@ static void postDetectionTest(String cwd_path, size_t cwd_depth,
   removeDetectionTest();
 }
 
-
 /** Prepares the test for detecting changes in copied nodes. */
 static void runPhase21(String cwd_path, size_t cwd_depth,
                        SearchNode *copy_detection_node)
