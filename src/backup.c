@@ -76,7 +76,7 @@ static const char *readSymlink(SearchResult result)
 /** Sets all values inside the given state to the properties in the
   specified result. A regular files hash and slot will be left undefined.
 
-  @param metadata The metadata to which the point belongs to.
+  @param state The state to update.
   @param result The search result describing a found path, which must have
   the type SRT_regular, SRT_symlink or SRT_directory. Otherwise it will
   result in undefined behaviour.
