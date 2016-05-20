@@ -73,6 +73,39 @@ static const char *readSymlink(SearchResult result)
   return buffer;
 }
 
+/** Sets all values inside the given state to the properties in the
+  specified result. A regular files hash and slot will be left undefined.
+
+  @param metadata The metadata to which the point belongs to.
+  @param result The search result describing a found path, which must have
+  the type SRT_regular, SRT_symlink or SRT_directory. Otherwise it will
+  result in undefined behaviour.
+*/
+static void setPathHistoryState(PathState *state, SearchResult result)
+{
+  state->uid = result.stats.st_uid;
+  state->gid = result.stats.st_gid;
+
+  if(result.type == SRT_regular)
+  {
+    state->type = PST_regular;
+    state->metadata.reg.mode = result.stats.st_mode;
+    state->metadata.reg.timestamp = result.stats.st_mtime;
+    state->metadata.reg.size = result.stats.st_size;
+  }
+  else if(result.type == SRT_symlink)
+  {
+    state->type = PST_symlink;
+    state->metadata.sym_target = readSymlink(result);
+  }
+  else if(result.type == SRT_directory)
+  {
+    state->type = PST_directory;
+    state->metadata.dir.mode = result.stats.st_mode;
+    state->metadata.dir.timestamp = result.stats.st_mtime;
+  }
+}
+
 /** Constructs a path history point from the given data.
 
   @param metadata The metadata to which the point belongs to.
@@ -90,27 +123,7 @@ static PathHistory *buildPathHistoryPoint(Metadata *metadata,
   point->backup = &metadata->current_backup;
   point->backup->ref_count = sSizeAdd(point->backup->ref_count, 1);
 
-  point->state.uid = result.stats.st_uid;
-  point->state.gid = result.stats.st_gid;
-
-  if(result.type == SRT_regular)
-  {
-    point->state.type = PST_regular;
-    point->state.metadata.reg.mode = result.stats.st_mode;
-    point->state.metadata.reg.timestamp = result.stats.st_mtime;
-    point->state.metadata.reg.size = result.stats.st_size;
-  }
-  else if(result.type == SRT_symlink)
-  {
-    point->state.type = PST_symlink;
-    point->state.metadata.sym_target = readSymlink(result);
-  }
-  else if(result.type == SRT_directory)
-  {
-    point->state.type = PST_directory;
-    point->state.metadata.dir.mode = result.stats.st_mode;
-    point->state.metadata.dir.timestamp = result.stats.st_mtime;
-  }
+  setPathHistoryState(&point->state, result);
 
   point->next = NULL;
 
@@ -324,14 +337,15 @@ static void checkFileContentChanges(PathNode *node, PathState *state,
   }
 }
 
-/** Checks what has changed in the path described by the given node.
+/** Compares the node against the stats in the given results and updates
+  both its backup hint and the specified path state.
 
-  @param node The node representing the path to check.
-  @param state The path state which will be updated with the changes.
-  @param result The search result which found the given node.
+  @param node The node containing the hint to update.
+  @param state The state to update.
+  @param result The result which has matched the given node.
 */
-static void handleNodeChanges(PathNode *node, PathState *state,
-                              SearchResult result)
+static void applyNodeChanges(PathNode *node, PathState *state,
+                             SearchResult result)
 {
   if(state->uid != result.stats.st_uid ||
      state->gid != result.stats.st_gid)
@@ -390,6 +404,70 @@ static void handleNodeChanges(PathNode *node, PathState *state,
       node->hint |= BH_timestamp_changed;
       state->metadata.dir.timestamp = result.stats.st_mtime;
     }
+  }
+}
+
+/** Checks if the filetype of the given node has changed and updates its
+  backup hint accordingly.
+
+  @param node The node describing the path to check.
+  @param result The search result which has matched the path.
+*/
+static void handleFiletypeChanges(PathNode *node, SearchResult result)
+{
+  if(node->history->state.type == PST_regular)
+  {
+    if(result.type == SRT_symlink)
+    {
+      node->hint = BH_regular_to_symlink;
+    }
+    else if(result.type == SRT_directory)
+    {
+      node->hint = BH_regular_to_directory;
+    }
+  }
+  else if(node->history->state.type == PST_symlink)
+  {
+    if(result.type == SRT_regular)
+    {
+      node->hint = BH_symlink_to_regular;
+    }
+    else if(result.type == SRT_directory)
+    {
+      node->hint = BH_symlink_to_directory;
+    }
+  }
+  else if(node->history->state.type == PST_directory)
+  {
+    if(result.type == SRT_regular)
+    {
+      node->hint = BH_directory_to_regular;
+    }
+    else if(result.type == SRT_symlink)
+    {
+      node->hint = BH_directory_to_symlink;
+    }
+  }
+}
+
+/** Checks what has changed in the path described by the given node.
+
+  @param node The node containing the backup hint to update.
+  @param state The path state which will be updated with the changes.
+  @param result The search result which matched the given node.
+*/
+static void handleNodeChanges(PathNode *node, PathState *state,
+                              SearchResult result)
+{
+  handleFiletypeChanges(node, result);
+
+  if(node->hint == BH_none)
+  {
+    applyNodeChanges(node, state, result);
+  }
+  else
+  {
+    setPathHistoryState(state, result);
   }
 }
 
