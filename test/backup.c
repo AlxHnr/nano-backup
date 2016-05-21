@@ -3845,82 +3845,9 @@ static void postDetectionTest(String cwd_path, size_t cwd_depth,
   removeDetectionTest();
 }
 
-/** Prepares the test for detecting changes in copied nodes. */
-static void runPhase21(String cwd_path, size_t cwd_depth,
-                       SearchNode *copy_detection_node)
-{
-  initChangeDetectionTest(cwd_path, cwd_depth, copy_detection_node,
-                          BPOL_copy);
-}
-
-/** Injects changes into the current metadata. */
-static void runPhase22(String cwd_path, size_t cwd_depth,
-                       SearchNode *copy_detection_node)
-{
-  modifyChangeDetectionTest(cwd_path, cwd_depth, copy_detection_node, BPOL_copy);
-}
-
-/** Tests change detection in copied nodes. */
-static void runPhase23(String cwd_path, size_t cwd_depth,
-                       SearchNode *copy_detection_node)
-{
-  changeDetectionTest(cwd_path, cwd_depth, copy_detection_node, BPOL_copy);
-}
-
-/** Tests the metadata written by phase 23 and cleans up. */
-static void runPhase24(String cwd_path, size_t cwd_depth,
-                       SearchNode *copy_detection_node)
-{
-  postDetectionTest(cwd_path, cwd_depth, copy_detection_node, BPOL_copy);
-}
-
-/** Prepares the test for detecting changes in mirrored nodes. */
-static void runPhase25(String cwd_path, size_t cwd_depth,
-                       SearchNode *mirror_detection_node)
-{
-  initChangeDetectionTest(cwd_path, cwd_depth, mirror_detection_node,
-                          BPOL_mirror);
-}
-
-/** Injects changes into the current metadata. */
-static void runPhase26(String cwd_path, size_t cwd_depth,
-                       SearchNode *mirror_detection_node)
-{
-  modifyChangeDetectionTest(cwd_path, cwd_depth, mirror_detection_node, BPOL_mirror);
-}
-
-/** Tests change detection in mirrored nodes. */
-static void runPhase27(String cwd_path, size_t cwd_depth,
-                       SearchNode *mirror_detection_node)
-{
-  changeDetectionTest(cwd_path, cwd_depth, mirror_detection_node, BPOL_mirror);
-}
-
-/** Tests the metadata written by phase 27 and cleans up. */
-static void runPhase28(String cwd_path, size_t cwd_depth,
-                       SearchNode *mirror_detection_node)
-{
-  postDetectionTest(cwd_path, cwd_depth, mirror_detection_node, BPOL_mirror);
-}
-
-/** Prepares the test for detecting changes in tracked nodes. */
-static void runPhase29(String cwd_path, size_t cwd_depth,
-                       SearchNode *track_detection_node)
-{
-  initChangeDetectionTest(cwd_path, cwd_depth, track_detection_node,
-                          BPOL_track);
-}
-
-/** Injects changes into the current metadata. */
-static void runPhase30(String cwd_path, size_t cwd_depth,
-                       SearchNode *track_detection_node)
-{
-  modifyChangeDetectionTest(cwd_path, cwd_depth, track_detection_node, BPOL_track);
-}
-
 /** Tests change detection in tracked nodes. */
-static void runPhase31(String cwd_path, size_t cwd_depth,
-                       SearchNode *track_detection_node)
+static void trackChangeDetectionTest(String cwd_path, size_t cwd_depth,
+                                     SearchNode *track_detection_node)
 {
   /* Initiate the backup. */
   Metadata *metadata = metadataLoad("tmp/repo/metadata");
@@ -4294,8 +4221,8 @@ static void runPhase31(String cwd_path, size_t cwd_depth,
 }
 
 /** Tests the metadata written by phase 31 and cleans up. */
-static void runPhase32(String cwd_path, size_t cwd_depth,
-                       SearchNode *track_detection_node)
+static void trackPostDetectionTest(String cwd_path, size_t cwd_depth,
+                                   SearchNode *track_detection_node)
 {
   /* Initiate the backup. */
   Metadata *metadata = metadataLoad("tmp/repo/metadata");
@@ -4852,24 +4779,24 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("detecting changes in copied files");
-  runPhase21(cwd, cwd_depth, copy_detection_node);
-  runPhase22(cwd, cwd_depth, copy_detection_node);
-  runPhase23(cwd, cwd_depth, copy_detection_node);
-  runPhase24(cwd, cwd_depth, copy_detection_node);
+  initChangeDetectionTest(cwd,   cwd_depth, copy_detection_node, BPOL_copy);
+  modifyChangeDetectionTest(cwd, cwd_depth, copy_detection_node, BPOL_copy);
+  changeDetectionTest(cwd,       cwd_depth, copy_detection_node, BPOL_copy);
+  postDetectionTest(cwd,         cwd_depth, copy_detection_node, BPOL_copy);
   testGroupEnd();
 
   testGroupStart("detecting changes in mirrored files");
-  runPhase25(cwd, cwd_depth, mirror_detection_node);
-  runPhase26(cwd, cwd_depth, mirror_detection_node);
-  runPhase27(cwd, cwd_depth, mirror_detection_node);
-  runPhase28(cwd, cwd_depth, mirror_detection_node);
+  initChangeDetectionTest(cwd,   cwd_depth, mirror_detection_node, BPOL_mirror);
+  modifyChangeDetectionTest(cwd, cwd_depth, mirror_detection_node, BPOL_mirror);
+  changeDetectionTest(cwd,       cwd_depth, mirror_detection_node, BPOL_mirror);
+  postDetectionTest(cwd,         cwd_depth, mirror_detection_node, BPOL_mirror);
   testGroupEnd();
 
   testGroupStart("detecting changes in tracked files");
-  runPhase29(cwd, cwd_depth, track_detection_node);
-  runPhase30(cwd, cwd_depth, track_detection_node);
-  runPhase31(cwd, cwd_depth, track_detection_node);
-  runPhase32(cwd, cwd_depth, track_detection_node);
+  initChangeDetectionTest(cwd,   cwd_depth, track_detection_node, BPOL_track);
+  modifyChangeDetectionTest(cwd, cwd_depth, track_detection_node, BPOL_track);
+  trackChangeDetectionTest(cwd,  cwd_depth, track_detection_node);
+  trackPostDetectionTest(cwd,    cwd_depth, track_detection_node);
   testGroupEnd();
 
   /* Run special backup phases. */
