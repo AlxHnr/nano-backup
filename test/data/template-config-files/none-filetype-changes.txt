@@ -1,0 +1,13 @@
+[copy]
+/tmp/files/a/b/2
+/tmp/files/a/c
+/tmp/files/e/f/i
+
+[track]
+/tmp/files/a/b
+/tmp/files/a/b/2/1
+/tmp/files/e/f/g
+
+[mirror]
+/tmp/files/a/d
+/tmp/files/e/f/h
