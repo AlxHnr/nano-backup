@@ -246,7 +246,7 @@ static void prepareNodeForWipingRecursively(Metadata *metadata,
   @param metadata The metadata of the current backup.
   @param node The node which should be updated recursively.
   @param extend_tracked_histories True if a tracked nodes history should be
-  extended with a "removed" state. Must be true for the initial call.
+  extended with a "removed" state.
 */
 static void markAsRemovedRecursively(Metadata *metadata, PathNode *node,
                                      bool extend_tracked_histories)
@@ -465,7 +465,7 @@ static void handleNodeChanges(PathNode *node, PathState *state,
   {
     applyNodeChanges(node, state, result);
   }
-  else
+  else if(result.policy != BPOL_none)
   {
     setPathHistoryState(state, result);
   }
@@ -629,8 +629,33 @@ static SearchResultType initiateMetadataRecursively(Metadata *metadata,
           != SRT_end_of_directory);
   }
 
-  handleNotFoundSubnodes(metadata, result.node, result.policy,
-                         node->subnodes, ignore_list);
+  if(node->hint == BH_directory_to_regular ||
+     node->hint == BH_directory_to_symlink)
+  {
+    if(result.policy == BPOL_none ||
+       result.policy == BPOL_track)
+    {
+      for(PathNode *subnode = node->subnodes;
+          subnode != NULL; subnode = subnode->next)
+      {
+        markAsRemovedRecursively(metadata, subnode,
+                                 result.policy == BPOL_track);
+      }
+    }
+    else
+    {
+      for(PathNode *subnode = node->subnodes;
+          subnode != NULL; subnode = subnode->next)
+      {
+        prepareNodeForWipingRecursively(metadata, subnode);
+      }
+    }
+  }
+  else
+  {
+    handleNotFoundSubnodes(metadata, result.node, result.policy,
+                           node->subnodes, ignore_list);
+  }
 
   /* Mark nodes without a policy and needed subnodes for purging. */
   if(result.policy == BPOL_none)
