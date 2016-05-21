@@ -3289,20 +3289,15 @@ static void initChangeDetectionTest(String cwd_path, size_t cwd_depth,
 }
 
 /** Modifies the current metadata in such a way, that a subsequent
-  initiation will find changes in nodes. It takes the following additional
-  argument:
-
-  @param phase_id The ID of the current backup phase. Needed for
-  accessing preceding timestamps.
-*/
+  initiation will find changes in nodes. */
 static void modifyChangeDetectionTest(String cwd_path, size_t cwd_depth,
                                       SearchNode *change_detection_node,
-                                      BackupPolicy policy, size_t phase_id)
+                                      BackupPolicy policy)
 {
   /* Initiate the backup. */
   Metadata *metadata = metadataLoad("tmp/repo/metadata");
   assert_true(metadata->total_path_count == cwd_depth + 49);
-  checkHistPoint(metadata, 0, 0, phase_timestamps[phase_id - 2], cwd_depth + 49);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[backup_counter - 1], cwd_depth + 49);
   initiateBackup(metadata, change_detection_node);
 
   /* Check the initiated backup. */
@@ -3310,7 +3305,7 @@ static void modifyChangeDetectionTest(String cwd_path, size_t cwd_depth,
   assert_true(metadata->current_backup.ref_count == cwd_depth + 2);
   assert_true(metadata->backup_history_length == 1);
   assert_true(metadata->total_path_count == cwd_depth + 49);
-  checkHistPoint(metadata, 0, 0, phase_timestamps[phase_id - 2], 47);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[backup_counter - 1], 47);
 
   PathNode *files = findFilesNode(metadata, cwd_path, BH_unchanged, 40);
 
@@ -3519,13 +3514,13 @@ static void modifyChangeDetectionTest(String cwd_path, size_t cwd_depth,
 /** Tests the changes injected by modifyChangeDetectionTest(). */
 static void changeDetectionTest(String cwd_path, size_t cwd_depth,
                                 SearchNode *change_detection_node,
-                                BackupPolicy policy, size_t phase_id)
+                                BackupPolicy policy)
 {
   /* Initiate the backup. */
   Metadata *metadata = metadataLoad("tmp/repo/metadata");
   assert_true(metadata->total_path_count == cwd_depth + 49);
-  checkHistPoint(metadata, 0, 0, phase_timestamps[phase_id - 2], cwd_depth + 2);
-  checkHistPoint(metadata, 1, 1, phase_timestamps[phase_id - 3], 47);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[backup_counter - 1], cwd_depth + 2);
+  checkHistPoint(metadata, 1, 1, phase_timestamps[backup_counter - 2], 47);
   initiateBackup(metadata, change_detection_node);
 
   /* Check the initiated backup. */
@@ -3533,8 +3528,8 @@ static void changeDetectionTest(String cwd_path, size_t cwd_depth,
   assert_true(metadata->current_backup.ref_count == cwd_depth + 47);
   assert_true(metadata->backup_history_length == 2);
   assert_true(metadata->total_path_count == cwd_depth + 49);
-  checkHistPoint(metadata, 0, 0, phase_timestamps[phase_id - 2], 0);
-  checkHistPoint(metadata, 1, 1, phase_timestamps[phase_id - 3], 2);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[backup_counter - 1], 0);
+  checkHistPoint(metadata, 1, 1, phase_timestamps[backup_counter - 2], 2);
 
   PathNode *files = findFilesNode(metadata, cwd_path, BH_unchanged, 40);
 
@@ -3728,13 +3723,13 @@ static void removeDetectionTest(void)
   test directory. */
 static void postDetectionTest(String cwd_path, size_t cwd_depth,
                               SearchNode *change_detection_node,
-                              BackupPolicy policy, size_t phase_id)
+                              BackupPolicy policy)
 {
   /* Initiate the backup. */
   Metadata *metadata = metadataLoad("tmp/repo/metadata");
   assert_true(metadata->total_path_count == cwd_depth + 49);
-  checkHistPoint(metadata, 0, 0, phase_timestamps[phase_id - 2], cwd_depth + 47);
-  checkHistPoint(metadata, 1, 1, phase_timestamps[phase_id - 4], 2);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[backup_counter - 1], cwd_depth + 47);
+  checkHistPoint(metadata, 1, 1, phase_timestamps[backup_counter - 3], 2);
   initiateBackup(metadata, change_detection_node);
 
   /* Check the initiated backup. */
@@ -3742,8 +3737,8 @@ static void postDetectionTest(String cwd_path, size_t cwd_depth,
   assert_true(metadata->current_backup.ref_count == cwd_depth + 2);
   assert_true(metadata->backup_history_length == 2);
   assert_true(metadata->total_path_count == cwd_depth + 49);
-  checkHistPoint(metadata, 0, 0, phase_timestamps[phase_id - 2], 45);
-  checkHistPoint(metadata, 1, 1, phase_timestamps[phase_id - 4], 2);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[backup_counter - 1], 45);
+  checkHistPoint(metadata, 1, 1, phase_timestamps[backup_counter - 3], 2);
 
   PathNode *files = findFilesNode(metadata, cwd_path, BH_unchanged, 40);
 
@@ -3862,24 +3857,21 @@ static void runPhase21(String cwd_path, size_t cwd_depth,
 static void runPhase22(String cwd_path, size_t cwd_depth,
                        SearchNode *copy_detection_node)
 {
-  modifyChangeDetectionTest(cwd_path, cwd_depth, copy_detection_node,
-                            BPOL_copy, 22);
+  modifyChangeDetectionTest(cwd_path, cwd_depth, copy_detection_node, BPOL_copy);
 }
 
 /** Tests change detection in copied nodes. */
 static void runPhase23(String cwd_path, size_t cwd_depth,
                        SearchNode *copy_detection_node)
 {
-  changeDetectionTest(cwd_path, cwd_depth, copy_detection_node,
-                      BPOL_copy, 23);
+  changeDetectionTest(cwd_path, cwd_depth, copy_detection_node, BPOL_copy);
 }
 
 /** Tests the metadata written by phase 23 and cleans up. */
 static void runPhase24(String cwd_path, size_t cwd_depth,
                        SearchNode *copy_detection_node)
 {
-  postDetectionTest(cwd_path, cwd_depth, copy_detection_node,
-                    BPOL_copy, 24);
+  postDetectionTest(cwd_path, cwd_depth, copy_detection_node, BPOL_copy);
 }
 
 /** Prepares the test for detecting changes in mirrored nodes. */
@@ -3894,24 +3886,21 @@ static void runPhase25(String cwd_path, size_t cwd_depth,
 static void runPhase26(String cwd_path, size_t cwd_depth,
                        SearchNode *mirror_detection_node)
 {
-  modifyChangeDetectionTest(cwd_path, cwd_depth, mirror_detection_node,
-                            BPOL_mirror, 26);
+  modifyChangeDetectionTest(cwd_path, cwd_depth, mirror_detection_node, BPOL_mirror);
 }
 
 /** Tests change detection in mirrored nodes. */
 static void runPhase27(String cwd_path, size_t cwd_depth,
                        SearchNode *mirror_detection_node)
 {
-  changeDetectionTest(cwd_path, cwd_depth, mirror_detection_node,
-                      BPOL_mirror, 27);
+  changeDetectionTest(cwd_path, cwd_depth, mirror_detection_node, BPOL_mirror);
 }
 
 /** Tests the metadata written by phase 27 and cleans up. */
 static void runPhase28(String cwd_path, size_t cwd_depth,
                        SearchNode *mirror_detection_node)
 {
-  postDetectionTest(cwd_path, cwd_depth, mirror_detection_node,
-                    BPOL_mirror, 28);
+  postDetectionTest(cwd_path, cwd_depth, mirror_detection_node, BPOL_mirror);
 }
 
 /** Prepares the test for detecting changes in tracked nodes. */
@@ -3926,8 +3915,7 @@ static void runPhase29(String cwd_path, size_t cwd_depth,
 static void runPhase30(String cwd_path, size_t cwd_depth,
                        SearchNode *track_detection_node)
 {
-  modifyChangeDetectionTest(cwd_path, cwd_depth, track_detection_node,
-                            BPOL_track, 30);
+  modifyChangeDetectionTest(cwd_path, cwd_depth, track_detection_node, BPOL_track);
 }
 
 /** Tests change detection in tracked nodes. */
