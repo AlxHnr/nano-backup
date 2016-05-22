@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "test.h"
 
@@ -157,6 +158,8 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("sPathExists()");
+  assert_error(sPathExists("empty.txt/foo"),
+               "failed to check existence of \"empty.txt/foo\": Not a directory");
   assert_true(checkPathExists("empty.txt"));
   assert_true(checkPathExists("example.txt"));
   assert_true(checkPathExists("symlink.txt"));
@@ -167,6 +170,13 @@ int main(void)
   assert_true(checkPathExists("broken-config-files/"));
   assert_true(checkPathExists("non-existing-file.txt") == false);
   assert_true(checkPathExists("non-existing-directory/") == false);
+  assert_true(checkPathExists("non/existing/directory/") == false);
+  assert_true(checkPathExists("valid-config-files/non/existing/file") == false);
+
+  assert_true(sPathExists("tmp/dummy-symlink") == false);
+  assert_true(symlink("non-existing-file.txt", "tmp/dummy-symlink") == 0);
+  assert_true(sPathExists("tmp/dummy-symlink"));
+  assert_true(sPathExists("tmp/dummy-symlink/bar") == false);
   testGroupEnd();
 
   testGroupStart("sStat()");

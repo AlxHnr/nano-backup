@@ -419,9 +419,10 @@ bool sPathExists(const char *path)
 {
   int old_errno = errno;
   bool exists = true;
+  struct stat stats;
   errno = 0;
 
-  if(access(path, F_OK) != 0)
+  if(lstat(path, &stats) != 0)
   {
     if(errno != 0 && errno != ENOENT)
     {
