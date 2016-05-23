@@ -4736,6 +4736,144 @@ static void change2NoneFiletypeChange(String cwd_path, size_t cwd_depth,
   assert_true(countFilesInDir("tmp/repo") == 3);
 }
 
+/** Tests the metadata written by change2NoneFiletypeChange(). */
+static void postNoneFiletypeChange(String cwd_path, size_t cwd_depth,
+                                   SearchNode *none_filetype_node)
+{
+  /* Initiate the backup. */
+  Metadata *metadata = metadataLoad("tmp/repo/metadata");
+  assert_true(metadata->total_path_count == cwd_depth + 15);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[backup_counter - 1], cwd_depth + 4);
+  checkHistPoint(metadata, 1, 1, phase_timestamps[backup_counter - 2], 2);
+  checkHistPoint(metadata, 2, 2, phase_timestamps[backup_counter - 3], 10);
+  initiateBackup(metadata, none_filetype_node);
+
+  /* Check the initiated backup. */
+  checkMetadata(metadata, 0, true);
+  assert_true(metadata->current_backup.ref_count == cwd_depth + 4);
+  assert_true(metadata->backup_history_length == 3);
+  assert_true(metadata->total_path_count == cwd_depth + 15);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[backup_counter - 1], 0);
+  checkHistPoint(metadata, 1, 1, phase_timestamps[backup_counter - 2], 2);
+  checkHistPoint(metadata, 2, 2, phase_timestamps[backup_counter - 3], 10);
+
+  PathNode *files = findFilesNode(metadata, cwd_path, BH_unchanged, 2);
+
+  PathNode *a = findSubnode(files, "a", BH_directory_to_regular, BPOL_none, 1, 3);
+  mustHaveDirectoryCached(a, &metadata->current_backup);
+  PathNode *b = findSubnode(a, "b", BH_removed, BPOL_track, 1, 2);
+  mustHaveDirectoryCached(b, &metadata->backup_history[2]);
+  PathNode *b_1 = findSubnode(b, "1", BH_removed, BPOL_track, 1, 0);
+  mustHaveRegularCached(b_1, &metadata->backup_history[2], 7, (uint8_t *)"foo bar", 0);
+  PathNode *b_2 = findSubnode(b, "2", BH_removed, BPOL_copy, 1, 1);
+  mustHaveDirectoryCached(b_2, &metadata->backup_history[2]);
+  PathNode *b_2_1 = findSubnode(b_2, "1", BH_removed, BPOL_track, 1, 0);
+  mustHaveRegularCached(b_2_1, &metadata->backup_history[2], 18, (uint8_t *)"FooFooFooFooFooFoo", 0);
+  PathNode *c = findSubnode(a, "c", BH_removed, BPOL_copy, 1, 0);
+  mustHaveRegularCached(c, &metadata->backup_history[2], 56, nested_2_hash, 0);
+  PathNode *d = findSubnode(a, "d", BH_removed, BPOL_mirror, 1, 1);
+  mustHaveDirectoryCached(d, &metadata->backup_history[2]);
+  PathNode *d_1 = findSubnode(d, "1", BH_removed, BPOL_mirror, 1, 0);
+  mustHaveRegularCached(d_1, &metadata->backup_history[2], 12, (uint8_t *)"BARBARBARBAR", 0);
+
+  PathNode *e = findSubnode(files, "e", BH_directory_to_regular, BPOL_none, 1, 1);
+  struct stat e_stats = cachedStat(e->path, sStat);
+  e_stats.st_uid++;
+  e_stats.st_mtime++;
+  mustHaveDirectoryStats(e, &metadata->current_backup, e_stats);
+  PathNode *f = findSubnode(e, "f", BH_removed, BPOL_none, 1, 3);
+  mustHaveDirectoryCached(f, &metadata->backup_history[1]);
+  PathNode *g = findSubnode(f, "g", BH_unchanged, BPOL_track, 2, 0);
+  mustHaveNonExisting(g, &metadata->backup_history[1]);
+  mustHaveDirectoryCached(g, &metadata->backup_history[2]);
+  PathNode *h = findSubnode(f, "h", BH_removed, BPOL_mirror, 1, 0);
+  mustHaveRegularCached(h, &metadata->backup_history[2], 1200, data_d_hash, 0);
+  PathNode *i = findSubnode(f, "i", BH_removed, BPOL_copy, 1, 0);
+  mustHaveSymlinkLCached(i, &metadata->backup_history[2], "non-existing.txt");
+
+  /* Modify various path nodes. */
+  e->history->state.uid--;
+  e->history->state.metadata.dir.timestamp--;
+
+  /* Finish the backup and perform additional checks. */
+  completeBackup(metadata);
+  assert_true(countFilesInDir("tmp/repo") == 3);
+}
+
+/** Restores test files to their initial state and cleans up. */
+static void restoreNoneFiletypeChange(String cwd_path, size_t cwd_depth,
+                                      SearchNode *none_filetype_node)
+{
+  /* Load the metadata. */
+  Metadata *metadata = metadataLoad("tmp/repo/metadata");
+  assert_true(metadata->total_path_count == cwd_depth + 15);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[backup_counter - 1], cwd_depth + 4);
+  checkHistPoint(metadata, 1, 1, phase_timestamps[backup_counter - 2], 2);
+  checkHistPoint(metadata, 2, 2, phase_timestamps[backup_counter - 3], 10);
+
+  /* Restore all files and initiate the backup. */
+  removePath("tmp/files/a");
+  removePath("tmp/files/e");
+  restoreWithTimeRecursively(metadata->paths);
+  initiateBackup(metadata, none_filetype_node);
+
+  /* Check the initiated backup. */
+  checkMetadata(metadata, 0, true);
+  assert_true(metadata->current_backup.ref_count == cwd_depth + 6);
+  assert_true(metadata->backup_history_length == 3);
+  assert_true(metadata->total_path_count == cwd_depth + 15);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[backup_counter - 1], 0);
+  checkHistPoint(metadata, 1, 1, phase_timestamps[backup_counter - 2], 1);
+  checkHistPoint(metadata, 2, 2, phase_timestamps[backup_counter - 3], 10);
+
+  PathNode *files = findFilesNode(metadata, cwd_path, BH_unchanged, 2);
+
+  PathNode *a = findSubnode(files, "a", BH_unchanged, BPOL_none, 1, 3);
+  mustHaveDirectoryStat(a, &metadata->current_backup);
+  PathNode *b = findSubnode(a, "b", BH_unchanged, BPOL_track, 1, 2);
+  mustHaveDirectoryStat(b, &metadata->backup_history[2]);
+  PathNode *b_1 = findSubnode(b, "1", BH_unchanged, BPOL_track, 1, 0);
+  mustHaveRegularStat(b_1, &metadata->backup_history[2], 7, (uint8_t *)"foo bar", 0);
+  PathNode *b_2 = findSubnode(b, "2", BH_unchanged, BPOL_copy, 1, 1);
+  mustHaveDirectoryStat(b_2, &metadata->backup_history[2]);
+  PathNode *b_2_1 = findSubnode(b_2, "1", BH_unchanged, BPOL_track, 1, 0);
+  mustHaveRegularStat(b_2_1, &metadata->backup_history[2], 18, (uint8_t *)"FooFooFooFooFooFoo", 0);
+  PathNode *c = findSubnode(a, "c", BH_unchanged, BPOL_copy, 1, 0);
+  mustHaveRegularStat(c, &metadata->backup_history[2], 56, nested_2_hash, 0);
+  PathNode *d = findSubnode(a, "d", BH_unchanged, BPOL_mirror, 1, 1);
+  mustHaveDirectoryStat(d, &metadata->backup_history[2]);
+  PathNode *d_1 = findSubnode(d, "1", BH_unchanged, BPOL_mirror, 1, 0);
+  mustHaveRegularStat(d_1, &metadata->backup_history[2], 12, (uint8_t *)"BARBARBARBAR", 0);
+
+  PathNode *e = findSubnode(files, "e", BH_unchanged, BPOL_none, 1, 1);
+  mustHaveDirectoryStat(e, &metadata->current_backup);
+  PathNode *f = findSubnode(e, "f", BH_unchanged, BPOL_none, 1, 3);
+  mustHaveDirectoryStat(f, &metadata->current_backup);
+  PathNode *g = findSubnode(f, "g", BH_added, BPOL_track, 3, 0);
+  mustHaveDirectoryStat(g, &metadata->current_backup);
+  mustHaveNonExisting(g, &metadata->backup_history[1]);
+  mustHaveDirectoryStat(g, &metadata->backup_history[2]);
+  PathNode *h = findSubnode(f, "h", BH_unchanged, BPOL_mirror, 1, 0);
+  mustHaveRegularStat(h, &metadata->backup_history[2], 1200, data_d_hash, 0);
+  PathNode *i = findSubnode(f, "i", BH_unchanged, BPOL_copy, 1, 0);
+  mustHaveSymlinkLStat(i, &metadata->backup_history[2], "non-existing.txt");
+
+  /* Finish the backup and perform additional checks. */
+  completeBackup(metadata);
+  assert_true(countFilesInDir("tmp/repo") == 3);
+
+  /* Clean up the test directory. */
+  removeNoneFiletypeA();
+  removePath("tmp/files/e/f/g");
+  removePath("tmp/files/e/f/h");
+  removePath("tmp/files/e/f/i");
+  removePath("tmp/files/e/f");
+  removePath("tmp/files/e");
+  removePath("tmp/repo/0-71e61482bfd593014183a25e6602a90f8dbc740f-56");
+  removePath("tmp/repo/0-d826d391c7dc38d37f73796168e5581f7b9982d3-1200");
+  removePath("tmp/repo/metadata");
+}
+
 /** Tests the handling of hash collisions. */
 static void runPhaseCollision(String cwd_path, size_t cwd_depth,
                               SearchNode *phase_collision_node)
@@ -5014,9 +5152,11 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("filetype changes in nodes with no policy");
-  initNoneFiletypeChange(cwd, cwd_depth, none_filetype_node);
+  initNoneFiletypeChange(cwd,    cwd_depth, none_filetype_node);
   change1NoneFiletypeChange(cwd, cwd_depth, none_filetype_node);
   change2NoneFiletypeChange(cwd, cwd_depth, none_filetype_node);
+  postNoneFiletypeChange(cwd,    cwd_depth, none_filetype_node);
+  restoreNoneFiletypeChange(cwd, cwd_depth, none_filetype_node);
   testGroupEnd();
 
   /* Run special backup phases. */
