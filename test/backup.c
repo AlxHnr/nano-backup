@@ -4874,6 +4874,156 @@ static void restoreNoneFiletypeChange(String cwd_path, size_t cwd_depth,
   removePath("tmp/repo/metadata");
 }
 
+/** Prepares the testing of filetype changes. */
+static void initFiletypeChange(String cwd_path, size_t cwd_depth,
+                               SearchNode *filetype_node,
+                               BackupPolicy policy)
+{
+  /* Prepare the test files. */
+  resetStatCache();
+  assertTmpIsCleared();
+  makeDir("tmp/files/5");
+  makeDir("tmp/files/6");
+  makeDir("tmp/files/6/a");
+  makeDir("tmp/files/7");
+  makeDir("tmp/files/7/a");
+  makeDir("tmp/files/7/b");
+  makeDir("tmp/files/7/c");
+  makeDir("tmp/files/7/d");
+  makeDir("tmp/files/8");
+  makeDir("tmp/files/8/a");
+  makeDir("tmp/files/8/a/b");
+  makeDir("tmp/files/8/c");
+  makeDir("tmp/files/8/c/d");
+  makeDir("tmp/files/8/e");
+  makeDir("tmp/files/8/e/f");
+  makeDir("tmp/files/8/e/f/1");
+  makeDir("tmp/files/9");
+  generateFile("tmp/files/1",         "DummyFile",   1);
+  generateFile("tmp/files/3",         "a/b/c/",      7);
+  generateFile("tmp/files/6/a/1",     "X",           20);
+  generateFile("tmp/files/6/2",       "FOO",         2);
+  generateFile("tmp/files/6/3",       "0",           2123);
+  generateFile("tmp/files/7/a/1",     "nested ",     9);
+  generateFile("tmp/files/7/b/1",     "nested ",     2);
+  generateFile("tmp/files/7/b/2",     "empty\n",     200);
+  generateFile("tmp/files/7/c/2",     "dummy",       1);
+  generateFile("tmp/files/7/d/1",     "DUMMY-",      3);
+  generateFile("tmp/files/8/a/b/1",   "_FILE_",      2);
+  generateFile("tmp/files/8/c/d/1",   "empty\n",     200);
+  generateFile("tmp/files/8/e/f/1/1", "nano backup", 1);
+  generateFile("tmp/files/8/e/f/1/2", "NanoBackup",  1);
+  makeSymlink("target",           "tmp/files/2");
+  makeSymlink("/dev/nano-backup", "tmp/files/4");
+  makeSymlink("/home",            "tmp/files/7/c/1");
+  makeSymlink("1",                "tmp/files/7/d/2");
+
+  /* Initiate the backup. */
+  Metadata *metadata = metadataNew();
+  initiateBackup(metadata, filetype_node);
+
+  /* Check the initiated backup. */
+  checkMetadata(metadata, 0, false);
+  assert_true(metadata->current_backup.ref_count == cwd_depth + 37);
+  assert_true(metadata->backup_history_length == 0);
+  assert_true(metadata->total_path_count == cwd_depth + 37);
+
+  PathNode *files = findFilesNode(metadata, cwd_path, BH_added, 9);
+
+  PathNode *node_1 = findSubnode(files, "1", BH_added, policy, 1, 0);
+  mustHaveRegularCached(node_1, &metadata->current_backup, 9, NULL, 0);
+  PathNode *node_2 = findSubnode(files, "2", BH_added, policy, 1, 0);
+  mustHaveSymlinkLCached(node_2, &metadata->current_backup, "target");
+  PathNode *node_3 = findSubnode(files, "3", BH_added, policy, 1, 0);
+  mustHaveRegularCached(node_3, &metadata->current_backup, 42, NULL, 0);
+  PathNode *node_4 = findSubnode(files, "4", BH_added, policy, 1, 0);
+  mustHaveSymlinkLCached(node_4, &metadata->current_backup, "/dev/nano-backup");
+  PathNode *node_5 = findSubnode(files, "5", BH_added, policy, 1, 0);
+  mustHaveDirectoryCached(node_5, &metadata->current_backup);
+
+  PathNode *node_6 = findSubnode(files, "6", BH_added, policy, 1, 3);
+  mustHaveDirectoryCached(node_6, &metadata->current_backup);
+  PathNode *node_6_a = findSubnode(node_6, "a", BH_added, policy, 1, 1);
+  mustHaveDirectoryCached(node_6_a, &metadata->current_backup);
+  PathNode *node_6_a_1 = findSubnode(node_6_a, "1", BH_added, policy, 1, 0);
+  mustHaveRegularCached(node_6_a_1, &metadata->current_backup, 20, NULL, 0);
+  PathNode *node_6_2 = findSubnode(node_6, "2", BH_added, policy, 1, 0);
+  mustHaveRegularCached(node_6_2, &metadata->current_backup, 6, NULL, 0);
+  PathNode *node_6_3 = findSubnode(node_6, "3", BH_added, policy, 1, 0);
+  mustHaveRegularCached(node_6_3, &metadata->current_backup, 2123, NULL, 0);
+
+  PathNode *node_7 = findSubnode(files, "7", BH_added, policy, 1, 4);
+  mustHaveDirectoryCached(node_7, &metadata->current_backup);
+  PathNode *node_7_a = findSubnode(node_7, "a", BH_added, BPOL_track, 1, 1);
+  mustHaveDirectoryCached(node_7_a, &metadata->current_backup);
+  PathNode *node_7_a_1 = findSubnode(node_7_a, "1", BH_added, BPOL_track, 1, 0);
+  mustHaveRegularCached(node_7_a_1, &metadata->current_backup, 63, NULL, 0);
+  PathNode *node_7_b = findSubnode(node_7, "b", BH_added, BPOL_track, 1, 2);
+  mustHaveDirectoryCached(node_7_b, &metadata->current_backup);
+  PathNode *node_7_b_1 = findSubnode(node_7_b, "1", BH_added, BPOL_track, 1, 0);
+  mustHaveRegularCached(node_7_b_1, &metadata->current_backup, 14, NULL, 0);
+  PathNode *node_7_b_2 = findSubnode(node_7_b, "2", BH_added, BPOL_track, 1, 0);
+  mustHaveRegularCached(node_7_b_2, &metadata->current_backup, 1200, NULL, 0);
+  PathNode *node_7_c = findSubnode(node_7, "c", BH_added, BPOL_copy, 1, 2);
+  mustHaveDirectoryCached(node_7_c, &metadata->current_backup);
+  PathNode *node_7_c_1 = findSubnode(node_7_c, "1", BH_added, BPOL_copy, 1, 0);
+  mustHaveSymlinkLCached(node_7_c_1, &metadata->current_backup, "/home");
+  PathNode *node_7_c_2 = findSubnode(node_7_c, "2", BH_added, BPOL_copy, 1, 0);
+  mustHaveRegularCached(node_7_c_2, &metadata->current_backup, 5, NULL, 0);
+  PathNode *node_7_d = findSubnode(node_7, "d", BH_added, BPOL_mirror, 1, 2);
+  mustHaveDirectoryCached(node_7_d, &metadata->current_backup);
+  PathNode *node_7_d_1 = findSubnode(node_7_d, "1", BH_added, BPOL_mirror, 1, 0);
+  mustHaveRegularCached(node_7_d_1, &metadata->current_backup, 18, NULL, 0);
+  PathNode *node_7_d_2 = findSubnode(node_7_d, "2", BH_added, BPOL_mirror, 1, 0);
+  mustHaveSymlinkLCached(node_7_d_2, &metadata->current_backup, "1");
+
+  PathNode *node_8 = findSubnode(files, "8", BH_added, policy, 1, 3);
+  mustHaveDirectoryCached(node_8, &metadata->current_backup);
+  PathNode *node_8_a = findSubnode(node_8, "a", BH_added, policy, 1, 1);
+  mustHaveDirectoryCached(node_8_a, &metadata->current_backup);
+  PathNode *node_8_a_b = findSubnode(node_8_a, "b", BH_added, BPOL_track, 1, 1);
+  mustHaveDirectoryCached(node_8_a_b, &metadata->current_backup);
+  PathNode *node_8_a_b_1 = findSubnode(node_8_a_b, "1", BH_added, BPOL_copy, 1, 0);
+  mustHaveRegularCached(node_8_a_b_1, &metadata->current_backup, 12, NULL, 0);
+  PathNode *node_8_c = findSubnode(node_8, "c", BH_added, policy, 1, 1);
+  mustHaveDirectoryCached(node_8_c, &metadata->current_backup);
+  PathNode *node_8_c_d = findSubnode(node_8_c, "d", BH_added, BPOL_copy, 1, 1);
+  mustHaveDirectoryCached(node_8_c_d, &metadata->current_backup);
+  PathNode *node_8_c_d_1 = findSubnode(node_8_c_d, "1", BH_added, BPOL_mirror, 1, 0);
+  mustHaveRegularCached(node_8_c_d_1, &metadata->current_backup, 1200, NULL, 0);
+  PathNode *node_8_e = findSubnode(node_8, "e", BH_added, policy, 1, 1);
+  mustHaveDirectoryCached(node_8_e, &metadata->current_backup);
+  PathNode *node_8_e_f = findSubnode(node_8_e, "f", BH_added, BPOL_mirror, 1, 1);
+  mustHaveDirectoryCached(node_8_e_f, &metadata->current_backup);
+  PathNode *node_8_e_f_1 = findSubnode(node_8_e_f, "1", BH_added, BPOL_track, 1, 2);
+  mustHaveDirectoryCached(node_8_e_f_1, &metadata->current_backup);
+  PathNode *node_8_e_f_1_1 = findSubnode(node_8_e_f_1, "1", BH_added, BPOL_track, 1, 0);
+  mustHaveRegularCached(node_8_e_f_1_1, &metadata->current_backup, 11, NULL, 0);
+  PathNode *node_8_e_f_1_2 = findSubnode(node_8_e_f_1, "2", BH_added, BPOL_track, 1, 0);
+  mustHaveRegularCached(node_8_e_f_1_2, &metadata->current_backup, 10, NULL, 0);
+
+  PathNode *node_9 = findSubnode(files, "9", BH_added, policy, 1, 0);
+  mustHaveDirectoryCached(node_9, &metadata->current_backup);
+
+  /* Finish the backup and perform additional checks. */
+  completeBackup(metadata);
+  assert_true(countFilesInDir("tmp/repo") == 5);
+  mustHaveRegularCached(node_1,         &metadata->current_backup, 9,    (uint8_t *)"DummyFile",            0);
+  mustHaveRegularCached(node_3,         &metadata->current_backup, 42,   test_c_hash,                       0);
+  mustHaveRegularCached(node_6_a_1,     &metadata->current_backup, 20,   (uint8_t *)"XXXXXXXXXXXXXXXXXXXX", 0);
+  mustHaveRegularCached(node_6_2,       &metadata->current_backup, 6,    (uint8_t *)"FOOFOO",               0);
+  mustHaveRegularCached(node_6_3,       &metadata->current_backup, 2123, bin_hash,                          0);
+  mustHaveRegularCached(node_7_a_1,     &metadata->current_backup, 63,   node_24_hash,                      0);
+  mustHaveRegularCached(node_7_b_1,     &metadata->current_backup, 14,   (uint8_t *)"nested nested ",       0);
+  mustHaveRegularCached(node_7_b_2,     &metadata->current_backup, 1200, bin_c_1_hash,                      0);
+  mustHaveRegularCached(node_7_c_2,     &metadata->current_backup, 5,    (uint8_t *)"dummy",                0);
+  mustHaveRegularCached(node_7_d_1,     &metadata->current_backup, 18,   (uint8_t *)"DUMMY-DUMMY-DUMMY-",   0);
+  mustHaveRegularCached(node_8_a_b_1,   &metadata->current_backup, 12,   (uint8_t *)"_FILE__FILE_",         0);
+  mustHaveRegularCached(node_8_c_d_1,   &metadata->current_backup, 1200, bin_c_1_hash,                      0);
+  mustHaveRegularCached(node_8_e_f_1_1, &metadata->current_backup, 11,   (uint8_t *)"nano backup",          0);
+  mustHaveRegularCached(node_8_e_f_1_2, &metadata->current_backup, 10,   (uint8_t *)"NanoBackup",           0);
+}
+
 /** Tests the handling of hash collisions. */
 static void runPhaseCollision(String cwd_path, size_t cwd_depth,
                               SearchNode *phase_collision_node)
@@ -5082,7 +5232,10 @@ int main(void)
   SearchNode *mirror_detection_node = searchTreeLoad("generated-config-files/change-detection-mirror.txt");
   SearchNode *track_detection_node  = searchTreeLoad("generated-config-files/change-detection-track.txt");
   SearchNode *phase_collision_node  = searchTreeLoad("generated-config-files/backup-phase-collision.txt");
-  SearchNode *none_filetype_node    = searchTreeLoad("generated-config-files/none-filetype-changes.txt");
+  SearchNode *none_filetype_node    = searchTreeLoad("generated-config-files/filetype-changes-none.txt");
+  SearchNode *copy_filetype_node    = searchTreeLoad("generated-config-files/filetype-changes-copy.txt");
+  SearchNode *mirror_filetype_node  = searchTreeLoad("generated-config-files/filetype-changes-mirror.txt");
+  SearchNode *track_filetype_node   = searchTreeLoad("generated-config-files/filetype-changes-track.txt");
 
   stat_cache = strtableNew();
   makeDir("tmp/repo");
@@ -5130,21 +5283,21 @@ int main(void)
   runPhase20(cwd, cwd_depth, phase_17_node);
   testGroupEnd();
 
-  testGroupStart("detecting changes in copied files");
+  testGroupStart("detecting changes in copied nodes");
   initChangeDetectionTest(cwd,   cwd_depth, copy_detection_node, BPOL_copy);
   modifyChangeDetectionTest(cwd, cwd_depth, copy_detection_node, BPOL_copy);
   changeDetectionTest(cwd,       cwd_depth, copy_detection_node, BPOL_copy);
   postDetectionTest(cwd,         cwd_depth, copy_detection_node, BPOL_copy);
   testGroupEnd();
 
-  testGroupStart("detecting changes in mirrored files");
+  testGroupStart("detecting changes in mirrored nodes");
   initChangeDetectionTest(cwd,   cwd_depth, mirror_detection_node, BPOL_mirror);
   modifyChangeDetectionTest(cwd, cwd_depth, mirror_detection_node, BPOL_mirror);
   changeDetectionTest(cwd,       cwd_depth, mirror_detection_node, BPOL_mirror);
   postDetectionTest(cwd,         cwd_depth, mirror_detection_node, BPOL_mirror);
   testGroupEnd();
 
-  testGroupStart("detecting changes in tracked files");
+  testGroupStart("detecting changes in tracked nodes");
   initChangeDetectionTest(cwd,   cwd_depth, track_detection_node, BPOL_track);
   modifyChangeDetectionTest(cwd, cwd_depth, track_detection_node, BPOL_track);
   trackChangeDetectionTest(cwd,  cwd_depth, track_detection_node);
@@ -5157,6 +5310,18 @@ int main(void)
   change2NoneFiletypeChange(cwd, cwd_depth, none_filetype_node);
   postNoneFiletypeChange(cwd,    cwd_depth, none_filetype_node);
   restoreNoneFiletypeChange(cwd, cwd_depth, none_filetype_node);
+  testGroupEnd();
+
+  testGroupStart("filetype changes in copied nodes");
+  initFiletypeChange(cwd, cwd_depth, copy_filetype_node, BPOL_copy);
+  testGroupEnd();
+
+  testGroupStart("filetype changes in mirrored nodes");
+  initFiletypeChange(cwd, cwd_depth, mirror_filetype_node, BPOL_mirror);
+  testGroupEnd();
+
+  testGroupStart("filetype changes in tracked nodes");
+  initFiletypeChange(cwd, cwd_depth, track_filetype_node, BPOL_track);
   testGroupEnd();
 
   /* Run special backup phases. */
