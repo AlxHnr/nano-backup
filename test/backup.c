@@ -5330,6 +5330,107 @@ static void changeFiletypeChange(String cwd_path, size_t cwd_depth,
   mustHaveRegularStat(node_8,   &metadata->current_backup, 518, node_42_hash,                      0);
 }
 
+/** Removes files left over by changeFiletypeChange(). */
+static void removeFiletypeChangeFiles(void)
+{
+  removePath("tmp/files/1");
+  removePath("tmp/files/2");
+  removePath("tmp/files/3/a/c/2");
+  removePath("tmp/files/3/a/c/1");
+  removePath("tmp/files/3/a/c");
+  removePath("tmp/files/3/a/b");
+  removePath("tmp/files/3/a");
+  removePath("tmp/files/3");
+  removePath("tmp/files/4/a/c/2");
+  removePath("tmp/files/4/a/c/1");
+  removePath("tmp/files/4/a/c");
+  removePath("tmp/files/4/a/b");
+  removePath("tmp/files/4/a");
+  removePath("tmp/files/4");
+  removePath("tmp/files/5");
+  removePath("tmp/files/6");
+  removePath("tmp/files/7");
+  removePath("tmp/files/8");
+  removePath("tmp/files/9");
+  removePath("tmp/repo/0-10ec418fd4d4551dfe9ce13a996e9b30623942e9-518");
+  removePath("tmp/repo/0-183b8a27e5c0c60c601ab80bb550a38c0bd1426a-63");
+  removePath("tmp/repo/0-2b85a2b06e498c7b976da4ff8d34ed84cb42c7e0-42");
+  removePath("tmp/repo/0-6c88db41c1b2b26aa7a8d5d94abdf20b3976d961-2123");
+  removePath("tmp/repo/0-78a560f4742dfe37324c2b66801f3f45ce03e2ef-21");
+  removePath("tmp/repo/0-e8fb29619700e5b60930886e94822c66ce2ad6bf-1200");
+  removePath("tmp/repo/metadata");
+}
+
+/** Tests the metadata written by changeFiletypeChange() and cleans up. */
+static void postFiletypeChange(String cwd_path, size_t cwd_depth,
+                               SearchNode *filetype_node,
+                               BackupPolicy policy)
+{
+  /* Initiate the backup. */
+  Metadata *metadata = metadataLoad("tmp/repo/metadata");
+  assert_true(metadata->total_path_count == cwd_depth + 21);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[backup_counter - 1], cwd_depth + 21);
+  initiateBackup(metadata, filetype_node);
+
+  /* Check the initiated backup. */
+  checkMetadata(metadata, 0, true);
+  assert_true(metadata->current_backup.ref_count == cwd_depth + 2);
+  assert_true(metadata->backup_history_length == 1);
+  assert_true(metadata->total_path_count == cwd_depth + 21);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[backup_counter - 1], 19);
+
+  PathNode *files = findFilesNode(metadata, cwd_path, BH_unchanged, 9);
+
+  PathNode *node_1 = findSubnode(files, "1", BH_unchanged, policy, 1, 0);
+  mustHaveSymlinkLStat(node_1, &metadata->backup_history[0], "NewSymlink");
+  PathNode *node_2 = findSubnode(files, "2", BH_unchanged, policy, 1, 0);
+  mustHaveRegularStat(node_2, &metadata->backup_history[0], 518, node_42_hash, 0);
+
+  PathNode *node_3 = findSubnode(files, "3", BH_unchanged, policy, 1, 1);
+  mustHaveDirectoryStat(node_3, &metadata->backup_history[0]);
+  PathNode *node_3_a = findSubnode(node_3, "a", BH_unchanged, policy, 1, 2);
+  mustHaveDirectoryStat(node_3_a, &metadata->backup_history[0]);
+  PathNode *node_3_b = findSubnode(node_3_a, "b", BH_unchanged, BPOL_track, 1, 0);
+  mustHaveRegularStat(node_3_b, &metadata->backup_history[0], 11, (uint8_t *)"nano-backup", 0);
+  PathNode *node_3_c = findSubnode(node_3_a, "c", BH_unchanged, policy, 1, 2);
+  mustHaveDirectoryStat(node_3_c, &metadata->backup_history[0]);
+  PathNode *node_3_1 = findSubnode(node_3_c, "1", BH_unchanged, BPOL_copy, 1, 0);
+  mustHaveRegularStat(node_3_1, &metadata->backup_history[0], 8, (uint8_t *)"test 123", 0);
+  PathNode *node_3_2 = findSubnode(node_3_c, "2", BH_unchanged, BPOL_mirror, 1, 0);
+  mustHaveRegularStat(node_3_2, &metadata->backup_history[0], 9, (uint8_t *)"TEST_TEST", 0);
+
+  PathNode *node_4 = findSubnode(files, "4", BH_unchanged, policy, 1, 1);
+  mustHaveDirectoryStat(node_4, &metadata->backup_history[0]);
+  PathNode *node_4_a = findSubnode(node_4, "a", BH_unchanged, policy, 1, 2);
+  mustHaveDirectoryStat(node_4_a, &metadata->backup_history[0]);
+  PathNode *node_4_b = findSubnode(node_4_a, "b", BH_unchanged, policy, 1, 0);
+  mustHaveRegularStat(node_4_b, &metadata->backup_history[0], 12, (uint8_t *)"backupbackup", 0);
+  PathNode *node_4_c = findSubnode(node_4_a, "c", BH_unchanged, policy, 1, 2);
+  mustHaveDirectoryStat(node_4_c, &metadata->backup_history[0]);
+  PathNode *node_4_1 = findSubnode(node_4_c, "1", BH_unchanged, policy, 1, 0);
+  mustHaveRegularStat(node_4_1, &metadata->backup_history[0], 21, node_45_hash, 0);
+  PathNode *node_4_2 = findSubnode(node_4_c, "2", BH_unchanged, policy, 1, 0);
+  mustHaveRegularStat(node_4_2, &metadata->backup_history[0], 20, (uint8_t *)"====================", 0);
+
+  PathNode *node_5 = findSubnode(files, "5", BH_unchanged, policy, 1, 0);
+  mustHaveRegularStat(node_5, &metadata->backup_history[0], 13, (uint8_t *)"?????????????", 0);
+  PathNode *node_6 = findSubnode(files, "6", BH_unchanged, policy, 1, 0);
+  mustHaveSymlinkLStat(node_6, &metadata->backup_history[0], "3");
+  PathNode *node_7 = findSubnode(files, "7", BH_unchanged, policy, 1, 0);
+  mustHaveRegularStat(node_7, &metadata->backup_history[0], 0, (uint8_t *)"K", 0);
+  PathNode *node_8 = findSubnode(files, "8", BH_unchanged, policy, 1, 0);
+  mustHaveRegularStat(node_8, &metadata->backup_history[0], 518, node_42_hash, 0);
+  PathNode *node_9 = findSubnode(files, "9", BH_unchanged, policy, 1, 0);
+  mustHaveSymlinkLStat(node_9, &metadata->backup_history[0], "/dev/null");
+
+  /* Finish the backup and perform additional checks. */
+  completeBackup(metadata);
+  assert_true(countFilesInDir("tmp/repo") == 7);
+
+  /* Clean up the test directory. */
+  removeFiletypeChangeFiles();
+}
+
 /** Tests the handling of hash collisions. */
 static void runPhaseCollision(String cwd_path, size_t cwd_depth,
                               SearchNode *phase_collision_node)
@@ -5619,15 +5720,17 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("filetype changes in copied nodes");
-  initFiletypeChange(cwd, cwd_depth, copy_filetype_node, BPOL_copy);
+  initFiletypeChange(cwd,   cwd_depth, copy_filetype_node, BPOL_copy);
   modifyFiletypeChange(cwd, cwd_depth, copy_filetype_node, BPOL_copy);
   changeFiletypeChange(cwd, cwd_depth, copy_filetype_node, BPOL_copy);
+  postFiletypeChange(cwd,   cwd_depth, copy_filetype_node, BPOL_copy);
   testGroupEnd();
 
   testGroupStart("filetype changes in mirrored nodes");
-  initFiletypeChange(cwd, cwd_depth, mirror_filetype_node, BPOL_mirror);
+  initFiletypeChange(cwd,   cwd_depth, mirror_filetype_node, BPOL_mirror);
   modifyFiletypeChange(cwd, cwd_depth, mirror_filetype_node, BPOL_mirror);
   changeFiletypeChange(cwd, cwd_depth, mirror_filetype_node, BPOL_mirror);
+  postFiletypeChange(cwd,   cwd_depth, mirror_filetype_node, BPOL_mirror);
   testGroupEnd();
 
   testGroupStart("filetype changes in tracked nodes");
