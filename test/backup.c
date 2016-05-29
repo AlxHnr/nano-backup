@@ -5024,39 +5024,6 @@ static void initFiletypeChange(String cwd_path, size_t cwd_depth,
   mustHaveRegularCached(node_8_e_f_1_2, &metadata->current_backup, 10,   (uint8_t *)"NanoBackup",           0);
 }
 
-/** Removes files which are expected to get removed during
-  modifyFiletypeChange(). */
-static void removeFiletypeChanges(void)
-{
-  removePath("tmp/files/6/3");
-  removePath("tmp/files/6/2");
-  removePath("tmp/files/6/a/1");
-  removePath("tmp/files/6/a");
-  removePath("tmp/files/6");
-  removePath("tmp/files/7/b/2");
-  removePath("tmp/files/7/b/1");
-  removePath("tmp/files/7/b");
-  removePath("tmp/files/7/c/2");
-  removePath("tmp/files/7/c/1");
-  removePath("tmp/files/7/c");
-  removePath("tmp/files/7/d/2");
-  removePath("tmp/files/7/d/1");
-  removePath("tmp/files/7/d");
-  removePath("tmp/files/7");
-  removePath("tmp/files/8/a/b/1");
-  removePath("tmp/files/8/a/b");
-  removePath("tmp/files/8/a");
-  removePath("tmp/files/8/c/d/1");
-  removePath("tmp/files/8/c/d");
-  removePath("tmp/files/8/c");
-  removePath("tmp/files/8/e/f/1/2");
-  removePath("tmp/files/8/e/f/1/1");
-  removePath("tmp/files/8/e/f/1");
-  removePath("tmp/files/8/e/f");
-  removePath("tmp/files/8/e");
-  removePath("tmp/files/8");
-}
-
 /** Modifies the test files and metadata in such a way that subsequent
   backups will detect filetype changes. */
 static void modifyFiletypeChange(String cwd_path, size_t cwd_depth,
@@ -5160,8 +5127,6 @@ static void modifyFiletypeChange(String cwd_path, size_t cwd_depth,
   mustHaveDirectoryCached(node_9, &metadata->backup_history[0]);
 
   /* Modify various path nodes. */
-  removeFiletypeChanges();
-
   removePath("tmp/files/1");
   makeSymlink("NewSymlink", "tmp/files/1");
 
@@ -5189,9 +5154,37 @@ static void modifyFiletypeChange(String cwd_path, size_t cwd_depth,
   removePath("tmp/files/5");
   generateFile("tmp/files/5", "?", 13);
 
+  removePath("tmp/files/6/3");
+  removePath("tmp/files/6/2");
+  removePath("tmp/files/6/a/1");
+  removePath("tmp/files/6/a");
+  removePath("tmp/files/6");
   makeSymlink("3", "tmp/files/6");
+
+  removePath("tmp/files/7/b/2");
+  removePath("tmp/files/7/b/1");
+  removePath("tmp/files/7/b");
+  removePath("tmp/files/7/c/2");
+  removePath("tmp/files/7/c/1");
+  removePath("tmp/files/7/c");
+  removePath("tmp/files/7/d/2");
+  removePath("tmp/files/7/d/1");
+  removePath("tmp/files/7/d");
+  removePath("tmp/files/7");
   generateFile("tmp/files/7", "", 0);
 
+  removePath("tmp/files/8/a/b/1");
+  removePath("tmp/files/8/a/b");
+  removePath("tmp/files/8/a");
+  removePath("tmp/files/8/c/d/1");
+  removePath("tmp/files/8/c/d");
+  removePath("tmp/files/8/c");
+  removePath("tmp/files/8/e/f/1/2");
+  removePath("tmp/files/8/e/f/1/1");
+  removePath("tmp/files/8/e/f/1");
+  removePath("tmp/files/8/e/f");
+  removePath("tmp/files/8/e");
+  removePath("tmp/files/8");
   node_8->history->state.metadata.dir.mode++;
   makeSymlink("2", "tmp/files/8");
 
