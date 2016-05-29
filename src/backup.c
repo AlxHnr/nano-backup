@@ -886,7 +886,10 @@ static void finishBackupRecursively(Metadata *metadata,
     /* Handle only new regular files. */
     if(node->history->state.type == PST_regular &&
        node->history->state.metadata.reg.size > 0 &&
-       (node->hint == BH_added || (node->hint & BH_content_changed)))
+       (node->hint == BH_added ||
+        node->hint == BH_symlink_to_regular ||
+        node->hint == BH_directory_to_regular ||
+        (node->hint & BH_content_changed)))
     {
       addFileToRepo(node, repo_path, repo_tmp_file_path);
     }
