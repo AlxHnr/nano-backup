@@ -652,9 +652,6 @@ static SearchResultType initiateMetadataRecursively(Metadata *metadata,
     }
   }
   else if(result.policy == BPOL_track &&
-          (node->hint == BH_unchanged ||
-           node->hint == BH_directory_to_regular ||
-           node->hint > BH_directory_to_symlink) &&
           node->history->state.type == PST_regular)
   {
     for(PathNode *subnode = node->subnodes;
