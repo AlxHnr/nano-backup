@@ -508,10 +508,8 @@ static void handleFoundNode(Metadata *metadata, PathNode *node,
   }
   else
   {
-    PathHistory *point = mpAlloc(sizeof *point);
-    point->state = node->history->state;
-
-    handleNodeChanges(node, &point->state, result);
+    PathState state = node->history->state;
+    handleNodeChanges(node, &state, result);
 
     if(node->hint == BH_none)
     {
@@ -519,6 +517,9 @@ static void handleFoundNode(Metadata *metadata, PathNode *node,
     }
     else
     {
+      PathHistory *point = mpAlloc(sizeof *point);
+
+      point->state = state;
       point->backup = &metadata->current_backup;
       point->backup->ref_count = sSizeAdd(point->backup->ref_count, 1);
 
