@@ -210,6 +210,18 @@ static bool matchesIgnoreList(String path, RegexList *ignore_list)
   return false;
 }
 
+/** Decrements all reference counts in the given history list.
+
+  @param first_point The first history point in the list. Can be NULL.
+*/
+static void decrementRefCounts(PathHistory *first_point)
+{
+  for(PathHistory *point = first_point; point != NULL; point = point->next)
+  {
+    point->backup->ref_count--;
+  }
+}
+
 /** Marks the given node as BH_not_part_of_repository and decrements all
   reference counts it causes.
 
@@ -218,14 +230,15 @@ static bool matchesIgnoreList(String path, RegexList *ignore_list)
 */
 static void prepareNodeForWiping(Metadata *metadata, PathNode *node)
 {
+  if(node->hint & BH_not_part_of_repository)
+  {
+    return;
+  }
+
   node->hint = BH_not_part_of_repository;
   metadata->total_path_count--;
 
-  for(PathHistory *point = node->history;
-      point != NULL; point = point->next)
-  {
-    point->backup->ref_count--;
-  }
+  decrementRefCounts(node->history);
 }
 
 /** Recursive version of prepareNodeForWiping(). */
@@ -480,6 +493,39 @@ static void handleNodeChanges(PathNode *node, PathState *state,
 static void handleFoundNode(Metadata *metadata, PathNode *node,
                             SearchResult result)
 {
+  BackupHint history_hint = 0;
+  if(result.policy != node->policy)
+  {
+    history_hint = BH_policy_changed;
+    if(node->policy == BPOL_track)
+    {
+      if(node->history->state.type == PST_non_existing)
+      {
+        node->history->backup->ref_count--;
+        node->history = node->history->next;
+      }
+
+      if(node->history->next != NULL)
+      {
+        decrementRefCounts(node->history->next);
+        node->history->next = NULL;
+
+        history_hint |= BH_loses_history;
+      }
+
+      if(node->history->state.type != PST_directory)
+      {
+        for(PathNode *subnode = node->subnodes;
+            subnode != NULL; subnode = subnode->next)
+        {
+          prepareNodeForWipingRecursively(metadata, subnode);
+        }
+      }
+    }
+
+    node->policy = result.policy;
+  }
+
   if(result.policy != BPOL_track)
   {
     handleNodeChanges(node, &node->history->state, result);
@@ -527,6 +573,8 @@ static void handleFoundNode(Metadata *metadata, PathNode *node,
       node->history = point;
     }
   }
+
+  node->hint |= history_hint;
 }
 
 /** Checks which nodes where not found during the backup and handles them.

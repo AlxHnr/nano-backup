@@ -145,6 +145,12 @@ typedef enum
   /** The hash of a RegularFileInfo was set while checking for changes.
     This can be used to save unneeded hash computations. */
   BH_fresh_hash = 1 << 8,
+
+  /** The policy of a path has changed. */
+  BH_policy_changed = 1 << 9,
+
+  /** A policy change causes the path to lose its history. */
+  BH_loses_history = 1 << 10,
 }BackupHint;
 
 /** A node representing a path in the filetree. */
