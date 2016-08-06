@@ -291,6 +291,51 @@ static void markAsRemovedRecursively(Metadata *metadata, PathNode *node,
   }
 }
 
+/** Checks and handles policy changes.
+
+  @param metadata The metadata of the current backup.
+  @param node The node to check for changes.
+  @param policy The policy under which the node was found, or supposed to
+  be found.
+*/
+static void handlePolicyChanges(Metadata *metadata, PathNode *node,
+                                BackupPolicy policy)
+{
+  if(node->policy == policy)
+  {
+    return;
+  }
+
+  backupHintSet(node->hint, BH_policy_changed);
+  if(node->policy == BPOL_track)
+  {
+    if(node->history->state.type == PST_non_existing)
+    {
+      node->history->backup->ref_count--;
+      node->history = node->history->next;
+    }
+
+    if(node->history->next != NULL)
+    {
+      decrementRefCounts(node->history->next);
+      node->history->next = NULL;
+
+      backupHintSet(node->hint, BH_loses_history);
+    }
+
+    if(node->history->state.type != PST_directory)
+    {
+      for(PathNode *subnode = node->subnodes;
+          subnode != NULL; subnode = subnode->next)
+      {
+        prepareNodeForWipingRecursively(metadata, subnode);
+      }
+    }
+  }
+
+  node->policy = policy;
+}
+
 /** Handles a node, which path was removed from the users filesystem.
 
   @param metadata The metadata of the current backup.
@@ -300,6 +345,8 @@ static void markAsRemovedRecursively(Metadata *metadata, PathNode *node,
 static void handleRemovedPath(Metadata *metadata, PathNode *node,
                               BackupPolicy policy)
 {
+  handlePolicyChanges(metadata, node, policy);
+
   if(policy == BPOL_mirror)
   {
     prepareNodeForWipingRecursively(metadata, node);
@@ -495,37 +542,7 @@ static void handleNodeChanges(PathNode *node, PathState *state,
 static void handleFoundNode(Metadata *metadata, PathNode *node,
                             SearchResult result)
 {
-  if(result.policy != node->policy)
-  {
-    backupHintSet(node->hint, BH_policy_changed);
-    if(node->policy == BPOL_track)
-    {
-      if(node->history->state.type == PST_non_existing)
-      {
-        node->history->backup->ref_count--;
-        node->history = node->history->next;
-      }
-
-      if(node->history->next != NULL)
-      {
-        decrementRefCounts(node->history->next);
-        node->history->next = NULL;
-
-        backupHintSet(node->hint, BH_loses_history);
-      }
-
-      if(node->history->state.type != PST_directory)
-      {
-        for(PathNode *subnode = node->subnodes;
-            subnode != NULL; subnode = subnode->next)
-        {
-          prepareNodeForWipingRecursively(metadata, subnode);
-        }
-      }
-    }
-
-    node->policy = result.policy;
-  }
+  handlePolicyChanges(metadata, node, result.policy);
 
   if(result.policy != BPOL_track)
   {
