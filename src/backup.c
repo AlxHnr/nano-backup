@@ -660,7 +660,7 @@ static SearchResultType initiateMetadataRecursively(Metadata *metadata,
     String path_copy = strCopy(result.path);
     memcpy(&node->path, &path_copy, sizeof(node->path));
 
-    backupHintSet(node->hint, BH_added);
+    node->hint = BH_added;
     node->policy = result.policy;
     node->history = buildPathHistoryPoint(metadata, result);
     node->subnodes = NULL;
