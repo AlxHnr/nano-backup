@@ -854,7 +854,7 @@ static Metadata *genNodesToWipe(void)
 
   /* Decrement wiped nodes reference count. */
   conf_d->hint    = BH_not_part_of_repository;
-  make_conf->hint = BH_not_part_of_repository;
+  make_conf->hint = BH_not_part_of_repository | BH_policy_changed | BH_loses_history;
   metadata->backup_history[3].ref_count -= 3;
   metadata->backup_history[2].ref_count -= 2;
   metadata->backup_history[0].ref_count -= 1;
