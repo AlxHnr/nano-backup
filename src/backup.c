@@ -523,7 +523,7 @@ static void handleNodeChanges(PathNode *node, PathState *state,
 {
   handleFiletypeChanges(node, result);
 
-  if(node->hint == BH_none)
+  if(backupHintNoPol(node->hint) == BH_none)
   {
     applyNodeChanges(node, state, result);
   }
@@ -548,17 +548,10 @@ static void handleFoundNode(Metadata *metadata, PathNode *node,
   {
     handleNodeChanges(node, &node->history->state, result);
 
-    if(node->hint != BH_none)
+    if(backupHintNoPol(node->hint) != BH_none ||
+       result.policy == BPOL_none)
     {
       reassignPointToCurrent(metadata, node->history);
-    }
-    else
-    {
-      backupHintSet(node->hint, BH_unchanged);
-      if(result.policy == BPOL_none)
-      {
-        reassignPointToCurrent(metadata, node->history);
-      }
     }
   }
   else if(node->history->state.type == PST_non_existing)
@@ -575,11 +568,7 @@ static void handleFoundNode(Metadata *metadata, PathNode *node,
     PathState state = node->history->state;
     handleNodeChanges(node, &state, result);
 
-    if(node->hint == BH_none)
-    {
-      backupHintSet(node->hint, BH_unchanged);
-    }
-    else
+    if(backupHintNoPol(node->hint) != BH_none)
     {
       PathHistory *point = mpAlloc(sizeof *point);
 
@@ -749,6 +738,11 @@ static SearchResultType initiateMetadataRecursively(Metadata *metadata,
     {
       prepareNodeForWiping(metadata, node);
     }
+  }
+
+  if(node->hint == BH_none)
+  {
+    backupHintSet(node->hint, BH_unchanged);
   }
 
   return result.type;

@@ -110,14 +110,15 @@ typedef enum
     be 0 to allow combining other hints. */
   BH_none = 0,
 
+  /** The path has not changed since the last backup. Excludes all other
+    values. */
+  BH_unchanged,
+
   /* The following values are mutually exclusive, unless stated
      otherwise. */
 
   /** The path was added. */
   BH_added,
-
-  /** The path has not changed since the last backup. */
-  BH_unchanged,
 
   /** The path was removed from the users system. */
   BH_removed,
@@ -152,7 +153,7 @@ typedef enum
   BH_fresh_hash = 1 << 8,
 
   /* The following values can be combined with all other values defined
-     above. */
+     above, except with BH_unchanged. */
 
   /** The policy of a path has changed. */
   BH_policy_changed = 1 << 9,
@@ -164,7 +165,7 @@ typedef enum
 /** Assigns a single hint to a variable while preventing to set mutually
   exclusive bits. */
 #define backupHintSet(var, hint) \
-  var = (hint == BH_none? BH_none: \
+  var = (hint <= BH_unchanged? hint: \
          hint <= BH_directory_to_symlink? ((var & ~0x1FF) | hint): \
          hint <= BH_fresh_hash? ((var & ~0xF) | hint): \
          (var | hint))
