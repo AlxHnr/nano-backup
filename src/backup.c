@@ -230,12 +230,12 @@ static void decrementRefCounts(PathHistory *first_point)
 */
 static void prepareNodeForWiping(Metadata *metadata, PathNode *node)
 {
-  if(node->hint & BH_not_part_of_repository)
+  if(backupHintNoPol(node->hint) == BH_not_part_of_repository)
   {
     return;
   }
 
-  node->hint = BH_not_part_of_repository;
+  backupHintSet(node->hint, BH_not_part_of_repository);
   metadata->total_path_count--;
 
   decrementRefCounts(node->history);
@@ -266,11 +266,11 @@ static void markAsRemovedRecursively(Metadata *metadata, PathNode *node,
 {
   if(node->history->state.type == PST_non_existing)
   {
-    node->hint = BH_unchanged;
+    backupHintSet(node->hint, BH_unchanged);
   }
   else
   {
-    node->hint = BH_removed;
+    backupHintSet(node->hint, BH_removed);
     extend_tracked_histories &= (node->policy == BPOL_track);
 
     if(extend_tracked_histories)
@@ -345,7 +345,9 @@ static void checkFileContentChanges(PathNode *node, PathState *state,
 
   if(memcmp(state->metadata.reg.hash, hash, bytes_used) != 0)
   {
-    node->hint |= BH_content_changed | BH_fresh_hash;
+    backupHintSet(node->hint, BH_content_changed);
+    backupHintSet(node->hint, BH_fresh_hash);
+
     memcpy(state->metadata.reg.hash, hash, bytes_used);
   }
 }
@@ -363,7 +365,7 @@ static void applyNodeChanges(PathNode *node, PathState *state,
   if(state->uid != result.stats.st_uid ||
      state->gid != result.stats.st_gid)
   {
-    node->hint |= BH_owner_changed;
+    backupHintSet(node->hint, BH_owner_changed);
     state->uid = result.stats.st_uid;
     state->gid = result.stats.st_gid;
   }
@@ -373,22 +375,22 @@ static void applyNodeChanges(PathNode *node, PathState *state,
   {
     if(state->metadata.reg.mode != result.stats.st_mode)
     {
-      node->hint |= BH_permissions_changed;
+      backupHintSet(node->hint, BH_permissions_changed);
       state->metadata.reg.mode = result.stats.st_mode;
     }
 
     if(state->metadata.reg.timestamp != result.stats.st_mtime)
     {
-      node->hint |= BH_timestamp_changed;
+      backupHintSet(node->hint, BH_timestamp_changed);
       state->metadata.reg.timestamp = result.stats.st_mtime;
     }
 
     if(state->metadata.reg.size != (uint64_t)result.stats.st_size)
     {
-      node->hint |= BH_content_changed;
+      backupHintSet(node->hint, BH_content_changed);
       state->metadata.reg.size = result.stats.st_size;
     }
-    else if(node->hint & BH_timestamp_changed &&
+    else if((node->hint & BH_timestamp_changed) &&
             state->metadata.reg.size > 0)
     {
       checkFileContentChanges(node, state, result);
@@ -401,20 +403,20 @@ static void applyNodeChanges(PathNode *node, PathState *state,
     if(strcmp(state->metadata.sym_target, sym_target) != 0)
     {
       state->metadata.sym_target = sym_target;
-      node->hint |= BH_content_changed;
+      backupHintSet(node->hint, BH_content_changed);
     }
   }
   else if(state->type == PST_directory)
   {
     if(state->metadata.dir.mode != result.stats.st_mode)
     {
-      node->hint |= BH_permissions_changed;
+      backupHintSet(node->hint, BH_permissions_changed);
       state->metadata.dir.mode = result.stats.st_mode;
     }
 
     if(state->metadata.dir.timestamp != result.stats.st_mtime)
     {
-      node->hint |= BH_timestamp_changed;
+      backupHintSet(node->hint, BH_timestamp_changed);
       state->metadata.dir.timestamp = result.stats.st_mtime;
     }
   }
@@ -432,33 +434,33 @@ static void handleFiletypeChanges(PathNode *node, SearchResult result)
   {
     if(result.type == SRT_symlink)
     {
-      node->hint = BH_regular_to_symlink;
+      backupHintSet(node->hint, BH_regular_to_symlink);
     }
     else if(result.type == SRT_directory)
     {
-      node->hint = BH_regular_to_directory;
+      backupHintSet(node->hint, BH_regular_to_directory);
     }
   }
   else if(node->history->state.type == PST_symlink)
   {
     if(result.type == SRT_regular)
     {
-      node->hint = BH_symlink_to_regular;
+      backupHintSet(node->hint, BH_symlink_to_regular);
     }
     else if(result.type == SRT_directory)
     {
-      node->hint = BH_symlink_to_directory;
+      backupHintSet(node->hint, BH_symlink_to_directory);
     }
   }
   else if(node->history->state.type == PST_directory)
   {
     if(result.type == SRT_regular)
     {
-      node->hint = BH_directory_to_regular;
+      backupHintSet(node->hint, BH_directory_to_regular);
     }
     else if(result.type == SRT_symlink)
     {
-      node->hint = BH_directory_to_symlink;
+      backupHintSet(node->hint, BH_directory_to_symlink);
     }
   }
 }
@@ -493,10 +495,9 @@ static void handleNodeChanges(PathNode *node, PathState *state,
 static void handleFoundNode(Metadata *metadata, PathNode *node,
                             SearchResult result)
 {
-  BackupHint history_hint = 0;
   if(result.policy != node->policy)
   {
-    history_hint = BH_policy_changed;
+    backupHintSet(node->hint, BH_policy_changed);
     if(node->policy == BPOL_track)
     {
       if(node->history->state.type == PST_non_existing)
@@ -510,7 +511,7 @@ static void handleFoundNode(Metadata *metadata, PathNode *node,
         decrementRefCounts(node->history->next);
         node->history->next = NULL;
 
-        history_hint |= BH_loses_history;
+        backupHintSet(node->hint, BH_loses_history);
       }
 
       if(node->history->state.type != PST_directory)
@@ -536,7 +537,7 @@ static void handleFoundNode(Metadata *metadata, PathNode *node,
     }
     else
     {
-      node->hint = BH_unchanged;
+      backupHintSet(node->hint, BH_unchanged);
       if(result.policy == BPOL_none)
       {
         reassignPointToCurrent(metadata, node->history);
@@ -545,7 +546,7 @@ static void handleFoundNode(Metadata *metadata, PathNode *node,
   }
   else if(node->history->state.type == PST_non_existing)
   {
-    node->hint = BH_added;
+    backupHintSet(node->hint, BH_added);
 
     PathHistory *point = buildPathHistoryPoint(metadata, result);
 
@@ -559,7 +560,7 @@ static void handleFoundNode(Metadata *metadata, PathNode *node,
 
     if(node->hint == BH_none)
     {
-      node->hint = BH_unchanged;
+      backupHintSet(node->hint, BH_unchanged);
     }
     else
     {
@@ -573,8 +574,6 @@ static void handleFoundNode(Metadata *metadata, PathNode *node,
       node->history = point;
     }
   }
-
-  node->hint |= history_hint;
 }
 
 /** Checks which nodes where not found during the backup and handles them.
@@ -655,7 +654,7 @@ static SearchResultType initiateMetadataRecursively(Metadata *metadata,
     String path_copy = strCopy(result.path);
     memcpy(&node->path, &path_copy, sizeof(node->path));
 
-    node->hint = BH_added;
+    backupHintSet(node->hint, BH_added);
     node->policy = result.policy;
     node->history = buildPathHistoryPoint(metadata, result);
     node->subnodes = NULL;
@@ -678,8 +677,8 @@ static SearchResultType initiateMetadataRecursively(Metadata *metadata,
           != SRT_end_of_directory);
   }
 
-  if(node->hint == BH_directory_to_regular ||
-     node->hint == BH_directory_to_symlink)
+  if(backupHintNoPol(node->hint) == BH_directory_to_regular ||
+     backupHintNoPol(node->hint) == BH_directory_to_symlink)
   {
     if(result.policy == BPOL_none ||
        result.policy == BPOL_track)
@@ -722,7 +721,7 @@ static SearchResultType initiateMetadataRecursively(Metadata *metadata,
     for(PathNode *subnode = node->subnodes;
         subnode != NULL; subnode = subnode->next)
     {
-      if(subnode->hint != BH_not_part_of_repository)
+      if(backupHintNoPol(subnode->hint) != BH_not_part_of_repository)
       {
         has_needed_subnode = true;
         break;
@@ -944,9 +943,9 @@ static void finishBackupRecursively(Metadata *metadata,
     /* Handle only new regular files. */
     if(node->history->state.type == PST_regular &&
        node->history->state.metadata.reg.size > 0 &&
-       (node->hint == BH_added ||
-        node->hint == BH_symlink_to_regular ||
-        node->hint == BH_directory_to_regular ||
+       (backupHintNoPol(node->hint) == BH_added ||
+        backupHintNoPol(node->hint) == BH_symlink_to_regular ||
+        backupHintNoPol(node->hint) == BH_directory_to_regular ||
         (node->hint & BH_content_changed)))
     {
       addFileToRepo(node, repo_path, repo_tmp_file_path);

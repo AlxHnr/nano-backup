@@ -106,8 +106,12 @@ struct PathHistory
   backup. */
 typedef enum
 {
-  /** The path has no hint and was neither added, changed or removed. */
-  BH_none,
+  /** The path has no hint and was neither added, changed or removed. Must
+    be 0 to allow combining other hints. */
+  BH_none = 0,
+
+  /* The following values are mutually exclusive, unless stated
+     otherwise. */
 
   /** The path was added. */
   BH_added,
@@ -128,7 +132,8 @@ typedef enum
   BH_directory_to_regular, /**< The directory was replaced by a file. */
   BH_directory_to_symlink, /**< The directory was replaced by a symlink. */
 
-  /* The following values can be combined using the or operator. */
+  /* The following values can be combined using the or operator. They
+     can't be used together with the values defined above. */
 
   /** The owner of the path has changed. */
   BH_owner_changed = 1 << 4,
@@ -146,12 +151,26 @@ typedef enum
     This can be used to save unneeded hash computations. */
   BH_fresh_hash = 1 << 8,
 
+  /* The following values can be combined with all other values defined
+     above. */
+
   /** The policy of a path has changed. */
   BH_policy_changed = 1 << 9,
 
   /** A policy change causes the path to lose its history. */
   BH_loses_history = 1 << 10,
 }BackupHint;
+
+/** Assigns a single hint to a variable while preventing to set mutually
+  exclusive bits. */
+#define backupHintSet(var, hint) \
+  var = (hint == BH_none? BH_none: \
+         hint <= BH_directory_to_symlink? ((var & ~0x1FF) | hint): \
+         hint <= BH_fresh_hash? ((var & ~0xF) | hint): \
+         (var | hint))
+
+/** Returns the value without policy bits. */
+#define backupHintNoPol(val) ((val) & 0x1FF)
 
 /** A node representing a path in the filetree. */
 typedef struct PathNode PathNode;

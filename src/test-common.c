@@ -173,7 +173,7 @@ static size_t checkPathTree(PathNode *parent_node, Metadata *metadata,
 
   for(PathNode *node = parent_node; node != NULL; node = node->next)
   {
-    if(node->hint == BH_not_part_of_repository)
+    if(backupHintNoPol(node->hint) == BH_not_part_of_repository)
     {
       continue;
     }

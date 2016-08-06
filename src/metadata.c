@@ -516,7 +516,7 @@ static void writePathList(PathNode *node_list, RepoWriter *writer)
   size_t list_length = 0;
   for(PathNode *node = node_list; node != NULL; node = node->next)
   {
-    if(node->hint != BH_not_part_of_repository)
+    if(backupHintNoPol(node->hint) != BH_not_part_of_repository)
     {
       list_length = sSizeAdd(list_length, 1);
     }
@@ -526,7 +526,7 @@ static void writePathList(PathNode *node_list, RepoWriter *writer)
 
   for(PathNode *node = node_list; node != NULL; node = node->next)
   {
-    if(node->hint != BH_not_part_of_repository)
+    if(backupHintNoPol(node->hint) != BH_not_part_of_repository)
     {
       String name = strSplitPath(node->path).tail;
       write64(name.length, writer);
