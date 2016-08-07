@@ -27,6 +27,19 @@ print_running_test()
     done
 }
 
+# Prints a message, which indicates that a phase is running.
+#
+# $1 The number of the phase.
+print_running_phase()
+{
+  printf "    Running phase %s" "$1"
+  dots_to_print=$((53 - ${#1}))
+  test $dots_to_print -gt 0 &&
+    for i in $(seq $dots_to_print); do
+      printf "."
+    done
+}
+
 # Prints a message, which indicates that the test failed and terminates the
 # program with failure. It passes all its arguments directly to echo.
 fail_test()
@@ -42,8 +55,8 @@ fail_test()
 # $1 The name of the target.
 try_to_run_target()
 {
-  if test -f "${1}.sh"; then
-    target_script="${1}.sh"
+  if test -f "${PHASE_PATH}/${1}.sh"; then
+    target_script="${PHASE_PATH}/${1}.sh"
   elif test -f "../../fallback targets/${1}.sh"; then
     target_script="../../fallback targets/${1}.sh"
   else
@@ -55,7 +68,18 @@ try_to_run_target()
     fail_test "${yellow}$(basename "$target_script")${normal}: $output"
 }
 
+# Tries to run a target after its pre- and before its post-target.
+#
+# $1 The target name.
+try_to_run_full_target()
+{
+  try_to_run_target "pre-$1"
+  try_to_run_target "$1"
+  try_to_run_target "post-$1"
+}
+
 # Various variables available to test scripts.
+export PHASE_PATH="."
 export PROJECT_PATH="$PWD"
 export NB="$PROJECT_PATH/build/nb"
 
@@ -68,17 +92,31 @@ for test_group_path in "test/full program tests/"*; do
 
   for test_path in "$test_group_path"/*; do
     test_name=$(basename "$test_path")
-    print_running_test "$test_name"
 
-    cd "$test_path"
-    for target in clean init run clean; do
-      try_to_run_target "pre-$target"
-      try_to_run_target "$target"
-      try_to_run_target "post-$target"
-    done
-    cd - >/dev/null
+    (cd "$test_path"
 
-    echo "[${green}success${normal}]"
+    if test -d 1; then
+      echo "  Testing ${test_name}:"
+      try_to_run_full_target clean
+
+      for PHASE_PATH in $(seq 32); do
+        test -d "$PHASE_PATH" || break
+
+        print_running_phase "$PHASE_PATH"
+        try_to_run_full_target init
+        try_to_run_full_target run
+        echo "[${green}success${normal}]"
+      done
+
+      try_to_run_full_target clean
+      true
+    else
+      print_running_test "$test_name"
+      for target in clean init run clean; do
+        try_to_run_full_target "$target"
+      done
+      echo "[${green}success${normal}]"
+    fi) || exit 1
   done
   echo
 done

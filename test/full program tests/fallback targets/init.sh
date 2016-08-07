@@ -34,20 +34,21 @@ gen_config_file()
 mkdir -p generated
 
 # Generate expected output.
-if test -f expected-output; then
-  gen_expected_output "expected-output" "$PWD"
+if test -f "$PHASE_PATH/expected-output"; then
+  gen_expected_output "$PHASE_PATH/expected-output" "$PWD"
 elif test -f expected-output-test-data; then
-  gen_expected_output "expected-output-test-data" "$PROJECT_PATH/test/data"
+  gen_expected_output "$PHASE_PATH/expected-output-test-data" \
+    "$PROJECT_PATH/test/data"
 fi
 
 # Generate config file.
-if test -f config; then
-  gen_config_file "config" "$PWD"
-elif test -f config-test-data; then
-  gen_config_file "config-test-data" "$PROJECT_PATH/test/data"
+if test -f "$PHASE_PATH/config"; then
+  gen_config_file "$PHASE_PATH/config" "$PWD"
+elif test -f "$PHASE_PATH/config-test-data"; then
+  gen_config_file "$PHASE_PATH/config-test-data" "$PROJECT_PATH/test/data"
 fi
 
 # Generate repository file list.
-if test -f expected-repo-files; then
-  sort expected-repo-files > generated/expected-repo-files
+if test -f "$PHASE_PATH/expected-repo-files"; then
+  sort "$PHASE_PATH/expected-repo-files" > generated/expected-repo-files
 fi
