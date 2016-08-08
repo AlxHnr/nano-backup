@@ -11,9 +11,13 @@ gen_expected_output()
     sed -r 's,^Total: \+([0-9]+) items.*$,\1,g')
   total_files="0"
 
-  test -n "$expected_files" &&
-    test "$expected_files" != "0" &&
-    total_files=$(($path_elements + $expected_files))
+  if test -n "$expected_files"; then
+    if test "$PHASE_PATH" != "." && test "$PHASE_PATH" != "1" ; then
+      total_files="$expected_files"
+    elif test "$expected_files" != "0"; then
+      total_files=$(($path_elements + $expected_files))
+    fi
+  fi
 
   sed -r "s,^(.. )\/(.*)$,\1$2/\2,g" "$1" | \
     sed -r "s,^Total: \+$expected_files items,Total: +$total_files items,g" | \
