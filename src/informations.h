@@ -30,18 +30,29 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 #include "metadata.h"
 #include "search-tree.h"
 
+/** Contains statistics about a specific change type. */
+typedef struct
+{
+  /** The amount of items affected by this change. */
+  size_t count;
+
+  /** The size of all items affected by this change. */
+  uint64_t size;
+}ChangeStats;
+
 /** Stores a shallow summary of the changes in a metadata tree. */
 typedef struct
 {
-  /** The amount of new items added to the metadata tree. */
-  size_t new_items_count;
-
-  /** The total size of all new files added to the metadata tree. */
-  uint64_t new_files_size;
+  ChangeStats new_items;     /**< Statistics about new items. */
+  ChangeStats removed_items; /**< Statistics about removed items. */
+  ChangeStats wiped_items;   /**< Statistics about wiped items. */
+  ChangeStats changed_items; /**< Statistics about changed items. */
+  bool other;                /**< Other changes exist. */
 }MetadataChanges;
 
 extern void printHumanReadableSize(uint64_t size);

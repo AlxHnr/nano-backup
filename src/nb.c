@@ -110,10 +110,12 @@ int main(const int arg_count, const char **arg_list)
   MetadataChanges changes = printMetadataChanges(metadata);
   printSearchTreeInfos(root_node);
 
-  if(changes.new_items_count > 0)
+  if(changes.new_items.count   > 0 || changes.removed_items.count > 0 ||
+     changes.wiped_items.count > 0 || changes.changed_items.count > 0 ||
+     changes.other == true)
   {
-    printf("\nTotal: +%zu items, +", changes.new_items_count);
-    printHumanReadableSize(changes.new_files_size);
+    printf("\nTotal: +%zu items, +", changes.new_items.count);
+    printHumanReadableSize(changes.new_items.size);
     printf("\n\n");
 
     if(askUserProceed())

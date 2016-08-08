@@ -95,122 +95,273 @@ static void printSearchNodeInfos(SearchNode *root_node)
   }
 }
 
-/** Prints informations about a new directory.
-
-  @param node The node representing the new directory.
-  @param changes A summary of all changes in the subnodes of the given
-  node.
-*/
-static void printNewDirInfo(PathNode *node, MetadataChanges changes)
+/** Safely adds count and size to the given stats struct. */
+static void changeStatsAdd(ChangeStats *stats, size_t count, uint64_t size)
 {
-  colorPrintf(stdout, TC_green_bold, "++ ");
-  colorPrintf(stdout, TC_green, "%s/", node->path.str);
-  printf(" (");
+  stats->count = sSizeAdd(stats->count, count);
+  stats->size = sUint64Add(stats->size, size);
+}
 
-  if(changes.new_items_count > 0)
+/** Adds the statistics from b to a. */
+static void metadataChangesAdd(MetadataChanges *a, MetadataChanges b)
+{
+  changeStatsAdd(&a->new_items,
+                 b.new_items.count,
+                 b.new_items.size);
+
+  changeStatsAdd(&a->removed_items,
+                 b.removed_items.count,
+                 b.removed_items.size);
+
+  changeStatsAdd(&a->wiped_items,
+                 b.wiped_items.count,
+                 b.wiped_items.size);
+
+  changeStatsAdd(&a->changed_items,
+                 b.changed_items.count,
+                 b.changed_items.size);
+
+  a->other |= b.other;
+}
+
+static void addNode(PathNode *node, MetadataChanges *changes)
+{
+  BackupHint hint = backupHintNoPol(node->hint);
+  uint64_t size = 0;
+
+  if(node->history->state.type == PST_regular)
   {
-    printf("+%zu item%s", changes.new_items_count,
-           changes.new_items_count == 1?"":"s");
-    if(changes.new_files_size > 0)
-    {
-      printf(", +");
-      printHumanReadableSize(changes.new_files_size);
-    }
+    size = node->history->state.metadata.reg.size;
+  }
+
+  if(hint == BH_added)
+  {
+    changeStatsAdd(&changes->new_items, 1, size);
+  }
+  else if(hint == BH_removed)
+  {
+    changeStatsAdd(&changes->removed_items, 1, size);
+  }
+  else if(hint == BH_not_part_of_repository)
+  {
+    changeStatsAdd(&changes->wiped_items, 1, size);
+  }
+  else if(hint & BH_content_changed)
+  {
+    changeStatsAdd(&changes->changed_items, 1, size);
+  }
+  else if(node->hint != BH_unchanged)
+  {
+    changes->other = true;
+  }
+}
+
+static void printChangeStats(ChangeStats stats, const char *prefix)
+{
+  printf("%s%zu item%s", prefix, stats.count, stats.count == 1? "":"s");
+
+  if(stats.size > 0)
+  {
+    printf(", %s", prefix);
+    printHumanReadableSize(stats.size);
+  }
+}
+
+static void printPrefix(bool *printed_prefix)
+{
+  if(*printed_prefix)
+  {
+    printf(", ");
   }
   else
   {
-    printf("Empty");
+    printf(" (");
+    *printed_prefix = true;
   }
-
-  printf(")\n");
 }
 
-/** Prints changes in the given metadata tree recursively.
+/** Prints the given nodes path in the specified color. It will append a
+  "/" if the node represents a directory. */
+static void printNodePath(PathNode *node, TextColor color)
+{
+  colorPrintf(stdout, color, "%s%s", node->path.str,
+              node->history->state.type == PST_directory? "/":"");
+}
 
-  @param metadata A metadata tree which must have been initiated with
-  initiateBackup().
-  @param path_list The path list into which should be recursed.
-  @param print True, if informations should be printed.
+static void printNode(PathNode *node, MetadataChanges subnode_changes)
+{
+  BackupHint hint = backupHintNoPol(node->hint);
 
-  @return A shallow summary of the printed changes for further processing.
-*/
-static MetadataChanges printPathListRecursively(Metadata *metadata,
-                                                PathNode *path_list,
-                                                bool print)
+  if(hint == BH_added)
+  {
+    colorPrintf(stdout, TC_green_bold, "++ ");
+    printNodePath(node, TC_green);
+  }
+  else if(hint == BH_removed)
+  {
+    colorPrintf(stdout, TC_red_bold, "-- ");
+    printNodePath(node, TC_red);
+  }
+  else if(hint == BH_not_part_of_repository)
+  {
+    if(node->policy == BPOL_mirror)
+    {
+      colorPrintf(stdout, TC_red_bold, "xx ");
+      printNodePath(node, TC_red);
+    }
+    else
+    {
+      colorPrintf(stdout, TC_blue_bold, "?? ");
+      printNodePath(node, TC_blue);
+    }
+  }
+  else if(hint >= BH_regular_to_symlink &&
+          hint <= BH_directory_to_symlink)
+  {
+    colorPrintf(stdout, TC_cyan_bold, "<> ");
+    printNodePath(node, TC_cyan);
+  }
+  else if(hint & BH_content_changed)
+  {
+    colorPrintf(stdout, TC_yellow_bold, "!! ");
+    printNodePath(node, TC_yellow);
+  }
+  else if(hint != BH_none)
+  {
+    colorPrintf(stdout, TC_magenta_bold, "@@ ");
+    printNodePath(node, TC_magenta);
+  }
+  else
+  {
+    colorPrintf(stdout, TC_blue_bold, ":: ");
+    printNodePath(node, TC_blue);
+  }
+
+  bool printed_details = false;
+
+  if(hint >= BH_regular_to_symlink &&
+     hint <= BH_directory_to_symlink)
+  {
+    printPrefix(&printed_details);
+
+    switch(hint)
+    {
+      case BH_regular_to_symlink:   printf("File -> Symlink");      break;
+      case BH_regular_to_directory: printf("File -> Directory");    break;
+      case BH_symlink_to_regular:   printf("Symlink -> File");      break;
+      case BH_symlink_to_directory: printf("Symlink -> Directory"); break;
+      case BH_directory_to_regular: printf("Directory -> File");    break;
+      case BH_directory_to_symlink: printf("Directory -> Symlink"); break;
+      default: /* ignore */ break;
+    }
+  }
+
+  if(node->hint & BH_owner_changed)
+  {
+    printPrefix(&printed_details);
+    printf("owner");
+  }
+  if(node->hint & BH_permissions_changed)
+  {
+    printPrefix(&printed_details);
+    printf("permissions");
+  }
+  if(node->hint & BH_policy_changed)
+  {
+    printPrefix(&printed_details);
+    printf("policy changed");
+  }
+  if(node->hint & BH_loses_history)
+  {
+    printPrefix(&printed_details);
+    printf("looses history");
+  }
+
+  if(node->history->state.type == PST_directory &&
+     subnode_changes.new_items.count > 0 &&
+     (hint == BH_added ||
+      hint == BH_regular_to_directory ||
+      hint == BH_symlink_to_directory))
+  {
+    printPrefix(&printed_details);
+    printChangeStats(subnode_changes.new_items, "+");
+  }
+  /* Ensure node is or was a directory. */
+  else if(node->history->state.type == PST_directory ||
+          (node->history->next != NULL &&
+           node->history->next->state.type == PST_directory))
+  {
+    bool has_removed_items = subnode_changes.removed_items.count > 0;
+    bool has_wiped_items = subnode_changes.wiped_items.count > 0;
+
+    if(hint == BH_removed && has_removed_items)
+    {
+      printPrefix(&printed_details);
+      printChangeStats(subnode_changes.removed_items, "-");
+    }
+    else if(hint == BH_not_part_of_repository && has_wiped_items)
+    {
+      printPrefix(&printed_details);
+      printChangeStats(subnode_changes.wiped_items, "-");
+    }
+    else if((hint == BH_directory_to_regular ||
+             hint == BH_directory_to_symlink) &&
+            (has_removed_items || has_wiped_items))
+    {
+      ChangeStats lost_files = { .count = 0, .size = 0 };
+      changeStatsAdd(&lost_files, subnode_changes.removed_items.count,
+                     subnode_changes.removed_items.size);
+      changeStatsAdd(&lost_files, subnode_changes.wiped_items.count,
+                     subnode_changes.wiped_items.size);
+      printPrefix(&printed_details);
+      printChangeStats(lost_files, "-");
+    }
+  }
+
+  if(printed_details == true)
+  {
+    printf(")");
+  }
+
+  printf("\n");
+}
+
+static MetadataChanges recursePrintOverTree(Metadata *metadata,
+                                            PathNode *path_list,
+                                            bool print)
 {
   MetadataChanges changes =
   {
-    .new_items_count = 0,
-    .new_files_size = 0,
+    .new_items     = { .count = 0, .size = 0},
+    .removed_items = { .count = 0, .size = 0},
+    .wiped_items   = { .count = 0, .size = 0},
+    .changed_items = { .count = 0, .size = 0},
+    .other = false,
   };
 
   for(PathNode *node = path_list; node != NULL; node = node->next)
   {
-    /* Skip files that already existed in the last backup. */
-    if(node->history->backup != &metadata->current_backup ||
-       node->history->next != NULL)
+    if(print == true &&
+       node->policy != BPOL_none &&
+       node->hint > BH_unchanged)
     {
-      continue;
+      BackupHint hint = backupHintNoPol(node->hint);
+      print = print && (hint < BH_added || hint > BH_directory_to_symlink);
+
+      MetadataChanges subnode_changes =
+        recursePrintOverTree(metadata, node->subnodes, print);
+      metadataChangesAdd(&changes, subnode_changes);
+
+      printNode(node, subnode_changes);
     }
-    /* Skip non-directories without a policy. */
-    else if(node->history->state.type != PST_directory &&
-            node->policy == BPOL_none)
+    else
     {
-      continue;
+      MetadataChanges subnode_changes =
+        recursePrintOverTree(metadata, node->subnodes, print);
+      metadataChangesAdd(&changes, subnode_changes);
     }
 
-    if(node->history->state.type == PST_regular)
-    {
-      changes.new_items_count = sSizeAdd(changes.new_items_count, 1);
-      changes.new_files_size =
-        sUint64Add(changes.new_files_size,
-                   node->history->state.metadata.reg.size);
-
-      if(print)
-      {
-        colorPrintf(stdout, TC_green_bold, "++ ");
-        colorPrintf(stdout, TC_green, "%s\n", node->path.str);
-      }
-    }
-    else if(node->history->state.type == PST_symlink)
-    {
-      changes.new_items_count = sSizeAdd(changes.new_items_count, 1);
-
-      if(print)
-      {
-        colorPrintf(stdout, TC_green_bold, "++ ");
-        colorPrintf(stdout, TC_cyan, "%s", node->path.str);
-        colorPrintf(stdout, TC_magenta, " -> ");
-        colorPrintf(stdout, TC_yellow, "%s\n",
-                    node->history->state.metadata.sym_target);
-      }
-    }
-    else if(node->history->state.type == PST_directory)
-    {
-      MetadataChanges subnode_changes;
-
-      if(node->policy != BPOL_none && print == true)
-      {
-        subnode_changes =
-          printPathListRecursively(metadata, node->subnodes, false);
-        printNewDirInfo(node, subnode_changes);
-      }
-      else
-      {
-        subnode_changes =
-          printPathListRecursively(metadata, node->subnodes, print);
-      }
-
-      if(node->policy != BPOL_none || subnode_changes.new_items_count > 0)
-      {
-        changes.new_items_count = sSizeAdd(changes.new_items_count, 1);
-      }
-
-      changes.new_items_count =
-        sSizeAdd(changes.new_items_count, subnode_changes.new_items_count);
-      changes.new_files_size =
-        sUint64Add(changes.new_files_size, subnode_changes.new_files_size);
-    }
+    addNode(node, &changes);
   }
 
   return changes;
@@ -272,5 +423,5 @@ void printSearchTreeInfos(SearchNode *root_node)
 */
 MetadataChanges printMetadataChanges(Metadata *metadata)
 {
-  return printPathListRecursively(metadata, metadata->paths, true);
+  return recursePrintOverTree(metadata, metadata->paths, true);
 }
