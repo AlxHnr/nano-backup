@@ -19,7 +19,7 @@ gen_expected_output()
     fi
   fi
 
-  sed -r "s,^(.. )\/(.*)$,\1$2/\2,g" "$1" | \
+  sed -r "s,^(.. \^?)\/(.*)$,\1$2/\2,g" "$1" | \
     sed -r "s,^Total: \+$expected_files items,Total: +$total_files items,g" | \
     sort > generated/expected-output
 }

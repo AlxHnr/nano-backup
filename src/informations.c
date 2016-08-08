@@ -124,6 +124,22 @@ static void metadataChangesAdd(MetadataChanges *a, MetadataChanges b)
   a->other |= b.other;
 }
 
+/** Returns the first path state in the given nodes history. If this path
+  state represents a non-existing file and its predecessor exists, it will
+  return the predecessor. */
+static PathState *getExistingState(PathNode *node)
+{
+  if(node->history->state.type == PST_non_existing &&
+     node->history->next != NULL)
+  {
+    return &node->history->next->state;
+  }
+  else
+  {
+    return &node->history->state;
+  }
+}
+
 /** Adds statistics about the given nodes current change type to the
   specified change structure.
 
@@ -133,17 +149,12 @@ static void metadataChangesAdd(MetadataChanges *a, MetadataChanges b)
 static void addNode(PathNode *node, MetadataChanges *changes)
 {
   BackupHint hint = backupHintNoPol(node->hint);
+  PathState *state = getExistingState(node);
   uint64_t size = 0;
 
-  if(node->history->state.type == PST_regular)
+  if(state->type == PST_regular)
   {
-    size = node->history->state.metadata.reg.size;
-  }
-  else if(node->history->state.type == PST_non_existing &&
-          node->history->next != NULL &&
-          node->history->next->state.type == PST_regular)
-  {
-    size = node->history->next->state.metadata.reg.size;
+    size = state->metadata.reg.size;
   }
 
   if(hint == BH_added)
@@ -209,8 +220,10 @@ static void printPrefix(bool *printed_prefix)
   "/" if the node represents a directory. */
 static void printNodePath(PathNode *node, TextColor color)
 {
-  colorPrintf(stdout, color, "%s%s", node->path.str,
-              node->history->state.type == PST_directory? "/":"");
+  PathState *state = getExistingState(node);;
+
+  colorPrintf(stdout, color, "%s%s%s", state->type == PST_symlink? "^":"",
+              node->path.str, state->type == PST_directory? "/":"");
 }
 
 /** Prints informations about the given node.
@@ -320,51 +333,49 @@ static void printNode(PathNode *node, MetadataChanges subnode_changes)
     printf("looses history");
   }
 
-  if(node->history->state.type == PST_directory &&
-     subnode_changes.new_items.count > 0 &&
-     (hint == BH_added ||
-      hint == BH_regular_to_directory ||
-      hint == BH_symlink_to_directory))
+  PathState *existing_state = getExistingState(node);
+  if(existing_state->type == PST_directory)
   {
-    printPrefix(&printed_details);
-    printChangeStats(subnode_changes.new_items, "+");
-  }
-  /* Ensure node is or was a directory. */
-  else if(node->history->state.type == PST_directory ||
-          (node->history->state.type == PST_non_existing &&
-           node->history->next != NULL &&
-           node->history->next->state.type == PST_directory))
-  {
-    bool has_removed_items = subnode_changes.removed_items.count > 0;
-    bool has_wiped_items = subnode_changes.wiped_items.count > 0;
-
-    if(hint == BH_removed && has_removed_items)
+    if(hint == BH_added ||
+       hint == BH_regular_to_directory ||
+       hint == BH_symlink_to_directory)
+    {
+      printPrefix(&printed_details);
+      printChangeStats(subnode_changes.new_items, "+");
+    }
+    else if(hint == BH_removed)
     {
       printPrefix(&printed_details);
       printChangeStats(subnode_changes.removed_items, "-");
     }
-    else if(hint == BH_not_part_of_repository && has_wiped_items)
+    else if(hint == BH_not_part_of_repository)
     {
       printPrefix(&printed_details);
       printChangeStats(subnode_changes.wiped_items, "-");
     }
-    else if((hint == BH_directory_to_regular ||
-             hint == BH_directory_to_symlink) &&
-            (has_removed_items || has_wiped_items))
-    {
-      ChangeStats lost_files = { .count = 0, .size = 0 };
-      changeStatsAdd(&lost_files, subnode_changes.removed_items.count,
-                     subnode_changes.removed_items.size);
-      changeStatsAdd(&lost_files, subnode_changes.wiped_items.count,
-                     subnode_changes.wiped_items.size);
-      printPrefix(&printed_details);
-      printChangeStats(lost_files, "-");
-    }
+  }
+  else if(hint == BH_directory_to_regular ||
+          hint == BH_directory_to_symlink)
+  {
+    ChangeStats lost_files = { .count = 0, .size = 0 };
+    changeStatsAdd(&lost_files, subnode_changes.removed_items.count,
+                   subnode_changes.removed_items.size);
+    changeStatsAdd(&lost_files, subnode_changes.wiped_items.count,
+                   subnode_changes.wiped_items.size);
+    printPrefix(&printed_details);
+    printChangeStats(lost_files, "-");
   }
 
   if(printed_details == true)
   {
     printf(")");
+  }
+
+  if(existing_state->type == PST_symlink)
+  {
+    colorPrintf(stdout, TC_magenta, " -> ");
+    colorPrintf(stdout, TC_cyan, "%s",
+                existing_state->metadata.sym_target);
   }
 
   printf("\n");
