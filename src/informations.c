@@ -341,27 +341,29 @@ static MetadataChanges recursePrintOverTree(Metadata *metadata,
 
   for(PathNode *node = path_list; node != NULL; node = node->next)
   {
+    MetadataChanges subnode_changes;
+
     if(print == true &&
        node->policy != BPOL_none &&
        node->hint > BH_unchanged)
     {
       BackupHint hint = backupHintNoPol(node->hint);
-      print = print && (hint < BH_added || hint > BH_directory_to_symlink);
+      bool print_subnodes =
+        print && (hint < BH_added || hint > BH_directory_to_symlink);
 
-      MetadataChanges subnode_changes =
-        recursePrintOverTree(metadata, node->subnodes, print);
-      metadataChangesAdd(&changes, subnode_changes);
+      subnode_changes =
+        recursePrintOverTree(metadata, node->subnodes, print_subnodes);
 
       printNode(node, subnode_changes);
     }
     else
     {
-      MetadataChanges subnode_changes =
+      subnode_changes =
         recursePrintOverTree(metadata, node->subnodes, print);
-      metadataChangesAdd(&changes, subnode_changes);
     }
 
     addNode(node, &changes);
+    metadataChangesAdd(&changes, subnode_changes);
   }
 
   return changes;
