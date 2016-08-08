@@ -133,6 +133,12 @@ static void addNode(PathNode *node, MetadataChanges *changes)
   {
     size = node->history->state.metadata.reg.size;
   }
+  else if(node->history->state.type == PST_non_existing &&
+          node->history->next != NULL &&
+          node->history->next->state.type == PST_regular)
+  {
+    size = node->history->next->state.metadata.reg.size;
+  }
 
   if(hint == BH_added)
   {
