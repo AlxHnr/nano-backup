@@ -1,6 +1,6 @@
 ++ /test directory/bar-a.txt
 ++ /test directory/bar-b.txt
-++ /test directory/empty-directory -> .empty
+++ ^/test directory/empty-directory -> .empty
 ++ /test directory/foo 1/ (+8 items)
 ++ /test directory/foobar a1.txt
 ++ /test directory/foobar a2.txt

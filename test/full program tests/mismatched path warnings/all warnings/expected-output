@@ -1,5 +1,8 @@
 ++ /generated/a/ (+30 items, +24 b)
 ++ /generated/BAR/bird/file.txt
+?? /generated/BAR/gentoo
+?? /generated/FOO/ (-2 items)
+?? /generated/foo/ (-4 items)
 config: line 2: string matches not only directories: "dir"
 config: line 2: string never matched a file: "bar.txt"
 config: line 3: regex never matched a file: "some dir"

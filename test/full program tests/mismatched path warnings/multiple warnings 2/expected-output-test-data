@@ -2,6 +2,9 @@
 ++ /test directory/foo 1/test-file-b.txt
 ++ /test directory/foo 1/test-file-c.txt
 ++ /test directory/foo 1/♞.☂
+?? /test directory/bar-a.txt
+?? /test directory/bar-b.txt
+?? /test directory/foo 1/bar/ (-1 item)
 config: line 2: regex matches not only directories: "^(b|foo )"
 config: line 2: string matches, but not a directory: "2.txt"
 config: line 6: string never matched a file: "super"

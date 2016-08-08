@@ -2,3 +2,4 @@
 [track]
 
 /test directory//^[abc]ar-.\.txt$/test.txt
+/test directory/φ.txt

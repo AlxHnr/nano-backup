@@ -1,1 +1,8 @@
+++ /test directory/φ.txt
+?? /test directory/bar-a.txt
+?? /test directory/bar-b.txt
 config: line 4: regex matches, but not a directory: "^[abc]ar-.\.txt$"
+
+Total: +2 items, +0 b
+
+proceed? (y/n) 

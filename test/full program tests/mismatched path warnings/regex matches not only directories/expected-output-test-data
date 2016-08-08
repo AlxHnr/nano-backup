@@ -1,4 +1,6 @@
 ++ /test directory/foo 1/bar/ (+3 items)
+?? /test directory/bar-a.txt
+?? /test directory/bar-b.txt
 config: line 7: regex matches not only directories: "^(b|foo )"
 
 Total: +6 items, +0 b
