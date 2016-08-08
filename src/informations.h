@@ -53,6 +53,10 @@ typedef struct
   ChangeStats wiped_items;   /**< Statistics about wiped items. */
   ChangeStats changed_items; /**< Statistics about changed items. */
   bool other;                /**< Other changes exist. */
+
+  /** At least one node in the current list affects the modification
+    timestamp of the parent directory. */
+  bool affects_parent_timestamp;
 }MetadataChanges;
 
 extern void printHumanReadableSize(uint64_t size);

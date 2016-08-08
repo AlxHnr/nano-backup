@@ -143,10 +143,12 @@ static void addNode(PathNode *node, MetadataChanges *changes)
   if(hint == BH_added)
   {
     changeStatsAdd(&changes->new_items, 1, size);
+    changes->affects_parent_timestamp = true;
   }
   else if(hint == BH_removed)
   {
     changeStatsAdd(&changes->removed_items, 1, size);
+    changes->affects_parent_timestamp = true;
   }
   else if(hint == BH_not_part_of_repository)
   {
@@ -272,6 +274,18 @@ static void printNode(PathNode *node, MetadataChanges subnode_changes)
     printPrefix(&printed_details);
     printf("permissions");
   }
+
+  if(node->hint & BH_timestamp_changed)
+  {
+    printPrefix(&printed_details);
+    printf("timestamp");
+  }
+  else if(node->hint & BH_content_changed)
+  {
+    printPrefix(&printed_details);
+    printf("same timestamp");
+  }
+
   if(node->hint & BH_policy_changed)
   {
     printPrefix(&printed_details);
@@ -343,6 +357,7 @@ static MetadataChanges recursePrintOverTree(Metadata *metadata,
     .removed_items = { .count = 0, .size = 0 },
     .wiped_items   = { .count = 0, .size = 0 },
     .changed_items = { .count = 0, .size = 0 },
+    .affects_parent_timestamp = false,
     .other = false,
   };
 
@@ -359,7 +374,11 @@ static MetadataChanges recursePrintOverTree(Metadata *metadata,
       subnode_changes =
         recursePrintOverTree(metadata, node->subnodes, print_subnodes);
 
-      printNode(node, subnode_changes);
+      if(!(node->hint == BH_timestamp_changed &&
+           subnode_changes.affects_parent_timestamp))
+      {
+        printNode(node, subnode_changes);
+      }
     }
     else
     {
