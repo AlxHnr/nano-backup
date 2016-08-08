@@ -332,10 +332,10 @@ static MetadataChanges recursePrintOverTree(Metadata *metadata,
 {
   MetadataChanges changes =
   {
-    .new_items     = { .count = 0, .size = 0},
-    .removed_items = { .count = 0, .size = 0},
-    .wiped_items   = { .count = 0, .size = 0},
-    .changed_items = { .count = 0, .size = 0},
+    .new_items     = { .count = 0, .size = 0 },
+    .removed_items = { .count = 0, .size = 0 },
+    .wiped_items   = { .count = 0, .size = 0 },
+    .changed_items = { .count = 0, .size = 0 },
     .other = false,
   };
 
