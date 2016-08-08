@@ -288,7 +288,8 @@ static void printNode(PathNode *node, MetadataChanges subnode_changes)
   }
   /* Ensure node is or was a directory. */
   else if(node->history->state.type == PST_directory ||
-          (node->history->next != NULL &&
+          (node->history->state.type == PST_non_existing &&
+           node->history->next != NULL &&
            node->history->next->state.type == PST_directory))
   {
     bool has_removed_items = subnode_changes.removed_items.count > 0;
