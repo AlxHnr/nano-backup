@@ -124,6 +124,12 @@ static void metadataChangesAdd(MetadataChanges *a, MetadataChanges b)
   a->other |= b.other;
 }
 
+/** Adds statistics about the given nodes current change type to the
+  specified change structure.
+
+  @param node The node to consider.
+  @param changes The change struct which should be updated.
+*/
 static void addNode(PathNode *node, MetadataChanges *changes)
 {
   BackupHint hint = backupHintNoPol(node->hint);
@@ -164,6 +170,11 @@ static void addNode(PathNode *node, MetadataChanges *changes)
   }
 }
 
+/** Prints the informations in the given change stats.
+
+  @param stats The struct containing the informations.
+  @param prefix The string to print before each number.
+*/
 static void printChangeStats(ChangeStats stats, const char *prefix)
 {
   printf("%s%zu item%s", prefix, stats.count, stats.count == 1? "":"s");
@@ -175,6 +186,12 @@ static void printChangeStats(ChangeStats stats, const char *prefix)
   }
 }
 
+/** Prints an opening paren on its first call and a comma on all other
+  invocations of this function.
+
+  @param printed_prefix Stores the data about whether this function was
+  called already or not. Will be updated by this function.
+*/
 static void printPrefix(bool *printed_prefix)
 {
   if(*printed_prefix)
@@ -196,6 +213,12 @@ static void printNodePath(PathNode *node, TextColor color)
               node->history->state.type == PST_directory? "/":"");
 }
 
+/** Prints informations about the given node.
+
+  @param node The node to consider.
+  @param subnode_changes Statistics gathered from all the current nodes
+  subnodes.
+*/
 static void printNode(PathNode *node, MetadataChanges subnode_changes)
 {
   BackupHint hint = backupHintNoPol(node->hint);
@@ -347,6 +370,15 @@ static void printNode(PathNode *node, MetadataChanges subnode_changes)
   printf("\n");
 }
 
+/** Prints informations about a tree recursively.
+
+  @param metadata The metadata belonging to given node list.
+  @param path_list A list of nodes to print informations about.
+  @param print True, if informations should be printed.
+
+  @return Statistics about all the nodes locatable trough the given path
+  list.
+*/
 static MetadataChanges recursePrintOverTree(Metadata *metadata,
                                             PathNode *path_list,
                                             bool print)
