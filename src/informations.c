@@ -170,6 +170,12 @@ static void addNode(PathNode *node, MetadataChanges *changes)
   else if(hint == BH_not_part_of_repository)
   {
     changeStatsAdd(&changes->wiped_items, 1, size);
+
+    if(node->policy == BPOL_mirror &&
+       (node->hint & BH_policy_changed) == false)
+    {
+      changes->affects_parent_timestamp = true;
+    }
   }
   else if(hint & BH_content_changed)
   {
@@ -184,11 +190,12 @@ static void addNode(PathNode *node, MetadataChanges *changes)
 /** Prints the informations in the given change stats.
 
   @param stats The struct containing the informations.
-  @param prefix The string to print before each number.
+  @param prefix The string to print before each number larger than 0.
 */
 static void printChangeStats(ChangeStats stats, const char *prefix)
 {
-  printf("%s%zu item%s", prefix, stats.count, stats.count == 1? "":"s");
+  printf("%s%zu item%s", stats.count > 0? prefix:"",
+         stats.count, stats.count == 1? "":"s");
 
   if(stats.size > 0)
   {
