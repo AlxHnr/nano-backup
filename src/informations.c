@@ -181,7 +181,10 @@ static void addNode(PathNode *node, MetadataChanges *changes)
   {
     changeStatsAdd(&changes->changed_items, 1, size);
   }
-  else if(node->hint != BH_unchanged)
+  else if(node->hint != BH_unchanged &&
+          (node->policy != BPOL_none ||
+           (node->hint < BH_owner_changed ||
+            node->hint > BH_timestamp_changed)))
   {
     changes->other = true;
   }
@@ -416,7 +419,10 @@ static MetadataChanges recursePrintOverTree(Metadata *metadata,
     MetadataChanges subnode_changes;
 
     if(print == true && node->hint > BH_unchanged &&
-       !(node->policy == BPOL_none && node->hint == BH_added))
+       !(node->policy == BPOL_none &&
+         (node->hint == BH_added ||
+          (node->hint >= BH_owner_changed &&
+           node->hint <= BH_timestamp_changed))))
     {
       bool print_subnodes =
         backupHintNoPol(node->hint) > BH_directory_to_symlink;
