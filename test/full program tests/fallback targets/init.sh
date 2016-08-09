@@ -7,8 +7,8 @@
 gen_expected_output()
 {
   path_elements=$(echo "$2" | grep -o '\/' | wc -l)
-  expected_files=$(grep -E '^Total: \+[0-9]+ items' "$1" | \
-    sed -r 's,^Total: \+([0-9]+) items.*$,\1,g')
+  expected_files=$(grep -E '^New: [0-9]+ ' "$1" | \
+    sed -r 's,^New: ([0-9]+) .*$,\1,g')
   total_files="0"
 
   if test -n "$expected_files"; then
@@ -20,7 +20,7 @@ gen_expected_output()
   fi
 
   sed -r "s,^(.. \^?)\/(.*)$,\1$2/\2,g" "$1" | \
-    sed -r "s,^Total: \+$expected_files items,Total: +$total_files items,g" | \
+    sed -r "s,^New: $expected_files ,New: $total_files ,g" | \
     sort > generated/expected-output
 }
 

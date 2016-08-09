@@ -30,6 +30,7 @@
 #include <string.h>
 
 #include "backup.h"
+#include "colors.h"
 #include "metadata.h"
 #include "search-tree.h"
 #include "informations.h"
@@ -67,6 +68,34 @@ static bool askUserProceed(void)
       return false;
     }
   }
+}
+
+/** Prints the given statistics.
+
+  @param summary A short summary of the change type.
+  @param color The color to print the count of affected files by this
+  change.
+  @param stats The statistics to print.
+  @param printed_stats Stores whether this function was already called or
+  not. Will be updated by this function.
+*/
+static void printStats(const char *summary, TextColor color,
+                       ChangeStats stats, bool *printed_stats)
+{
+  if(*printed_stats)
+  {
+    printf(", ");
+  }
+  else
+  {
+    *printed_stats = true;
+  }
+
+  printf("%s: ", summary);
+  colorPrintf(stdout, color, "%zu", stats.count);
+  printf(" (");
+  printHumanReadableSize(stats.size);
+  printf(")");
 }
 
 int main(const int arg_count, const char **arg_list)
@@ -114,9 +143,28 @@ int main(const int arg_count, const char **arg_list)
      changes.wiped_items.count > 0 || changes.changed_items.count > 0 ||
      changes.other == true)
   {
-    printf("\nTotal: +%zu items, +", changes.new_items.count);
-    printHumanReadableSize(changes.new_items.size);
-    printf("\n\n");
+    printf("\n");
+
+    bool printed_stats = false;
+    if(changes.new_items.count > 0)
+    {
+      printStats("New", TC_green_bold, changes.new_items,
+                 &printed_stats);
+    }
+    if(changes.removed_items.count > 0)
+    {
+      printStats("Removed", TC_red_bold, changes.removed_items,
+                 &printed_stats);
+    }
+    if(changes.wiped_items.count > 0)
+    {
+      printStats("To wipe", TC_blue_bold, changes.wiped_items,
+                 &printed_stats);
+    }
+    if(printed_stats)
+    {
+      printf("\n\n");
+    }
 
     if(askUserProceed())
     {

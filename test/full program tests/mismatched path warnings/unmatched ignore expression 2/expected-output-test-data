@@ -5,6 +5,6 @@
 ++ /test directory/foo 1/♞.☂
 config: line 2: regex never matched a path: "test directory/foo 1$"
 
-Total: +10 items, +0 b
+New: 10 (0 b)
 
 proceed? (y/n) 

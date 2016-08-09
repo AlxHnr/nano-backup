@@ -13,6 +13,6 @@ config: line 11: string matches, but not a directory: "test.txt"
 config: line 15: regex never matched a path: "6$"
 config: line 21: regex matches not only directories: "^(bird|gentoo)$"
 
-Total: +35 items, +40 b
+New: 35 (40 b), To wipe: 9 (0 b)
 
 proceed? (y/n) 

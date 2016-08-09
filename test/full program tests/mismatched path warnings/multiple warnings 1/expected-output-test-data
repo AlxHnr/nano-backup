@@ -4,6 +4,6 @@
 config: line 2: regex matches not only directories: "^(b|foo )"
 config: line 3: string never matched a file: "buzz"
 
-Total: +6 items, +0 b
+New: 6 (0 b), To wipe: 2 (0 b)
 
 proceed? (y/n) 

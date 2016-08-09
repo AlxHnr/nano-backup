@@ -3,6 +3,6 @@
 ++ /test directory/.hidden/❤❤❤.txt
 config: line 3: regex never matched a directory: "foo:bar[0-9]+$"
 
-Total: +8 items, +0 b
+New: 8 (0 b)
 
 proceed? (y/n) 

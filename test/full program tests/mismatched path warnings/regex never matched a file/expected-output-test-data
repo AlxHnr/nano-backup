@@ -8,6 +8,6 @@
 ++ /test directory/€.txt
 config: line 3: regex never matched a file: "foo:bar[0-9]+$"
 
-Total: +9 items, +0 b
+New: 9 (0 b)
 
 proceed? (y/n) 

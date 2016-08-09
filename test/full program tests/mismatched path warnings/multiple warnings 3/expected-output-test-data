@@ -10,6 +10,6 @@ config: line 6: string never matched a file: "non-existing file"
 config: line 9: regex never matched a file: "unmatched regex"
 config: line 13: regex never matched a path: "."
 
-Total: +7 items, +0 b
+New: 7 (0 b)
 
 proceed? (y/n) 
