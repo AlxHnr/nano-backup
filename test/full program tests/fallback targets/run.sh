@@ -1,9 +1,13 @@
+test -f "$PHASE_PATH/input" &&
+  NB_INPUT="$(cat "$PHASE_PATH/input")" ||
+  NB_INPUT="yes"
+export NB_INPUT
+
 if test -f "$PHASE_PATH/arguments"; then
   cat "$PHASE_PATH/arguments"
 else
   echo generated/repo
-fi |
-xargs sh -c '(test -f "$PHASE_PATH/input" && cat "$PHASE_PATH/input") | "$NB" "$@"' -- 2>&1 |
+fi | xargs sh -c 'printf "%s" "$NB_INPUT" | "$NB" "$@"' -- 2>&1 |
 sort > generated/output
 
 diff -q generated/output generated/expected-output
