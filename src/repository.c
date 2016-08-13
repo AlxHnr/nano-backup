@@ -36,6 +36,7 @@
 #include <stdbool.h>
 #include <inttypes.h>
 
+#include "buffer.h"
 #include "safe-wrappers.h"
 #include "error-handling.h"
 
@@ -88,30 +89,7 @@ struct RepoReader
 };
 
 /** A reusable buffer for constructing paths of files inside repos. */
-static char *path_buffer = NULL;
-static size_t path_buffer_capacity = 0;
-
-/** Frees the path buffer. */
-static void freePathBuffer(void)
-{
-  free(path_buffer);
-}
-
-/** Ensures that the path_buffer has at least the required capacity.
-  Otherwise it will be reallocated.
-
-  @param size The size which the path_buffer must have.
-*/
-static void pathBufferEnsureCapacity(size_t size)
-{
-  if(size > path_buffer_capacity)
-  {
-    if(path_buffer == NULL) atexit(freePathBuffer);
-
-    path_buffer = sRealloc(path_buffer, size);
-    path_buffer_capacity = size;
-  }
-}
+static Buffer *path_buffer = NULL;
 
 /** Populates the path_buffer with the path required for accessing a file
   inside the repository.
@@ -129,12 +107,12 @@ static void fillPathBufferWithInfo(String repo_path,
   required_capacity += FILE_HASH_SIZE * 2;
   required_capacity += 2; /* Reserve some room for the slash and '\0'. */
   required_capacity = sSizeAdd(required_capacity, repo_path.length);
-  pathBufferEnsureCapacity(required_capacity);
+  bufferEnsureCapacity(&path_buffer, required_capacity);
 
-  memcpy(path_buffer, repo_path.str, repo_path.length);
-  path_buffer[repo_path.length] = '/';
+  memcpy(path_buffer->data, repo_path.str, repo_path.length);
+  path_buffer->data[repo_path.length] = '/';
 
-  char *prefix_buffer = &path_buffer[repo_path.length + 1];
+  char *prefix_buffer = &path_buffer->data[repo_path.length + 1];
   sprintf(prefix_buffer, "%i-", info->slot);
 
   char *hash_buffer = &prefix_buffer[prefix_length];
@@ -176,7 +154,7 @@ static RepoWriter *createRepoWriter(const char *repo_path,
 bool repoRegularFileExists(String repo_path, const RegularFileInfo *info)
 {
   fillPathBufferWithInfo(repo_path, info);
-  return sPathExists(path_buffer);
+  return sPathExists(path_buffer->data);
 }
 
 /** Opens a new RepoReader for reading a file from a repository.
@@ -198,7 +176,7 @@ RepoReader *repoReaderOpenFile(const char *repo_path,
                                const RegularFileInfo *info)
 {
   fillPathBufferWithInfo(str(repo_path), info);
-  FILE *stream = fopen(path_buffer, "rb");
+  FILE *stream = fopen(path_buffer->data, "rb");
   if(stream == NULL)
   {
     dieErrno("failed to open \"%s\" in \"%s\"",
@@ -371,7 +349,7 @@ void repoWriterClose(RepoWriter *writer_to_close)
   else
   {
     fillPathBufferWithInfo(str(writer.repo_path), writer.rename_to.info);
-    sRename(writer.repo_tmp_file_path, path_buffer);
+    sRename(writer.repo_tmp_file_path, path_buffer->data);
   }
 
   int dir_descriptor = open(writer.repo_path, O_RDONLY, 0);

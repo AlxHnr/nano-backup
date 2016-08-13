@@ -377,11 +377,12 @@ static void restoreLargeRegularFile(const char *path,
   RepoReader *reader = repoReaderOpenFile("tmp/repo", path, info);
   FileStream *writer = sFopenWrite(path);
   uint64_t bytes_left = info->size;
-  char *buffer = sMalloc(4096);
+  char buffer[4096];
 
   while(bytes_left > 0)
   {
-    size_t bytes_to_read = bytes_left > 4096 ? 4096 : bytes_left;
+    size_t bytes_to_read =
+      bytes_left > sizeof(buffer) ? sizeof(buffer) : bytes_left;
 
     repoReaderRead(buffer, bytes_to_read, reader);
     sFwrite(buffer, bytes_to_read, writer);
@@ -389,7 +390,6 @@ static void restoreLargeRegularFile(const char *path,
     bytes_left -= bytes_to_read;
   }
 
-  free(buffer);
   repoReaderClose(reader);
   sFclose(writer);
 }

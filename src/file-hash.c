@@ -29,8 +29,11 @@
 
 #include <stdlib.h>
 
+#include "buffer.h"
 #include "safe-wrappers.h"
 #include "error-handling.h"
+
+static Buffer *io_buffer = NULL;
 
 /** Calculates the hash of a file.
 
@@ -46,7 +49,9 @@ void fileHash(const char *path, struct stat stats, uint8_t *hash)
   size_t blocksize    = stats.st_blksize;
   uint64_t bytes_left = stats.st_size;
   FileStream *stream  = sFopenRead(path);
-  char *buffer        = sMalloc(blocksize);
+
+  bufferEnsureCapacity(&io_buffer, blocksize);
+  char *buffer = io_buffer->data;
 
   SHA_CTX context;
   SHA1_Init(&context);
@@ -60,7 +65,6 @@ void fileHash(const char *path, struct stat stats, uint8_t *hash)
     bytes_left -= bytes_to_read;
   }
 
-  free(buffer);
   bool stream_not_at_end = sFbytesLeft(stream);
   sFclose(stream);
 

@@ -31,12 +31,15 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "buffer.h"
 #include "search.h"
 #include "file-hash.h"
 #include "repository.h"
 #include "memory-pool.h"
 #include "safe-wrappers.h"
 #include "error-handling.h"
+
+static Buffer *io_buffer = NULL;
 
 /** Reads the content of a symlink.
 
@@ -768,7 +771,9 @@ static void copyFileIntoRepo(PathNode *node, const char *repo_path,
   FileStream *reader = sFopenRead(node->path.str);
   RepoWriter *writer = repoWriterOpenFile(repo_path, repo_tmp_file_path,
                                           node->path.str, reg);
-  char *buffer = sMalloc(blocksize);
+
+  bufferEnsureCapacity(&io_buffer, blocksize);
+  char *buffer = io_buffer->data;
 
   while(bytes_left > 0)
   {
@@ -779,8 +784,6 @@ static void copyFileIntoRepo(PathNode *node, const char *repo_path,
 
     bytes_left -= bytes_to_read;
   }
-
-  free(buffer);
 
   bool stream_not_at_end = sFbytesLeft(reader);
   sFclose(reader);
@@ -814,7 +817,9 @@ static bool equalsToStoredFile(PathNode *node, const char *repo_path,
   uint64_t bytes_left = reg->size;
 
   FileStream *stream = sFopenRead(node->path.str);
-  char *buffer = sMalloc(sSizeMul(blocksize, 2));
+
+  bufferEnsureCapacity(&io_buffer, sSizeMul(blocksize, 2));
+  char *buffer = io_buffer->data;
 
   RepoReader *repo_stream =
     repoReaderOpenFile(repo_path, node->path.str, reg);
@@ -835,7 +840,6 @@ static bool equalsToStoredFile(PathNode *node, const char *repo_path,
   }
 
   repoReaderClose(repo_stream);
-  free(buffer);
 
   bool stream_not_at_end = sFbytesLeft(stream);
   sFclose(stream);
