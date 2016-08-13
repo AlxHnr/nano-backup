@@ -29,7 +29,7 @@ build/%.o:
 test: build/nb $(TESTS) $(GENERATED_CONFIGS) \
   test/data/test\ directory/.empty/
 	@(cd test/data/ && \
-	  for test in safe-wrappers memory-pool file-hash colors \
+	  for test in safe-wrappers memory-pool buffer file-hash colors \
 	  string-utils string-table search-tree search repository \
 	  metadata backup; do \
 	  rm -rf tmp/; \
