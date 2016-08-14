@@ -29,7 +29,6 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
 #include "buffer.h"
 #include "search.h"
@@ -37,48 +36,10 @@
 #include "repository.h"
 #include "memory-pool.h"
 #include "safe-wrappers.h"
+#include "backup-helpers.h"
 #include "error-handling.h"
 
 static Buffer *io_buffer = NULL;
-
-/** Reads the content of a symlink into the given Buffer.
-
-  @param path The path to the symlink.
-  @param stats The stats of the symlink.
-  @param buffer_ptr The Buffer in which the string will be stored.
-
-  @return The given buffers data.
-*/
-static const char *readSymlink(const char *path, struct stat stats,
-                               Buffer **buffer_ptr)
-{
-  uint64_t buffer_length = sUint64Add(stats.st_size, 1);
-  if(buffer_length > SIZE_MAX)
-  {
-    die("symlink does not fit in memory: \"%s\"", path);
-  }
-
-  bufferEnsureCapacity(buffer_ptr, buffer_length);
-  char *buffer = (*buffer_ptr)->data;
-
-  /* Although st_size bytes are enough to store the symlinks target path,
-     the full buffer is used. This allows to detect whether the symlink
-     has increased in size since its last lstat() or not. */
-  ssize_t read_bytes = readlink(path, buffer, buffer_length);
-
-  if(read_bytes == -1)
-  {
-    dieErrno("failed to read symlink: \"%s\"", path);
-  }
-  else if(read_bytes != stats.st_size)
-  {
-    die("symlink changed while reading: \"%s\"", path);
-  }
-
-  buffer[stats.st_size] = '\0';
-
-  return buffer;
-}
 
 /** Sets all values inside the given state to the properties in the
   specified result. A regular files hash and slot will be left undefined.
@@ -365,120 +326,6 @@ static void handleRemovedPath(Metadata *metadata, PathNode *node,
   else
   {
     markAsRemovedRecursively(metadata, node, true);
-  }
-}
-
-/** Checks if the content of a regular file has changed.
-
-  @param node A node representing a file with a size greater than 0 at its
-  current history point. Its size should not have changed since the last
-  backup. This function will update the node if the file has changed.
-  @param state The path state to check and update.
-  @param result The search result which has found the given node.
-*/
-static void checkFileContentChanges(PathNode *node, PathState *state,
-                                    struct stat stats)
-{
-  uint8_t hash[FILE_HASH_SIZE];
-  size_t bytes_used = FILE_HASH_SIZE;
-
-  if(state->metadata.reg.size > FILE_HASH_SIZE)
-  {
-    fileHash(node->path.str, stats, hash);
-  }
-  else
-  {
-    bytes_used = state->metadata.reg.size;
-
-    FileStream *stream = sFopenRead(node->path.str);
-    sFread(hash, bytes_used, stream);
-    bool stream_not_at_end = sFbytesLeft(stream);
-    sFclose(stream);
-
-    if(stream_not_at_end)
-    {
-      die("file has changed while checking for changes: \"%s\"",
-          node->path.str);
-    }
-  }
-
-  if(memcmp(state->metadata.reg.hash, hash, bytes_used) != 0)
-  {
-    backupHintSet(node->hint, BH_content_changed);
-    backupHintSet(node->hint, BH_fresh_hash);
-
-    memcpy(state->metadata.reg.hash, hash, bytes_used);
-  }
-}
-
-/** Compares the node against the stats in the given results and updates
-  both its backup hint and the specified path state.
-
-  @param node The node containing the hint to update.
-  @param state The state to update.
-  @param result The result which has matched the given node.
-*/
-static void applyNodeChanges(PathNode *node, PathState *state,
-                             struct stat stats)
-{
-  if(state->uid != stats.st_uid ||
-     state->gid != stats.st_gid)
-  {
-    backupHintSet(node->hint, BH_owner_changed);
-    state->uid = stats.st_uid;
-    state->gid = stats.st_gid;
-  }
-
-  /* Path state specific change checks. */
-  if(state->type == PST_regular)
-  {
-    if(state->metadata.reg.mode != stats.st_mode)
-    {
-      backupHintSet(node->hint, BH_permissions_changed);
-      state->metadata.reg.mode = stats.st_mode;
-    }
-
-    if(state->metadata.reg.timestamp != stats.st_mtime)
-    {
-      backupHintSet(node->hint, BH_timestamp_changed);
-      state->metadata.reg.timestamp = stats.st_mtime;
-    }
-
-    if(state->metadata.reg.size != (uint64_t)stats.st_size)
-    {
-      backupHintSet(node->hint, BH_content_changed);
-      state->metadata.reg.size = stats.st_size;
-    }
-    else if((node->hint & BH_timestamp_changed) &&
-            state->metadata.reg.size > 0)
-    {
-      checkFileContentChanges(node, state, stats);
-    }
-  }
-  else if(state->type == PST_symlink)
-  {
-    const char *sym_target =
-      readSymlink(node->path.str, stats, &io_buffer);
-
-    if(strcmp(state->metadata.sym_target, sym_target) != 0)
-    {
-      state->metadata.sym_target = strCopy(str(sym_target)).str;
-      backupHintSet(node->hint, BH_content_changed);
-    }
-  }
-  else if(state->type == PST_directory)
-  {
-    if(state->metadata.dir.mode != stats.st_mode)
-    {
-      backupHintSet(node->hint, BH_permissions_changed);
-      state->metadata.dir.mode = stats.st_mode;
-    }
-
-    if(state->metadata.dir.timestamp != stats.st_mtime)
-    {
-      backupHintSet(node->hint, BH_timestamp_changed);
-      state->metadata.dir.timestamp = stats.st_mtime;
-    }
   }
 }
 
