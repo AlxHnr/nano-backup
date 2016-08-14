@@ -386,6 +386,48 @@ int main(void)
   assert_true(sStat("tmp/file-2").st_size == 0);
   testGroupEnd();
 
+  testGroupStart("sChmod()");
+  sChmod("tmp/test-file-1", 0600);
+  assert_true((sLStat("tmp/test-file-1").st_mode & ~S_IFMT) == 0600);
+  sChmod("tmp/test-file-1", 0404);
+  assert_true((sLStat("tmp/test-file-1").st_mode & ~S_IFMT) == 0404);
+  sChmod("tmp/test-file-1", 0544);
+  assert_true((sLStat("tmp/test-file-1").st_mode & ~S_IFMT) == 0544);
+  sChmod("tmp/test-file-1", 0644);
+  assert_true((sLStat("tmp/test-file-1").st_mode & ~S_IFMT) == 0644);
+
+  sSymlink("test-file-1", "tmp/test-symlink-1");
+  sChmod("tmp/test-symlink-1", 0600);
+  assert_true((sLStat("tmp/test-file-1").st_mode & ~S_IFMT) == 0600);
+  sChmod("tmp/test-symlink-1", 0404);
+  assert_true((sLStat("tmp/test-file-1").st_mode & ~S_IFMT) == 0404);
+  sChmod("tmp/test-symlink-1", 0544);
+  assert_true((sLStat("tmp/test-file-1").st_mode & ~S_IFMT) == 0544);
+  sChmod("tmp/test-symlink-1", 0644);
+  assert_true((sLStat("tmp/test-file-1").st_mode & ~S_IFMT) == 0644);
+
+  assert_error(sChmod("tmp/non-existing", 0600),
+               "failed to change permissions of \"tmp/non-existing\": No such file or directory");
+  testGroupEnd();
+
+  testGroupStart("sChown()");
+  struct stat test_file_1_stat = sLStat("tmp/test-file-1");
+  sChown("tmp/test-file-1", test_file_1_stat.st_uid, test_file_1_stat.st_gid);
+
+  sSymlink("non-existing", "tmp/dangling-symlink");
+  assert_error(sChown("tmp/dangling-symlink", test_file_1_stat.st_uid, test_file_1_stat.st_gid),
+               "failed to change owner of \"tmp/dangling-symlink\": No such file or directory");
+  testGroupEnd();
+
+  testGroupStart("sLChown()");
+  struct stat dangling_symlink_stat = sLStat("tmp/dangling-symlink");
+
+  sLChown("tmp/dangling-symlink", dangling_symlink_stat.st_uid, dangling_symlink_stat.st_gid);
+
+  assert_error(sLChown("tmp/non-existing", dangling_symlink_stat.st_uid, dangling_symlink_stat.st_gid),
+               "failed to change owner of \"tmp/non-existing\": No such file or directory");
+  testGroupEnd();
+
   testGroupStart("sRemove()");
   sFclose(sFopenWrite("tmp/file-to-remove"));
   sMkdir("tmp/dir-to-remove");

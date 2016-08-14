@@ -496,6 +496,33 @@ void sRename(const char *oldpath, const char *newpath)
   }
 }
 
+/** Safe wrapper around chmod(). */
+void sChmod(const char *path, mode_t mode)
+{
+  if(chmod(path, mode) != 0)
+  {
+    dieErrno("failed to change permissions of \"%s\"", path);
+  }
+}
+
+/** Safe wrapper around chown(). */
+void sChown(const char *path, uid_t user, gid_t group)
+{
+  if(chown(path, user, group) != 0)
+  {
+    dieErrno("failed to change owner of \"%s\"", path);
+  }
+}
+
+/** Safe wrapper around lchown(). */
+void sLChown(const char *path, uid_t user, gid_t group)
+{
+  if(lchown(path, user, group) != 0)
+  {
+    dieErrno("failed to change owner of \"%s\"", path);
+  }
+}
+
 /** Safe wrapper around remove().
 
   @param path The path to remove.
