@@ -41,37 +41,41 @@
 
 static Buffer *io_buffer = NULL;
 
-/** Reads the content of a symlink.
+/** Reads the content of a symlink into the given Buffer.
 
-  @param result The result trough which the symlink was discovered.
+  @param path The path to the symlink.
+  @param stats The stats of the symlink.
+  @param buffer_ptr The Buffer in which the string will be stored.
 
-  @return The content of the symlink. Should not be freed by the caller.
+  @return The given buffers data.
 */
-static const char *readSymlink(SearchResult result)
+static const char *readSymlink(const char *path, struct stat stats,
+                               Buffer **buffer_ptr)
 {
-  uint64_t buffer_length = sUint64Add(result.stats.st_size, 1);
+  uint64_t buffer_length = sUint64Add(stats.st_size, 1);
   if(buffer_length > SIZE_MAX)
   {
-    die("symlink does not fit in memory: \"%s\"", result.path.str);
+    die("symlink does not fit in memory: \"%s\"", path);
   }
 
-  char *buffer = mpAlloc(buffer_length);
+  bufferEnsureCapacity(buffer_ptr, buffer_length);
+  char *buffer = (*buffer_ptr)->data;
 
   /* Although st_size bytes are enough to store the symlinks target path,
      the full buffer is used. This allows to detect whether the symlink
      has increased in size since its last lstat() or not. */
-  ssize_t read_bytes = readlink(result.path.str, buffer, buffer_length);
+  ssize_t read_bytes = readlink(path, buffer, buffer_length);
 
   if(read_bytes == -1)
   {
-    dieErrno("failed to read symlink: \"%s\"", result.path.str);
+    dieErrno("failed to read symlink: \"%s\"", path);
   }
-  else if(read_bytes != result.stats.st_size)
+  else if(read_bytes != stats.st_size)
   {
-    die("symlink changed while reading: \"%s\"", result.path.str);
+    die("symlink changed while reading: \"%s\"", path);
   }
 
-  buffer[result.stats.st_size] = '\0';
+  buffer[stats.st_size] = '\0';
 
   return buffer;
 }
@@ -99,7 +103,11 @@ static void setPathHistoryState(PathState *state, SearchResult result)
   else if(result.type == SRT_symlink)
   {
     state->type = PST_symlink;
-    state->metadata.sym_target = readSymlink(result);
+
+    const char *sym_target =
+      readSymlink(result.path.str, result.stats, &io_buffer);
+
+    state->metadata.sym_target = strCopy(str(sym_target)).str;
   }
   else if(result.type == SRT_directory)
   {
@@ -365,17 +373,18 @@ static void handleRemovedPath(Metadata *metadata, PathNode *node,
   @param node A node representing a file with a size greater than 0 at its
   current history point. Its size should not have changed since the last
   backup. This function will update the node if the file has changed.
+  @param state The path state to check and update.
   @param result The search result which has found the given node.
 */
 static void checkFileContentChanges(PathNode *node, PathState *state,
-                                    SearchResult result)
+                                    struct stat stats)
 {
   uint8_t hash[FILE_HASH_SIZE];
   size_t bytes_used = FILE_HASH_SIZE;
 
   if(state->metadata.reg.size > FILE_HASH_SIZE)
   {
-    fileHash(node->path.str, result.stats, hash);
+    fileHash(node->path.str, stats, hash);
   }
   else
   {
@@ -410,64 +419,65 @@ static void checkFileContentChanges(PathNode *node, PathState *state,
   @param result The result which has matched the given node.
 */
 static void applyNodeChanges(PathNode *node, PathState *state,
-                             SearchResult result)
+                             struct stat stats)
 {
-  if(state->uid != result.stats.st_uid ||
-     state->gid != result.stats.st_gid)
+  if(state->uid != stats.st_uid ||
+     state->gid != stats.st_gid)
   {
     backupHintSet(node->hint, BH_owner_changed);
-    state->uid = result.stats.st_uid;
-    state->gid = result.stats.st_gid;
+    state->uid = stats.st_uid;
+    state->gid = stats.st_gid;
   }
 
   /* Path state specific change checks. */
   if(state->type == PST_regular)
   {
-    if(state->metadata.reg.mode != result.stats.st_mode)
+    if(state->metadata.reg.mode != stats.st_mode)
     {
       backupHintSet(node->hint, BH_permissions_changed);
-      state->metadata.reg.mode = result.stats.st_mode;
+      state->metadata.reg.mode = stats.st_mode;
     }
 
-    if(state->metadata.reg.timestamp != result.stats.st_mtime)
+    if(state->metadata.reg.timestamp != stats.st_mtime)
     {
       backupHintSet(node->hint, BH_timestamp_changed);
-      state->metadata.reg.timestamp = result.stats.st_mtime;
+      state->metadata.reg.timestamp = stats.st_mtime;
     }
 
-    if(state->metadata.reg.size != (uint64_t)result.stats.st_size)
+    if(state->metadata.reg.size != (uint64_t)stats.st_size)
     {
       backupHintSet(node->hint, BH_content_changed);
-      state->metadata.reg.size = result.stats.st_size;
+      state->metadata.reg.size = stats.st_size;
     }
     else if((node->hint & BH_timestamp_changed) &&
             state->metadata.reg.size > 0)
     {
-      checkFileContentChanges(node, state, result);
+      checkFileContentChanges(node, state, stats);
     }
   }
   else if(state->type == PST_symlink)
   {
-    const char *sym_target = readSymlink(result);
+    const char *sym_target =
+      readSymlink(node->path.str, stats, &io_buffer);
 
     if(strcmp(state->metadata.sym_target, sym_target) != 0)
     {
-      state->metadata.sym_target = sym_target;
+      state->metadata.sym_target = strCopy(str(sym_target)).str;
       backupHintSet(node->hint, BH_content_changed);
     }
   }
   else if(state->type == PST_directory)
   {
-    if(state->metadata.dir.mode != result.stats.st_mode)
+    if(state->metadata.dir.mode != stats.st_mode)
     {
       backupHintSet(node->hint, BH_permissions_changed);
-      state->metadata.dir.mode = result.stats.st_mode;
+      state->metadata.dir.mode = stats.st_mode;
     }
 
-    if(state->metadata.dir.timestamp != result.stats.st_mtime)
+    if(state->metadata.dir.timestamp != stats.st_mtime)
     {
       backupHintSet(node->hint, BH_timestamp_changed);
-      state->metadata.dir.timestamp = result.stats.st_mtime;
+      state->metadata.dir.timestamp = stats.st_mtime;
     }
   }
 }
@@ -528,7 +538,7 @@ static void handleNodeChanges(PathNode *node, PathState *state,
 
   if(backupHintNoPol(node->hint) == BH_none)
   {
-    applyNodeChanges(node, state, result);
+    applyNodeChanges(node, state, result.stats);
   }
   else if(result.policy != BPOL_none)
   {
