@@ -196,10 +196,7 @@ static void setTimestamp(const char *path, time_t timestamp)
 static void makeDir(const char *path)
 {
   struct utimbuf parent_time = getParentTime(path);
-  if(mkdir(path, 0755) != 0)
-  {
-    dieErrno("failed to create directory \"%s\"", path);
-  }
+  sMkdir(path);
   restoreParentTime(path, parent_time);
 }
 
@@ -207,10 +204,7 @@ static void makeDir(const char *path)
 static void makeSymlink(const char *target, const char *linkpath)
 {
   struct utimbuf parent_time = getParentTime(linkpath);
-  if(symlink(target, linkpath) != 0)
-  {
-    dieErrno("failed to create symlink \"%s\" -> \"%s\"", linkpath, target);
-  }
+  sSymlink(target, linkpath);
   restoreParentTime(linkpath, parent_time);
 }
 
