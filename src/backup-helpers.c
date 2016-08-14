@@ -41,7 +41,7 @@ static Buffer *io_buffer = NULL;
   current history point. Its size should not have changed since the last
   backup. This function will update the node if the file has changed.
   @param state The path state to check and update.
-  @param result The search result which has found the given node.
+  @param stats The stats of the file represented by the given node.
 */
 static void checkFileContentChanges(PathNode *node, PathState *state,
                                     struct stat stats)
@@ -122,7 +122,7 @@ const char *readSymlink(const char *path, struct stat stats,
 
   @param node The node containing the hint to update.
   @param state The state to update.
-  @param result The result which has matched the given node.
+  @param stats The stats of the file represented by the given node.
 */
 void applyNodeChanges(PathNode *node, PathState *state, struct stat stats)
 {
