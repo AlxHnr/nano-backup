@@ -339,6 +339,34 @@ int main(void)
   sFclose(test_file);
   testGroupEnd();
 
+  testGroupStart("sMkdir()");
+  assert_true(sPathExists("tmp/some-directory") == false);
+  sMkdir("tmp/some-directory");
+  assert_true(sPathExists("tmp/some-directory"));
+  assert_true(S_ISDIR(sLStat("tmp/some-directory").st_mode));
+
+  assert_error(sMkdir("tmp/some-directory"),
+               "failed to create directory: \"tmp/some-directory\": File exists");
+  assert_error(sMkdir("tmp/non-existing/foo"),
+               "failed to create directory: \"tmp/non-existing/foo\": No such file or directory");
+  testGroupEnd();
+
+  testGroupStart("sSymlink()");
+  assert_true(sPathExists("tmp/some-symlink") == false);
+  sSymlink("foo bar 123", "tmp/some-symlink");
+  assert_true(sPathExists("tmp/some-symlink"));
+  assert_true(S_ISLNK(sLStat("tmp/some-symlink").st_mode));
+
+  char some_symlink_buffer[12] = { 0 };
+  assert_true(11 == readlink("tmp/some-symlink", some_symlink_buffer, sizeof(some_symlink_buffer)));
+  assert_true(strcmp(some_symlink_buffer, "foo bar 123") == 0);
+
+  assert_error(sSymlink("test", "tmp/some-symlink"),
+               "failed to create symlink: \"tmp/some-symlink\": File exists");
+  assert_error(sSymlink("backup", "tmp/non-existing/bar"),
+               "failed to create symlink: \"tmp/non-existing/bar\": No such file or directory");
+  testGroupEnd();
+
   testGroupStart("sRename()");
   assert_true(sPathExists("tmp/file-1") == false);
   sFclose(sFopenWrite("tmp/file-1"));

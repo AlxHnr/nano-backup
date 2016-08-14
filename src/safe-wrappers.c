@@ -458,6 +458,31 @@ struct stat sLStat(const char *path)
   return safeStat(path, lstat);
 }
 
+/** A failsafe wrapper around mkdir().
+
+  @param path The path to the directory to create.
+*/
+void sMkdir(const char *path)
+{
+  if(mkdir(path, 0755) != 0)
+  {
+    dieErrno("failed to create directory: \"%s\"", path);
+  }
+}
+
+/** A failsafe wrapper around symlink().
+
+  @param target The path to which the symlink should point.
+  @param path The path to the symlink to create.
+*/
+void sSymlink(const char *target, const char *path)
+{
+  if(symlink(target, path) != 0)
+  {
+    dieErrno("failed to create symlink: \"%s\"", path);
+  }
+}
+
 /** Safe wrapper around rename().
 
   @param oldpath Path to the file which should be renamed.

@@ -66,6 +66,8 @@ extern void sCloseDir(DIR *dir, const char *path);
 extern bool sPathExists(const char *path);
 extern struct stat sStat(const char *path);
 extern struct stat sLStat(const char *path);
+extern void sMkdir(const char *path);
+extern void sSymlink(const char *target, const char *path);
 extern void sRename(const char *oldpath, const char *newpath);
 
 extern char *sReadLine(FILE *stream);
