@@ -69,6 +69,7 @@ extern struct stat sLStat(const char *path);
 extern void sMkdir(const char *path);
 extern void sSymlink(const char *target, const char *path);
 extern void sRename(const char *oldpath, const char *newpath);
+extern void sRemove(const char *path);
 
 extern char *sReadLine(FILE *stream);
 extern time_t sTime(void);

@@ -496,6 +496,18 @@ void sRename(const char *oldpath, const char *newpath)
   }
 }
 
+/** Safe wrapper around remove().
+
+  @param path The path to remove.
+*/
+void sRemove(const char *path)
+{
+  if(remove(path) != 0)
+  {
+    dieErrno("failed to remove \"%s\"", path);
+  }
+}
+
 /** Reads a line from the given stream and terminates the program on
   failure.
 

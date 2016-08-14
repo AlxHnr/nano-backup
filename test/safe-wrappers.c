@@ -386,6 +386,40 @@ int main(void)
   assert_true(sStat("tmp/file-2").st_size == 0);
   testGroupEnd();
 
+  testGroupStart("sRemove()");
+  sFclose(sFopenWrite("tmp/file-to-remove"));
+  sMkdir("tmp/dir-to-remove");
+  sSymlink("file-to-remove", "tmp/link-to-remove1");
+  sSymlink("dir-to-remove", "tmp/link-to-remove2");
+
+  sRemove("tmp/link-to-remove1");
+  sRemove("tmp/link-to-remove2");
+  assert_true(sPathExists("tmp/file-to-remove"));
+  assert_true(sPathExists("tmp/dir-to-remove"));
+  assert_true(sPathExists("tmp/link-to-remove1") == false);
+  assert_true(sPathExists("tmp/link-to-remove2") == false);
+
+  sRemove("tmp/file-to-remove");
+  assert_true(sPathExists("tmp/file-to-remove") == false);
+
+  sRemove("tmp/dir-to-remove");
+  assert_true(sPathExists("tmp/dir-to-remove") == false);
+
+  assert_error(sRemove("tmp/non-existing"),
+               "failed to remove \"tmp/non-existing\": No such file or directory");
+  assert_error(sRemove("tmp/non-existing-dir/foo"),
+               "failed to remove \"tmp/non-existing-dir/foo\": No such file or directory");
+
+  sMkdir("tmp/non-empty-dir");
+  sFclose(sFopenWrite("tmp/non-empty-dir/foo"));
+  assert_error(sRemove("tmp/non-empty-dir"),
+               "failed to remove \"tmp/non-empty-dir\": Directory not empty");
+
+  sRemove("tmp/non-empty-dir/foo");
+  sRemove("tmp/non-empty-dir");
+  assert_true(sPathExists("tmp/non-empty-dir") == false);
+  testGroupEnd();
+
   testGroupStart("sReadLine()");
   FILE *in_stream = fopen("valid-config-files/simple.txt", "rb");
   checkReadSimpleTxt(in_stream);

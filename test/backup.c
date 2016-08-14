@@ -280,10 +280,7 @@ static void generateCollidingFiles(const uint8_t *hash, size_t size,
 static void removePath(const char *path)
 {
   struct utimbuf parent_time = getParentTime(path);
-  if(remove(path) != 0)
-  {
-    dieErrno("failed to remove \"%s\"", path);
-  }
+  sRemove(path);
   restoreParentTime(path, parent_time);
 }
 
