@@ -72,6 +72,7 @@ extern void sRename(const char *oldpath, const char *newpath);
 extern void sChmod(const char *path, mode_t mode);
 extern void sChown(const char *path, uid_t user, gid_t group);
 extern void sLChown(const char *path, uid_t user, gid_t group);
+extern void sUtime(const char *path, time_t time);
 extern void sRemove(const char *path);
 
 extern char *sReadLine(FILE *stream);

@@ -27,7 +27,6 @@
 
 #include "backup.h"
 
-#include <utime.h>
 #include <unistd.h>
 #include <stdlib.h>
 
@@ -152,50 +151,23 @@ static size_t countFilesInDir(const char *path)
   return counter;
 }
 
-/** Safe wrapper around utime(). */
-static void sUtime(const char *path, struct utimbuf time)
-{
-  if(utime(path, &time) != 0)
-  {
-    dieErrno("failed to restore paths time: \"%s\"", path);
-  }
-}
-
 /** Creates a backup of the given paths parent directories timestamps. */
-static struct utimbuf getParentTime(const char *path)
+static time_t getParentTime(const char *path)
 {
-  struct stat stats = sStat(strCopy(strSplitPath(str(path)).head).str);
-
-  return (struct utimbuf)
-  {
-    .actime  = stats.st_atime,
-    .modtime = stats.st_mtime,
-  };
+  return sStat(strCopy(strSplitPath(str(path)).head).str).st_mtime;
 }
 
 /** Counterpart to getParentTime(). */
-static void restoreParentTime(const char *path, struct utimbuf time)
+static void restoreParentTime(const char *path, time_t time)
 {
   const char *parent_path = strCopy(strSplitPath(str(path)).head).str;
   sUtime(parent_path, time);
 }
 
-/** Sets the modification timestamp of the given path. */
-static void setTimestamp(const char *path, time_t timestamp)
-{
-  struct utimbuf time =
-  {
-    .actime  = timestamp,
-    .modtime = timestamp,
-  };
-
-  sUtime(path, time);
-}
-
 /** Safe wrapper around mkdir(). */
 static void makeDir(const char *path)
 {
-  struct utimbuf parent_time = getParentTime(path);
+  time_t parent_time = getParentTime(path);
   sMkdir(path);
   restoreParentTime(path, parent_time);
 }
@@ -203,7 +175,7 @@ static void makeDir(const char *path)
 /** Safe wrapper around symlink(). */
 static void makeSymlink(const char *target, const char *linkpath)
 {
-  struct utimbuf parent_time = getParentTime(linkpath);
+  time_t parent_time = getParentTime(linkpath);
   sSymlink(target, linkpath);
   restoreParentTime(linkpath, parent_time);
 }
@@ -223,7 +195,7 @@ static void generateFile(const char *path, const char *content,
     die("failed to generate file: Already existing: \"%s\"", path);
   }
 
-  struct utimbuf parent_time = getParentTime(path);
+  time_t parent_time = getParentTime(path);
   FileStream *stream = sFopenWrite(path);
   size_t content_length = strlen(content);
 
@@ -279,7 +251,7 @@ static void generateCollidingFiles(const uint8_t *hash, size_t size,
 /** Safe wrapper around remove(). */
 static void removePath(const char *path)
 {
-  struct utimbuf parent_time = getParentTime(path);
+  time_t parent_time = getParentTime(path);
   sRemove(path);
   restoreParentTime(path, parent_time);
 }
@@ -320,7 +292,7 @@ static void regenerateFile(PathNode *node, const char *content,
 
   removePath(node->path.str);
   generateFile(node->path.str, content, repetitions);
-  setTimestamp(node->path.str, node->history->state.metadata.reg.timestamp);
+  sUtime(node->path.str, node->history->state.metadata.reg.timestamp);
 }
 
 /** Changes the path to which a symlink points.
@@ -394,7 +366,7 @@ static void restoreLargeRegularFile(const char *path,
 static void restoreRegularFile(const char *path,
                                const RegularFileInfo *info)
 {
-  struct utimbuf parent_time = getParentTime(path);
+  time_t parent_time = getParentTime(path);
 
   if(info->size <= FILE_HASH_SIZE)
   {
@@ -407,7 +379,7 @@ static void restoreRegularFile(const char *path,
     restoreLargeRegularFile(path, info);
   }
 
-  setTimestamp(path, info->timestamp);
+  sUtime(path, info->timestamp);
   restoreParentTime(path, parent_time);
 }
 
@@ -431,7 +403,7 @@ static void restoreWithTimeRecursively(PathNode *node)
         break;
       case PST_directory:
         makeDir(node->path.str);
-        setTimestamp(node->path.str, point->state.metadata.dir.timestamp);
+        sUtime(node->path.str, point->state.metadata.dir.timestamp);
         break;
       default:
         die("unable to restore \"%s\"", node->path.str);
@@ -6252,7 +6224,7 @@ int main(void)
   /* Create a backup of the current metadata. */
   time_t tmp_timestamp = sStat("tmp").st_mtime;
   metadataWrite(metadataLoad("tmp/repo/metadata"), "tmp", "tmp/tmp-file", "tmp/metadata-backup");
-  setTimestamp("tmp", tmp_timestamp);
+  sUtime("tmp", tmp_timestamp);
 
   /* Run some backup phases. */
   phase("backup with no changes",                        runPhase11, phase_9_node, cwd, cwd_depth);
@@ -6261,7 +6233,7 @@ int main(void)
   /* Restore metadata from phase 10. */
   tmp_timestamp = sStat("tmp").st_mtime;
   sRename("tmp/metadata-backup", "tmp/repo/metadata");
-  setTimestamp("tmp", tmp_timestamp);
+  sUtime("tmp", tmp_timestamp);
 
   /* Run more backup phases. */
   phase("a variation of the previous backup", runPhase13, phase_13_node, cwd, cwd_depth);

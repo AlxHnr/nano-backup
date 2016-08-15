@@ -30,6 +30,7 @@
 
 #include <errno.h>
 #include <stdio.h>
+#include <utime.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -520,6 +521,21 @@ void sLChown(const char *path, uid_t user, gid_t group)
   if(lchown(path, user, group) != 0)
   {
     dieErrno("failed to change owner of \"%s\"", path);
+  }
+}
+
+/** Simplified safe wrapper around utime(). */
+void sUtime(const char *path, time_t time)
+{
+  struct utimbuf time_buffer =
+  {
+    .actime  = time,
+    .modtime = time,
+  };
+
+  if(utime(path, &time_buffer) != 0)
+  {
+    dieErrno("failed to set timestamp of \"%s\"", path);
   }
 }
 

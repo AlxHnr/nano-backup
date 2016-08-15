@@ -428,6 +428,24 @@ int main(void)
                "failed to change owner of \"tmp/non-existing\": No such file or directory");
   testGroupEnd();
 
+  testGroupStart("sUtime()");
+  sUtime("tmp/test-file-1", 123);
+  assert_true(sLStat("tmp/test-file-1").st_mtime == 123);
+  sUtime("tmp/test-file-1", 987654);
+  assert_true(sLStat("tmp/test-file-1").st_mtime == 987654);
+  sUtime("tmp/test-file-1", 555);
+  assert_true(sLStat("tmp/test-file-1").st_mtime == 555);
+  sUtime("tmp/test-symlink-1", 13579);
+  assert_true(sLStat("tmp/test-file-1").st_mtime == 13579);
+  sUtime("tmp/test-symlink-1", 900);
+  assert_true(sLStat("tmp/test-file-1").st_mtime == 900);
+  sUtime("tmp/test-symlink-1", 12);
+  assert_true(sLStat("tmp/test-file-1").st_mtime == 12);
+
+  assert_error(sUtime("tmp/non-existing", 123),
+               "failed to set timestamp of \"tmp/non-existing\": No such file or directory");
+  testGroupEnd();
+
   testGroupStart("sRemove()");
   sFclose(sFopenWrite("tmp/file-to-remove"));
   sMkdir("tmp/dir-to-remove");
