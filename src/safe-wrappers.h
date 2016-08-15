@@ -74,6 +74,7 @@ extern void sChown(const char *path, uid_t user, gid_t group);
 extern void sLChown(const char *path, uid_t user, gid_t group);
 extern void sUtime(const char *path, time_t time);
 extern void sRemove(const char *path);
+extern void sRemoveRecursively(const char *path);
 
 extern char *sReadLine(FILE *stream);
 extern time_t sTime(void);
@@ -82,7 +83,7 @@ extern time_t sTime(void);
 typedef struct
 {
   /** The content of the file. It will point to NULL if the size of the
-    file equals to zero.*/
+    file equals to zero. */
   char *content;
 
   /** The size of the content in bytes. */

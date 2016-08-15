@@ -33,8 +33,10 @@
 #include <utime.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
+#include "buffer.h"
 #include "error-handling.h"
 
 struct FileStream
@@ -549,6 +551,55 @@ void sRemove(const char *path)
   {
     dieErrno("failed to remove \"%s\"", path);
   }
+}
+
+/** Removes the given path recursively.
+
+  @param buffer The buffer containing the null-terminated path to remove.
+  @param length The length of the given path.
+*/
+static void removeRecursively(Buffer *buffer, size_t length)
+{
+  struct stat stats = sLStat(buffer->data);
+
+  if(S_ISDIR(stats.st_mode))
+  {
+    DIR *dir = sOpenDir(buffer->data);
+
+    for(struct dirent *dir_entry = sReadDir(dir, buffer->data);
+        dir_entry != NULL; dir_entry = sReadDir(dir, buffer->data))
+    {
+      size_t d_name_length = strlen(dir_entry->d_name);
+      size_t required_capacity =
+        sSizeAdd(sSizeAdd(length, 2), d_name_length);
+      bufferEnsureCapacity(&buffer, required_capacity);
+
+      buffer->data[length] = '/';
+      buffer->data[length + 1 + d_name_length] = '\0';
+      memcpy(&buffer->data[length + 1], dir_entry->d_name, d_name_length);
+
+      removeRecursively(buffer, length + 1 + d_name_length);
+
+      buffer->data[length] = '\0';
+    }
+
+    sCloseDir(dir, buffer->data);
+  }
+
+  sRemove(buffer->data);
+}
+
+/** Recursive version of sRemove(). */
+void sRemoveRecursively(const char *path)
+{
+  static Buffer *buffer = NULL;
+  size_t length = strlen(path);
+
+  bufferEnsureCapacity(&buffer, sSizeAdd(length, 1));
+  memcpy(buffer->data, path, length);
+  buffer->data[length] = '\0';
+
+  removeRecursively(buffer, length);
 }
 
 /** Reads a line from the given stream and terminates the program on

@@ -480,6 +480,41 @@ int main(void)
   assert_true(sPathExists("tmp/non-empty-dir") == false);
   testGroupEnd();
 
+  testGroupStart("sRemoveRecursively()");
+  assert_true(sPathExists("tmp/test-file-1"));
+  assert_true(sPathExists("tmp/test-symlink-1"));
+  sRemoveRecursively("tmp/test-symlink-1");
+  assert_true(sPathExists("tmp/test-file-1"));
+  assert_true(sPathExists("tmp/test-symlink-1") == false);
+
+  sRemoveRecursively("tmp/test-file-1");
+  assert_true(sPathExists("tmp/test-file-1") == false);
+
+  sMkdir("tmp/foo");
+  sFclose(sFopenWrite("tmp/foo/bar"));
+  sSymlink("bar", "tmp/foo/123");
+  sMkdir("tmp/foo/1");
+  sMkdir("tmp/foo/1/2");
+  sMkdir("tmp/foo/1/2/3");
+  sMkdir("tmp/foo/1/2/3/4");
+  sMkdir("tmp/foo/1/2/3/4/5");
+  sMkdir("tmp/foo/1/2/3/4/6");
+  sMkdir("tmp/foo/1/2/3/4/7");
+  sMkdir("tmp/foo/1/2/3/xyz");
+  sSymlink("../../../..", "tmp/foo/1/2/3/abc");
+  sSymlink("../../../bar", "tmp/foo/1/2/bar");
+  sFclose(sFopenWrite("tmp/bar"));
+
+  assert_true(sPathExists("tmp/foo"));
+  assert_true(sPathExists("tmp/bar"));
+  sRemoveRecursively("tmp/foo");
+  assert_true(sPathExists("tmp/foo") == false);
+  assert_true(sPathExists("tmp/bar"));
+
+  sRemoveRecursively("tmp/bar");
+  assert_true(sPathExists("tmp/bar") == false);
+  testGroupEnd();
+
   testGroupStart("sReadLine()");
   FILE *in_stream = fopen("valid-config-files/simple.txt", "rb");
   checkReadSimpleTxt(in_stream);
