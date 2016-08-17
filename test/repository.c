@@ -42,16 +42,28 @@
   @param info Informations describing the file.
 */
 static void testFileExists(const char *file_path,
+                           const char *subdir_path,
+                           const char *subsubdir_path,
                            const RegularFileInfo *info)
 {
   String repo_path = str("tmp");
 
+  assert_true(sPathExists(subdir_path) == false);
+  assert_true(repoRegularFileExists(repo_path, info) == false);
+  sMkdir(subdir_path);
+  assert_true(repoRegularFileExists(repo_path, info) == false);
+  sMkdir(subsubdir_path);
   assert_true(repoRegularFileExists(repo_path, info) == false);
   sFclose(sFopenWrite(file_path));
   assert_true(repoRegularFileExists(repo_path, info) == true);
-  assert_true(remove(file_path) == 0);
+
+  sRemove(file_path);
   assert_true(repoRegularFileExists(repo_path, info) == false);
-  assert_true(sPathExists(file_path) == false);
+  sRemove(subsubdir_path);
+  assert_true(repoRegularFileExists(repo_path, info) == false);
+  sRemove(subdir_path);
+  assert_true(repoRegularFileExists(repo_path, info) == false);
+  assert_true(sPathExists(subdir_path) == false);
 }
 
 /** Asserts that the given file contains the string "Hello backup!". */
@@ -151,7 +163,7 @@ static void testWithExistingTmpFile(RepoWriter *writer,
 
 int main(void)
 {
-  const char *info_1_path = "tmp/24-070a0d101316191c1f2225282b2e3134373a3d40-139";
+  const char *info_1_path = "tmp/0/70/a0d101316191c1f2225282b2e3134373a3d40x8bx18";
   RegularFileInfo info_1 =
   {
     .size = 139, .slot = 24,
@@ -162,7 +174,7 @@ int main(void)
     },
   };
 
-  const char *info_2_path = "tmp/255-21514d1d49151941393d2d251109552931350d45-138904";
+  const char *info_2_path = "tmp/2/15/14d1d49151941393d2d251109552931350d45x21e98xff";
   RegularFileInfo info_2 =
   {
     .size = 138904, .slot = 255,
@@ -173,7 +185,8 @@ int main(void)
     },
   };
 
-  const char *info_3_path = "tmp/0-4b5f2b134f473b1f2757333f17531b23372f435b-18446744073709551615";
+
+  const char *info_3_path = "tmp/4/b5/f2b134f473b1f2757333f17531b23372f435bxffffffffffffffffx0";
   RegularFileInfo info_3 =
   {
     .size = 18446744073709551615UL, .slot = 0,
@@ -184,7 +197,7 @@ int main(void)
     },
   };
 
-  const char *info_4_path = "tmp/39-000000000000112233445566778899aabbccddee-0";
+  const char *info_4_path = "tmp/0/00/000000000112233445566778899aabbccddeex0x27";
   RegularFileInfo info_4 =
   {
     .size = 0, .slot = 39,
@@ -197,10 +210,10 @@ int main(void)
 
   testGroupStart("repoRegularFileExists()");
   assert_true(repoRegularFileExists(str("non-existing-path"), &info_1) == false);
-  testFileExists(info_1_path, &info_1);
-  testFileExists(info_2_path, &info_2);
-  testFileExists(info_3_path, &info_3);
-  testFileExists(info_4_path, &info_4);
+  testFileExists(info_1_path, "tmp/0", "tmp/0/70", &info_1);
+  testFileExists(info_2_path, "tmp/2", "tmp/2/15", &info_2);
+  testFileExists(info_3_path, "tmp/4", "tmp/4/b5", &info_3);
+  testFileExists(info_4_path, "tmp/0", "tmp/0/00", &info_4);
   testGroupEnd();
 
   testGroupStart("write regular files to repository");
