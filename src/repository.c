@@ -101,28 +101,33 @@ static Buffer *path_buffer = NULL;
 static void fillPathBufferWithInfo(String repo_path,
                                    const RegularFileInfo *info)
 {
-  size_t prefix_length = snprintf(NULL, 0, "%i-", info->slot);
   size_t required_capacity =
-    prefix_length + snprintf(NULL, 0, "-%"PRIu64, info->size);
-  required_capacity += FILE_HASH_SIZE * 2;
-  required_capacity += 2; /* Reserve some room for the slash and '\0'. */
+    snprintf(NULL, 0, "%x", info->slot) +
+    snprintf(NULL, 0, "%"PRIx64, info->size) +
+    (FILE_HASH_SIZE * 2) + 6; /* 3 Slashes, 2 X's and '\0'. */
   required_capacity = sSizeAdd(required_capacity, repo_path.length);
+
   bufferEnsureCapacity(&path_buffer, required_capacity);
 
   memcpy(path_buffer->data, repo_path.str, repo_path.length);
   path_buffer->data[repo_path.length] = '/';
 
-  char *prefix_buffer = &path_buffer->data[repo_path.length + 1];
-  sprintf(prefix_buffer, "%i-", info->slot);
+  char *hash_buffer = &path_buffer->data[repo_path.length + 1];
+  sprintf(hash_buffer,     "%02x", info->hash[0]);
+  sprintf(&hash_buffer[3], "%02x", info->hash[1]);
+  hash_buffer[2] = hash_buffer[1];
+  hash_buffer[1] = '/';
+  hash_buffer[5] = hash_buffer[4];
+  hash_buffer[4] = '/';
+  hash_buffer += 2;
 
-  char *hash_buffer = &prefix_buffer[prefix_length];
-  for(size_t index = 0; index < FILE_HASH_SIZE; index++)
+  for(size_t index = 2; index < FILE_HASH_SIZE; index++)
   {
     sprintf(&hash_buffer[index * 2], "%02x", info->hash[index]);
   }
 
-  char *suffix_buffer = &hash_buffer[FILE_HASH_SIZE * 2];
-  sprintf(suffix_buffer, "-%"PRIu64, info->size);
+  char *suffix_buffer = &hash_buffer[FILE_HASH_SIZE * 2 - 1];
+  sprintf(suffix_buffer, "x%"PRIx64"x%x", info->size, info->slot);
 }
 
 /** Creates a new RepoWriter from its arguments. Contains the core logic
@@ -282,10 +287,9 @@ RepoWriter *repoWriterOpenFile(const char *repo_path,
 /** Like repoWriterOpenFile(), but takes the final filepath as argument.
 
   @param final_path The path to which the temporary file gets renamed to
-  after flushing. The returned RepoWriter will keep a reference to this
-  string, so make sure not to modify or free it as long as the writer is in
-  use. The file in this path must be inside the repository in order to be
-  effective.
+  after flushing. This file must be directly inside the repository. The
+  returned RepoWriter will keep a reference to this string, so make sure
+  not to modify or free it as long as the writer is in use.
 */
 RepoWriter *repoWriterOpenRaw(const char *repo_path,
                               const char *repo_tmp_file_path,
@@ -321,6 +325,21 @@ void repoWriterWrite(const void *data, size_t size, RepoWriter *writer)
   }
 }
 
+/** Calls fdatasync() on the given directories descriptor.
+
+  @param path The path to the directory to sync to disk.
+*/
+static void fdatasyncDirectory(const char *path)
+{
+  int dir_descriptor = open(path, O_RDONLY, 0);
+  if(dir_descriptor == -1 ||
+     fdatasync(dir_descriptor) != 0 ||
+     close(dir_descriptor) != 0)
+  {
+    dieErrno("failed to sync directory to device: \"%s\"", path);
+  }
+}
+
 /** Finalizes the write process represented by the given writer. All its
   data will be written to disk and the temporary file will be renamed to
   its final filename.
@@ -348,15 +367,33 @@ void repoWriterClose(RepoWriter *writer_to_close)
   }
   else
   {
-    fillPathBufferWithInfo(str(writer.repo_path), writer.rename_to.info);
+    String repo_path = str(writer.repo_path);
+    fillPathBufferWithInfo(repo_path, writer.rename_to.info);
+
+    /* Ensure that the final paths parent directories exists. */
+    path_buffer->data[repo_path.length + 5] = '\0';
+    if(sPathExists(path_buffer->data) == false)
+    {
+      path_buffer->data[repo_path.length + 2] = '\0';
+      if(sPathExists(path_buffer->data) == false)
+      {
+        sMkdir(path_buffer->data);
+        fdatasyncDirectory(writer.repo_path);
+      }
+      path_buffer->data[repo_path.length + 2] = '/';
+
+      sMkdir(path_buffer->data);
+
+      path_buffer->data[repo_path.length + 2] = '\0';
+      fdatasyncDirectory(path_buffer->data);
+      path_buffer->data[repo_path.length + 2] = '/';
+    }
+    path_buffer->data[repo_path.length + 5] = '/';
+
     sRename(writer.repo_tmp_file_path, path_buffer->data);
+    path_buffer->data[repo_path.length + 5] = '\0';
+    fdatasyncDirectory(path_buffer->data);
   }
 
-  int dir_descriptor = open(writer.repo_path, O_RDONLY, 0);
-  if(dir_descriptor == -1 ||
-     fdatasync(dir_descriptor) != 0 ||
-     close(dir_descriptor) != 0)
-  {
-    dieErrno("failed to sync \"%s\" to device", writer.repo_path);
-  }
+  fdatasyncDirectory(writer.repo_path);
 }
