@@ -13,7 +13,8 @@ sort > generated/output
 diff -q generated/output generated/expected-output
 
 if test -f generated/expected-repo-files; then
-  ls -A generated/repo/ | sort > generated/repo-files
+  find generated/repo/ | sed 's/^generated\/repo\///g' |
+  sed '/^$/d' | sort > generated/repo-files
   diff -q generated/repo-files generated/expected-repo-files
 fi
 
