@@ -126,7 +126,7 @@ static void fillPathBufferWithInfo(String repo_path,
     sprintf(&hash_buffer[index * 2], "%02x", info->hash[index]);
   }
 
-  char *suffix_buffer = &hash_buffer[FILE_HASH_SIZE * 2 - 1];
+  char *suffix_buffer = &hash_buffer[FILE_HASH_SIZE * 2];
   sprintf(suffix_buffer, "x%"PRIx64"x%x", info->size, info->slot);
 }
 
