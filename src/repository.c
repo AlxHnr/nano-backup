@@ -36,7 +36,6 @@
 #include <stdbool.h>
 #include <inttypes.h>
 
-#include "buffer.h"
 #include "safe-wrappers.h"
 #include "error-handling.h"
 
@@ -88,6 +87,37 @@ struct RepoReader
   FILE *stream;
 };
 
+/** Returns the required capacity to store the unique path of the given
+  file info, including its terminating null byte. */
+static size_t getFilePathRequiredCapacity(const RegularFileInfo *info)
+{
+  return
+    snprintf(NULL, 0, "%x", info->slot) +
+    snprintf(NULL, 0, "%"PRIx64, info->size) +
+    (FILE_HASH_SIZE * 2) + 5; /* 2 Slashes, 2 X's and '\0'. */
+}
+
+/** Writes the unique path of the given file info into the specified
+  buffer. */
+static void buildFilePath(char *buffer, const RegularFileInfo *info)
+{
+  sprintf(buffer,     "%02x", info->hash[0]);
+  sprintf(&buffer[3], "%02x", info->hash[1]);
+  buffer[2] = buffer[1];
+  buffer[1] = '/';
+  buffer[5] = buffer[4];
+  buffer[4] = '/';
+  buffer += 2;
+
+  for(size_t index = 2; index < FILE_HASH_SIZE; index++)
+  {
+    sprintf(&buffer[index * 2], "%02x", info->hash[index]);
+  }
+
+  char *suffix_buffer = &buffer[FILE_HASH_SIZE * 2];
+  sprintf(suffix_buffer, "x%"PRIx64"x%x", info->size, info->slot);
+}
+
 /** A reusable buffer for constructing paths of files inside repos. */
 static Buffer *path_buffer = NULL;
 
@@ -101,33 +131,16 @@ static Buffer *path_buffer = NULL;
 static void fillPathBufferWithInfo(String repo_path,
                                    const RegularFileInfo *info)
 {
-  size_t required_capacity =
-    snprintf(NULL, 0, "%x", info->slot) +
-    snprintf(NULL, 0, "%"PRIx64, info->size) +
-    (FILE_HASH_SIZE * 2) + 6; /* 3 Slashes, 2 X's and '\0'. */
+  /* The +1 is for the slash after the repo path. */
+  size_t required_capacity = getFilePathRequiredCapacity(info) + 1;
   required_capacity = sSizeAdd(required_capacity, repo_path.length);
-
   bufferEnsureCapacity(&path_buffer, required_capacity);
 
   memcpy(path_buffer->data, repo_path.str, repo_path.length);
   path_buffer->data[repo_path.length] = '/';
 
   char *hash_buffer = &path_buffer->data[repo_path.length + 1];
-  sprintf(hash_buffer,     "%02x", info->hash[0]);
-  sprintf(&hash_buffer[3], "%02x", info->hash[1]);
-  hash_buffer[2] = hash_buffer[1];
-  hash_buffer[1] = '/';
-  hash_buffer[5] = hash_buffer[4];
-  hash_buffer[4] = '/';
-  hash_buffer += 2;
-
-  for(size_t index = 2; index < FILE_HASH_SIZE; index++)
-  {
-    sprintf(&hash_buffer[index * 2], "%02x", info->hash[index]);
-  }
-
-  char *suffix_buffer = &hash_buffer[FILE_HASH_SIZE * 2];
-  sprintf(suffix_buffer, "x%"PRIx64"x%x", info->size, info->slot);
+  buildFilePath(hash_buffer, info);
 }
 
 /** Creates a new RepoWriter from its arguments. Contains the core logic
@@ -160,6 +173,18 @@ bool repoRegularFileExists(String repo_path, const RegularFileInfo *info)
 {
   fillPathBufferWithInfo(repo_path, info);
   return sPathExists(path_buffer->data);
+}
+
+/** Builds the unique path of the file represented by the given info.
+
+  @param buffer The buffer to which the string will be written.
+  @param info The info from which the filepath will be built.
+*/
+void repoBuildRegularFilePath(Buffer **buffer, const RegularFileInfo *info)
+{
+  size_t required_capacity = getFilePathRequiredCapacity(info);
+  bufferEnsureCapacity(buffer, required_capacity);
+  buildFilePath((*buffer)->data, info);
 }
 
 /** Opens a new RepoReader for reading a file from a repository.

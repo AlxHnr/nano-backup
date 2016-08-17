@@ -142,6 +142,20 @@ static void testWithExistingTmpFile(RepoWriter *writer,
   free(content.content);
 }
 
+/** Tests repoBuildRegularFilePath().
+
+  @param path The path of the final file relative to the current directory.
+  @param info The file info to pass to repoBuildRegularFilePath().
+*/
+static void testRegularFilePathBuilding(const char *path,
+                                        RegularFileInfo *info)
+{
+  static Buffer *buffer = NULL;
+
+  repoBuildRegularFilePath(&buffer, info);
+  assert_true(strcmp(buffer->data, &path[4]) == 0);
+}
+
 int main(void)
 {
   const char *info_1_path = "tmp/0/70/a0d101316191c1f2225282b2e3134373a3d40x8bx18";
@@ -216,6 +230,15 @@ int main(void)
   testFileExists(info_2_path, "tmp/2", "tmp/2/15", &info_2);
   testFileExists(info_3_path, "tmp/4", "tmp/4/b5", &info_3);
   testFileExists(info_4_path, "tmp/0", "tmp/0/00", &info_4);
+  testGroupEnd();
+
+  testGroupStart("repoBuildRegularFilePath()");
+  testRegularFilePathBuilding(info_1_path, &info_1);
+  testRegularFilePathBuilding(info_2_path, &info_2);
+  testRegularFilePathBuilding(info_3_path, &info_3);
+  testRegularFilePathBuilding(info_4_path, &info_4);
+  testRegularFilePathBuilding(info_5_path, &info_5);
+  testRegularFilePathBuilding(info_6_path, &info_6);
   testGroupEnd();
 
   testGroupStart("write regular files to repository");
