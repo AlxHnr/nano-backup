@@ -334,6 +334,7 @@ int main(void)
   testGroupStart("behaviour with existing tmp-file");
   sRename(info_1_path, TMP_FILE_PATH);
   assert_true(sStat(TMP_FILE_PATH).st_size == 15);
+  assert_true(sPathExists("tmp/2") == false);
   testWithExistingTmpFile(repoWriterOpenFile("tmp", TMP_FILE_PATH, "info_2", &info_2), info_2_path);
 
   sRename("tmp/some-file", TMP_FILE_PATH);
