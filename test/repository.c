@@ -66,6 +66,15 @@ static void testFileExists(const char *file_path,
   assert_true(sPathExists(subdir_path) == false);
 }
 
+/** Writes "Hello backup!". */
+static void writeTestFile(RepoWriter *writer)
+{
+  repoWriterWrite("Hello",  5, writer);
+  repoWriterWrite(" ",      1, writer);
+  repoWriterWrite("backup", 6, writer);
+  repoWriterWrite("!",      1, writer);
+}
+
 /** Asserts that the given file contains the string "Hello backup!". */
 static void checkTestFile(const char *file_path)
 {
@@ -73,34 +82,6 @@ static void checkTestFile(const char *file_path)
   assert_true(content.size == 13);
   assert_true(memcmp(content.content, "Hello backup!", 13) == 0);
   free(content.content);
-}
-
-/** Tests writing with the given RepoWriter.
-
-  @param writer A new, unused RepoWriter. It will be destroyed by this
-  function, so it should not be used again.
-  @param final_path The file which should be created by finalizing the
-  given RepoWriter.
-*/
-static void testRepoWriter(RepoWriter *writer, const char *final_path)
-{
-  assert_true(writer != NULL);
-  assert_true(sPathExists(TMP_FILE_PATH) == true);
-  assert_true(sPathExists(final_path)    == false);
-
-  repoWriterWrite("Hello",  5, writer);
-  repoWriterWrite(" ",      1, writer);
-  repoWriterWrite("backup", 6, writer);
-  repoWriterWrite("!",      1, writer);
-
-  assert_true(sPathExists(TMP_FILE_PATH) == true);
-  assert_true(sPathExists(final_path)    == false);
-
-  repoWriterClose(writer);
-
-  assert_true(sPathExists(TMP_FILE_PATH) == false);
-  assert_true(sPathExists(final_path)    == true);
-  checkTestFile(final_path);
 }
 
 /** Overwrites the given filepath with the file represented by the
@@ -185,7 +166,6 @@ int main(void)
     },
   };
 
-
   const char *info_3_path = "tmp/4/b5/f2b134f473b1f2757333f17531b23372f435bxffffffffffffffffx0";
   RegularFileInfo info_3 =
   {
@@ -208,6 +188,28 @@ int main(void)
     },
   };
 
+  const char *info_5_path = "tmp/0/fb/a0d101316191c1f2225282b2e3134373a3d40x46x0";
+  RegularFileInfo info_5 =
+  {
+    .size = 70, .slot = 0,
+    .hash =
+    {
+      0x0f, 0xba, 0x0d, 0x10, 0x13, 0x16, 0x19, 0x1c, 0x1f, 0x22,
+      0x25, 0x28, 0x2b, 0x2e, 0x31, 0x34, 0x37, 0x3a, 0x3d, 0x40,
+    },
+  };
+
+  const char *info_6_path = "tmp/0/fb/d28fb2948efac8b2c25282b2e3134373a3d40x9fc4x11";
+  RegularFileInfo info_6 =
+  {
+    .size = 40900, .slot = 17,
+    .hash =
+    {
+      0x0f, 0xbd, 0x28, 0xfb, 0x29, 0x48, 0xef, 0xac, 0x8b, 0x2c,
+      0x25, 0x28, 0x2b, 0x2e, 0x31, 0x34, 0x37, 0x3a, 0x3d, 0x40,
+    },
+  };
+
   testGroupStart("repoRegularFileExists()");
   assert_true(repoRegularFileExists(str("non-existing-path"), &info_1) == false);
   testFileExists(info_1_path, "tmp/0", "tmp/0/70", &info_1);
@@ -222,9 +224,74 @@ int main(void)
   assert_error(repoWriterOpenFile("example.txt", "example.txt/tmp-file", "foo", &info_2),
                "failed to open \"example.txt/tmp-file\" for writing: Not a directory");
 
+  /* Write a new file without existing parent directories. */
+  assert_true(sPathExists("tmp/0") == false);
   assert_true(sPathExists(TMP_FILE_PATH) == false);
-  assert_true(sPathExists(info_1_path)   == false);
-  testRepoWriter(repoWriterOpenFile("tmp", TMP_FILE_PATH, "info_1", &info_1), info_1_path);
+
+  RepoWriter *writer = repoWriterOpenFile("tmp", TMP_FILE_PATH, "info_1", &info_1);
+
+  assert_true(writer != NULL);
+  assert_true(sPathExists("tmp/0") == false);
+  assert_true(sPathExists(TMP_FILE_PATH) == true);
+
+  writeTestFile(writer);
+
+  assert_true(sPathExists("tmp/0") == false);
+  assert_true(sPathExists(TMP_FILE_PATH) == true);
+
+  repoWriterClose(writer);
+
+  assert_true(sPathExists(TMP_FILE_PATH) == false);
+  assert_true(sPathExists(info_1_path) == true);
+  checkTestFile(info_1_path);
+
+  /* Write a new file without the existing subdirectory. */
+  assert_true(sPathExists("tmp/0") == true);
+  assert_true(sPathExists("tmp/0/fb") == false);
+  assert_true(sPathExists(TMP_FILE_PATH) == false);
+
+  writer = repoWriterOpenFile("tmp", TMP_FILE_PATH, "info_5", &info_5);
+
+  assert_true(writer != NULL);
+  assert_true(sPathExists("tmp/0") == true);
+  assert_true(sPathExists("tmp/0/fb") == false);
+  assert_true(sPathExists(TMP_FILE_PATH) == true);
+
+  writeTestFile(writer);
+
+  assert_true(sPathExists("tmp/0") == true);
+  assert_true(sPathExists("tmp/0/fb") == false);
+  assert_true(sPathExists(TMP_FILE_PATH) == true);
+
+  repoWriterClose(writer);
+
+  assert_true(sPathExists(TMP_FILE_PATH) == false);
+  assert_true(sPathExists(info_5_path) == true);
+  checkTestFile(info_5_path);
+
+  /* Write a new file with existing parent directories. */
+  assert_true(sPathExists("tmp/0/fb") == true);
+  assert_true(sPathExists(info_6_path) == false);
+  assert_true(sPathExists(TMP_FILE_PATH) == false);
+
+  writer = repoWriterOpenFile("tmp", TMP_FILE_PATH, "info_6", &info_6);
+
+  assert_true(writer != NULL);
+  assert_true(sPathExists("tmp/0/fb") == true);
+  assert_true(sPathExists(info_6_path) == false);
+  assert_true(sPathExists(TMP_FILE_PATH) == true);
+
+  writeTestFile(writer);
+
+  assert_true(sPathExists("tmp/0/fb") == true);
+  assert_true(sPathExists(info_6_path) == false);
+  assert_true(sPathExists(TMP_FILE_PATH) == true);
+
+  repoWriterClose(writer);
+
+  assert_true(sPathExists(TMP_FILE_PATH) == false);
+  assert_true(sPathExists(info_6_path) == true);
+  checkTestFile(info_6_path);
   testGroupEnd();
 
   testGroupStart("write to repository in raw mode");
@@ -233,9 +300,25 @@ int main(void)
   assert_error(repoWriterOpenRaw("example.txt", "example.txt/tmp-file", "bar", "tmp/bar"),
                "failed to open \"example.txt/tmp-file\" for writing: Not a directory");
 
+  assert_true(sPathExists("some-file") == false);
   assert_true(sPathExists(TMP_FILE_PATH) == false);
-  assert_true(sPathExists("some-file")   == false);
-  testRepoWriter(repoWriterOpenRaw("tmp", TMP_FILE_PATH, "some-file", "tmp/some-file"), "tmp/some-file");
+
+  writer = repoWriterOpenRaw("tmp", TMP_FILE_PATH, "some-file", "tmp/some-file");
+
+  assert_true(writer != NULL);
+  assert_true(sPathExists("tmp/some-file") == false);
+  assert_true(sPathExists(TMP_FILE_PATH) == true);
+
+  writeTestFile(writer);
+
+  assert_true(sPathExists("tmp/some-file") == false);
+  assert_true(sPathExists(TMP_FILE_PATH) == true);
+
+  repoWriterClose(writer);
+
+  assert_true(sPathExists("tmp/some-file") == true);
+  assert_true(sPathExists(TMP_FILE_PATH) == false);
+  checkTestFile("tmp/some-file");
   testGroupEnd();
 
   testGroupStart("safe overwriting");
@@ -276,9 +359,9 @@ int main(void)
                "failed to open \"info_1\" in \"tmp\": Permission denied");
   assert_true(rmdir(info_1_path) == 0);
 
-  FileStream *writer = sFopenWrite(info_1_path);
-  sFwrite("This is an example text.", 24, writer);
-  sFclose(writer);
+  FileStream *stream = sFopenWrite(info_1_path);
+  sFwrite("This is an example text.", 24, stream);
+  sFclose(stream);
 
   RepoReader *reader = repoReaderOpenFile("tmp", "info_1", &info_1);
   assert_true(reader != NULL);
