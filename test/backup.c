@@ -27,6 +27,7 @@
 
 #include "backup.h"
 
+#include <ftw.h>
 #include <unistd.h>
 #include <stdlib.h>
 
@@ -131,24 +132,40 @@ static size_t countPathElements(String string)
   return count;
 }
 
-/** Counts the items in the specified directory, excluding "." and "..".
+static size_t directory_item_counter = 0;
+
+/** Increments directory_item_counter and can be passed to nftw(). */
+static int countItems(const char *path, const struct stat *stats,
+                      int type, struct FTW *ftw)
+{
+  /* Ignore all arguments. */
+  (void)path;
+  (void)stats;
+  (void)type;
+  (void)ftw;
+
+  directory_item_counter++;
+
+  return 0;
+}
+
+/** Counts the items in the specified directory recursively.
 
   @param path The path to a valid directory.
 
   @return The amount of files in the specified directory.
 */
-static size_t countFilesInDir(const char *path)
+static size_t countItemsInDir(const char *path)
 {
-  size_t counter = 0;
-  DIR *dir = sOpenDir(path);
+  directory_item_counter = 0;
 
-  while(sReadDir(dir, path) != NULL)
+  if(nftw(path, countItems, 10, FTW_PHYS) == -1)
   {
-    counter++;
+    dieErrno("failed to count items in directory: \"%s\"", path);
   }
 
-  sCloseDir(dir, path);
-  return counter;
+  /* The given directory does not count, thus - 1. */
+  return directory_item_counter - 1;
 }
 
 /** Creates a backup of the given paths parent directories timestamps. */
@@ -256,26 +273,6 @@ static void removePath(const char *path)
   restoreParentTime(path, parent_time);
 }
 
-/** Counterpart to generateCollidingFiles(). */
-static void removeCollidingFiles(const uint8_t *hash, size_t size,
-                                 size_t files_to_remove)
-{
-  assert_true(files_to_remove <= UINT8_MAX + 1);
-
-  char hash_string[FILE_HASH_SIZE * 2 + 1];
-  for(size_t index = 0; index < FILE_HASH_SIZE; index++)
-  {
-    sprintf(&hash_string[index * 2], "%02x", hash[index]);
-  }
-
-  char buffer[64];
-  for(size_t slot = 0; slot < files_to_remove; slot++)
-  {
-    sprintf(buffer, "tmp/repo/%zu-%s-%zu", slot, hash_string, size);
-    removePath(buffer);
-  }
-}
-
 /** Like generateFile(), but overwrites an existing file without affecting
   its modification timestamp.
 
@@ -309,9 +306,10 @@ static void remakeSymlink(const char *new_target, const char *linkpath)
 /** Asserts that "tmp" contains only "repo" and "files". */
 static void assertTmpIsCleared(void)
 {
-  assert_true(countFilesInDir("tmp") == 2);
-  assert_true(countFilesInDir("tmp/repo") == 0);
-  assert_true(countFilesInDir("tmp/files") == 0);
+  sRemoveRecursively("tmp");
+  sMkdir("tmp");
+  sMkdir("tmp/repo");
+  sMkdir("tmp/files");
 }
 
 /** Finds the first point in the nodes history, which is not
@@ -671,6 +669,7 @@ static void runPhase1(String cwd_path, size_t cwd_depth,
                       SearchNode *phase_1_node)
 {
   /* Generate dummy files. */
+  assertTmpIsCleared();
   makeDir("tmp/files/foo");
   makeDir("tmp/files/foo/bar");
   makeDir("tmp/files/foo/dir");
@@ -685,7 +684,6 @@ static void runPhase1(String cwd_path, size_t cwd_depth,
   /* Initiate the backup. */
   Metadata *metadata = metadataNew();
   initiateBackup(metadata, phase_1_node);
-  assert_true(countFilesInDir("tmp/repo") == 0);
 
   /* Check the initiated backup. */
   checkMetadata(metadata, 0, false);
@@ -725,7 +723,7 @@ static void runPhase1(String cwd_path, size_t cwd_depth,
   mustHaveRegularStat(three_txt,     &metadata->current_backup, 400, three_hash, 0);
   mustHaveRegularStat(dir_three_txt, &metadata->current_backup, 400, three_hash, 0);
   mustHaveRegularStat(some_file,     &metadata->current_backup, 84,  some_file_hash, 0);
-  assert_true(countFilesInDir("tmp/repo") == 3);
+  assert_true(countItemsInDir("tmp/repo") == 7);
 }
 
 /** Tests a second backup by creating new files. */
@@ -787,7 +785,7 @@ static void runPhase2(String cwd_path, size_t cwd_depth,
   completeBackup(metadata);
   mustHaveRegularStat(super, &metadata->current_backup, 2100, super_hash, 0);
   mustHaveRegularStat(file,  &metadata->current_backup, 10, (uint8_t *)"dummy file", 0);
-  assert_true(countFilesInDir("tmp/repo") == 4);
+  assert_true(countItemsInDir("tmp/repo") == 10);
 }
 
 /** Performs a third backup by removing files. */
@@ -850,7 +848,7 @@ static void runPhase3(String cwd_path, size_t cwd_depth,
 
   /* Finish backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countFilesInDir("tmp/repo") == 4);
+  assert_true(countItemsInDir("tmp/repo") == 10);
 }
 
 /** Performs a fourth backup, which doesn't do anything. */
@@ -896,7 +894,7 @@ static void runPhase4(String cwd_path, size_t cwd_depth,
 
   /* Finish backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countFilesInDir("tmp/repo") == 4);
+  assert_true(countItemsInDir("tmp/repo") == 10);
 
   /* Clean up after test. */
   removePath("tmp/files/foo/bar/3.txt");
@@ -1050,7 +1048,7 @@ static void runPhase5(String cwd_path, size_t cwd_depth,
 
   /* Finish backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countFilesInDir("tmp/repo") == 8);
+  assert_true(countItemsInDir("tmp/repo") == 22);
   mustHaveRegularStat(subdir_a1, &metadata->current_backup, 1,    (uint8_t *)"1???????????????????", 0);
   mustHaveRegularStat(subdir_c,  &metadata->current_backup, 20,   (uint8_t *)"11111111111111111111", 0);
   mustHaveRegularStat(subdir_f,  &metadata->current_backup, 12,   (uint8_t *)"TestTestTest????????", 0);
@@ -1189,7 +1187,7 @@ static void runPhase6(String cwd_path, size_t cwd_depth,
 
   /* Finish backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countFilesInDir("tmp/repo") == 8);
+  assert_true(countItemsInDir("tmp/repo") == 22);
 
   /* Clean up after test. */
   removePath("tmp/files/foo/bar/subdir/a1");
@@ -1295,7 +1293,7 @@ static void runPhase7(String cwd_path, size_t cwd_depth,
 
   /* Finish backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countFilesInDir("tmp/repo") == 8);
+  assert_true(countItemsInDir("tmp/repo") == 22);
   mustHaveRegularCached(directory_c, &metadata->current_backup, 14,
                        (uint8_t *)"ContentContent??????", 0);
   mustHaveRegularCached(directory_f, &metadata->current_backup, 16,
@@ -1399,7 +1397,7 @@ static void runPhase8(String cwd_path, size_t cwd_depth,
 
   /* Finish backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countFilesInDir("tmp/repo") == 8);
+  assert_true(countItemsInDir("tmp/repo") == 22);
 
   /* Clean up after test. */
   removePath("tmp/files/home/user/text.txt");
@@ -1689,7 +1687,7 @@ static void runPhase9(String cwd_path, size_t cwd_depth,
 
   /* Finish backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countFilesInDir("tmp/repo") == 11);
+  assert_true(countItemsInDir("tmp/repo") == 30);
   mustHaveRegularCached(dir_b,          &metadata->current_backup, 8,    (uint8_t *)"12321232",             0);
   mustHaveRegularCached(dir_c,          &metadata->current_backup, 8,    (uint8_t *)"abcdedcb",             0);
   mustHaveRegularCached(three_c,        &metadata->current_backup, 12,   (uint8_t *)"FooFooFooFoo",         0);
@@ -2014,7 +2012,7 @@ static void runPhase10(String cwd_path, size_t cwd_depth,
 
   /* Finish backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countFilesInDir("tmp/repo") == 11);
+  assert_true(countItemsInDir("tmp/repo") == 30);
 }
 
 /** Performs a backup with no changes. */
@@ -2201,7 +2199,7 @@ static void runPhase11(String cwd_path, size_t cwd_depth,
 
   /* Finish backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countFilesInDir("tmp/repo") == 11);
+  assert_true(countItemsInDir("tmp/repo") == 30);
 }
 
 /** Performs a backup after restoring files removed in phase 10. */
@@ -2404,7 +2402,7 @@ static void runPhase12(String cwd_path, size_t cwd_depth,
 
   /* Finish backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countFilesInDir("tmp/repo") == 11);
+  assert_true(countItemsInDir("tmp/repo") == 30);
   mustHaveRegularCached(bin_3, &metadata->current_backup, 144, nested_1_hash, 0);
 }
 
@@ -2602,28 +2600,8 @@ static void runPhase13(String cwd_path, size_t cwd_depth,
 
   /* Finish backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countFilesInDir("tmp/repo") == 12);
+  assert_true(countItemsInDir("tmp/repo") == 33);
   mustHaveRegularStat(bin, &metadata->current_backup, 2123, bin_hash, 0);
-
-  /* Clean up after tests. */
-  phase10RemoveExtraFiles();
-  removePath("tmp/files/bin");
-  removePath("tmp/files/foo/bar/1.txt");
-  removePath("tmp/files/foo/bar");
-  removePath("tmp/files/foo/some file");
-  removePath("tmp/files/foo");
-  removePath("tmp/repo/0-2b85a2b06e498c7b976da4ff8d34ed84cb42c7e0-42");
-  removePath("tmp/repo/0-46bc4f204ce9d0cd59b429b3807b6494fe77f5fe-400");
-  removePath("tmp/repo/0-5571584deb0a98dcbda15dc9da9ffe1001e2b5fe-24");
-  removePath("tmp/repo/0-5f0cd39ef362dc1fe6d94fbb7fec8b9fb7861054-84");
-  removePath("tmp/repo/0-6c88db41c1b2b26aa7a8d5d94abdf20b3976d961-2123");
-  removePath("tmp/repo/0-71e61482bfd593014183a25e6602a90f8dbc740f-56");
-  removePath("tmp/repo/0-af07ccfef55c44947b630f58e82ab042ca6894b8-144");
-  removePath("tmp/repo/0-b744398d179e9d86393c3349ce2406674189bb89-2100");
-  removePath("tmp/repo/0-cf71d992f969b21d31940646dc6e5de6d4af2fa1-21");
-  removePath("tmp/repo/0-d826d391c7dc38d37f73796168e5581f7b9982d3-1200");
-  removePath("tmp/repo/0-e8fb29619700e5b60930886e94822c66ce2ad6bf-1200");
-  removePath("tmp/repo/metadata");
 }
 
 /** Creates and backups various simple files with the copy policy. */
@@ -2669,7 +2647,7 @@ static void runPhase14(String cwd_path, size_t cwd_depth,
 
   /* Finish the backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countFilesInDir("tmp/repo") == 1);
+  assert_true(countItemsInDir("tmp/repo") == 1);
   mustHaveRegularCached(a,   &metadata->current_backup, 14, (uint8_t *)"This file is a", 0);
   mustHaveRegularCached(d_1, &metadata->current_backup, 14, (uint8_t *)"This file is 1", 0);
 }
@@ -2723,7 +2701,7 @@ static void runPhase15(String cwd_path, size_t cwd_depth,
 
   /* Finish the backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countFilesInDir("tmp/repo") == 1);
+  assert_true(countItemsInDir("tmp/repo") == 1);
 }
 
 /** Restores all files previously deleted and checks the result. */
@@ -2765,12 +2743,7 @@ static void runPhase16(String cwd_path, size_t cwd_depth,
 
   /* Finish the backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countFilesInDir("tmp/repo") == 1);
-
-  /* Clean up test directory. */
-  phase15RemoveFiles();
-  removePath("tmp/files/d");
-  removePath("tmp/repo/metadata");
+  assert_true(countItemsInDir("tmp/repo") == 1);
 }
 
 /** Asserts that the given node contains a "dummy" subnode with the
@@ -2845,7 +2818,7 @@ static void runPhase17(String cwd_path, size_t cwd_depth,
 
   /* Finish the backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countFilesInDir("tmp/repo") == 1);
+  assert_true(countItemsInDir("tmp/repo") == 1);
   mustHaveDummy(b, BH_added, BPOL_copy,   &metadata->current_backup, "dummy");
   mustHaveDummy(c, BH_added, BPOL_track,  &metadata->current_backup, "dummy");
   mustHaveDummy(e, BH_added, BPOL_mirror, &metadata->current_backup, "dummy");
@@ -2921,7 +2894,7 @@ static void runPhase18(String cwd_path, size_t cwd_depth,
 
   /* Finish the backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countFilesInDir("tmp/repo") == 1);
+  assert_true(countItemsInDir("tmp/repo") == 1);
 }
 
 /** Tests detection of changes in nodes without a policy. */
@@ -2974,7 +2947,7 @@ static void runPhase19(String cwd_path, size_t cwd_depth,
 
   /* Finish the backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countFilesInDir("tmp/repo") == 1);
+  assert_true(countItemsInDir("tmp/repo") == 1);
 }
 
 /** Tests metadata written by phase 19. */
@@ -3026,24 +2999,7 @@ static void runPhase20(String cwd_path, size_t cwd_depth,
 
   /* Finish the backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countFilesInDir("tmp/repo") == 1);
-
-  /* Clean up the test directory. */
-  removePath("tmp/repo/metadata");
-  removePath("tmp/files/h/dummy");
-  removePath("tmp/files/h");
-  removePath("tmp/files/g/dummy");
-  removePath("tmp/files/g");
-  removePath("tmp/files/d/f/dummy");
-  removePath("tmp/files/d/f");
-  removePath("tmp/files/d/e/dummy");
-  removePath("tmp/files/d/e");
-  removePath("tmp/files/d");
-  removePath("tmp/files/a/c/dummy");
-  removePath("tmp/files/a/c");
-  removePath("tmp/files/a/b/dummy");
-  removePath("tmp/files/a/b");
-  removePath("tmp/files/a");
+  assert_true(countItemsInDir("tmp/repo") == 1);
 }
 
 /** Prepares files and metadata for testing detection of changes in files.
@@ -3217,7 +3173,7 @@ static void initChangeDetectionTest(String cwd_path, size_t cwd_depth,
 
   /* Finish the backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countFilesInDir("tmp/repo") == 12);
+  assert_true(countItemsInDir("tmp/repo") == 33);
   mustHaveRegularStat(node_7,  &metadata->current_backup, 400,  three_hash,                    0);
   mustHaveRegularStat(node_9,  &metadata->current_backup, 15,   (uint8_t *)"This is a file\n", 0);
   mustHaveRegularStat(node_10, &metadata->current_backup, 11,   (uint8_t *)"GID and UID",      0);
@@ -3471,7 +3427,7 @@ static void modifyChangeDetectionTest(String cwd_path, size_t cwd_depth,
 
   /* Finish the backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countFilesInDir("tmp/repo") == 12);
+  assert_true(countItemsInDir("tmp/repo") == 33);
 }
 
 /** Tests the changes injected by modifyChangeDetectionTest(). */
@@ -3603,7 +3559,7 @@ static void changeDetectionTest(String cwd_path, size_t cwd_depth,
 
   /* Finish the backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countFilesInDir("tmp/repo") == 19);
+  assert_true(countItemsInDir("tmp/repo") == 49);
   mustHaveRegularStat(node_7,  &metadata->current_backup,    400,  three_hash,                        0);
   mustHaveRegularStat(node_9,  &metadata->current_backup,    12,   (uint8_t *)"This is test",         0);
   mustHaveRegularStat(node_10, &metadata->current_backup,    11,   (uint8_t *)"GID and UID",          0);
@@ -3635,51 +3591,6 @@ static void changeDetectionTest(String cwd_path, size_t cwd_depth,
   mustHaveRegularStat(node_44, &metadata->current_backup,    20,   (uint8_t *)"QQQQQQQQQQQQQQQQQQQQ", 0);
   mustHaveRegularStat(node_45, &metadata->current_backup,    21,   node_45_hash,                      0);
   mustHaveRegularStat(node_46, &metadata->current_backup,    615,  node_46_hash,                      0);
-}
-
-/** Removes all files created by the change detection tests. */
-static void removeDetectionTest(void)
-{
-  removePath("tmp/files/8/12");
-  removePath("tmp/files/8/11");
-  removePath("tmp/files/8/10");
-  removePath("tmp/files/8/9");
-  removePath("tmp/files/8");
-  removePath("tmp/files/5/7");
-  removePath("tmp/files/5/6");
-  removePath("tmp/files/5");
-  removePath("tmp/files/4");
-  removePath("tmp/files/3");
-  removePath("tmp/files/2");
-  removePath("tmp/files/0/1");
-  removePath("tmp/files/0");
-
-  char buffer[] = "tmp/files/XX";
-  for(size_t counter = 13; counter < 47; counter++)
-  {
-    sprintf(buffer, "tmp/files/%zu", counter);
-    removePath(buffer);
-  }
-
-  removePath("tmp/repo/metadata");
-  removePath("tmp/repo/0-078c51640036aa016e40ef9f1fd60efee3aca6db-22");
-  removePath("tmp/repo/0-10ec418fd4d4551dfe9ce13a996e9b30623942e9-518");
-  removePath("tmp/repo/0-183b8a27e5c0c60c601ab80bb550a38c0bd1426a-63");
-  removePath("tmp/repo/0-211d56ceadb7e7811e082d09574e5c021547a8f5-615");
-  removePath("tmp/repo/0-24f11886655fbaec065d80cbfe6219953c8c1aa4-2124");
-  removePath("tmp/repo/0-2b85a2b06e498c7b976da4ff8d34ed84cb42c7e0-42");
-  removePath("tmp/repo/0-46bc4f204ce9d0cd59b429b3807b6494fe77f5fe-400");
-  removePath("tmp/repo/0-5571584deb0a98dcbda15dc9da9ffe1001e2b5fe-24");
-  removePath("tmp/repo/0-5f0cd39ef362dc1fe6d94fbb7fec8b9fb7861054-84");
-  removePath("tmp/repo/0-6c88db41c1b2b26aa7a8d5d94abdf20b3976d961-2123");
-  removePath("tmp/repo/0-71e61482bfd593014183a25e6602a90f8dbc740f-56");
-  removePath("tmp/repo/0-78a560f4742dfe37324c2b66801f3f45ce03e2ef-21");
-  removePath("tmp/repo/0-af07ccfef55c44947b630f58e82ab042ca6894b8-144");
-  removePath("tmp/repo/0-b744398d179e9d86393c3349ce2406674189bb89-2100");
-  removePath("tmp/repo/0-cf71d992f969b21d31940646dc6e5de6d4af2fa1-21");
-  removePath("tmp/repo/0-d15690c2799092dd2f5d586039180711e5a3135a-1200");
-  removePath("tmp/repo/0-d826d391c7dc38d37f73796168e5581f7b9982d3-1200");
-  removePath("tmp/repo/0-e8fb29619700e5b60930886e94822c66ce2ad6bf-1200");
 }
 
 /** Tests the metadata written by changeDetectionTest() and cleans up the
@@ -3802,10 +3713,7 @@ static void postDetectionTest(String cwd_path, size_t cwd_depth,
 
   /* Finish the backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countFilesInDir("tmp/repo") == 19);
-
-  /* Clean up the test directory. */
-  removeDetectionTest();
+  assert_true(countItemsInDir("tmp/repo") == 49);
 }
 
 /** Tests change detection in tracked nodes. */
@@ -4118,7 +4026,7 @@ static void trackChangeDetectionTest(String cwd_path, size_t cwd_depth,
 
   /* Finish the backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countFilesInDir("tmp/repo") == 19);
+  assert_true(countItemsInDir("tmp/repo") == 49);
   mustHaveRegularStat(node_7,  &metadata->current_backup,    400,  three_hash,                        0);
   mustHaveRegularStat(node_9,  &metadata->current_backup,    12,   (uint8_t *)"This is test",         0);
   mustHaveRegularStat(node_10, &metadata->current_backup,    11,   (uint8_t *)"GID and UID",          0);
@@ -4480,10 +4388,7 @@ static void trackPostDetectionTest(String cwd_path, size_t cwd_depth,
 
   /* Finish the backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countFilesInDir("tmp/repo") == 19);
-
-  /* Clean up the test directory. */
-  removeDetectionTest();
+  assert_true(countItemsInDir("tmp/repo") == 49);
 }
 
 /** Prepares replacing a directory with a file/symlink. */
@@ -4549,7 +4454,7 @@ static void initNoneFiletypeChange(String cwd_path, size_t cwd_depth,
 
   /* Finish the backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countFilesInDir("tmp/repo") == 3);
+  assert_true(countItemsInDir("tmp/repo") == 7);
   mustHaveRegularCached(b_1,   &metadata->current_backup, 7,    (uint8_t *)"foo bar",            0);
   mustHaveRegularCached(b_2_1, &metadata->current_backup, 18,   (uint8_t *)"FooFooFooFooFooFoo", 0);
   mustHaveRegularCached(c,     &metadata->current_backup, 56,   nested_2_hash,                   0);
@@ -4630,7 +4535,7 @@ static void change1NoneFiletypeChange(String cwd_path, size_t cwd_depth,
 
   /* Finish the backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countFilesInDir("tmp/repo") == 3);
+  assert_true(countItemsInDir("tmp/repo") == 7);
 }
 
 /** Like change1NoneFiletypeChange(), but replaces a directory with a
@@ -4696,7 +4601,7 @@ static void change2NoneFiletypeChange(String cwd_path, size_t cwd_depth,
 
   /* Finish the backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countFilesInDir("tmp/repo") == 3);
+  assert_true(countItemsInDir("tmp/repo") == 7);
 }
 
 /** Tests the metadata written by change2NoneFiletypeChange(). */
@@ -4760,7 +4665,7 @@ static void postNoneFiletypeChange(String cwd_path, size_t cwd_depth,
 
   /* Finish the backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countFilesInDir("tmp/repo") == 3);
+  assert_true(countItemsInDir("tmp/repo") == 7);
 }
 
 /** Restores test files to their initial state and cleans up. */
@@ -4823,18 +4728,7 @@ static void restoreNoneFiletypeChange(String cwd_path, size_t cwd_depth,
 
   /* Finish the backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countFilesInDir("tmp/repo") == 3);
-
-  /* Clean up the test directory. */
-  removeNoneFiletypeA();
-  removePath("tmp/files/e/f/g");
-  removePath("tmp/files/e/f/h");
-  removePath("tmp/files/e/f/i");
-  removePath("tmp/files/e/f");
-  removePath("tmp/files/e");
-  removePath("tmp/repo/0-71e61482bfd593014183a25e6602a90f8dbc740f-56");
-  removePath("tmp/repo/0-d826d391c7dc38d37f73796168e5581f7b9982d3-1200");
-  removePath("tmp/repo/metadata");
+  assert_true(countItemsInDir("tmp/repo") == 7);
 }
 
 /** Prepares the testing of filetype changes. */
@@ -4970,7 +4864,7 @@ static void initFiletypeChange(String cwd_path, size_t cwd_depth,
 
   /* Finish the backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countFilesInDir("tmp/repo") == 5);
+  assert_true(countItemsInDir("tmp/repo") == 13);
   mustHaveRegularCached(node_1,         &metadata->current_backup, 9,    (uint8_t *)"DummyFile",            0);
   mustHaveRegularCached(node_3,         &metadata->current_backup, 42,   test_c_hash,                       0);
   mustHaveRegularCached(node_6_a_1,     &metadata->current_backup, 20,   (uint8_t *)"XXXXXXXXXXXXXXXXXXXX", 0);
@@ -5156,7 +5050,7 @@ static void modifyFiletypeChange(String cwd_path, size_t cwd_depth,
 
   /* Finish the backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countFilesInDir("tmp/repo") == 5);
+  assert_true(countItemsInDir("tmp/repo") == 13);
 }
 
 /** Checks the changes injected by modifyFiletypeChange(). */
@@ -5280,7 +5174,7 @@ static void changeFiletypeChange(String cwd_path, size_t cwd_depth,
 
   /* Finish the backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countFilesInDir("tmp/repo") == 7);
+  assert_true(countItemsInDir("tmp/repo") == 18);
   mustHaveRegularStat(node_2,   &metadata->current_backup, 518, node_42_hash,                      0);
   mustHaveRegularStat(node_3_b, &metadata->current_backup, 11,  (uint8_t *)"nano-backup",          0);
   mustHaveRegularStat(node_3_1, &metadata->current_backup, 8,   (uint8_t *)"test 123",             0);
@@ -5291,37 +5185,6 @@ static void changeFiletypeChange(String cwd_path, size_t cwd_depth,
   mustHaveRegularStat(node_5,   &metadata->current_backup, 13,  (uint8_t *)"?????????????",        0);
   mustHaveRegularStat(node_7,   &metadata->current_backup, 0,   (uint8_t *)"K",                    0);
   mustHaveRegularStat(node_8,   &metadata->current_backup, 518, node_42_hash,                      0);
-}
-
-/** Removes files left over by changeFiletypeChange(). */
-static void removeFiletypeChangeFiles(void)
-{
-  removePath("tmp/files/1");
-  removePath("tmp/files/2");
-  removePath("tmp/files/3/a/c/2");
-  removePath("tmp/files/3/a/c/1");
-  removePath("tmp/files/3/a/c");
-  removePath("tmp/files/3/a/b");
-  removePath("tmp/files/3/a");
-  removePath("tmp/files/3");
-  removePath("tmp/files/4/a/c/2");
-  removePath("tmp/files/4/a/c/1");
-  removePath("tmp/files/4/a/c");
-  removePath("tmp/files/4/a/b");
-  removePath("tmp/files/4/a");
-  removePath("tmp/files/4");
-  removePath("tmp/files/5");
-  removePath("tmp/files/6");
-  removePath("tmp/files/7");
-  removePath("tmp/files/8");
-  removePath("tmp/files/9");
-  removePath("tmp/repo/0-10ec418fd4d4551dfe9ce13a996e9b30623942e9-518");
-  removePath("tmp/repo/0-183b8a27e5c0c60c601ab80bb550a38c0bd1426a-63");
-  removePath("tmp/repo/0-2b85a2b06e498c7b976da4ff8d34ed84cb42c7e0-42");
-  removePath("tmp/repo/0-6c88db41c1b2b26aa7a8d5d94abdf20b3976d961-2123");
-  removePath("tmp/repo/0-78a560f4742dfe37324c2b66801f3f45ce03e2ef-21");
-  removePath("tmp/repo/0-e8fb29619700e5b60930886e94822c66ce2ad6bf-1200");
-  removePath("tmp/repo/metadata");
 }
 
 /** Tests the metadata written by changeFiletypeChange() and cleans up. */
@@ -5388,10 +5251,7 @@ static void postFiletypeChange(String cwd_path, size_t cwd_depth,
 
   /* Finish the backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countFilesInDir("tmp/repo") == 7);
-
-  /* Clean up the test directory. */
-  removeFiletypeChangeFiles();
+  assert_true(countItemsInDir("tmp/repo") == 18);
 }
 
 /** Checks the changes injected by modifyFiletypeChange() for the track
@@ -5544,7 +5404,7 @@ static void trackFiletypeChange(String cwd_path, size_t cwd_depth,
 
   /* Finish the backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countFilesInDir("tmp/repo") == 7);
+  assert_true(countItemsInDir("tmp/repo") == 18);
   mustHaveRegularStat(node_2,   &metadata->current_backup, 518, node_42_hash,                      0);
   mustHaveRegularStat(node_3_b, &metadata->current_backup, 11,  (uint8_t *)"nano-backup",          0);
   mustHaveRegularStat(node_3_1, &metadata->current_backup, 8,   (uint8_t *)"test 123",             0);
@@ -5727,7 +5587,7 @@ static void trackFiletypeChangePost(String cwd_path, size_t cwd_depth,
 
   /* Finish the backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countFilesInDir("tmp/repo") == 7);
+  assert_true(countItemsInDir("tmp/repo") == 18);
 }
 
 /** Prepares policy change test from BPOL_none. */
@@ -5796,7 +5656,7 @@ static void policyChangeFromNoneInit(String cwd_path, size_t cwd_depth,
 
   /* Finish the backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countFilesInDir("tmp/repo") == 1);
+  assert_true(countItemsInDir("tmp/repo") == 1);
 
   /* Remove some files. */
   removePath("tmp/files/b/1");
@@ -5828,7 +5688,7 @@ static void policyChangeFromNoneInit(String cwd_path, size_t cwd_depth,
 
   /* Finish the other backup. */
   completeBackup(metadata);
-  assert_true(countFilesInDir("tmp/repo") == 1);
+  assert_true(countItemsInDir("tmp/repo") == 1);
 }
 
 /** Finishes policy change test from BPOL_none. */
@@ -5904,7 +5764,7 @@ static void policyChangeFromNoneChange(String cwd_path, size_t cwd_depth,
 
   /* Finish the backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countFilesInDir("tmp/repo") == 1);
+  assert_true(countItemsInDir("tmp/repo") == 1);
 }
 
 /** Checks the metadata written by the previous test and cleans up. */
@@ -5977,16 +5837,7 @@ static void policyChangeFromNonePost(String cwd_path, size_t cwd_depth,
 
   /* Finish the backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countFilesInDir("tmp/repo") == 1);
-
-  /* Clean up. */
-  removePath("tmp/repo/metadata");
-  removePath("tmp/files/a/1");
-  removePath("tmp/files/a");
-  removePath("tmp/files/c/1");
-  removePath("tmp/files/c");
-  removePath("tmp/files/e/1");
-  removePath("tmp/files/e");
+  assert_true(countItemsInDir("tmp/repo") == 1);
 }
 
 /** Tests the handling of hash collisions. */
@@ -6073,7 +5924,7 @@ static void runPhaseCollision(String cwd_path, size_t cwd_depth,
 
   /* Finish backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countFilesInDir("tmp/repo") == 284);
+  assert_true(countItemsInDir("tmp/repo") == 292);
   mustHaveRegularStat(foo,       &metadata->current_backup, 4007, hash_1,    1);
   mustHaveRegularStat(bar,       &metadata->current_backup, 2006, hash_3,    3);
   mustHaveRegularStat(a_1,       &metadata->current_backup, 297,  hash_19,   19);
@@ -6081,24 +5932,6 @@ static void runPhaseCollision(String cwd_path, size_t cwd_depth,
   mustHaveRegularStat(test,      &metadata->current_backup, 80,   hash_test, 0);
   mustHaveRegularStat(important, &metadata->current_backup, 2006, hash_3,    3);
   mustHaveRegularStat(nano,      &metadata->current_backup, 1572, hash_255,  255);
-
-  /* Clean up test. */
-  removePath("tmp/files/dir/foo.txt");
-  removePath("tmp/files/dir/bar.txt");
-  removePath("tmp/files/dir/a/test");
-  removePath("tmp/files/dir/a/2");
-  removePath("tmp/files/dir/a/1");
-  removePath("tmp/files/dir/a");
-  removePath("tmp/files/dir");
-  removePath("tmp/files/backup/nano");
-  removePath("tmp/files/backup/important");
-  removePath("tmp/files/backup");
-  removePath("tmp/repo/metadata");
-  removePath("tmp/repo/0-14d1a208351dc71c2d568d8fc5110660cdca7ca5-80");
-  removeCollidingFiles(hash_1,   4007, 2);
-  removeCollidingFiles(hash_3,   2006, 4);
-  removeCollidingFiles(hash_19,  297,  20);
-  removeCollidingFiles(hash_255, 1572, 256);
 }
 
 /** Tests the handling of a hash collision slot overflow. */
@@ -6143,18 +5976,6 @@ static void runPhaseSlotOverflow(String cwd_path, size_t cwd_depth,
   /* Finish backup. */
   assert_error(finishBackup(metadata, "tmp/repo", "tmp/repo/tmp-file"),
                "overflow calculating slot number");
-
-  /* Clean up generated files. */
-  removePath("tmp/files/backup/test");
-  removePath("tmp/files/backup/a/b");
-  removePath("tmp/files/backup/a");
-  removePath("tmp/files/backup");
-  removeCollidingFiles(hash_256, 214, 256);
-
-  if(sPathExists("tmp/repo/0-931293b3347b83ce52911c47277a612d7d92f99a-39"))
-  {
-    removePath("tmp/repo/0-931293b3347b83ce52911c47277a612d7d92f99a-39");
-  }
 }
 
 /** Runs a backup phase.
@@ -6303,7 +6124,6 @@ int main(void)
   trackFiletypeChangePost(cwd, cwd_depth, track_filetype_node, 1);
   trackFiletypeChangePost(cwd, cwd_depth, track_filetype_node, 1);
   trackFiletypeChangePost(cwd, cwd_depth, track_filetype_node, 1);
-  removeFiletypeChangeFiles();
   testGroupEnd();
 
   testGroupStart("policy change from none");
