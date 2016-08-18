@@ -513,6 +513,9 @@ int main(void)
 
   sRemoveRecursively("tmp/bar");
   assert_true(sPathExists("tmp/bar") == false);
+
+  assert_error(sRemoveRecursively(""),
+               "failed to access \"\": No such file or directory");
   testGroupEnd();
 
   testGroupStart("sReadLine()");

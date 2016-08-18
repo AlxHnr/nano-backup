@@ -37,6 +37,7 @@
 #include <unistd.h>
 
 #include "buffer.h"
+#include "path-builder.h"
 #include "error-handling.h"
 
 struct FileStream
@@ -569,16 +570,10 @@ static void removeRecursively(Buffer *buffer, size_t length)
     for(struct dirent *dir_entry = sReadDir(dir, buffer->data);
         dir_entry != NULL; dir_entry = sReadDir(dir, buffer->data))
     {
-      size_t d_name_length = strlen(dir_entry->d_name);
-      size_t required_capacity =
-        sSizeAdd(sSizeAdd(length, 2), d_name_length);
-      bufferEnsureCapacity(&buffer, required_capacity);
+      size_t sub_path_length =
+        pathBuilderAppend(&buffer, length, dir_entry->d_name);
 
-      buffer->data[length] = '/';
-      buffer->data[length + 1 + d_name_length] = '\0';
-      memcpy(&buffer->data[length + 1], dir_entry->d_name, d_name_length);
-
-      removeRecursively(buffer, length + 1 + d_name_length);
+      removeRecursively(buffer, sub_path_length);
 
       buffer->data[length] = '\0';
     }
@@ -593,11 +588,7 @@ static void removeRecursively(Buffer *buffer, size_t length)
 void sRemoveRecursively(const char *path)
 {
   static Buffer *buffer = NULL;
-  size_t length = strlen(path);
-
-  bufferEnsureCapacity(&buffer, sSizeAdd(length, 1));
-  memcpy(buffer->data, path, length);
-  buffer->data[length] = '\0';
+  size_t length = pathBuilderSet(&buffer, path);
 
   removeRecursively(buffer, length);
 }
