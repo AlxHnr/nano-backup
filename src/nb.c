@@ -37,6 +37,7 @@
 #include "string-utils.h"
 #include "safe-wrappers.h"
 #include "error-handling.h"
+#include "garbage-collector.h"
 
 /** Prompts the user to proceed.
 
@@ -171,6 +172,16 @@ int main(const int arg_count, const char **arg_list)
       finishBackup(metadata, repo_path.str, tmp_file_path.str);
       metadataWrite(metadata, repo_path.str, tmp_file_path.str,
                     metadata_path.str);
+
+      GCStats gc_stats = collectGarbage(metadata, repo_path.str);
+      if(gc_stats.count > 0)
+      {
+        printf("\nDeleted unreferenced items: ");
+        colorPrintf(stdout, TC_blue_bold, "%zu", gc_stats.count);
+        printf(" (");
+        printHumanReadableSize(gc_stats.size);
+        printf(")\n");
+      }
     }
   }
 }

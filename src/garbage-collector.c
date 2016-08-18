@@ -79,12 +79,14 @@ static void populateTableRecursively(StringTable *table, PathNode *node)
   @param table The table containing referenced file paths.
   @param length The length of the path in path_buffer.
   @param repo_path_length The length of the path to the repository.
+  @param gc_stats GC statistics which will be incremented by this function.
 
   @return True if the directory specified in path_buffer contains
   referenced files.
 */
 static bool recurseIntoDirectory(StringTable *table, size_t length,
-                                 size_t repo_path_length)
+                                 size_t repo_path_length,
+                                 GCStats *gc_stats)
 {
   bool item_required = false;
   struct stat stats = sLStat(path_buffer->data);
@@ -99,8 +101,8 @@ static bool recurseIntoDirectory(StringTable *table, size_t length,
       size_t sub_path_length =
         pathBuilderAppend(&path_buffer, length, dir_entry->d_name);
 
-      item_required |=
-        recurseIntoDirectory(table, sub_path_length, repo_path_length);
+      item_required |= recurseIntoDirectory(table, sub_path_length,
+                                            repo_path_length, gc_stats);
 
       path_buffer->data[length] = '\0';
     }
@@ -116,15 +118,18 @@ static bool recurseIntoDirectory(StringTable *table, size_t length,
         .length = length - repo_path_length - 1,
       };
 
-    if(strtableGet(table, path_in_repo) != NULL)
-    {
-      item_required = true;
-    }
+    item_required |= (strtableGet(table, path_in_repo) != NULL);
   }
 
   if(item_required == false)
   {
     sRemove(path_buffer->data);
+    gc_stats->count = sSizeAdd(gc_stats->count, 1);
+
+    if(S_ISREG(stats.st_mode))
+    {
+      gc_stats->size = sUint64Add(gc_stats->size, stats.st_size);
+    }
   }
 
   return item_required;
@@ -134,8 +139,10 @@ static bool recurseIntoDirectory(StringTable *table, size_t length,
 
   @param metadata The metadata to search for referenced files.
   @param repo_path The path to the repository which should be cleaned up.
+
+  @return Statistics about items removed from the repository.
 */
-void collectGarbage(Metadata *metadata, const char *repo_path)
+GCStats collectGarbage(Metadata *metadata, const char *repo_path)
 {
   StringTable *table = strtableNew();
   strtableMap(table, str("config"),   (void *)0x1);
@@ -146,8 +153,12 @@ void collectGarbage(Metadata *metadata, const char *repo_path)
     populateTableRecursively(table, node);
   }
 
+  GCStats gc_stats = { .count = 0, .size = 0 };
+
   size_t length = pathBuilderSet(&path_buffer, repo_path);
-  recurseIntoDirectory(table, length, length);
+  recurseIntoDirectory(table, length, length, &gc_stats);
 
   strtableFree(table);
+
+  return gc_stats;
 }

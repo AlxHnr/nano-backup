@@ -30,6 +30,16 @@
 
 #include "metadata.h"
 
-extern void collectGarbage(Metadata *metadata, const char *repo_path);
+/** Contains statistics about collected files. */
+typedef struct
+{
+  /** The amount of removed items from the repository. */
+  size_t count;
+
+  /** The size of removed files from the repository. */
+  uint64_t size;
+}GCStats;
+
+extern GCStats collectGarbage(Metadata *metadata, const char *repo_path);
 
 #endif
