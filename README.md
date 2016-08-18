@@ -1,9 +1,7 @@
 [![Build Status](https://travis-ci.org/AlxHnr/nano-backup.svg?branch=master)](https://travis-ci.org/AlxHnr/nano-backup)
 [![codecov.io](https://codecov.io/github/AlxHnr/nano-backup/coverage.svg?branch=master)](https://codecov.io/github/AlxHnr/nano-backup?branch=master)
 
-These features are not implemented yet:
-* Removing unreferenced files from the repository
-* Restoring files
+Restoring files is not implemented yet.
 
 It requires a POSIX.1-2001 conform OS and depends on
 [OpenSSL](https://www.openssl.org/). Building the program requires a C99
