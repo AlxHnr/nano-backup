@@ -99,6 +99,29 @@ static void printStats(const char *summary, TextColor color,
   printf(")");
 }
 
+/** Runs collectGarbage() and prints the returned statistics.
+
+  @param metadata The metadata to pass to collectGarbage().
+  @param repo_path The path to the repository to pass to collectGarbage().
+  @param prepend_newline True if a newline should be printed first.
+*/
+static void runGC(Metadata *metadata, const char *repo_path,
+                  bool prepend_newline)
+{
+  GCStats gc_stats = collectGarbage(metadata, repo_path);
+
+  if(gc_stats.count > 0)
+  {
+    printf("%sDiscarded unreferenced item%s: ",
+           prepend_newline? "\n":"",
+           gc_stats.count == 1? "":"s");
+    colorPrintf(stdout, TC_blue_bold, "%zu", gc_stats.count);
+    printf(" (");
+    printHumanReadableSize(gc_stats.size);
+    printf(")\n");
+  }
+}
+
 int main(const int arg_count, const char **arg_list)
 {
   if(arg_count <= 1)
@@ -173,15 +196,7 @@ int main(const int arg_count, const char **arg_list)
       metadataWrite(metadata, repo_path.str, tmp_file_path.str,
                     metadata_path.str);
 
-      GCStats gc_stats = collectGarbage(metadata, repo_path.str);
-      if(gc_stats.count > 0)
-      {
-        printf("\nDiscarded unreferenced items: ");
-        colorPrintf(stdout, TC_blue_bold, "%zu", gc_stats.count);
-        printf(" (");
-        printHumanReadableSize(gc_stats.size);
-        printf(")\n");
-      }
+      runGC(metadata, repo_path.str, true);
     }
   }
 }
