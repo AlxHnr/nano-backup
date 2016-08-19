@@ -122,35 +122,20 @@ static void runGC(Metadata *metadata, const char *repo_path,
   }
 }
 
-int main(const int arg_count, const char **arg_list)
+/** The default action when only the repository is given.
+
+  @param repo_arg The repository path argument as provided by the user.
+*/
+static void backup(const char *repo_arg)
 {
-  if(arg_count <= 1)
-  {
-    die("no arguments");
-  }
-  else if(arg_count > 2)
-  {
-    die("too many arguments");
-  }
-  else if(!sPathExists(arg_list[1]))
-  {
-    die("repository doesn't exist: \"%s\"", arg_list[1]);
-  }
-
-  struct stat repo_stats = sStat(arg_list[1]);
-  if(!S_ISDIR(repo_stats.st_mode))
-  {
-    die("not a directory: \"%s\"", arg_list[1]);
-  }
-
-  String repo_path = strRemoveTrailingSlashes(str(arg_list[1]));
+  String repo_path = strRemoveTrailingSlashes(str(repo_arg));
   String config_path = strAppendPath(repo_path, str("config"));
   String metadata_path = strAppendPath(repo_path, str("metadata"));
   String tmp_file_path = strAppendPath(repo_path, str("tmp-file"));
 
   if(!sPathExists(config_path.str))
   {
-    die("repository has no config file: \"%s\"", arg_list[1]);
+    die("repository has no config file: \"%s\"", repo_arg);
   }
   SearchNode *root_node = searchTreeLoad(config_path.str);
 
@@ -192,11 +177,58 @@ int main(const int arg_count, const char **arg_list)
 
     if(askUserProceed())
     {
-      finishBackup(metadata, repo_path.str, tmp_file_path.str);
-      metadataWrite(metadata, repo_path.str, tmp_file_path.str,
+      finishBackup(metadata, repo_arg, tmp_file_path.str);
+      metadataWrite(metadata, repo_arg, tmp_file_path.str,
                     metadata_path.str);
 
-      runGC(metadata, repo_path.str, true);
+      runGC(metadata, repo_arg, true);
     }
+  }
+}
+
+/** The gc command.
+
+  @param repo_arg The repository path argument as provided by the user.
+*/
+static void gc(const char *repo_arg)
+{
+  String repo_path = strRemoveTrailingSlashes(str(repo_arg));
+  String metadata_path = strAppendPath(repo_path, str("metadata"));
+
+  runGC(metadataLoad(metadata_path.str), repo_arg, false);
+}
+
+int main(const int arg_count, const char **arg_list)
+{
+  if(arg_count <= 1)
+  {
+    die("no arguments");
+  }
+  else if(arg_count > 3)
+  {
+    die("too many arguments");
+  }
+  else if(!sPathExists(arg_list[1]))
+  {
+    die("repository doesn't exist: \"%s\"", arg_list[1]);
+  }
+
+  struct stat repo_stats = sStat(arg_list[1]);
+  if(!S_ISDIR(repo_stats.st_mode))
+  {
+    die("not a directory: \"%s\"", arg_list[1]);
+  }
+
+  if(arg_count == 2)
+  {
+    backup(arg_list[1]);
+  }
+  else if(strcmp(arg_list[2], "gc") == 0)
+  {
+    gc(arg_list[1]);
+  }
+  else
+  {
+    die("invalid argument: \"%s\"", arg_list[2]);
   }
 }
