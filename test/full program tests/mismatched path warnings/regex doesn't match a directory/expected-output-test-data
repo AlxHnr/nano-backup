@@ -3,6 +3,6 @@
 ?? /test directory/bar-b.txt
 config: line 4: regex matches, but not a directory: "^[abc]ar-.\.txt$"
 
-New: 2 (0 b), To wipe: 2 (0 b)
+New: 2 (0 b), Lost: 2 (0 b)
 
 proceed? (y/n) 

@@ -3,6 +3,6 @@
 ?? /test directory/bar-b.txt
 config: line 7: regex matches not only directories: "^(b|foo )"
 
-New: 6 (0 b), To wipe: 2 (0 b)
+New: 6 (0 b), Lost: 2 (0 b)
 
 proceed? (y/n) 

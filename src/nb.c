@@ -159,7 +159,7 @@ int main(const int arg_count, const char **arg_list)
     }
     if(changes.wiped_items.count > 0)
     {
-      printStats("To wipe", TC_blue_bold, changes.wiped_items,
+      printStats("Lost", TC_blue_bold, changes.wiped_items,
                  &printed_stats);
     }
     if(printed_stats)
@@ -176,7 +176,7 @@ int main(const int arg_count, const char **arg_list)
       GCStats gc_stats = collectGarbage(metadata, repo_path.str);
       if(gc_stats.count > 0)
       {
-        printf("\nDeleted unreferenced items: ");
+        printf("\nDiscarded unreferenced items: ");
         colorPrintf(stdout, TC_blue_bold, "%zu", gc_stats.count);
         printf(" (");
         printHumanReadableSize(gc_stats.size);
