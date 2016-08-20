@@ -32,6 +32,7 @@
 #include "string-utils.h"
 
 extern String getCwd(void);
+extern size_t countItemsInDir(const char *path);
 
 extern void checkMetadata(Metadata *metadata,
                           size_t config_history_length,

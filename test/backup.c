@@ -27,7 +27,6 @@
 
 #include "backup.h"
 
-#include <ftw.h>
 #include <unistd.h>
 #include <stdlib.h>
 
@@ -130,42 +129,6 @@ static size_t countPathElements(String string)
   }
 
   return count;
-}
-
-static size_t directory_item_counter = 0;
-
-/** Increments directory_item_counter and can be passed to nftw(). */
-static int countItems(const char *path, const struct stat *stats,
-                      int type, struct FTW *ftw)
-{
-  /* Ignore all arguments. */
-  (void)path;
-  (void)stats;
-  (void)type;
-  (void)ftw;
-
-  directory_item_counter++;
-
-  return 0;
-}
-
-/** Counts the items in the specified directory recursively.
-
-  @param path The path to a valid directory.
-
-  @return The amount of files in the specified directory.
-*/
-static size_t countItemsInDir(const char *path)
-{
-  directory_item_counter = 0;
-
-  if(nftw(path, countItems, 10, FTW_PHYS) == -1)
-  {
-    dieErrno("failed to count items in directory: \"%s\"", path);
-  }
-
-  /* The given directory does not count, thus - 1. */
-  return directory_item_counter - 1;
 }
 
 /** Creates a backup of the given paths parent directories timestamps. */
