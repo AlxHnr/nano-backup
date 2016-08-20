@@ -88,8 +88,11 @@ static bool recurseIntoDirectory(StringTable *table, size_t length,
                                  size_t repo_path_length,
                                  GCStats *gc_stats)
 {
-  bool item_required = false;
-  struct stat stats = sLStat(path_buffer->data);
+  bool item_required = length == repo_path_length;
+  struct stat stats =
+    length == repo_path_length?
+    sStat(path_buffer->data):
+    sLStat(path_buffer->data);
 
   if(S_ISDIR(stats.st_mode))
   {
@@ -109,7 +112,7 @@ static bool recurseIntoDirectory(StringTable *table, size_t length,
 
     sCloseDir(dir, path_buffer->data);
   }
-  else
+  else if(length != repo_path_length)
   {
     String path_in_repo =
       (String)
