@@ -31,7 +31,7 @@ test: build/nb $(TESTS) $(GENERATED_CONFIGS) \
 	@(cd test/data/ && \
 	  for test in safe-wrappers memory-pool buffer path-builder \
 	  file-hash colors string-utils string-table search-tree search \
-	  repository metadata backup; do \
+	  repository metadata backup garbage-collector; do \
 	  rm -rf tmp/; \
 	  mkdir -p tmp/; \
 	  test -t 1 && echo -e "Running \033[0;33m$$test\033[0m:" || \
