@@ -195,6 +195,11 @@ static void gc(const char *repo_arg)
   String repo_path = strRemoveTrailingSlashes(str(repo_arg));
   String metadata_path = strAppendPath(repo_path, str("metadata"));
 
+  if(!sPathExists(metadata_path.str))
+  {
+    die("repository has no metadata: \"%s\"", repo_arg);
+  }
+
   runGC(metadataLoad(metadata_path.str), repo_arg, false);
 }
 
