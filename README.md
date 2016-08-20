@@ -56,8 +56,7 @@ Just prefix a pattern with an additional slash:
 /home/user/Pictures//\.(png|jpg)$
 ```
 
-**Note**: A regular expression can not contain a slash and will only match
-file or directory names.
+**Note**: A regular expression can not contain a slash.
 
 ## Policies
 
@@ -66,7 +65,7 @@ element of a path:
 
 ```
 [policy]
-/home/user/Pictures/last-element
+/home/user/last-element
 ```
 
 All its parent directories will be backed up silently. Paths can inherit
@@ -89,3 +88,15 @@ copy        | Backup only the latest version of a file.
 mirror      | Like copy, but if a file gets removed from the filesystem, it will also be removed from the backup.
 track       | Keep a history of every change, including modification timestamps, owner, group and permission bits.
 ignore      | Not really a policy, but allows to specify regular expressions for excluding files. It has a lower priority than the other policies and only matches files which have not been matched already.
+
+## Frequently asked questions
+
+### How do i synchronize two repositories?
+
+Here is an example for the repositories _old/_ and _current/_:
+
+```sh
+rm old/{config,metadata}
+cp -rn current/* old/
+nb old/ gc
+```
