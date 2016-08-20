@@ -114,5 +114,15 @@ int main(void)
   testPathBuilderAppend(&buffer, 0, "etc", "/etc");
   testPathBuilderAppend(&buffer, 4, "portage", "/etc/portage");
   testPathBuilderAppend(&buffer, 12, "make.conf", "/etc/portage/make.conf");
+
+  testPathBuilderSet(&buffer, "tmp/file");
+  testPathBuilderAppend(&buffer, 8,  "",  "tmp/file/");
+  testPathBuilderAppend(&buffer, 8,  "",  "tmp/file/");
+  testPathBuilderAppend(&buffer, 9,  "",  "tmp/file//");
+  testPathBuilderAppend(&buffer, 10, "",  "tmp/file///");
+  testPathBuilderAppend(&buffer, 8,  "a", "tmp/file/a");
+  testPathBuilderAppend(&buffer, 10, "a", "tmp/file/a/a");
+  testPathBuilderAppend(&buffer, 12, "a", "tmp/file/a/a/a");
+  testPathBuilderAppend(&buffer, 7,  "",  "tmp/fil/");
   testGroupEnd();
 }
