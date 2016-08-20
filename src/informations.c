@@ -180,6 +180,7 @@ static void addNode(PathNode *node, MetadataChanges *changes)
   else if(hint & BH_content_changed)
   {
     changeStatsAdd(&changes->changed_items, 1, size);
+    changes->affects_parent_timestamp = true;
   }
   else if(node->hint != BH_unchanged &&
           (node->policy != BPOL_none ||
@@ -321,15 +322,11 @@ static void printNode(PathNode *node, MetadataChanges subnode_changes)
     printf("permissions");
   }
 
-  if(node->hint & BH_timestamp_changed)
+  if(!(node->hint & BH_timestamp_changed) !=
+     !(node->hint & BH_content_changed))
   {
     printPrefix(&printed_details);
-    printf("timestamp");
-  }
-  else if(node->hint & BH_content_changed)
-  {
-    printPrefix(&printed_details);
-    printf("same timestamp");
+    printf("%stimestamp", (node->hint & BH_timestamp_changed)? "":"same ");
   }
 
   if(node->hint & BH_policy_changed)
