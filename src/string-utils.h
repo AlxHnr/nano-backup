@@ -65,5 +65,6 @@ extern uint32_t strHash(String string);
 extern String strRemoveTrailingSlashes(String string);
 extern String strAppendPath(String path, String filename);
 extern StringSplit strSplitPath(String path);
+extern bool strIsParentPath(String parent, String path);
 
 #endif

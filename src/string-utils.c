@@ -215,3 +215,18 @@ StringSplit strSplitPath(String path)
     }
   };
 }
+
+/** Returns true if the given path starts with the specified parent. E.g.
+  strIsParentPath("/etc", "/etc/portage") == true.
+
+  @param parent The parent path which should not end with a slash.
+  @param path The full path which could start with the parent.
+
+  @return True if path starts with parent.
+*/
+bool strIsParentPath(String parent, String path)
+{
+  return parent.length < strRemoveTrailingSlashes(path).length &&
+    path.str[parent.length] == '/' &&
+    memcmp(path.str, parent.str, parent.length) == 0;
+}

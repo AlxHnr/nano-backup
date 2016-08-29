@@ -47,6 +47,12 @@ static void testRemoveTrailingSlashes(String original, String expected)
   assert_true(trimmed.str == original.str);
 }
 
+/** Simplified wrapper around strIsParentPath(). */
+static bool isParentPath(const char *parent, const char *path)
+{
+  return strIsParentPath(str(parent), str(path));
+}
+
 int main(void)
 {
   String zero_length = (String){ .str = "some-data", .length = 0 };
@@ -178,5 +184,45 @@ int main(void)
   StringSplit another_split = strSplitPath(str("/another/////split/"));
   assert_true(strCompare(another_split.head, str("/another/////split")));
   assert_true(strCompare(another_split.tail, str("")));
+  testGroupEnd();
+
+  testGroupStart("strIsParentPath()");
+  assert_true(isParentPath("",              "")     == false);
+  assert_true(isParentPath("",              "/")    == false);
+  assert_true(isParentPath("",              "///")  == false);
+  assert_true(isParentPath("/",             "")     == false);
+  assert_true(isParentPath("/",             "/etc") == false);
+  assert_true(isParentPath("",              "/etc"));
+  assert_true(isParentPath("",              "/etc/portage"));
+  assert_true(isParentPath("/",             "/etc/portage") == false);
+  assert_true(isParentPath("/et",           "/etc/portage") == false);
+  assert_true(isParentPath("/et",           "/et//portage"));
+  assert_true(isParentPath("/etc",          "/etc/portage"));
+  assert_true(isParentPath("/etc",          "/etc/portage/"));
+  assert_true(isParentPath("/etc",          "/etc/portage///"));
+  assert_true(isParentPath("/et?",          "/etc/portage")    == false);
+  assert_true(isParentPath("/etc/",         "/etc/portage")    == false);
+  assert_true(isParentPath("/etc/p",        "/etc/portage")    == false);
+  assert_true(isParentPath("/etc/portage",  "/etc/portage")    == false);
+  assert_true(isParentPath("/etc/portage",  "/etc/portage/")   == false);
+  assert_true(isParentPath("/etc/portage",  "/etc/portage//")  == false);
+  assert_true(isParentPath("/etc/portage",  "/etc/portage///") == false);
+  assert_true(isParentPath("/etc/portage/", "/etc/portage") == false);
+  assert_true(isParentPath("/etc/portage/", "/etc/") == false);
+  assert_true(isParentPath("/etc/portage/", "/etc") == false);
+  assert_true(isParentPath("/etc/portage/", "") == false);
+  assert_true(isParentPath("/etc/portage",  "/etc/portage/make.conf/foo"));
+  assert_true(isParentPath("/etc/portage/", "/etc/portage/make.conf/foo") == false);
+  assert_true(isParentPath("",                           "/etc/portage/make.conf/foo"));
+  assert_true(isParentPath("/etc",                       "/etc/portage/make.conf/foo"));
+  assert_true(isParentPath("/etc/portage",               "/etc/portage/make.conf/foo"));
+  assert_true(isParentPath("/etc/portage/make.conf",     "/etc/portage/make.conf/foo"));
+  assert_true(isParentPath("/etc/portage/make.conf/foo", "/etc/portage/make.conf/foo") == false);
+  assert_true(isParentPath("foo",           "foo/a"));
+  assert_true(isParentPath("foo/a",         "foo/a/bar"));
+  assert_true(isParentPath("foo/a/bar",     "foo/a/bar/1"));
+  assert_true(isParentPath("foo/a/bar/1",   "foo/a/bar/1/2"));
+  assert_true(isParentPath("foo/a/bar/1/2", "foo/a/bar/1/2/3"));
+  assert_true(isParentPath("foo/a/bar/2/2", "foo/a/bar/1/2/3") == false);
   testGroupEnd();
 }
