@@ -594,6 +594,39 @@ void sRemoveRecursively(const char *path)
   removeRecursively(buffer, length);
 }
 
+/** Safe and simplified wrapper around getcwd().
+
+  @return The current working directory. Must be freed by the caller using
+  free().
+*/
+char *sGetCwd(void)
+{
+  size_t capacity = 4;
+  char *buffer = sMalloc(capacity);
+  int old_errno = errno;
+
+  char *result = NULL;
+  do
+  {
+    errno = 0;
+    result = getcwd(buffer, capacity);
+    if(result == NULL)
+    {
+      if(errno != ERANGE)
+      {
+        free(buffer);
+        dieErrno("failed to determine current working directory");
+      }
+
+      capacity = sSizeMul(capacity, 2);
+      buffer = sRealloc(buffer, capacity);
+    }
+  }while(result == NULL);
+
+  errno = old_errno;
+  return buffer;
+}
+
 /** Reads a line from the given stream and terminates the program on
   failure.
 
@@ -682,7 +715,6 @@ size_t sStringToSize(const char *string)
   }
 
   errno = old_errno;
-
   return (size_t)value;
 }
 

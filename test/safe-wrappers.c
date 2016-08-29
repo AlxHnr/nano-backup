@@ -519,6 +519,20 @@ int main(void)
                "failed to access \"\": No such file or directory");
   testGroupEnd();
 
+  testGroupStart("sGetCwd()");
+  errno = 22;
+  char *cwd = sGetCwd();
+  assert_true(cwd != NULL);
+  assert_true(errno == 22);
+
+  char *cwd_copy = sMalloc(strlen(cwd) + 1);
+  assert_true(getcwd(cwd_copy, strlen(cwd) + 1) == cwd_copy);
+  assert_true(strcmp(cwd, cwd_copy) == 0);
+
+  free(cwd);
+  free(cwd_copy);
+  testGroupEnd();
+
   testGroupStart("sReadLine()");
   FILE *in_stream = fopen("valid-config-files/simple.txt", "rb");
   checkReadSimpleTxt(in_stream);

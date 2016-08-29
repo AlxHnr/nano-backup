@@ -273,39 +273,14 @@ static void checkPathState(PathNode *node, PathHistory *point,
   }
 }
 
-/** Determines the current working directory.
-
-  @return A String which should not freed by the caller.
-*/
+/** Determines the current working directory. */
 String getCwd(void)
 {
-  size_t capacity = 128;
-  char *buffer = sMalloc(capacity);
-  char *result = NULL;
-  int old_errno = errno;
-  errno = 0;
+  char *cwd = sGetCwd();
+  String cwd_string = strCopy(str(cwd));
+  free(cwd);
 
-  do
-  {
-    result = getcwd(buffer, capacity);
-    if(result == NULL)
-    {
-      if(errno != ERANGE)
-      {
-        dieErrno("failed to get current working directory");
-      }
-
-      capacity = sSizeMul(capacity, 2);
-      buffer = sRealloc(buffer, capacity);
-      errno = 0;
-    }
-  }while(result == NULL);
-
-  String cwd = strCopy(str(buffer));
-  free(buffer);
-
-  errno = old_errno;
-  return cwd;
+  return cwd_string;
 }
 
 static size_t directory_item_counter = 0;

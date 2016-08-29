@@ -76,6 +76,7 @@ extern void sUtime(const char *path, time_t time);
 extern void sRemove(const char *path);
 extern void sRemoveRecursively(const char *path);
 
+extern char *sGetCwd(void);
 extern char *sReadLine(FILE *stream);
 extern size_t sStringToSize(const char *string);
 extern time_t sTime(void);
