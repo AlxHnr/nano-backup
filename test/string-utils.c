@@ -224,5 +224,10 @@ int main(void)
   assert_true(isParentPath("foo/a/bar/1",   "foo/a/bar/1/2"));
   assert_true(isParentPath("foo/a/bar/1/2", "foo/a/bar/1/2/3"));
   assert_true(isParentPath("foo/a/bar/2/2", "foo/a/bar/1/2/3") == false);
+  assert_true(isParentPath("/etc",  "/etc//")  == false);
+  assert_true(isParentPath("/etc/", "/etc//")  == false);
+  assert_true(isParentPath("/etc/", "/etc///") == false);
+  assert_true(isParentPath("/etc/", "/etc//portage"));
+  assert_true(isParentPath("/etc/", "/etc///portage"));
   testGroupEnd();
 }
