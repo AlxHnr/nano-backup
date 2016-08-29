@@ -77,6 +77,7 @@ extern void sRemove(const char *path);
 extern void sRemoveRecursively(const char *path);
 
 extern char *sReadLine(FILE *stream);
+extern size_t sStringToSize(const char *string);
 extern time_t sTime(void);
 
 /** A simple struct, containing the content of the file and its size. */

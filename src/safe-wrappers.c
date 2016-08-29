@@ -31,6 +31,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <utime.h>
+#include <limits.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -649,6 +650,40 @@ char *sReadLine(FILE *stream)
 
   if(buffer) buffer[used] = '\0';
   return buffer;
+}
+
+/** Converts the given string to a size_t value and terminates the program
+  on conversion errors.
+
+  @param string The string to convert.
+
+  @return The value represented by the given string.
+*/
+size_t sStringToSize(const char *string)
+{
+  int old_errno = errno;
+  errno = 0;
+
+  char *endptr;
+  long long int value = strtoll(string, &endptr, 10);
+
+  if(endptr == string)
+  {
+    die("unable to convert to size: \"%s\"", string);
+  }
+  else if(value < 0)
+  {
+    die("unable to convert negative value to size: \"%s\"", string);
+  }
+  else if((value == LLONG_MAX && errno == ERANGE) ||
+          (unsigned long long int)value > SIZE_MAX)
+  {
+    die("value too large to convert to size: \"%s\"", string);
+  }
+
+  errno = old_errno;
+
+  return (size_t)value;
 }
 
 /** Safe wrapper around time().

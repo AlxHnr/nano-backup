@@ -28,6 +28,7 @@
 #include "safe-wrappers.h"
 
 #include <errno.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
@@ -536,6 +537,70 @@ int main(void)
   assert_true(sReadLine(in_stream) == NULL);
   assert_true(sReadLine(in_stream) == NULL);
   assert_true(fclose(in_stream) == 0);
+  testGroupEnd();
+
+  testGroupStart("sStringToSize()");
+  errno = 7;
+
+  assert_true(sStringToSize("0") == 0);
+  assert_true(errno == 7);
+  assert_true(sStringToSize("55") == 55);
+  assert_true(errno == 7);
+  assert_true(sStringToSize("100982") == 100982);
+  assert_true(errno == 7);
+  assert_true(sStringToSize("   53") == 53);
+  assert_true(errno == 7);
+  assert_true(sStringToSize("+129") == 129);
+  assert_true(errno == 7);
+  assert_true(sStringToSize("0x17") == 0);
+  assert_true(errno == 7);
+  assert_true(sStringToSize("92a7ff") == 92);
+  assert_true(errno == 7);
+  assert_true(sStringToSize("0777") == 777);
+  assert_true(errno == 7);
+  assert_true(sStringToSize("01938") == 1938);
+  assert_true(errno == 7);
+  assert_true(sStringToSize("28.7") == 28);
+  assert_true(errno == 7);
+  assert_true(sStringToSize("34,6") == 34);
+  assert_true(errno == 7);
+  assert_true(sStringToSize("4294967295") == 4294967295);
+  assert_true(errno == 7);
+
+#if SIZE_MAX == UINT32_MAX
+  assert_error(sStringToSize("4294967296"),
+               "value too large to convert to size: \"4294967296\"");
+#elif SIZE_MAX == UINT64_MAX
+  assert_true(sStringToSize("9223372036854775807") == 9223372036854775807);
+  assert_true(errno == 7);
+#endif
+
+  assert_error(sStringToSize("9223372036854775808"),
+               "value too large to convert to size: \"9223372036854775808\"");
+
+  assert_error(sStringToSize("-1"),
+               "unable to convert negative value to size: \"-1\"");
+  assert_error(sStringToSize("-100964"),
+               "unable to convert negative value to size: \"-100964\"");
+  assert_error(sStringToSize("-4294967295"),
+               "unable to convert negative value to size: \"-4294967295\"");
+  assert_error(sStringToSize("-4294967296"),
+               "unable to convert negative value to size: \"-4294967296\"");
+  assert_error(sStringToSize("-9223372036854775807"),
+               "unable to convert negative value to size: \"-9223372036854775807\"");
+  assert_error(sStringToSize("-9223372036854775808"),
+               "unable to convert negative value to size: \"-9223372036854775808\"");
+  assert_error(sStringToSize("-9223372036854775809"),
+               "unable to convert negative value to size: \"-9223372036854775809\"");
+  assert_error(sStringToSize("-99999999999999999999"),
+               "unable to convert negative value to size: \"-99999999999999999999\"");
+
+  assert_error(sStringToSize(""),      "unable to convert to size: \"\"");
+  assert_error(sStringToSize("foo"),   "unable to convert to size: \"foo\"");
+  assert_error(sStringToSize("  foo"), "unable to convert to size: \"  foo\"");
+  assert_error(sStringToSize("ef68"),  "unable to convert to size: \"ef68\"");
+  assert_error(sStringToSize("--1"),   "unable to convert to size: \"--1\"");
+  assert_error(sStringToSize("++1"),   "unable to convert to size: \"++1\"");
   testGroupEnd();
 
   testGroupStart("sTime()");
