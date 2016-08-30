@@ -125,7 +125,7 @@ static String getLine(FileContent config, size_t start)
   size_t end = start;
   while(end < config.size && config.content[end] != '\n') end++;
 
-  return (String){ .str = &config.content[start], .length = end - start};
+  return (String){ .str = &config.content[start], .length = end - start };
 }
 
 /** Creates a new node and adds it to its parent node. This function does
