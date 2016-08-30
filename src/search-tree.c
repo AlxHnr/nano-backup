@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "regex-pool.h"
 #include "memory-pool.h"
 #include "string-table.h"
 #include "safe-wrappers.h"
@@ -40,73 +41,6 @@ static String copy_token   = { .str = "[copy]",   .length = 6 };
 static String mirror_token = { .str = "[mirror]", .length = 8 };
 static String track_token  = { .str = "[track]",  .length = 7 };
 static String ignore_token = { .str = "[ignore]", .length = 8 };
-
-/** All SearchNodes are allocated inside the internal memory pool and live
- as long as the entire program. Thus regular expressions must be tracked
- separately and freed when the program exits. */
-static regex_t **regex_pool = NULL;
-static size_t regex_pool_used = 0;
-static size_t regex_pool_capacity = 0;
-
-/** Frees the entire regex pool. */
-static void freeRegexPool(void)
-{
-  for(size_t index = 0; index < regex_pool_used; index++)
-  {
-    regfree(regex_pool[index]);
-    free(regex_pool[index]);
-  }
-
-  free(regex_pool);
-}
-
-/** Compiles the given expression and stores the resulting regex in the
-  regex pool. It will terminate the program with an error message if the
-  given expression is invalid.
-
-  @param expression A null-terminated string.
-  @param line_nr The number of the line in the config file on which the
-  given expression was defined. Needed for printing an error message.
-
-  @return A compiled regex which should not be freed by the caller.
-*/
-static const regex_t *compileRegex(const char *expression, size_t line_nr)
-{
-  /* Grow regex pool if its used up. */
-  if(regex_pool_used == regex_pool_capacity)
-  {
-    if(regex_pool == NULL) atexit(freeRegexPool);
-
-    size_t new_pool_length =
-      regex_pool_capacity == 0 ? 8 : sSizeMul(regex_pool_capacity, 2);
-    size_t new_pool_size = sSizeMul(sizeof *regex_pool, new_pool_length);
-
-    regex_pool = sRealloc(regex_pool, new_pool_size);
-    regex_pool_capacity = new_pool_length;
-  }
-
-  /* The memory for a regex is not allocated inside the internal memory
-     pool because it may have a shorter lifetime then the regex pool
-     itself. */
-  regex_t *regex = sMalloc(sizeof *regex);
-  int error = regcomp(regex, expression, REG_EXTENDED | REG_NOSUB);
-
-  if(error != 0)
-  {
-    size_t error_length = regerror(error, regex, NULL, 0);
-    char *error_str = mpAlloc(error_length);
-    regerror(error, regex, error_str, error_length);
-    free(regex);
-
-    die("config: line %zu: %s: \"%s\"", line_nr, error_str, expression);
-  }
-
-  /* Store reference in regex pool. */
-  regex_pool[regex_pool_used] = regex;
-  regex_pool_used++;
-
-  return regex;
-}
 
 /** Returns a string slice, containing the current line in the given config
   files data.
@@ -170,7 +104,7 @@ static SearchNode *newNode(StringTable *existing_nodes,
     String copy = strCopy(expression);
     memcpy(&node->name, &copy, sizeof(node->name));
 
-    node->regex = compileRegex(node->name.str, line_nr);
+    node->regex = rpCompile(node->name.str, "config", line_nr);
 
     parent_node->subnodes_contain_regex = true;
   }
@@ -333,7 +267,7 @@ SearchNode *searchTreeLoad(const char *path)
       /* Pass the copy of the current line, to ensure that the string is
          null-terminated. */
       ignore_expression->regex =
-        compileRegex(ignore_expression->expression.str, line_nr);
+        rpCompile(ignore_expression->expression.str, "config", line_nr);
 
       ignore_expression->has_matched = false;
 
