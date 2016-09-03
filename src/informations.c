@@ -271,7 +271,7 @@ static void printNode(PathNode *node, MetadataChanges subnode_changes)
     }
   }
   else if(hint >= BH_regular_to_symlink &&
-          hint <= BH_directory_to_symlink)
+          hint <= BH_other_to_directory)
   {
     colorPrintf(stdout, TC_cyan_bold, "<> ");
     printNodePath(node, TC_cyan);
@@ -295,7 +295,7 @@ static void printNode(PathNode *node, MetadataChanges subnode_changes)
   bool printed_details = false;
 
   if(hint >= BH_regular_to_symlink &&
-     hint <= BH_directory_to_symlink)
+     hint <= BH_other_to_directory)
   {
     printPrefix(&printed_details);
 
@@ -307,6 +307,9 @@ static void printNode(PathNode *node, MetadataChanges subnode_changes)
       case BH_symlink_to_directory: printf("Symlink -> Directory"); break;
       case BH_directory_to_regular: printf("Directory -> File");    break;
       case BH_directory_to_symlink: printf("Directory -> Symlink"); break;
+      case BH_other_to_regular:     printf("Other -> File");        break;
+      case BH_other_to_symlink:     printf("Other -> Symlink");     break;
+      case BH_other_to_directory:   printf("Other -> Directory");   break;
       default: /* ignore */ break;
     }
   }
@@ -422,7 +425,7 @@ static MetadataChanges recursePrintOverTree(Metadata *metadata,
            node->hint <= BH_timestamp_changed))))
     {
       bool print_subnodes =
-        backupHintNoPol(node->hint) > BH_directory_to_symlink;
+        backupHintNoPol(node->hint) > BH_other_to_directory;
 
       subnode_changes =
         recursePrintOverTree(metadata, node->subnodes, print_subnodes);

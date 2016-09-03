@@ -133,6 +133,11 @@ typedef enum
   BH_directory_to_regular, /**< The directory was replaced by a file. */
   BH_directory_to_symlink, /**< The directory was replaced by a symlink. */
 
+  /* Special hints for restoring files. */
+  BH_other_to_regular,   /**< Restoring unsupported file to regular. */
+  BH_other_to_symlink,   /**< Restoring unsupported file to symlink. */
+  BH_other_to_directory, /**< Restoring unsupported file to directory. */
+
   /* The following values can be combined using the or operator. They
      can't be used together with the values defined above. */
 
@@ -166,7 +171,7 @@ typedef enum
   exclusive bits. */
 #define backupHintSet(var, hint) \
   var = (hint <= BH_unchanged? hint: \
-         hint <= BH_directory_to_symlink? ((var & ~0x1FF) | hint): \
+         hint <= BH_other_to_directory? ((var & ~0x1FF) | hint): \
          hint <= BH_fresh_hash? ((var & ~0xF) | hint): \
          (var | hint))
 
