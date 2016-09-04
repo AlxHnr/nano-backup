@@ -84,6 +84,12 @@ static PathState *findExistingPathState(PathNode *node, size_t id)
   return state;
 }
 
+/** Checks for filetype changes and updates the given nodes backup hint.
+
+  @param node The node which hint should be updated.
+  @param state The state to compare against.
+  @param stats The stats of the path on the users system.
+*/
 static void handleFiletypeChanges(PathNode *node, PathState *state,
                                   struct stat stats)
 {
@@ -134,6 +140,12 @@ static void handleFiletypeChanges(PathNode *node, PathState *state,
   }
 }
 
+/** Checks the nodes path for changes.
+
+  @param node The node representing the path. Its backup hint may be
+  updated by this function.
+  @param state The state against which the path should be compared.
+*/
 static void checkAndHandleChanges(PathNode *node, PathState *state)
 {
   if(sPathExists(node->path.str))
@@ -156,6 +168,11 @@ static void checkAndHandleChanges(PathNode *node, PathState *state)
   }
 }
 
+/** Recursive version of checkAndHandleChanges(). It takes the following
+  additional argument:
+
+  @param id The id of the backup against which should be compared.
+*/
 static void checkAndHandleChangesRecursively(PathNode *node,
                                              PathState *state,
                                              size_t id)
@@ -173,6 +190,12 @@ static void checkAndHandleChangesRecursively(PathNode *node,
   }
 }
 
+/** Initiates the restoring of a node in the given node list.
+
+  @param node_list The node list containing the given path.
+  @param id The backup id to which should be restored.
+  @param path The path to restore.
+*/
 static void initiateRestoreRecursively(PathNode *node_list,
                                        size_t id, String path)
 {
@@ -202,6 +225,13 @@ static void initiateRestoreRecursively(PathNode *node_list,
   }
 }
 
+/** Initiates the restoring of the given path.
+
+  @param metadata An uninitialized metadata struct. It should never be
+  passed to this function more than once.
+  @param id The backup id to which the given path should be restored.
+  @param path_to_restore The full, absolute path to restore.
+*/
 void initiateRestore(Metadata *metadata, size_t id,
                      const char *path_to_restore)
 {
