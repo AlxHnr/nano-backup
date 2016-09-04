@@ -31,7 +31,9 @@
 
 #include "backup.h"
 #include "colors.h"
+#include "restore.h"
 #include "metadata.h"
+#include "regex-pool.h"
 #include "search-tree.h"
 #include "informations.h"
 #include "string-utils.h"
@@ -122,6 +124,17 @@ static void runGC(Metadata *metadata, const char *repo_path,
   }
 }
 
+/** Returns true if the given struct contains any changes. */
+static bool containsChanges(MetadataChanges changes)
+{
+  return
+    changes.new_items.count > 0 ||
+    changes.removed_items.count > 0 ||
+    changes.wiped_items.count > 0 ||
+    changes.changed_items.count > 0 ||
+    changes.other == true;
+}
+
 /** The default action when only the repository is given.
 
   @param repo_arg The repository path argument as provided by the user.
@@ -148,9 +161,7 @@ static void backup(const char *repo_arg)
   MetadataChanges changes = printMetadataChanges(metadata);
   printSearchTreeInfos(root_node);
 
-  if(changes.new_items.count   > 0 || changes.removed_items.count > 0 ||
-     changes.wiped_items.count > 0 || changes.changed_items.count > 0 ||
-     changes.other == true)
+  if(containsChanges(changes))
   {
     printf("\n");
 
@@ -186,11 +197,8 @@ static void backup(const char *repo_arg)
   }
 }
 
-/** The gc command.
-
-  @param repo_arg The repository path argument as provided by the user.
-*/
-static void gc(const char *repo_arg)
+/** Loads the metadata of the specified repository. */
+static Metadata *metadataLoadFromRepo(const char *repo_arg)
 {
   String repo_path = strRemoveTrailingSlashes(str(repo_arg));
   String metadata_path = strAppendPath(repo_path, str("metadata"));
@@ -200,18 +208,48 @@ static void gc(const char *repo_arg)
     die("repository has no metadata: \"%s\"", repo_arg);
   }
 
-  runGC(metadataLoad(metadata_path.str), repo_arg, false);
+  return metadataLoad(metadata_path.str);
+}
+
+/** Ensures that the given path is absolute. */
+static const char *buildFullPath(const char *path)
+{
+  if(path[0] == '/')
+  {
+    return path;
+  }
+  else
+  {
+    char *cwd = sGetCwd();
+    String full_path = strAppendPath(str(cwd), str(path));
+    free(cwd);
+
+    return full_path.str;
+  }
+}
+
+/** Restores a path.
+
+  @param repo_arg The repository path as specified by the user.
+  @param id The id to which the path should be restored.
+  @param path The path to restore.
+*/
+static void restore(const char *repo_arg, size_t id, const char *path)
+{
+  Metadata *metadata = metadataLoadFromRepo(repo_arg);
+  initiateRestore(metadata, id, buildFullPath(path));
+
+  if(containsChanges(printMetadataChanges(metadata)) &&
+     printf("\n") == 1 && askUserProceed())
+  {
+  }
 }
 
 int main(const int arg_count, const char **arg_list)
 {
-  if(arg_count <= 1)
+  if(arg_count < 2)
   {
-    die("no arguments");
-  }
-  else if(arg_count > 3)
-  {
-    die("too many arguments");
+    die("no repository specified");
   }
   else if(!sPathExists(arg_list[1]))
   {
@@ -230,10 +268,26 @@ int main(const int arg_count, const char **arg_list)
   }
   else if(strcmp(arg_list[2], "gc") == 0)
   {
-    gc(arg_list[1]);
+    if(arg_count > 3)
+    {
+      die("too many arguments for gc command");
+    }
+
+    runGC(metadataLoadFromRepo(arg_list[1]), arg_list[1], false);
+  }
+  else if(regexec(rpCompile("^[0-9]+$", __FILE__, __LINE__),
+                  arg_list[2], 0, NULL, 0) == 0)
+  {
+    if(arg_count > 4)
+    {
+      die("too many paths specified");
+    }
+
+    restore(arg_list[1], sStringToSize(arg_list[2]),
+            arg_count == 4? arg_list[3]:"/");
   }
   else
   {
-    die("invalid argument: \"%s\"", arg_list[2]);
+    die("invalid arguments");
   }
 }
