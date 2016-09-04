@@ -182,7 +182,7 @@ static void addNode(PathNode *node, MetadataChanges *changes)
     changeStatsAdd(&changes->changed_items, 1, size);
     changes->affects_parent_timestamp = true;
   }
-  else if(node->hint != BH_unchanged &&
+  else if(node->hint > BH_unchanged &&
           (node->policy != BPOL_none ||
            (node->hint < BH_owner_changed ||
             node->hint > BH_timestamp_changed)))
