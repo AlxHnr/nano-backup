@@ -237,5 +237,19 @@ static void initiateRestoreRecursively(PathNode *node_list,
 */
 void initiateRestore(Metadata *metadata, size_t id, const char *path)
 {
-  initiateRestoreRecursively(metadata->paths, id, str(path));
+  if(path[0] == '/' && path[1] == '\0')
+  {
+    for(PathNode *node = metadata->paths; node != NULL; node = node->next)
+    {
+      PathState *state = searchExistingPathState(node, id);
+      if(state != NULL)
+      {
+        checkAndHandleChangesRecursively(node, state, id);
+      }
+    }
+  }
+  else
+  {
+    initiateRestoreRecursively(metadata->paths, id, str(path));
+  }
 }
