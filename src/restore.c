@@ -182,10 +182,10 @@ static void checkAndHandleChangesRecursively(PathNode *node,
   for(PathNode *subnode = node->subnodes;
       subnode != NULL; subnode = subnode->next)
   {
-    PathState *state = searchExistingPathState(subnode, id);
-    if(state != NULL && state->type == PST_directory)
+    PathState *subnode_state = searchExistingPathState(subnode, id);
+    if(subnode_state != NULL && subnode_state->type == PST_directory)
     {
-      checkAndHandleChangesRecursively(subnode, state, id);
+      checkAndHandleChangesRecursively(subnode, subnode_state, id);
     }
   }
 }
