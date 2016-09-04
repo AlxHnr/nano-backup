@@ -32,5 +32,7 @@
 
 extern void initiateRestore(Metadata *metadata, size_t id,
                             const char *path);
+extern void finishRestore(Metadata *metadata, size_t id,
+                          const char *repo_path);
 
 #endif

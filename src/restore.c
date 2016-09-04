@@ -253,3 +253,184 @@ void initiateRestore(Metadata *metadata, size_t id, const char *path)
     initiateRestoreRecursively(metadata->paths, id, str(path));
   }
 }
+
+/** Copies a file from the repository to the system.
+
+  @param node The node representing the path to restore.
+  @param state The paths state representing a regular file.
+  @param repo_path The path to the repository.
+*/
+static void copyFileFromRepo(PathNode *node, PathState *state,
+                             const char *repo_path)
+{
+  RepoReader *reader =
+    repoReaderOpenFile(repo_path, node->path.str, &state->metadata.reg);
+  FileStream *writer = sFopenWrite(node->path.str);
+  uint64_t bytes_left = state->metadata.reg.size;
+  char buffer[4096];
+
+  while(bytes_left > 0)
+  {
+    size_t bytes_to_read =
+      bytes_left > sizeof(buffer) ? sizeof(buffer) : bytes_left;
+
+    repoReaderRead(buffer, bytes_to_read, reader);
+    sFwrite(buffer, bytes_to_read, writer);
+
+    bytes_left -= bytes_to_read;
+  }
+
+  repoReaderClose(reader);
+  sFclose(writer);
+}
+
+/** Restores a path depending on the given state.
+
+  @param node The node representing the path to restore.
+  @param state The state to which the path should be restored.
+  @param repo_path The path to the repository.
+*/
+static void restorePath(PathNode *node, PathState *state,
+                        const char *repo_path)
+{
+  if(state->type == PST_regular)
+  {
+    copyFileFromRepo(node, state, repo_path);
+    sChown(node->path.str, state->uid, state->gid);
+    sChmod(node->path.str, state->metadata.reg.mode);
+    sUtime(node->path.str, state->metadata.reg.timestamp);
+  }
+  else if(state->type == PST_symlink)
+  {
+    sSymlink(state->metadata.sym_target, node->path.str);
+    sLChown(node->path.str, state->uid, state->gid);
+  }
+  else if(state->type == PST_directory)
+  {
+    sMkdir(node->path.str);
+    sChown(node->path.str, state->uid, state->gid);
+    sChmod(node->path.str, state->metadata.dir.mode);
+    sUtime(node->path.str, state->metadata.dir.timestamp);
+  }
+}
+
+/** Recursive counterpart to finishRestore().
+
+  @param node The node to restore.
+  @param id See finishRestore().
+  @param repo_path See finishRestore().
+*/
+static void finishRestoreRecursively(PathNode *node, size_t id,
+                                     const char *repo_path)
+{
+  PathState *state = searchExistingPathState(node, id);
+  if(state == NULL)
+  {
+    return;
+  }
+
+  if(backupHintNoPol(node->hint) == BH_added)
+  {
+    restorePath(node, state, repo_path);
+  }
+  else if(backupHintNoPol(node->hint) >= BH_regular_to_symlink &&
+          backupHintNoPol(node->hint) <= BH_other_to_directory)
+  {
+    if(backupHintNoPol(node->hint) == BH_directory_to_regular ||
+       backupHintNoPol(node->hint) == BH_directory_to_symlink)
+    {
+      sRemoveRecursively(node->path.str);
+    }
+    else
+    {
+      sRemove(node->path.str);
+    }
+
+    restorePath(node, state, repo_path);
+  }
+  else
+  {
+    if(node->hint & BH_owner_changed)
+    {
+      if(state->type == PST_symlink)
+      {
+        sLChown(node->path.str, state->uid, state->gid);
+      }
+      else
+      {
+        sChown(node->path.str, state->uid, state->gid);
+      }
+    }
+    if(node->hint & BH_permissions_changed)
+    {
+      if(state->type == PST_regular)
+      {
+        sChmod(node->path.str, state->metadata.reg.mode);
+      }
+      else if(state->type == PST_directory)
+      {
+        sChmod(node->path.str, state->metadata.dir.mode);
+      }
+    }
+    if(node->hint & BH_timestamp_changed ||
+       node->hint & BH_content_changed)
+    {
+      if(node->hint & BH_content_changed)
+      {
+        if(state->type == PST_symlink)
+        {
+          sRemove(node->path.str);
+          restorePath(node, state, repo_path);
+        }
+        else
+        {
+          copyFileFromRepo(node, state, repo_path);
+        }
+      }
+
+      if(state->type == PST_regular)
+      {
+        sUtime(node->path.str, state->metadata.reg.timestamp);
+      }
+      else if(state->type == PST_directory)
+      {
+        sUtime(node->path.str, state->metadata.dir.timestamp);
+      }
+    }
+  }
+
+  if(state->type == PST_directory)
+  {
+    bool subnode_changes_timestamp = false;
+
+    for(PathNode *subnode = node->subnodes;
+        subnode != NULL; subnode = subnode->next)
+    {
+      subnode_changes_timestamp |=
+        (backupHintNoPol(subnode->hint) > BH_unchanged &&
+         backupHintNoPol(subnode->hint) <= BH_other_to_directory) ||
+        (subnode->hint & BH_content_changed);
+
+      finishRestoreRecursively(subnode, id, repo_path);
+    }
+
+    if(subnode_changes_timestamp)
+    {
+      sUtime(node->path.str, state->metadata.dir.timestamp);
+    }
+  }
+}
+
+/** Completes the restoring of a path.
+
+  @param metadata Metadata initiated via initiateRestore().
+  @param id The same id which was passed to initiateRestore().
+  @param repo_path The path to the backup repository.
+*/
+void finishRestore(Metadata *metadata, size_t id, const char *repo_path)
+{
+  for(PathNode *node = metadata->paths; node != NULL; node = node->next)
+  {
+    finishRestoreRecursively(node, id, repo_path);
+  }
+}

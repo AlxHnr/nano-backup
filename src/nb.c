@@ -242,6 +242,7 @@ static void restore(const char *repo_arg, size_t id, const char *path)
   if(containsChanges(printMetadataChanges(metadata)) &&
      printf("\n") == 1 && askUserProceed())
   {
+    finishRestore(metadata, id, repo_arg);
   }
 }
 
