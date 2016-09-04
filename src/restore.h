@@ -31,6 +31,6 @@
 #include "metadata.h"
 
 extern void initiateRestore(Metadata *metadata, size_t id,
-                            const char *path_to_restore);
+                            const char *path);
 
 #endif

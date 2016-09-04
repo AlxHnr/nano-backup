@@ -230,10 +230,9 @@ static void initiateRestoreRecursively(PathNode *node_list,
   @param metadata An uninitialized metadata struct. It should never be
   passed to this function more than once.
   @param id The backup id to which the given path should be restored.
-  @param path_to_restore The full, absolute path to restore.
+  @param path The full, absolute path to restore.
 */
-void initiateRestore(Metadata *metadata, size_t id,
-                     const char *path_to_restore)
+void initiateRestore(Metadata *metadata, size_t id, const char *path)
 {
-  initiateRestoreRecursively(metadata->paths, id, str(path_to_restore));
+  initiateRestoreRecursively(metadata->paths, id, str(path));
 }
