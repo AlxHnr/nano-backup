@@ -1,17 +1,21 @@
 [![Build Status](https://travis-ci.org/AlxHnr/nano-backup.svg?branch=master)](https://travis-ci.org/AlxHnr/nano-backup)
 [![codecov.io](https://codecov.io/github/AlxHnr/nano-backup/coverage.svg?branch=master)](https://codecov.io/github/AlxHnr/nano-backup?branch=master)
 
-Restoring files is not implemented yet.
+Nano-backup provides a precise way to track files. It was intended for
+power-user who want to keep track of their fully customized posix system.
+It makes it easy to backup only the least amount of files required to
+restore your system. Nano-backup does not try to replace existing backup
+tools and focuses only on local backups. It stores full snapshots of files
+and may not be suited for backing up large VM images.
 
-It requires a POSIX.1-2001 conform OS and depends on
-[OpenSSL](https://www.openssl.org/). Building the program requires a C99
-conform C compiler and
-[pkg-config](http://www.freedesktop.org/wiki/Software/pkg-config/).
+Building nano-backup requires a C99 compiler,
+[pkg-config](http://www.freedesktop.org/wiki/Software/pkg-config/) and
+[OpenSSL](https://www.openssl.org/). It can be installed by cloning this
+repository and running `make` inside it. If the build succeeds, simply copy
+`build/nb` to a directory like `/usr/bin`.
 
-Nano-backup can be installed by cloning this repository and running `make`
-inside it. If the build succeeds, simply copy `build/nb` to a directory
-like `/usr/bin`. You probably want to run the test suite via `make test`
-after building it.
+**Note:** Gentoo users can install nano-backup directly from my
+[overlay](https://github.com/AlxHnr/gentoo-overlay).
 
 ## Usage
 
@@ -57,6 +61,21 @@ Just prefix a pattern with an additional slash:
 ```
 
 **Note**: A regular expression can not contain a slash.
+
+### Restoring files
+
+To restore a file or directory, pass its full or relative path to
+nano-backup:
+
+```sh
+nb repo/ 0 file.txt
+```
+
+The _0_ is the id of the latest backup. The backup before it would be _1_,
+etc.
+
+**Note**: The number is only relevant for tracked paths since only they
+have a history.
 
 ## Policies
 
