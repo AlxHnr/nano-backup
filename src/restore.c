@@ -145,10 +145,13 @@ static void handleFiletypeChanges(PathNode *node, PathState *state,
   @param node The node representing the path. Its backup hint may be
   updated by this function.
   @param state The state against which the path should be compared.
+  @param could_exist True if the path in the given node should be checked
+  for existence. Otherwise it will be marked as BH_added.
 */
-static void checkAndHandleChanges(PathNode *node, PathState *state)
+static void checkAndHandleChanges(PathNode *node, PathState *state,
+                                  bool could_exist)
 {
-  if(sPathExists(node->path.str))
+  if(could_exist && sPathExists(node->path.str))
   {
     struct stat stats =
       state->type == PST_symlink?
@@ -175,20 +178,28 @@ static void checkAndHandleChanges(PathNode *node, PathState *state)
 */
 static void checkAndHandleChangesRecursively(PathNode *node,
                                              PathState *state,
-                                             size_t id)
+                                             size_t id,
+                                             bool could_exist)
 {
-  checkAndHandleChanges(node, state);
-
-  if(state->type == PST_directory)
+  checkAndHandleChanges(node, state, could_exist);
+  if(state->type != PST_directory)
   {
-    for(PathNode *subnode = node->subnodes;
-        subnode != NULL; subnode = subnode->next)
+    return;
+  }
+  else if(backupHintNoPol(node->hint) >= BH_added &&
+          backupHintNoPol(node->hint) <= BH_other_to_directory)
+  {
+    could_exist = false;
+  }
+
+  for(PathNode *subnode = node->subnodes;
+      subnode != NULL; subnode = subnode->next)
+  {
+    PathState *subnode_state = searchExistingPathState(subnode, id);
+    if(subnode_state != NULL)
     {
-      PathState *subnode_state = searchExistingPathState(subnode, id);
-      if(subnode_state != NULL)
-      {
-        checkAndHandleChangesRecursively(subnode, subnode_state, id);
-      }
+      checkAndHandleChangesRecursively(subnode, subnode_state,
+                                       id, could_exist);
     }
   }
 }
@@ -198,9 +209,12 @@ static void checkAndHandleChangesRecursively(PathNode *node,
   @param node_list The node list containing the given path.
   @param id The backup id to which should be restored.
   @param path The path to restore.
+  @param could_exist True if the path to restore could exist. See
+  checkAndHandleChanges() for more informations.
 */
 static void initiateRestoreRecursively(PathNode *node_list,
-                                       size_t id, String path)
+                                       size_t id, String path,
+                                       bool could_exist)
 {
   bool found_node = false;
 
@@ -212,13 +226,28 @@ static void initiateRestoreRecursively(PathNode *node_list,
     {
       found_node = true;
       PathState *state = findExistingPathState(node, id);
-      checkAndHandleChangesRecursively(node, state, id);
+      checkAndHandleChangesRecursively(node, state, id, could_exist);
     }
     else if(strIsParentPath(node->path, path))
     {
       found_node = true;
-      checkAndHandleChanges(node, findExistingPathState(node, id));
-      initiateRestoreRecursively(node->subnodes, id, path);
+
+      PathState *state = findExistingPathState(node, id);
+      if(state->type != PST_directory)
+      {
+        die("path was not a directory at the specified time: \"%s\"",
+            node->path.str);
+      }
+
+      checkAndHandleChanges(node, state, could_exist);
+
+      bool subnode_could_exist =
+        could_exist &&
+        !(backupHintNoPol(node->hint) >= BH_added &&
+          backupHintNoPol(node->hint) <= BH_other_to_directory);
+
+      initiateRestoreRecursively(node->subnodes, id, path,
+                                 subnode_could_exist);
     }
   }
 
@@ -244,13 +273,13 @@ void initiateRestore(Metadata *metadata, size_t id, const char *path)
       PathState *state = searchExistingPathState(node, id);
       if(state != NULL)
       {
-        checkAndHandleChangesRecursively(node, state, id);
+        checkAndHandleChangesRecursively(node, state, id, true);
       }
     }
   }
   else
   {
-    initiateRestoreRecursively(metadata->paths, id, str(path));
+    initiateRestoreRecursively(metadata->paths, id, str(path), true);
   }
 }
 
