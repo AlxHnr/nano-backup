@@ -188,6 +188,9 @@ static void addNode(PathNode *node, MetadataChanges *changes)
             node->hint > BH_timestamp_changed)))
   {
     changes->other = true;
+    changes->affects_parent_timestamp |=
+      (hint >= BH_regular_to_symlink &&
+       hint <= BH_other_to_directory);
   }
 }
 
