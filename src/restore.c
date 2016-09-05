@@ -354,7 +354,7 @@ static bool finishRestoreRecursively(PathNode *node, size_t id,
     restorePath(node, state, repo_path);
     affects_parent_timestamp = true;
   }
-  else
+  else if(node->policy != BPOL_none)
   {
     if(node->hint & BH_owner_changed)
     {
@@ -417,7 +417,7 @@ static bool finishRestoreRecursively(PathNode *node, size_t id,
         finishRestoreRecursively(subnode, id, repo_path);
     }
 
-    if(subnode_changes_timestamp)
+    if(subnode_changes_timestamp && node->policy != BPOL_none)
     {
       sUtime(node->path.str, state->metadata.dir.timestamp);
     }
