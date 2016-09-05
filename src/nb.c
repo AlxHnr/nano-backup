@@ -256,9 +256,7 @@ int main(const int arg_count, const char **arg_list)
   {
     die("repository doesn't exist: \"%s\"", arg_list[1]);
   }
-
-  struct stat repo_stats = sStat(arg_list[1]);
-  if(!S_ISDIR(repo_stats.st_mode))
+  else if(!S_ISDIR(sStat(arg_list[1]).st_mode))
   {
     die("not a directory: \"%s\"", arg_list[1]);
   }
