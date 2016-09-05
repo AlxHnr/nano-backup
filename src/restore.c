@@ -319,19 +319,24 @@ static void restorePath(PathNode *node, PathState *state,
   @param node The node to restore.
   @param id See finishRestore().
   @param repo_path See finishRestore().
+
+  @return True if the restoring affected the parent directories timestamp.
 */
-static void finishRestoreRecursively(PathNode *node, size_t id,
+static bool finishRestoreRecursively(PathNode *node, size_t id,
                                      const char *repo_path)
 {
+  bool affects_parent_timestamp = false;
+
   PathState *state = searchExistingPathState(node, id);
   if(state == NULL)
   {
-    return;
+    return affects_parent_timestamp;
   }
 
   if(backupHintNoPol(node->hint) == BH_added)
   {
     restorePath(node, state, repo_path);
+    affects_parent_timestamp = true;
   }
   else if(backupHintNoPol(node->hint) >= BH_regular_to_symlink &&
           backupHintNoPol(node->hint) <= BH_other_to_directory)
@@ -347,6 +352,7 @@ static void finishRestoreRecursively(PathNode *node, size_t id,
     }
 
     restorePath(node, state, repo_path);
+    affects_parent_timestamp = true;
   }
   else
   {
@@ -372,22 +378,23 @@ static void finishRestoreRecursively(PathNode *node, size_t id,
         sChmod(node->path.str, state->metadata.dir.mode);
       }
     }
-    if(node->hint & BH_timestamp_changed ||
-       node->hint & BH_content_changed)
-    {
-      if(node->hint & BH_content_changed)
-      {
-        if(state->type == PST_symlink)
-        {
-          sRemove(node->path.str);
-          restorePath(node, state, repo_path);
-        }
-        else
-        {
-          copyFileFromRepo(node, state, repo_path);
-        }
-      }
 
+    if(node->hint & BH_content_changed)
+    {
+      if(state->type == PST_regular)
+      {
+        copyFileFromRepo(node, state, repo_path);
+        sUtime(node->path.str, state->metadata.reg.timestamp);
+      }
+      else if(state->type == PST_symlink)
+      {
+        sRemove(node->path.str);
+        restorePath(node, state, repo_path);
+        affects_parent_timestamp = true;
+      }
+    }
+    else if(node->hint & BH_timestamp_changed)
+    {
       if(state->type == PST_regular)
       {
         sUtime(node->path.str, state->metadata.reg.timestamp);
@@ -407,11 +414,7 @@ static void finishRestoreRecursively(PathNode *node, size_t id,
         subnode != NULL; subnode = subnode->next)
     {
       subnode_changes_timestamp |=
-        (backupHintNoPol(subnode->hint) > BH_unchanged &&
-         backupHintNoPol(subnode->hint) <= BH_other_to_directory) ||
-        (subnode->hint & BH_content_changed);
-
-      finishRestoreRecursively(subnode, id, repo_path);
+        finishRestoreRecursively(subnode, id, repo_path);
     }
 
     if(subnode_changes_timestamp)
@@ -419,6 +422,8 @@ static void finishRestoreRecursively(PathNode *node, size_t id,
       sUtime(node->path.str, state->metadata.dir.timestamp);
     }
   }
+
+  return affects_parent_timestamp;
 }
 
 /** Completes the restoring of a path.
