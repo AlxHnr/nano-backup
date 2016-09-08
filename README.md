@@ -2,7 +2,7 @@
 [![codecov.io](https://codecov.io/github/AlxHnr/nano-backup/coverage.svg?branch=master)](https://codecov.io/github/AlxHnr/nano-backup?branch=master)
 
 Nano-backup provides a precise way to track files. It was intended for
-power-user who want to keep track of their fully customized posix system.
+power-users who want to keep track of their fully customized posix system.
 It makes it easy to backup only the least amount of files required to
 restore your system. Nano-backup does not try to replace existing backup
 tools and focuses only on local backups. It stores full snapshots of files
@@ -115,7 +115,7 @@ ignore      | Not really a policy, but allows to specify regular expressions for
 Here is an example for the repositories _old/_ and _current/_:
 
 ```sh
-rm old/{config,metadata}
 cp -rn current/* old/
+cp current/{config,metadata} old/
 nb old/ gc
 ```
