@@ -57,7 +57,7 @@ Just prefix a pattern with an additional slash:
 
 ```
 [copy]
-/home/user/Pictures//\.(png|jpg)$
+/home/user//\.(png|jpg)$
 ```
 
 **Note**: A regular expression can not contain a slash.
@@ -87,26 +87,12 @@ element of a path:
 /home/user/last-element
 ```
 
-All its parent directories will be backed up silently. Paths can inherit
-policies from their parents:
-
-```
-[mirror]
-/home
-
-[track]
-/home/user/.config/
-```
-
-In the example above the files in `user` will be mirrored, while the files
-in `.config` will be tracked.
-
 Policy name | Description
 ------------|-------------
 copy        | Backup only the latest version of a file.
 mirror      | Like copy, but if a file gets removed from the filesystem, it will also be removed from the backup.
 track       | Keep a history of every change, including modification timestamps, owner, group and permission bits.
-ignore      | Not really a policy, but allows to specify regular expressions for excluding files. It has a lower priority than the other policies and only matches files which have not been matched already.
+ignore      | Allows specifying regular expressions for excluding files.
 
 ## Frequently asked questions
 

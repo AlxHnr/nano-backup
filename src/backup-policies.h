@@ -48,8 +48,8 @@ typedef enum
     timestamp, the files owner and its permission bits. */
   BPOL_track,
 
-  /** Ignore the file. This is only a helper policy for specific edge
-    cases. */
+  /** Ignore the file. This is only a helper policy for parsing config
+    files. */
   BPOL_ignore,
 }BackupPolicy;
 
