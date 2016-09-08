@@ -2,7 +2,7 @@
 [![codecov.io](https://codecov.io/github/AlxHnr/nano-backup/coverage.svg?branch=master)](https://codecov.io/github/AlxHnr/nano-backup?branch=master)
 
 Nano-backup provides a precise way to track files. It was intended for
-power-users who want to keep track of their fully customized posix system.
+power-users who want to keep track of their fully customized Unix system.
 It makes it easy to backup only the least amount of files required to
 restore your system. Nano-backup does not try to replace existing backup
 tools and focuses only on local backups. It stores full snapshots of files
@@ -90,9 +90,9 @@ element of a path:
 Policy name | Description
 ------------|-------------
 copy        | Backup only the latest version of a file.
-mirror      | Like copy, but if a file gets removed from the filesystem, it will also be removed from the backup.
+mirror      | Like copy, but if a file gets removed from the system, it will also be removed from the backup.
 track       | Keep a history of every change, including modification timestamps, owner, group and permission bits.
-ignore      | Allows specifying regular expressions for excluding files.
+ignore      | Allows specifying regular expressions for excluding paths.
 
 ## Frequently asked questions
 
