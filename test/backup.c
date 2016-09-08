@@ -31,6 +31,7 @@
 #include <stdlib.h>
 
 #include "test.h"
+#include "restore.h"
 #include "metadata.h"
 #include "memory-pool.h"
 #include "search-tree.h"
@@ -293,31 +294,6 @@ static PathHistory *findExistingHistPoint(PathNode *node)
   return NULL;
 }
 
-/** like restoreRegularFile(), but for files larger than FILE_HASH_SIZE.
-  This function does not restore the files modification timestamp. */
-static void restoreLargeRegularFile(const char *path,
-                                    const RegularFileInfo *info)
-{
-  RepoReader *reader = repoReaderOpenFile("tmp/repo", path, info);
-  FileStream *writer = sFopenWrite(path);
-  uint64_t bytes_left = info->size;
-  char buffer[4096];
-
-  while(bytes_left > 0)
-  {
-    size_t bytes_to_read =
-      bytes_left > sizeof(buffer) ? sizeof(buffer) : bytes_left;
-
-    repoReaderRead(buffer, bytes_to_read, reader);
-    sFwrite(buffer, bytes_to_read, writer);
-
-    bytes_left -= bytes_to_read;
-  }
-
-  repoReaderClose(reader);
-  sFclose(writer);
-}
-
 /** Restores a regular file with its modification timestamp.
 
   @param path The path to the file.
@@ -329,18 +305,9 @@ static void restoreRegularFile(const char *path,
 {
   time_t parent_time = getParentTime(path);
 
-  if(info->size <= FILE_HASH_SIZE)
-  {
-    FileStream *stream = sFopenWrite(path);
-    sFwrite(info->hash, info->size, stream);
-    sFclose(stream);
-  }
-  else
-  {
-    restoreLargeRegularFile(path, info);
-  }
-
+  restoreFile(path, info, "tmp/repo");
   sUtime(path, info->timestamp);
+
   restoreParentTime(path, parent_time);
 }
 

@@ -283,34 +283,45 @@ void initiateRestore(Metadata *metadata, size_t id, const char *path)
   }
 }
 
-/** Copies a file from the repository to the system.
+/** Restores a regular file. It will not restore metadata like timestamp,
+  owner and permissions.
 
-  @param node The node representing the path to restore.
-  @param state The paths state representing a regular file.
-  @param repo_path The path to the repository.
+  @param path The path to the file to restore. If the file already exists,
+  it will be overwritten.
+  @param info Informations about the file.
+  @param repo_path The path to the repository containing the file.
 */
-static void copyFileFromRepo(PathNode *node, PathState *state,
-                             const char *repo_path)
+void restoreFile(const char *path,
+                 const RegularFileInfo *info,
+                 const char *repo_path)
 {
-  RepoReader *reader =
-    repoReaderOpenFile(repo_path, node->path.str, &state->metadata.reg);
-  FileStream *writer = sFopenWrite(node->path.str);
-  uint64_t bytes_left = state->metadata.reg.size;
-  char buffer[4096];
-
-  while(bytes_left > 0)
+  if(info->size > FILE_HASH_SIZE)
   {
-    size_t bytes_to_read =
-      bytes_left > sizeof(buffer) ? sizeof(buffer) : bytes_left;
+    RepoReader *reader = repoReaderOpenFile(repo_path, path, info);
+    FileStream *writer = sFopenWrite(path);
+    uint64_t bytes_left = info->size;
+    char buffer[4096];
 
-    repoReaderRead(buffer, bytes_to_read, reader);
-    sFwrite(buffer, bytes_to_read, writer);
+    while(bytes_left > 0)
+    {
+      size_t bytes_to_read =
+        bytes_left > sizeof(buffer) ? sizeof(buffer) : bytes_left;
 
-    bytes_left -= bytes_to_read;
+      repoReaderRead(buffer, bytes_to_read, reader);
+      sFwrite(buffer, bytes_to_read, writer);
+
+      bytes_left -= bytes_to_read;
+    }
+
+    repoReaderClose(reader);
+    sFclose(writer);
   }
-
-  repoReaderClose(reader);
-  sFclose(writer);
+  else
+  {
+    FileStream *writer = sFopenWrite(path);
+    sFwrite(info->hash, info->size, writer);
+    sFclose(writer);
+  }
 }
 
 /** Restores a path depending on the given state.
@@ -324,7 +335,7 @@ static void restorePath(PathNode *node, PathState *state,
 {
   if(state->type == PST_regular)
   {
-    copyFileFromRepo(node, state, repo_path);
+    restoreFile(node->path.str, &state->metadata.reg, repo_path);
     sChown(node->path.str, state->uid, state->gid);
     sChmod(node->path.str, state->metadata.reg.mode);
     sUtime(node->path.str, state->metadata.reg.timestamp);
@@ -412,7 +423,7 @@ static bool finishRestoreRecursively(PathNode *node, size_t id,
     {
       if(state->type == PST_regular)
       {
-        copyFileFromRepo(node, state, repo_path);
+        restoreFile(node->path.str, &state->metadata.reg, repo_path);
         sUtime(node->path.str, state->metadata.reg.timestamp);
       }
       else if(state->type == PST_symlink)
