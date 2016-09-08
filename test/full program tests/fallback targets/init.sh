@@ -40,7 +40,7 @@ mkdir -p generated
 # Generate expected output.
 if test -f "$PHASE_PATH/expected-output"; then
   gen_expected_output "$PHASE_PATH/expected-output" "$PWD"
-elif test -f expected-output-test-data; then
+elif test -f "$PHASE_PATH/expected-output-test-data"; then
   gen_expected_output "$PHASE_PATH/expected-output-test-data" \
     "$PROJECT_PATH/test/data"
 fi
