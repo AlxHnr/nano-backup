@@ -279,7 +279,7 @@ int main(const int arg_count, const char **arg_list)
   {
     if(arg_count > 4)
     {
-      die("too many paths specified");
+      die("too many paths to restore");
     }
 
     restore(arg_list[1], sStringToSize(arg_list[2]),
