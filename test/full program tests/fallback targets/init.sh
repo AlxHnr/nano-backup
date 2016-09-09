@@ -30,12 +30,11 @@ gen_expected_output()
 # $2 The path which should be prepended to every path in the config file.
 gen_config_file()
 {
-  mkdir -p generated/repo
   sed -r "s,^\/,$2/,g" "$1" > generated/repo/config
 }
 
 # Initialize the test.
-mkdir -p generated
+mkdir -p generated/repo
 
 # Generate expected output.
 if test -f "$PHASE_PATH/expected-output"; then
