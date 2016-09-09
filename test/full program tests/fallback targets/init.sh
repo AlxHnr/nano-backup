@@ -12,7 +12,7 @@ gen_expected_output()
   total_files="0"
 
   if test -n "$expected_files"; then
-    if test "$PHASE_PATH" != "." && test "$PHASE_PATH" != "1" ; then
+    if test -f generated/repo/metadata; then
       total_files="$expected_files"
     elif test "$expected_files" != "0"; then
       total_files=$(($path_elements + $expected_files))
