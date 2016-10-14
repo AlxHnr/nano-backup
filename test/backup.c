@@ -36,6 +36,7 @@
 #include "memory-pool.h"
 #include "search-tree.h"
 #include "test-common.h"
+#include "path-builder.h"
 #include "string-table.h"
 #include "safe-wrappers.h"
 #include "error-handling.h"
@@ -206,26 +207,47 @@ static void generateCollidingFiles(const uint8_t *hash, size_t size,
   memcpy(info.hash, hash, FILE_HASH_SIZE);
   info.size = size;
 
+  static Buffer *path_buffer = NULL;
+  pathBuilderSet(&path_buffer, "tmp/repo");
+
+  static Buffer *path_in_repo = NULL;
+  repoBuildRegularFilePath(&path_in_repo, &info);
+  pathBuilderAppend(&path_buffer, 8, path_in_repo->data);
+
+  path_buffer->data[13] = '\0';
+  if(sPathExists(path_buffer->data) == false)
+  {
+    path_buffer->data[10] = '\0';
+    if(sPathExists(path_buffer->data) == false)
+    {
+      sMkdir(path_buffer->data);
+    }
+    path_buffer->data[10] = '/';
+
+    sMkdir(path_buffer->data);
+  }
+  path_buffer->data[13] = '/';
+
   for(size_t slot = 0; slot < files_to_create; slot++)
   {
     info.slot = (uint8_t)slot;
-    RepoWriter *writer =
-      repoWriterOpenFile("tmp/repo", "tmp/repo/tmp-file",
-                         "generated colliding file", &info);
+    repoBuildRegularFilePath(&path_in_repo, &info);
+    pathBuilderAppend(&path_buffer, 8, path_in_repo->data);
+    FileStream *stream = sFopenWrite(path_buffer->data);
 
     const uint8_t bytes_to_write[] = { info.slot, 0 };
     size_t bytes_left = size;
     while(bytes_left >= 2)
     {
-      repoWriterWrite(bytes_to_write, 2, writer);
+      sFwrite(bytes_to_write, 2, stream);
       bytes_left -= 2;
     }
     if(bytes_left)
     {
-      repoWriterWrite(bytes_to_write, 1, writer);
+      sFwrite(bytes_to_write, 1, stream);
     }
 
-    repoWriterClose(writer);
+    sFclose(stream);
   }
 }
 
