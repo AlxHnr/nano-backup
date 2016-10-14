@@ -4606,8 +4606,8 @@ static void restoreNoneFiletypeChange(String cwd_path, size_t cwd_depth,
   Metadata *metadata = metadataLoad("tmp/repo/metadata");
   assert_true(metadata->total_path_count == cwd_depth + 15);
   checkHistPoint(metadata, 0, 0, phase_timestamps[backup_counter - 1], cwd_depth + 4);
-  checkHistPoint(metadata, 1, 1, phase_timestamps[backup_counter - 2], 2);
-  checkHistPoint(metadata, 2, 2, phase_timestamps[backup_counter - 3], 10);
+  checkHistPoint(metadata, 1, 1, phase_timestamps[backup_counter - 3], 2);
+  checkHistPoint(metadata, 2, 2, phase_timestamps[backup_counter - 4], 10);
 
   /* Restore all files and initiate the backup. */
   removePath("tmp/files/a");
@@ -4621,8 +4621,8 @@ static void restoreNoneFiletypeChange(String cwd_path, size_t cwd_depth,
   assert_true(metadata->backup_history_length == 3);
   assert_true(metadata->total_path_count == cwd_depth + 15);
   checkHistPoint(metadata, 0, 0, phase_timestamps[backup_counter - 1], 0);
-  checkHistPoint(metadata, 1, 1, phase_timestamps[backup_counter - 2], 1);
-  checkHistPoint(metadata, 2, 2, phase_timestamps[backup_counter - 3], 10);
+  checkHistPoint(metadata, 1, 1, phase_timestamps[backup_counter - 3], 1);
+  checkHistPoint(metadata, 2, 2, phase_timestamps[backup_counter - 4], 10);
 
   PathNode *files = findFilesNode(metadata, cwd_path, BH_unchanged, 2);
 
@@ -5350,16 +5350,19 @@ static void trackFiletypeChange(String cwd_path, size_t cwd_depth,
 /** Tests the metadata written by changeFiletypeChange(). It takes the
   following additional argument:
 
-  @param off The offset for performing multiple runs. Must be 0 or 1.
+  @param completed_runs The count of subsequent runs this function has
+  completed.
 */
 static void trackFiletypeChangePost(String cwd_path, size_t cwd_depth,
-                                    SearchNode *filetype_node, size_t off)
+                                    SearchNode *filetype_node,
+                                    size_t completed_runs)
 {
   /* Initiate the backup. */
   Metadata *metadata = metadataLoad("tmp/repo/metadata");
   assert_true(metadata->total_path_count == cwd_depth + 47);
+  size_t off = completed_runs > 0;
 
-  if(off > 0)
+  if(completed_runs > 0)
   {
     checkHistPoint(metadata, 0, 0, phase_timestamps[backup_counter - 1], cwd_depth + 2);
   }
@@ -5368,8 +5371,8 @@ static void trackFiletypeChangePost(String cwd_path, size_t cwd_depth,
     checkHistPoint(metadata, 0, 0 , phase_timestamps[backup_counter - 1], cwd_depth + 32);
   }
 
-  checkHistPoint(metadata, 1 + off, 1 + off, phase_timestamps[backup_counter - 2 - off], 2);
-  checkHistPoint(metadata, 2 + off, 2 + off, phase_timestamps[backup_counter - 3 - off], 35);
+  checkHistPoint(metadata, 1 + off, 1 + off, phase_timestamps[backup_counter - 2 - completed_runs], 2);
+  checkHistPoint(metadata, 2 + off, 2 + off, phase_timestamps[backup_counter - 3 - completed_runs], 35);
   initiateBackup(metadata, filetype_node);
 
   /* Check the initiated backup. */
@@ -5378,14 +5381,14 @@ static void trackFiletypeChangePost(String cwd_path, size_t cwd_depth,
   assert_true(metadata->backup_history_length == 3 + off);
   assert_true(metadata->total_path_count == cwd_depth + 47);
 
-  if(off > 0)
+  if(completed_runs > 0)
   {
     checkHistPoint(metadata, 0, 0, phase_timestamps[backup_counter - 1], 0);
   }
 
-  checkHistPoint(metadata, 0 + off, 0 + off, phase_timestamps[backup_counter - 1 - off], 30);
-  checkHistPoint(metadata, 1 + off, 1 + off, phase_timestamps[backup_counter - 2 - off], 2);
-  checkHistPoint(metadata, 2 + off, 2 + off, phase_timestamps[backup_counter - 3 - off], 35);
+  checkHistPoint(metadata, 0 + off, 0 + off, phase_timestamps[backup_counter - 1 - completed_runs], 30);
+  checkHistPoint(metadata, 1 + off, 1 + off, phase_timestamps[backup_counter - 2 - completed_runs], 2);
+  checkHistPoint(metadata, 2 + off, 2 + off, phase_timestamps[backup_counter - 3 - completed_runs], 35);
 
   PathNode *files = findFilesNode(metadata, cwd_path, BH_unchanged, 9);
 
@@ -6064,7 +6067,7 @@ static void policyChangeFromCopyPost(String cwd_path, size_t cwd_depth,
   Metadata *metadata = metadataLoad("tmp/repo/metadata");
   assert_true(metadata->total_path_count == cwd_depth + 32);
   checkHistPoint(metadata, 0, 0, phase_timestamps[backup_counter - 1], cwd_depth + 9);
-  checkHistPoint(metadata, 1, 1, phase_timestamps[backup_counter - 2], 29);
+  checkHistPoint(metadata, 1, 1, phase_timestamps[backup_counter - 3], 29);
   initiateBackup(metadata, change_from_copy_final);
 
   /* Check the initiated backup. */
@@ -6073,7 +6076,7 @@ static void policyChangeFromCopyPost(String cwd_path, size_t cwd_depth,
   assert_true(metadata->backup_history_length == 2);
   assert_true(metadata->total_path_count == cwd_depth + 32);
   checkHistPoint(metadata, 0, 0, phase_timestamps[backup_counter - 1], 6);
-  checkHistPoint(metadata, 1, 1, phase_timestamps[backup_counter - 2], 29);
+  checkHistPoint(metadata, 1, 1, phase_timestamps[backup_counter - 3], 29);
 
   PathNode *files = findFilesNode(metadata, cwd_path, BH_unchanged, 14);
 
@@ -6445,9 +6448,9 @@ int main(void)
   trackFiletypeChange(cwd,     cwd_depth, track_filetype_node);
   trackFiletypeChangePost(cwd, cwd_depth, track_filetype_node, 0);
   trackFiletypeChangePost(cwd, cwd_depth, track_filetype_node, 1);
-  trackFiletypeChangePost(cwd, cwd_depth, track_filetype_node, 1);
-  trackFiletypeChangePost(cwd, cwd_depth, track_filetype_node, 1);
-  trackFiletypeChangePost(cwd, cwd_depth, track_filetype_node, 1);
+  trackFiletypeChangePost(cwd, cwd_depth, track_filetype_node, 2);
+  trackFiletypeChangePost(cwd, cwd_depth, track_filetype_node, 3);
+  trackFiletypeChangePost(cwd, cwd_depth, track_filetype_node, 4);
   testGroupEnd();
 
   testGroupStart("policy change from none");
