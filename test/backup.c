@@ -6187,6 +6187,273 @@ static void policyChangeFromCopyPost(String cwd_path, size_t cwd_depth,
   assert_true(countItemsInDir("tmp/repo") == 1);
 }
 
+/** Mirror counterpart to policyChangeFromNoneInit(). */
+static void policyChangeFromMirrorInit(String cwd_path, size_t cwd_depth,
+                                       SearchNode *change_from_mirror_init)
+{
+  resetStatCache();
+  assertTmpIsCleared();
+  makeDir("tmp/files/a");
+  makeDir("tmp/files/a/1");
+  makeDir("tmp/files/b");
+  makeDir("tmp/files/c");
+  makeDir("tmp/files/c/1");
+  makeDir("tmp/files/e");
+  makeDir("tmp/files/h");
+  makeDir("tmp/files/i");
+  makeDir("tmp/files/i/1");
+  makeDir("tmp/files/i/3");
+  makeDir("tmp/files/j");
+  generateFile("tmp/files/a/1/2", "",              0);
+  generateFile("tmp/files/b/1",   "random123",     1);
+  generateFile("tmp/files/b/2",   "Foo-Barbar",    1);
+  generateFile("tmp/files/c/1/2", "987654321",     1);
+  generateFile("tmp/files/d",     "some text",     1);
+  generateFile("tmp/files/e/1",   "tmp/files/e/1", 1);
+  generateFile("tmp/files/f",     "... Files_e_1", 1);
+  generateFile("tmp/files/g",     "",              0);
+  generateFile("tmp/files/h/1",   "0",             4);
+  generateFile("tmp/files/i/1/2", "x",             20);
+  generateFile("tmp/files/i/2",   "%",             10);
+  generateFile("tmp/files/i/3/1", "insert text",   1);
+  generateFile("tmp/files/j/1",   "void",          1);
+
+  /* Initiate the backup. */
+  Metadata *metadata = metadataNew();
+  initiateBackup(metadata, change_from_mirror_init);
+
+  /* Check the initiated backup. */
+  checkMetadata(metadata, 0, false);
+  assert_true(metadata->current_backup.ref_count == cwd_depth + 26);
+  assert_true(metadata->backup_history_length == 0);
+  assert_true(metadata->total_path_count == cwd_depth + 26);
+
+  /* Populate stat cache. */
+  PathNode *files = findFilesNode(metadata, cwd_path, BH_added, 10);
+
+  PathNode *b = findSubnode(files, "b", BH_added, BPOL_mirror, 1, 2);
+  cachedStat(b->path, sStat);
+  cachedStat(findSubnode(b, "1", BH_added, BPOL_mirror, 1, 0)->path, sStat);
+  cachedStat(findSubnode(b, "2", BH_added, BPOL_track, 1, 0)->path, sStat);
+
+  cachedStat(findSubnode(files, "d", BH_added, BPOL_mirror, 1, 0)->path, sStat);
+
+  PathNode *e = findSubnode(files, "e", BH_added, BPOL_mirror, 1, 1);
+  cachedStat(e->path, sStat);
+  cachedStat(findSubnode(e, "1", BH_added, BPOL_mirror, 1, 0)->path, sStat);
+
+  cachedStat(findSubnode(files, "g", BH_added, BPOL_mirror, 1, 0)->path, sStat);
+
+  PathNode *i = findSubnode(files, "i", BH_added, BPOL_mirror, 1, 3);
+  cachedStat(i->path, sStat);
+  PathNode *i_1 = findSubnode(i, "1", BH_added, BPOL_copy, 1, 1);
+  cachedStat(i_1->path, sStat);
+  cachedStat(findSubnode(i_1, "2", BH_added, BPOL_track, 1, 0)->path, sStat);
+  cachedStat(findSubnode(i, "2", BH_added, BPOL_mirror, 1, 0)->path, sStat);
+  PathNode *i_3 = findSubnode(i, "3", BH_added, BPOL_track, 1, 1);
+  cachedStat(i_3->path, sStat);
+  cachedStat(findSubnode(i_3, "1", BH_added, BPOL_track, 1, 0)->path, sStat);
+
+  PathNode *j = findSubnode(files, "j", BH_added, BPOL_mirror, 1, 1);
+  cachedStat(j->path, sStat);
+  cachedStat(findSubnode(j, "1", BH_added, BPOL_mirror, 1, 0)->path, sStat);
+
+  /* Finish the backup and perform additional checks. */
+  completeBackup(metadata);
+  assert_true(countItemsInDir("tmp/repo") == 1);
+}
+
+/** Mirror counterpart to policyChangeFromNoneChange(). */
+static void policyChangeFromMirrorChange(String cwd_path, size_t cwd_depth,
+                                         SearchNode *change_from_mirror_final)
+{
+  /* Remove various files directly before the initiation. */
+  removePath("tmp/files/b/2");
+  removePath("tmp/files/b/1");
+  removePath("tmp/files/b");
+  removePath("tmp/files/d");
+  removePath("tmp/files/e/1");
+  removePath("tmp/files/e");
+  removePath("tmp/files/g");
+  removePath("tmp/files/i/1/2");
+  removePath("tmp/files/i/1");
+  removePath("tmp/files/i/2");
+  removePath("tmp/files/i/3/1");
+  removePath("tmp/files/i/3");
+  removePath("tmp/files/i");
+  removePath("tmp/files/j/1");
+  removePath("tmp/files/j");
+
+  /* Initiate the backup. */
+  Metadata *metadata = metadataLoad("tmp/repo/metadata");
+  assert_true(metadata->total_path_count == cwd_depth + 26);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[backup_counter - 1], cwd_depth + 26);
+  initiateBackup(metadata, change_from_mirror_final);
+
+  /* Check the initiated backup. */
+  checkMetadata(metadata, 0, true);
+  assert_true(metadata->current_backup.ref_count == cwd_depth + 7);
+  assert_true(metadata->backup_history_length == 1);
+  assert_true(metadata->total_path_count == cwd_depth + 23);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[backup_counter - 1], 21);
+
+  PathNode *files = findFilesNode(metadata, cwd_path, BH_unchanged, 10);
+
+  PathNode *a = findSubnode(files, "a", BH_not_part_of_repository | BH_policy_changed, BPOL_none, 1, 1);
+  mustHaveDirectoryStat(a, &metadata->current_backup);
+  PathNode *a_1 = findSubnode(a, "1", BH_not_part_of_repository | BH_policy_changed, BPOL_none, 1, 1);
+  mustHaveDirectoryStat(a_1, &metadata->current_backup);
+  PathNode *a_2 = findSubnode(a_1, "2", BH_not_part_of_repository | BH_policy_changed, BPOL_none, 1, 0);
+  mustHaveRegularStat(a_2, &metadata->current_backup, 0, NULL, 0);
+
+  PathNode *b = findSubnode(files, "b", BH_removed | BH_policy_changed, BPOL_none, 1, 2);
+  mustHaveDirectoryCached(b, &metadata->backup_history[0]);
+  PathNode *b_1 = findSubnode(b, "1", BH_removed, BPOL_mirror, 1, 0);
+  mustHaveRegularCached(b_1, &metadata->backup_history[0], 9, (uint8_t *)"random123", 0);
+  PathNode *b_2 = findSubnode(b, "2", BH_removed, BPOL_track, 1, 0);
+  mustHaveRegularCached(b_2, &metadata->backup_history[0], 10, (uint8_t *)"Foo-Barbar", 0);
+
+  PathNode *c = findSubnode(files, "c", BH_policy_changed, BPOL_copy, 1, 1);
+  mustHaveDirectoryStat(c, &metadata->backup_history[0]);
+  PathNode *c_1 = findSubnode(c, "1", BH_policy_changed, BPOL_copy, 1, 1);
+  mustHaveDirectoryStat(c_1, &metadata->backup_history[0]);
+  PathNode *c_2 = findSubnode(c_1, "2", BH_policy_changed, BPOL_copy, 1, 0);
+  mustHaveRegularStat(c_2, &metadata->backup_history[0], 9, (uint8_t *)"987654321", 0);
+
+  PathNode *d = findSubnode(files, "d", BH_removed | BH_policy_changed, BPOL_copy, 1, 0);
+  mustHaveRegularCached(d, &metadata->backup_history[0], 9, (uint8_t *)"some text", 0);
+
+  PathNode *e = findSubnode(files, "e", BH_removed | BH_policy_changed, BPOL_copy, 1, 1);
+  mustHaveDirectoryCached(e, &metadata->backup_history[0]);
+  PathNode *e_1 = findSubnode(e, "1", BH_removed, BPOL_mirror, 1, 0);
+  mustHaveRegularCached(e_1, &metadata->backup_history[0], 13, (uint8_t *)"tmp/files/e/1", 0);
+
+  PathNode *f = findSubnode(files, "f", BH_policy_changed, BPOL_track, 1, 0);
+  mustHaveRegularStat(f, &metadata->backup_history[0], 13, (uint8_t *)"... Files_e_1", 0);
+
+  PathNode *g = findSubnode(files, "g", BH_removed | BH_policy_changed, BPOL_track, 2, 0);
+  mustHaveNonExisting(g, &metadata->current_backup);
+  mustHaveRegularCached(g, &metadata->backup_history[0], 0, NULL, 0);
+
+  PathNode *h = findSubnode(files, "h", BH_policy_changed, BPOL_track, 1, 1);
+  mustHaveDirectoryStat(h, &metadata->backup_history[0]);
+  PathNode *h_1 = findSubnode(h, "1", BH_policy_changed, BPOL_track, 1, 0);
+  mustHaveRegularStat(h_1, &metadata->backup_history[0], 4, (uint8_t *)"0000", 0);
+
+  PathNode *i = findSubnode(files, "i", BH_removed | BH_policy_changed, BPOL_track, 2, 3);
+  mustHaveNonExisting(i, &metadata->current_backup);
+  mustHaveDirectoryCached(i, &metadata->backup_history[0]);
+  PathNode *i_1 = findSubnode(i, "1", BH_removed, BPOL_copy, 1, 1);
+  mustHaveDirectoryCached(i_1, &metadata->backup_history[0]);
+  PathNode *i_1_2 = findSubnode(i_1, "2", BH_removed, BPOL_track, 1, 0);
+  mustHaveRegularCached(i_1_2, &metadata->backup_history[0], 20, (uint8_t *)"xxxxxxxxxxxxxxxxxxxx", 0);
+  PathNode *i_2 = findSubnode(i, "2", BH_removed, BPOL_mirror, 1, 0);
+  mustHaveRegularCached(i_2, &metadata->backup_history[0], 10, (uint8_t *)"%%%%%%%%%%", 0);
+  PathNode *i_3 = findSubnode(i, "3", BH_removed, BPOL_track, 2, 1);
+  mustHaveNonExisting(i_3, &metadata->current_backup);
+  mustHaveDirectoryCached(i_3, &metadata->backup_history[0]);
+  PathNode *i_3_1 = findSubnode(i_3, "1", BH_removed, BPOL_track, 2, 0);
+  mustHaveNonExisting(i_3_1, &metadata->current_backup);
+  mustHaveRegularCached(i_3_1, &metadata->backup_history[0], 11, (uint8_t *)"insert text", 0);
+
+  PathNode *j = findSubnode(files, "j", BH_removed | BH_policy_changed, BPOL_track, 2, 1);
+  mustHaveNonExisting(j, &metadata->current_backup);
+  mustHaveDirectoryCached(j, &metadata->backup_history[0]);
+  PathNode *j_1 = findSubnode(j, "1", BH_removed, BPOL_mirror, 1, 0);
+  mustHaveRegularCached(j_1, &metadata->backup_history[0], 4, (uint8_t *)"void", 0);
+
+  /* Finish the backup and perform additional checks. */
+  completeBackup(metadata);
+  assert_true(countItemsInDir("tmp/repo") == 1);
+
+  /* Remove various files to prevent rediscovering. */
+  removePath("tmp/files/a/1/2");
+  removePath("tmp/files/a/1");
+  removePath("tmp/files/a");
+}
+
+/** Mirror counterpart to policyChangeFromNonePost(). */
+static void policyChangeFromMirrorPost(String cwd_path, size_t cwd_depth,
+                                       SearchNode *change_from_mirror_final)
+{
+  /* Initiate the backup. */
+  Metadata *metadata = metadataLoad("tmp/repo/metadata");
+  assert_true(metadata->total_path_count == cwd_depth + 23);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[backup_counter - 1], cwd_depth + 7);
+  checkHistPoint(metadata, 1, 1, phase_timestamps[backup_counter - 2], 21);
+  initiateBackup(metadata, change_from_mirror_final);
+
+  /* Check the initiated backup. */
+  checkMetadata(metadata, 0, true);
+  assert_true(metadata->current_backup.ref_count == cwd_depth + 2);
+  assert_true(metadata->backup_history_length == 2);
+  assert_true(metadata->total_path_count == cwd_depth + 23);
+  checkHistPoint(metadata, 0, 0, phase_timestamps[backup_counter - 1], 5);
+  checkHistPoint(metadata, 1, 1, phase_timestamps[backup_counter - 2], 21);
+
+  PathNode *files = findFilesNode(metadata, cwd_path, BH_unchanged, 9);
+
+  PathNode *b = findSubnode(files, "b", BH_removed, BPOL_none, 1, 2);
+  mustHaveDirectoryCached(b, &metadata->backup_history[1]);
+  PathNode *b_1 = findSubnode(b, "1", BH_removed, BPOL_mirror, 1, 0);
+  mustHaveRegularCached(b_1, &metadata->backup_history[1], 9, (uint8_t *)"random123", 0);
+  PathNode *b_2 = findSubnode(b, "2", BH_removed, BPOL_track, 1, 0);
+  mustHaveRegularCached(b_2, &metadata->backup_history[1], 10, (uint8_t *)"Foo-Barbar", 0);
+
+  PathNode *c = findSubnode(files, "c", BH_unchanged, BPOL_copy, 1, 1);
+  mustHaveDirectoryStat(c, &metadata->backup_history[1]);
+  PathNode *c_1 = findSubnode(c, "1", BH_unchanged, BPOL_copy, 1, 1);
+  mustHaveDirectoryStat(c_1, &metadata->backup_history[1]);
+  PathNode *c_2 = findSubnode(c_1, "2", BH_unchanged, BPOL_copy, 1, 0);
+  mustHaveRegularStat(c_2, &metadata->backup_history[1], 9, (uint8_t *)"987654321", 0);
+
+  PathNode *d = findSubnode(files, "d", BH_removed, BPOL_copy, 1, 0);
+  mustHaveRegularCached(d, &metadata->backup_history[1], 9, (uint8_t *)"some text", 0);
+
+  PathNode *e = findSubnode(files, "e", BH_removed, BPOL_copy, 1, 1);
+  mustHaveDirectoryCached(e, &metadata->backup_history[1]);
+  PathNode *e_1 = findSubnode(e, "1", BH_removed, BPOL_mirror, 1, 0);
+  mustHaveRegularCached(e_1, &metadata->backup_history[1], 13, (uint8_t *)"tmp/files/e/1", 0);
+
+  PathNode *f = findSubnode(files, "f", BH_unchanged, BPOL_track, 1, 0);
+  mustHaveRegularStat(f, &metadata->backup_history[1], 13, (uint8_t *)"... Files_e_1", 0);
+
+  PathNode *g = findSubnode(files, "g", BH_unchanged, BPOL_track, 2, 0);
+  mustHaveNonExisting(g, &metadata->backup_history[0]);
+  mustHaveRegularCached(g, &metadata->backup_history[1], 0, NULL, 0);
+
+  PathNode *h = findSubnode(files, "h", BH_unchanged, BPOL_track, 1, 1);
+  mustHaveDirectoryStat(h, &metadata->backup_history[1]);
+  PathNode *h_1 = findSubnode(h, "1", BH_unchanged, BPOL_track, 1, 0);
+  mustHaveRegularStat(h_1, &metadata->backup_history[1], 4, (uint8_t *)"0000", 0);
+
+  PathNode *i = findSubnode(files, "i", BH_unchanged, BPOL_track, 2, 3);
+  mustHaveNonExisting(i, &metadata->backup_history[0]);
+  mustHaveDirectoryCached(i, &metadata->backup_history[1]);
+  PathNode *i_1 = findSubnode(i, "1", BH_removed, BPOL_copy, 1, 1);
+  mustHaveDirectoryCached(i_1, &metadata->backup_history[1]);
+  PathNode *i_1_2 = findSubnode(i_1, "2", BH_removed, BPOL_track, 1, 0);
+  mustHaveRegularCached(i_1_2, &metadata->backup_history[1], 20, (uint8_t *)"xxxxxxxxxxxxxxxxxxxx", 0);
+  PathNode *i_2 = findSubnode(i, "2", BH_removed, BPOL_mirror, 1, 0);
+  mustHaveRegularCached(i_2, &metadata->backup_history[1], 10, (uint8_t *)"%%%%%%%%%%", 0);
+  PathNode *i_3 = findSubnode(i, "3", BH_unchanged, BPOL_track, 2, 1);
+  mustHaveNonExisting(i_3, &metadata->backup_history[0]);
+  mustHaveDirectoryCached(i_3, &metadata->backup_history[1]);
+  PathNode *i_3_1 = findSubnode(i_3, "1", BH_unchanged, BPOL_track, 2, 0);
+  mustHaveNonExisting(i_3_1, &metadata->backup_history[0]);
+  mustHaveRegularCached(i_3_1, &metadata->backup_history[1], 11, (uint8_t *)"insert text", 0);
+
+  PathNode *j = findSubnode(files, "j", BH_unchanged, BPOL_track, 2, 1);
+  mustHaveNonExisting(j, &metadata->backup_history[0]);
+  mustHaveDirectoryCached(j, &metadata->backup_history[1]);
+  PathNode *j_1 = findSubnode(j, "1", BH_removed, BPOL_mirror, 1, 0);
+  mustHaveRegularCached(j_1, &metadata->backup_history[1], 4, (uint8_t *)"void", 0);
+
+  /* Finish the backup and perform additional checks. */
+  completeBackup(metadata);
+  assert_true(countItemsInDir("tmp/repo") == 1);
+}
+
 /** Tests the handling of hash collisions. */
 static void runPhaseCollision(String cwd_path, size_t cwd_depth,
                               SearchNode *phase_collision_node)
@@ -6374,6 +6641,8 @@ int main(void)
   SearchNode *change_from_none_final = searchTreeLoad("generated-config-files/policy-change-from-none-final.txt");
   SearchNode *change_from_copy_init  = searchTreeLoad("generated-config-files/policy-change-from-copy-init.txt");
   SearchNode *change_from_copy_final = searchTreeLoad("generated-config-files/policy-change-from-copy-final.txt");
+  SearchNode *change_from_mirror_init  = searchTreeLoad("generated-config-files/policy-change-from-mirror-init.txt");
+  SearchNode *change_from_mirror_final = searchTreeLoad("generated-config-files/policy-change-from-mirror-final.txt");
 
   stat_cache = strtableNew();
   makeDir("tmp/repo");
@@ -6485,6 +6754,12 @@ int main(void)
   policyChangeFromCopyInit(cwd,   cwd_depth, change_from_copy_init);
   policyChangeFromCopyChange(cwd, cwd_depth, change_from_copy_final);
   policyChangeFromCopyPost(cwd,   cwd_depth, change_from_copy_final);
+  testGroupEnd();
+
+  testGroupStart("policy change from mirror");
+  policyChangeFromMirrorInit(cwd,   cwd_depth, change_from_mirror_init);
+  policyChangeFromMirrorChange(cwd, cwd_depth, change_from_mirror_final);
+  policyChangeFromMirrorPost(cwd,   cwd_depth, change_from_mirror_final);
   testGroupEnd();
 
   /* Run special backup phases. */
