@@ -142,6 +142,10 @@ int main(void)
   assert_true(sSizeMul(5, 3) == 15);
   assert_true(sSizeMul(3, 5) == 15);
   assert_true(sSizeMul(70, 80) == 5600);
+  assert_true(sSizeMul(0,        0) == 0);
+  assert_true(sSizeMul(3,        0) == 0);
+  assert_true(sSizeMul(2348,     0) == 0);
+  assert_true(sSizeMul(SIZE_MAX, 0) == 0);
   assert_true(sSizeMul(SIZE_MAX, 1));
   assert_error(sSizeMul(SIZE_MAX, 25), expected_error);
   assert_error(sSizeMul(SIZE_MAX - 80, 295), expected_error);
