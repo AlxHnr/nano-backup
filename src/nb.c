@@ -214,11 +214,11 @@ static Metadata *metadataLoadFromRepo(const char *repo_arg)
 }
 
 /** Ensures that the given path is absolute. */
-static const char *buildFullPath(const char *path)
+static String buildFullPath(const char *path)
 {
   if(path[0] == '/')
   {
-    return path;
+    return str(path);
   }
   else
   {
@@ -226,7 +226,7 @@ static const char *buildFullPath(const char *path)
     String full_path = strAppendPath(str(cwd), str(path));
     free(cwd);
 
-    return full_path.str;
+    return full_path;
   }
 }
 
@@ -239,7 +239,8 @@ static const char *buildFullPath(const char *path)
 static void restore(const char *repo_arg, size_t id, const char *path)
 {
   Metadata *metadata = metadataLoadFromRepo(repo_arg);
-  initiateRestore(metadata, id, buildFullPath(path));
+  String full_path = strRemoveTrailingSlashes(buildFullPath(path));
+  initiateRestore(metadata, id, strCopy(full_path).str);
 
   if(containsChanges(printMetadataChanges(metadata)) &&
      printf("\n") == 1 && askYesNo("restore?"))
