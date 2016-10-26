@@ -223,7 +223,8 @@ static String buildFullPath(const char *path)
   else
   {
     char *cwd = sGetCwd();
-    String full_path = strAppendPath(str(cwd), str(path));
+    String full_path =
+      strAppendPath(strRemoveTrailingSlashes(str(cwd)), str(path));
     free(cwd);
 
     return full_path;
