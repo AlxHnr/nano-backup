@@ -43,15 +43,17 @@
 
 /** Prompts the user to proceed.
 
+  @param question The message which will be shown to the user.
+
   @return True if the user entered "y" or "yes". False if "n" or "no" was
   entered. False will also be returned if stdin has reached its end.
 */
-static bool askUserProceed(void)
+static bool askYesNo(const char *question)
 {
   char *line = NULL;
   while(true)
   {
-    printf("proceed? (y/n) ");
+    printf("%s (y/n) ", question);
 
     free(line);
     line = sReadLine(stdin);
@@ -186,7 +188,7 @@ static void backup(const char *repo_arg)
       printf("\n\n");
     }
 
-    if(askUserProceed())
+    if(askYesNo("proceed?"))
     {
       finishBackup(metadata, repo_arg, tmp_file_path.str);
       metadataWrite(metadata, repo_arg, tmp_file_path.str,
@@ -240,7 +242,7 @@ static void restore(const char *repo_arg, size_t id, const char *path)
   initiateRestore(metadata, id, buildFullPath(path));
 
   if(containsChanges(printMetadataChanges(metadata)) &&
-     printf("\n") == 1 && askUserProceed())
+     printf("\n") == 1 && askYesNo("restore?"))
   {
     finishRestore(metadata, id, repo_arg);
   }
