@@ -206,6 +206,7 @@ static void generateCollidingFiles(const uint8_t *hash, size_t size,
   RegularFileInfo info;
   memcpy(info.hash, hash, FILE_HASH_SIZE);
   info.size = size;
+  info.slot = 0;
 
   static Buffer *path_buffer = NULL;
   pathBuilderSet(&path_buffer, "tmp/repo");
@@ -3497,17 +3498,20 @@ static void changeDetectionTest(String cwd_path, size_t cwd_depth,
   mustHaveRegularStat(node_41, &metadata->current_backup, 0, (uint8_t *)"random file", 0);
   PathNode *node_42 = findSubnode(files, "42", BH_owner_changed | BH_content_changed, policy, 1, 0);
   memset(node_42->history->state.metadata.reg.hash, 'X', FILE_HASH_SIZE);
-  mustHaveRegularStat(node_42, &metadata->current_backup, 518, (uint8_t *)"XXXXXXXXXXXXXXXXXXXX", 0);
+  node_42->history->state.metadata.reg.slot = 52;
+  mustHaveRegularStat(node_42, &metadata->current_backup, 518, (uint8_t *)"XXXXXXXXXXXXXXXXXXXX", 52);
   PathNode *node_43 = findSubnode(files, "43", BH_timestamp_changed | BH_content_changed, policy, 1, 0);
   mustHaveRegularStat(node_43, &metadata->current_backup, 12, data_d_hash, 0);
   PathNode *node_44 = findSubnode(files, "44", BH_content_changed, policy, 1, 0);
   mustHaveRegularStat(node_44, &metadata->current_backup, 20, nested_1_hash, 0);
   PathNode *node_45 = findSubnode(files, "45", BH_content_changed, policy, 1, 0);
   memset(&node_45->history->state.metadata.reg.hash[10], 'J', 10);
-  mustHaveRegularStat(node_45, &metadata->current_backup, 21, (uint8_t *)"Small fileJJJJJJJJJJ", 0);
+  node_45->history->state.metadata.reg.slot = 149;
+  mustHaveRegularStat(node_45, &metadata->current_backup, 21, (uint8_t *)"Small fileJJJJJJJJJJ", 149);
   PathNode *node_46 = findSubnode(files, "46", BH_owner_changed | BH_content_changed, policy, 1, 0);
   memset(&node_46->history->state.metadata.reg.hash[9], '=', 11);
-  mustHaveRegularStat(node_46, &metadata->current_backup, 615, (uint8_t *)"Test file===========", 0);
+  node_46->history->state.metadata.reg.slot = 2;
+  mustHaveRegularStat(node_46, &metadata->current_backup, 615, (uint8_t *)"Test file===========", 2);
 
   /* Finish the backup and perform additional checks. */
   completeBackup(metadata);
@@ -3949,7 +3953,8 @@ static void trackChangeDetectionTest(String cwd_path, size_t cwd_depth,
 
   PathNode *node_42 = findSubnode(files, "42", BH_owner_changed | BH_content_changed, BPOL_track, 2, 0);
   memset(node_42->history->state.metadata.reg.hash, 'X', FILE_HASH_SIZE);
-  mustHaveRegularStat(node_42, &metadata->current_backup, 518, (uint8_t *)"XXXXXXXXXXXXXXXXXXXX", 0);
+  node_42->history->state.metadata.reg.slot = 7;
+  mustHaveRegularStat(node_42, &metadata->current_backup, 518, (uint8_t *)"XXXXXXXXXXXXXXXXXXXX", 7);
   struct stat node_42_stats = sStat(node_42->path.str);
   node_42_stats.st_gid++;
   mustHaveRegularStats(node_42, &metadata->backup_history[1], node_42_stats, 0, (uint8_t *)"", 0);
@@ -3966,11 +3971,13 @@ static void trackChangeDetectionTest(String cwd_path, size_t cwd_depth,
 
   PathNode *node_45 = findSubnode(files, "45", BH_content_changed, BPOL_track, 2, 0);
   memset(&node_45->history->state.metadata.reg.hash[10], 'J', 10);
-  mustHaveRegularStat(node_45, &metadata->current_backup,    21, (uint8_t *)"Small fileJJJJJJJJJJ", 0);
+  node_45->history->state.metadata.reg.slot = 99;
+  mustHaveRegularStat(node_45, &metadata->current_backup,    21, (uint8_t *)"Small fileJJJJJJJJJJ", 99);
   mustHaveRegularStat(node_45, &metadata->backup_history[1], 10, (uint8_t *)"Small file",           0);
 
   PathNode *node_46 = findSubnode(files, "46", BH_owner_changed | BH_content_changed, BPOL_track, 2, 0);
   memset(&node_46->history->state.metadata.reg.hash[9], '=', 11);
+  node_46->history->state.metadata.reg.slot = 0;
   mustHaveRegularStat(node_46, &metadata->current_backup, 615, (uint8_t *)"Test file===========", 0);
   struct stat node_46_stats = sStat(node_46->path.str);
   node_46_stats.st_uid++;
