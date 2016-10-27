@@ -41,14 +41,12 @@
 #include "error-handling.h"
 #include "garbage-collector.h"
 
-/** Prompts the user to proceed.
+/** Ensures that the user responds with "y" or "yes" to the given question
+  or terminates the program with failure.
 
   @param question The message which will be shown to the user.
-
-  @return True if the user entered "y" or "yes". False if "n" or "no" was
-  entered. False will also be returned if stdin has reached its end.
 */
-static bool askYesNo(const char *question)
+static void ensureUserConsent(const char *question)
 {
   char *line = NULL;
   while(true)
@@ -58,19 +56,17 @@ static bool askYesNo(const char *question)
     free(line);
     line = sReadLine(stdin);
 
-    if(line == NULL)
+    if(line == NULL ||
+       strcmp(line, "n") == 0 ||
+       strcmp(line, "no") == 0)
     {
-      return false;
+      free(line);
+      exit(EXIT_FAILURE);
     }
     else if(strcmp(line, "y") == 0 || strcmp(line, "yes") == 0)
     {
       free(line);
-      return true;
-    }
-    else if(strcmp(line, "n") == 0 || strcmp(line, "no") == 0)
-    {
-      free(line);
-      return false;
+      return;
     }
   }
 }
@@ -188,14 +184,12 @@ static void backup(const char *repo_arg)
       printf("\n\n");
     }
 
-    if(askYesNo("proceed?"))
-    {
-      finishBackup(metadata, repo_arg, tmp_file_path.str);
-      metadataWrite(metadata, repo_arg, tmp_file_path.str,
-                    metadata_path.str);
+    ensureUserConsent("proceed?");
+    finishBackup(metadata, repo_arg, tmp_file_path.str);
+    metadataWrite(metadata, repo_arg, tmp_file_path.str,
+                  metadata_path.str);
 
-      runGC(metadata, repo_arg, true);
-    }
+    runGC(metadata, repo_arg, true);
   }
 }
 
@@ -243,9 +237,9 @@ static void restore(const char *repo_arg, size_t id, const char *path)
   String full_path = strRemoveTrailingSlashes(buildFullPath(path));
   initiateRestore(metadata, id, strCopy(full_path).str);
 
-  if(containsChanges(printMetadataChanges(metadata)) &&
-     printf("\n") == 1 && askYesNo("restore?"))
+  if(containsChanges(printMetadataChanges(metadata)) && printf("\n") == 1)
   {
+    ensureUserConsent("restore?");
     finishRestore(metadata, id, repo_arg);
   }
 }
