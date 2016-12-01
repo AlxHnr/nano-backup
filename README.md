@@ -8,11 +8,18 @@ restore your system. Nano-backup does not try to replace existing backup
 tools and focuses only on local backups. It stores full snapshots of files
 and may not be suited for backing up large VM images.
 
+## Installation
+
 Building nano-backup requires a C99 compiler,
 [pkg-config](http://www.freedesktop.org/wiki/Software/pkg-config/) and
-[OpenSSL](https://www.openssl.org/). It can be installed by cloning this
-repository and running `make` inside it. If the build succeeds, simply copy
-`build/nb` to a directory like `/usr/bin`.
+[OpenSSL](https://www.openssl.org/). Clone this repository or download the
+[latest release](https://github.com/AlxHnr/nano-backup/releases) and run
+the following commands inside the project directory:
+
+```sh
+make
+cp build/nb /usr/bin
+```
 
 **Note:** Gentoo users can install nano-backup directly from my
 [overlay](https://github.com/AlxHnr/gentoo-overlay).
