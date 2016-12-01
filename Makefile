@@ -58,6 +58,7 @@ doc:
 
 clean:
 	- rm -rf build/ doc/ test/data/generated-*/ test/data/tmp/
+	- rmdir "test/data/test directory/.empty/" || true
 	@(for test_dir in "test/full program tests"/*/*; do \
 	  test -d "$$test_dir" || continue; \
 	  cd "$$test_dir" && \
