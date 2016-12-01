@@ -113,9 +113,9 @@ static void metadataChangesAdd(MetadataChanges *a, MetadataChanges b)
                  b.removed_items.count,
                  b.removed_items.size);
 
-  changeStatsAdd(&a->wiped_items,
-                 b.wiped_items.count,
-                 b.wiped_items.size);
+  changeStatsAdd(&a->lost_items,
+                 b.lost_items.count,
+                 b.lost_items.size);
 
   changeStatsAdd(&a->changed_items,
                  b.changed_items.count,
@@ -169,7 +169,7 @@ static void addNode(PathNode *node, MetadataChanges *changes)
   }
   else if(hint == BH_not_part_of_repository)
   {
-    changeStatsAdd(&changes->wiped_items, 1, size);
+    changeStatsAdd(&changes->lost_items, 1, size);
 
     if(node->policy == BPOL_mirror &&
        (node->hint & BH_policy_changed) == false)
@@ -364,7 +364,7 @@ static void printNode(PathNode *node, MetadataChanges subnode_changes)
     else if(hint == BH_not_part_of_repository)
     {
       printPrefix(&printed_details);
-      printChangeStats(subnode_changes.wiped_items, "-");
+      printChangeStats(subnode_changes.lost_items, "-");
     }
   }
   else if(hint == BH_directory_to_regular ||
@@ -373,8 +373,8 @@ static void printNode(PathNode *node, MetadataChanges subnode_changes)
     ChangeStats lost_files = { .count = 0, .size = 0 };
     changeStatsAdd(&lost_files, subnode_changes.removed_items.count,
                    subnode_changes.removed_items.size);
-    changeStatsAdd(&lost_files, subnode_changes.wiped_items.count,
-                   subnode_changes.wiped_items.size);
+    changeStatsAdd(&lost_files, subnode_changes.lost_items.count,
+                   subnode_changes.lost_items.size);
     printPrefix(&printed_details);
     printChangeStats(lost_files, "-");
   }
@@ -411,7 +411,7 @@ static MetadataChanges recursePrintOverTree(Metadata *metadata,
   {
     .new_items     = { .count = 0, .size = 0 },
     .removed_items = { .count = 0, .size = 0 },
-    .wiped_items   = { .count = 0, .size = 0 },
+    .lost_items    = { .count = 0, .size = 0 },
     .changed_items = { .count = 0, .size = 0 },
     .affects_parent_timestamp = false,
     .other = false,

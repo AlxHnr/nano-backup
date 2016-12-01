@@ -128,7 +128,7 @@ static bool containsChanges(MetadataChanges changes)
   return
     changes.new_items.count > 0 ||
     changes.removed_items.count > 0 ||
-    changes.wiped_items.count > 0 ||
+    changes.lost_items.count > 0 ||
     changes.changed_items.count > 0 ||
     changes.other == true;
 }
@@ -174,9 +174,9 @@ static void backup(const char *repo_arg)
       printStats("Removed", TC_red_bold, changes.removed_items,
                  &printed_stats);
     }
-    if(changes.wiped_items.count > 0)
+    if(changes.lost_items.count > 0)
     {
-      printStats("Lost", TC_blue_bold, changes.wiped_items,
+      printStats("Lost", TC_blue_bold, changes.lost_items,
                  &printed_stats);
     }
     if(printed_stats)

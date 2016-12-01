@@ -50,7 +50,7 @@ typedef struct
 {
   ChangeStats new_items;     /**< Statistics about new items. */
   ChangeStats removed_items; /**< Statistics about removed items. */
-  ChangeStats wiped_items;   /**< Statistics about wiped items. */
+  ChangeStats lost_items;    /**< Statistics about lost items. */
   ChangeStats changed_items; /**< Statistics about changed items. */
   bool other;                /**< Other changes exist. */
 
