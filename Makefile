@@ -35,10 +35,10 @@ test: build/nb $(TESTS) $(GENERATED_CONFIGS) \
 	  garbage-collector; do \
 	  rm -rf tmp/; \
 	  mkdir -p tmp/; \
-	  test -t 1 && echo -e "Running \033[0;33m$$test\033[0m:" || \
-	  echo "Running $$test:"; \
+	  test -t 1 && printf "Running \033[0;33m%s\033[0m:\n" "$$test" || \
+	  printf "Running %s\n" "$$test:"; \
 	  "../../build/test/$$test" || exit 1; \
-	  echo; \
+	  printf "\n"; \
 	  done && \
 	  rm -rf tmp/)
 	@./test/run-full-program-tests.sh
