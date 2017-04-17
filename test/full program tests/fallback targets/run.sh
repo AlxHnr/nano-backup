@@ -33,18 +33,26 @@ if test -f generated/expected-repo-files; then
 fi
 
 # Check generated filenames inside the repository.
-for file in generated/repo/*-*-*; do
-  test -e "$file" || continue
+for path in generated/repo/?/??/*; do
+  test -e "$path" || continue
+  file=${path#generated/repo/}
 
-  hash=${file#*-}
-  hash=${hash%-*}
-  real_hash=$(sha1sum "$file")
+  hash=${file//\//}
+  hash=${hash%%x*}
+  real_hash=$(sha1sum "$path")
   real_hash=${real_hash%% *}
   test "$hash" = "$real_hash" ||
-    (echo "invalid hash in filename: \"$file\"" && false)
+    {
+      echo "wrong hash in filename: \"$file\" (expected $real_hash)"
+      false
+    }
 
-  size=${file##*-}
-  real_size=$(stat --format="%s" "$file")
+  size=${file%x*}
+  size=${size##*x}
+  real_size=$(printf "%x" "$(wc -c < "$path")")
   test "$size" = "$real_size" ||
-    (echo "invalid size in filename: \"$file\"" && false)
+    {
+      echo "wrong size in filename: \"$file\" (expected $real_size)"
+      false
+    }
 done
