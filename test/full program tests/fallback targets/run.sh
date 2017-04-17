@@ -1,5 +1,5 @@
 test -f "$PHASE_PATH/input" &&
-  NB_INPUT="$(cat "$PHASE_PATH/input")" ||
+  NB_INPUT=$(cat "$PHASE_PATH/input") ||
   NB_INPUT="yes"
 export NB_INPUT
 
@@ -7,8 +7,22 @@ if test -f "$PHASE_PATH/arguments"; then
   cat "$PHASE_PATH/arguments"
 else
   echo generated/repo
-fi | xargs sh -c 'printf "%s" "$NB_INPUT" | "$NB" "$@"' -- 2>&1 |
-sort > generated/output
+fi | xargs sh -c '
+printf "%s" "$NB_INPUT" |
+{
+  "$NB" "$@"; echo "$?" > generated/exit-status;
+}' -- 2>&1 | sort > generated/output
+
+exit_status=$(cat generated/exit-status)
+test -f "$PHASE_PATH/exit-status" &&
+  expected_exit_status=$(cat "$PHASE_PATH/exit-status") ||
+  expected_exit_status=0
+
+test "$exit_status" -eq "$expected_exit_status" ||
+  {
+    echo "wrong exit status: $exit_status (expected $expected_exit_status)"
+    false
+  }
 
 diff -q generated/output generated/expected-output
 
