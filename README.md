@@ -112,3 +112,37 @@ cp -rn current/* old/
 cp current/{config,metadata} old/
 nb old/ gc
 ```
+
+### Why does it rely on timestamps and file sizes to check for changes?
+
+If a files size and timestamp has not changed, it is assumed that its
+content is still the same. While this method is extremely fast, it could
+allow an attacker to tamper with files. But then again, an attacker with
+system access could also tamper with the repository directly, or even
+replace the nb binary. On an uncompromised system with a working clock this
+shouldn't be an issue. Otherwise consider running some serious integrity
+checker or [IDS](https://en.wikipedia.org/wiki/Intrusion_detection_system)
+from a hardened live CD on an air-gapped system.
+
+### Why does it still use SHA-1? It is broken!
+
+This doesn't affect nano-backup. Any hash would do, as long as it can be
+used to:
+
+* _roughly_ estimate whether a file has changed
+* generate unique filenames for the backup repository
+
+If two _different_ files happen to have the same hash and size, they will
+still be backed up and restored as _different_ files. Unless your
+repository is publicly accessible and you want to ensure its integrity by
+signing the metadata, there is nothing to be concerned about.
+
+### Why don't use Git for backups?
+
+Git can't backup empty directories, doesn't handle binary files well and
+always keeps a history of everything. Sometimes it is desired to backup
+only the latest version of a file/directory, or even discard them like a
+mirror-style sync would do. Wiping a single file from a repository,
+including its history and residue is trivial with nano-backup. Git also has
+a completely different workflow and usually requires more commands to do a
+backup.
