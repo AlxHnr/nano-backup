@@ -37,7 +37,7 @@ for path in generated/repo/?/??/*; do
   test -e "$path" || continue
   file=${path#generated/repo/}
 
-  hash=${file//\//}
+  hash=$(printf "%s" "$file" | tr -d /)
   hash=${hash%%x*}
   real_hash=$(sha1sum "$path")
   real_hash=${real_hash%% *}
