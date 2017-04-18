@@ -6470,7 +6470,7 @@ static void runPhaseCollision(String cwd_path, size_t cwd_depth,
   makeDir("tmp/files/dir");
   makeDir("tmp/files/dir/a");
   makeDir("tmp/files/backup");
-  generateFile("tmp/files/dir/foo.txt",      "0",     4007);
+  generateFile("tmp/files/dir/foo.txt",      "0",     27850);
   generateFile("tmp/files/dir/bar.txt",      "ab",    1003);
   generateFile("tmp/files/dir/a/1",          "@",     297);
   generateFile("tmp/files/dir/a/2",          "ab",    1003);
@@ -6480,8 +6480,8 @@ static void runPhaseCollision(String cwd_path, size_t cwd_depth,
 
   const uint8_t hash_1[] =
   {
-    0xef, 0x07, 0xd2, 0x3d, 0xae, 0x32, 0xbd, 0xb6, 0xbd, 0x55,
-    0x1b, 0x28, 0x30, 0x12, 0x3c, 0x32, 0x41, 0x6e, 0x5e, 0xa4,
+    0x0d, 0x83, 0x17, 0x31, 0x73, 0x95, 0xe7, 0x71, 0xeb, 0xa0,
+    0xdd, 0xb7, 0xfb, 0xb3, 0xec, 0xf0, 0xb6, 0x1c, 0x56, 0x2e,
   };
   const uint8_t hash_3[] =
   {
@@ -6504,10 +6504,10 @@ static void runPhaseCollision(String cwd_path, size_t cwd_depth,
     0x8d, 0x8f, 0xc5, 0x11, 0x06, 0x60, 0xcd, 0xca, 0x7c, 0xa5,
   };
 
-  generateCollidingFiles(hash_1,   4007, 1);
-  generateCollidingFiles(hash_3,   2006, 3);
-  generateCollidingFiles(hash_19,  297,  19);
-  generateCollidingFiles(hash_255, 1572, 255);
+  generateCollidingFiles(hash_1,   27850, 1);
+  generateCollidingFiles(hash_3,   2006,  3);
+  generateCollidingFiles(hash_19,  297,   19);
+  generateCollidingFiles(hash_255, 1572,  255);
 
   /* Initiate the backup. */
   Metadata *metadata = metadataNew();
@@ -6524,7 +6524,7 @@ static void runPhaseCollision(String cwd_path, size_t cwd_depth,
   PathNode *dir = findSubnode(files, "dir", BH_added, BPOL_copy, 1, 3);
   mustHaveDirectoryStat(dir, &metadata->current_backup);
   PathNode *foo = findSubnode(dir, "foo.txt", BH_added, BPOL_copy, 1, 0);
-  mustHaveRegularStat(foo, &metadata->current_backup, 4007, NULL, 0);
+  mustHaveRegularStat(foo, &metadata->current_backup, 27850, NULL, 0);
   PathNode *bar = findSubnode(dir, "bar.txt", BH_added, BPOL_copy, 1, 0);
   mustHaveRegularStat(bar, &metadata->current_backup, 2006, NULL, 0);
   PathNode *a = findSubnode(dir, "a", BH_added, BPOL_track, 1, 3);
@@ -6546,13 +6546,13 @@ static void runPhaseCollision(String cwd_path, size_t cwd_depth,
   /* Finish backup and perform additional checks. */
   completeBackup(metadata);
   assert_true(countItemsInDir("tmp/repo") == 292);
-  mustHaveRegularStat(foo,       &metadata->current_backup, 4007, hash_1,    1);
-  mustHaveRegularStat(bar,       &metadata->current_backup, 2006, hash_3,    3);
-  mustHaveRegularStat(a_1,       &metadata->current_backup, 297,  hash_19,   19);
-  mustHaveRegularStat(a_2,       &metadata->current_backup, 2006, hash_3,    3);
-  mustHaveRegularStat(test,      &metadata->current_backup, 80,   hash_test, 0);
-  mustHaveRegularStat(important, &metadata->current_backup, 2006, hash_3,    3);
-  mustHaveRegularStat(nano,      &metadata->current_backup, 1572, hash_255,  255);
+  mustHaveRegularStat(foo,       &metadata->current_backup, 27850, hash_1,    1);
+  mustHaveRegularStat(bar,       &metadata->current_backup, 2006,  hash_3,    3);
+  mustHaveRegularStat(a_1,       &metadata->current_backup, 297,   hash_19,   19);
+  mustHaveRegularStat(a_2,       &metadata->current_backup, 2006,  hash_3,    3);
+  mustHaveRegularStat(test,      &metadata->current_backup, 80,    hash_test, 0);
+  mustHaveRegularStat(important, &metadata->current_backup, 2006,  hash_3,    3);
+  mustHaveRegularStat(nano,      &metadata->current_backup, 1572,  hash_255,  255);
 }
 
 /** Tests the handling of a hash collision slot overflow. */

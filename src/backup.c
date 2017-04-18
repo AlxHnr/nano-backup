@@ -701,7 +701,7 @@ static bool equalsToStoredFile(PathNode *node, const char *repo_path,
   bool stream_not_at_end = sFbytesLeft(stream);
   sFclose(stream);
 
-  if(stream_not_at_end)
+  if(bytes_left == 0 && stream_not_at_end)
   {
     die("file has changed while comparing to backup: \"%s\"",
         node->path.str);
