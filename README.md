@@ -118,8 +118,8 @@ nb old/ gc
 If a files size and timestamp has not changed, it is assumed that its
 content is still the same. While this method is extremely fast, it could
 allow an attacker to tamper with files. But then again, an attacker with
-system access could also tamper with the repository directly, or even
-replace the nb binary. On an uncompromised system with a working clock this
+file access could also tamper with the repository directly, or even replace
+the nb binary. On an uncompromised system with a working clock this
 shouldn't be an issue. Otherwise consider running some serious integrity
 checker or [IDS](https://en.wikipedia.org/wiki/Intrusion_detection_system)
 from a hardened live CD on an air-gapped system.
@@ -132,10 +132,7 @@ used to:
 * _roughly_ estimate whether a file has changed
 * generate unique filenames for the backup repository
 
-If two _different_ files happen to have the same hash and size, they will
-still be backed up and restored as _different_ files. Unless your
-repository is publicly accessible and you want to ensure its integrity by
-signing the metadata, there is nothing to be concerned about.
+Collisions are handled properly.
 
 ### Why don't use Git for backups?
 
