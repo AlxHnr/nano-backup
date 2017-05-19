@@ -112,9 +112,7 @@ static void runGC(Metadata *metadata, const char *repo_path,
 
   if(gc_stats.count > 0)
   {
-    printf("%sDiscarded unreferenced item%s: ",
-           prepend_newline? "\n":"",
-           gc_stats.count == 1? "":"s");
+    printf("%sDiscarded unreferenced items: ", prepend_newline? "\n":"");
     colorPrintf(stdout, TC_blue_bold, "%zu", gc_stats.count);
     printf(" (");
     printHumanReadableSize(gc_stats.size);
