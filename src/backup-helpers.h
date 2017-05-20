@@ -33,8 +33,9 @@
 #include "buffer.h"
 #include "metadata.h"
 
-extern const char *readSymlink(const char *path, struct stat stats,
-                               Buffer **buffer_ptr);
+extern void readSymlink(const char *path,
+                        struct stat stats,
+                        Buffer **buffer_ptr);
 extern void applyNodeChanges(PathNode *node, PathState *state,
                              struct stat stats);
 

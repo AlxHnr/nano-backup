@@ -64,11 +64,8 @@ static void setPathHistoryState(PathState *state, SearchResult result)
   else if(result.type == SRT_symlink)
   {
     state->type = PST_symlink;
-
-    const char *sym_target =
-      readSymlink(result.path.str, result.stats, &io_buffer);
-
-    state->metadata.sym_target = strCopy(str(sym_target)).str;
+    readSymlink(result.path.str, result.stats, &io_buffer);
+    state->metadata.sym_target = strCopy(str(io_buffer->data)).str;
   }
   else if(result.type == SRT_directory)
   {

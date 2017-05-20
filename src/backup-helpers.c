@@ -83,11 +83,10 @@ static void checkFileContentChanges(PathNode *node, PathState *state,
   @param path The path to the symlink.
   @param stats The stats of the symlink.
   @param buffer_ptr The Buffer in which the string will be stored.
-
-  @return The given buffers data.
 */
-const char *readSymlink(const char *path, struct stat stats,
-                        Buffer **buffer_ptr)
+void readSymlink(const char *path,
+                 struct stat stats,
+                 Buffer **buffer_ptr)
 {
   uint64_t buffer_length = sUint64Add(stats.st_size, 1);
   if(buffer_length > SIZE_MAX)
@@ -96,12 +95,11 @@ const char *readSymlink(const char *path, struct stat stats,
   }
 
   bufferEnsureCapacity(buffer_ptr, buffer_length);
-  char *buffer = (*buffer_ptr)->data;
 
   /* Although st_size bytes are enough to store the symlinks target path,
      the full buffer is used. This allows to detect whether the symlink
      has increased in size since its last lstat() or not. */
-  ssize_t read_bytes = readlink(path, buffer, buffer_length);
+  ssize_t read_bytes = readlink(path, (*buffer_ptr)->data, buffer_length);
 
   if(read_bytes == -1)
   {
@@ -112,9 +110,7 @@ const char *readSymlink(const char *path, struct stat stats,
     die("symlink changed while reading: \"%s\"", path);
   }
 
-  buffer[stats.st_size] = '\0';
-
-  return buffer;
+  (*buffer_ptr)->data[stats.st_size] = '\0';
 }
 
 /** Compares the node against the stats in the given results and updates
@@ -162,12 +158,11 @@ void applyNodeChanges(PathNode *node, PathState *state, struct stat stats)
   }
   else if(state->type == PST_symlink)
   {
-    const char *sym_target =
-      readSymlink(node->path.str, stats, &io_buffer);
+    readSymlink(node->path.str, stats, &io_buffer);
 
-    if(strcmp(state->metadata.sym_target, sym_target) != 0)
+    if(strcmp(state->metadata.sym_target, io_buffer->data) != 0)
     {
-      state->metadata.sym_target = strCopy(str(sym_target)).str;
+      state->metadata.sym_target = strCopy(str(io_buffer->data)).str;
       backupHintSet(node->hint, BH_content_changed);
     }
   }
