@@ -53,6 +53,115 @@ static bool isParentPath(const char *parent, const char *path)
   return strIsParentPath(str(parent), str(path));
 }
 
+/** Tests strPathContainsDotElements(). */
+static void testStrPathContainsDotElements(void)
+{
+  assert_true(strPathContainsDotElements(str("")) == false);
+  assert_true(strPathContainsDotElements(str(".")));
+  assert_true(strPathContainsDotElements(str("..")));
+  assert_true(strPathContainsDotElements(str("...")) == false);
+  assert_true(strPathContainsDotElements(str("....")) == false);
+  assert_true(strPathContainsDotElements(str("/.")));
+  assert_true(strPathContainsDotElements(str("/..")));
+  assert_true(strPathContainsDotElements(str("/...")) == false);
+  assert_true(strPathContainsDotElements(str("/....")) == false);
+  assert_true(strPathContainsDotElements(str("./")));
+  assert_true(strPathContainsDotElements(str("../")));
+  assert_true(strPathContainsDotElements(str(".../")) == false);
+  assert_true(strPathContainsDotElements(str("..../")) == false);
+  assert_true(strPathContainsDotElements(str("/./")));
+  assert_true(strPathContainsDotElements(str("/../")));
+  assert_true(strPathContainsDotElements(str("/.../")) == false);
+  assert_true(strPathContainsDotElements(str("/..../")) == false);
+  assert_true(strPathContainsDotElements(str("//.")) == false);
+  assert_true(strPathContainsDotElements(str("//..")) == false);
+  assert_true(strPathContainsDotElements(str("//...")) == false);
+  assert_true(strPathContainsDotElements(str("//....")) == false);
+  assert_true(strPathContainsDotElements(str(".//")));
+  assert_true(strPathContainsDotElements(str("..//")));
+  assert_true(strPathContainsDotElements(str("...//")) == false);
+  assert_true(strPathContainsDotElements(str("....//")) == false);
+  assert_true(strPathContainsDotElements(str("//.//")) == false);
+  assert_true(strPathContainsDotElements(str("//..//")) == false);
+  assert_true(strPathContainsDotElements(str("//...//")) == false);
+  assert_true(strPathContainsDotElements(str("//....//")) == false);
+  assert_true(strPathContainsDotElements(str("///.")) == false);
+  assert_true(strPathContainsDotElements(str("///..")) == false);
+  assert_true(strPathContainsDotElements(str("///...")) == false);
+  assert_true(strPathContainsDotElements(str("///....")) == false);
+  assert_true(strPathContainsDotElements(str(".///")));
+  assert_true(strPathContainsDotElements(str("..///")));
+  assert_true(strPathContainsDotElements(str("...///")) == false);
+  assert_true(strPathContainsDotElements(str("....///")) == false);
+  assert_true(strPathContainsDotElements(str("///.///")) == false);
+  assert_true(strPathContainsDotElements(str("///..///")) == false);
+  assert_true(strPathContainsDotElements(str("///...///")) == false);
+  assert_true(strPathContainsDotElements(str("///....///")) == false);
+  assert_true(strPathContainsDotElements(str("/home/foo/hidden/bar")) == false);
+  assert_true(strPathContainsDotElements(str("/home/foo/.hidden/bar")) == false);
+  assert_true(strPathContainsDotElements(str("/home/foo/..hidden/bar")) == false);
+  assert_true(strPathContainsDotElements(str("/home/foo/...hidden/bar")) == false);
+  assert_true(strPathContainsDotElements(str("/home/foo/hidden./bar")) == false);
+  assert_true(strPathContainsDotElements(str("/home/foo/hidden../bar")) == false);
+  assert_true(strPathContainsDotElements(str("/home/foo/hidden.../bar")) == false);
+  assert_true(strPathContainsDotElements(str("./home/foo/")));
+  assert_true(strPathContainsDotElements(str("../home/foo/")));
+  assert_true(strPathContainsDotElements(str(".../home/foo/")) == false);
+  assert_true(strPathContainsDotElements(str("..../home/foo/")) == false);
+  assert_true(strPathContainsDotElements(str("/home/foo/.")));
+  assert_true(strPathContainsDotElements(str("/home/foo/..")));
+  assert_true(strPathContainsDotElements(str("home/foo/.")));
+  assert_true(strPathContainsDotElements(str("home/foo/..")));
+  assert_true(strPathContainsDotElements(str("/home/foo.")) == false);
+  assert_true(strPathContainsDotElements(str("/home/foo..")) == false);
+  assert_true(strPathContainsDotElements(str("home/foo.")) == false);
+  assert_true(strPathContainsDotElements(str("home/foo..")) == false);
+  assert_true(strPathContainsDotElements(str("home/foo...")) == false);
+  assert_true(strPathContainsDotElements(str("/home/.foo")) == false);
+  assert_true(strPathContainsDotElements(str("/home/..foo")) == false);
+  assert_true(strPathContainsDotElements(str("home/.foo")) == false);
+  assert_true(strPathContainsDotElements(str("home/..foo")) == false);
+  assert_true(strPathContainsDotElements(str("home/...foo")) == false);
+  assert_true(strPathContainsDotElements(str("home/./foo")));
+  assert_true(strPathContainsDotElements(str("home/../foo")));
+  assert_true(strPathContainsDotElements(str("/home/./foo")));
+  assert_true(strPathContainsDotElements(str("/home/../foo")));
+  assert_true(strPathContainsDotElements(str("home/./foo/")));
+  assert_true(strPathContainsDotElements(str("home/../foo/")));
+  assert_true(strPathContainsDotElements(str("/home/./foo/")));
+  assert_true(strPathContainsDotElements(str("/home/../foo/")));
+  assert_true(strPathContainsDotElements(str("home//./foo/")) == false);
+  assert_true(strPathContainsDotElements(str("/home///./foo/")) == false);
+  assert_true(strPathContainsDotElements(str("/home////./foo/")) == false);
+  assert_true(strPathContainsDotElements(str("/home////./foo/.")));
+  assert_true(strPathContainsDotElements(str("/home/.///./foo/")));
+  assert_true(strPathContainsDotElements(str("/home/..//foo/")));
+  assert_true(strPathContainsDotElements(str(".home/foo/bar")) == false);
+  assert_true(strPathContainsDotElements(str("..home/foo/bar")) == false);
+  assert_true(strPathContainsDotElements(str("...home/foo/bar")) == false);
+  assert_true(strPathContainsDotElements(str("/home/foo////////bar/.")));
+  assert_true(strPathContainsDotElements(str("/home/foo////////bar/..")));
+  assert_true(strPathContainsDotElements(str("/home/foo////.////bar////")) == false);
+  assert_true(strPathContainsDotElements(str("/home/foo////..////bar////")) == false);
+  assert_true(strPathContainsDotElements(str("/home/foo////...////bar////")) == false);
+  assert_true(strPathContainsDotElements(str("/home/foo////////bar")) == false);
+  assert_true(strPathContainsDotElements(str("/home/foo////////bar/")) == false);
+  assert_true(strPathContainsDotElements(str("/home/f/o//////bar////")) == false);
+  assert_true(strPathContainsDotElements(str("/home/foo////////bar////")) == false);
+  assert_true(strPathContainsDotElements(str("/home/foo////......////bar////")) == false);
+  assert_true(strPathContainsDotElements(str("///////////")) == false);
+  assert_true(strPathContainsDotElements(str(".///////////")));
+  assert_true(strPathContainsDotElements(str("..///////////")));
+  assert_true(strPathContainsDotElements(str("...///////////")) == false);
+  assert_true(strPathContainsDotElements(str(".../////./../////")));
+  assert_true(strPathContainsDotElements(str(".../////x/../////")));
+  assert_true(strPathContainsDotElements(str(".//////./////")));
+  assert_true(strPathContainsDotElements(str(".//////../////")));
+  assert_true(strPathContainsDotElements(str("../////.//////")));
+  assert_true(strPathContainsDotElements(str(".//////../////..")));
+  assert_true(strPathContainsDotElements(str("../////..//////.")));
+}
+
 int main(void)
 {
   String zero_length = (String){ .str = "some-data", .length = 0 };
@@ -184,6 +293,10 @@ int main(void)
   StringSplit another_split = strSplitPath(str("/another/////split/"));
   assert_true(strCompare(another_split.head, str("/another/////split")));
   assert_true(strCompare(another_split.tail, str("")));
+  testGroupEnd();
+
+  testGroupStart("strPathContainsDotElements()");
+  testStrPathContainsDotElements();
   testGroupEnd();
 
   testGroupStart("strIsParentPath()");
