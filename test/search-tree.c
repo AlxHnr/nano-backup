@@ -393,11 +393,7 @@ static void testPathsWithWhitespaces(void)
 static void assertParseError(const char *path, const char *message)
 {
   FileContent content = sGetFilesContent(path);
-  String config = (String)
-  {
-    .str = content.content,
-    .length = content.size,
-  };
+  String config = { .str = content.content, .length = content.size };
 
   assert_error(searchTreeParse(config), message);
 

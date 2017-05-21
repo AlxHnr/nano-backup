@@ -334,11 +334,7 @@ SearchNode *searchTreeParse(String config)
 SearchNode *searchTreeLoad(const char *path)
 {
   FileContent content = sGetFilesContent(path);
-  String config = (String)
-  {
-    .str = content.content,
-    .length = content.size,
-  };
+  String config = { .str = content.content, .length = content.size };
 
   SearchNode *root_node = searchTreeParse(config);
   free(content.content);
