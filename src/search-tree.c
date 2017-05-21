@@ -160,7 +160,7 @@ static void inheritPolicyToSubnodes(SearchNode *parent_node)
 
 /** Parses the given config source into a search tree.
 
-  @param path The source of the config file.
+  @param config The source of the config file.
 
   @return The root node of the search tree. All nodes are allocated inside
   the internal memory pool and should not be freed by the caller.
