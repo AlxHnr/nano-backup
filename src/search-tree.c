@@ -53,13 +53,13 @@ static String ignore_token = { .str = "[ignore]", .length = 8 };
   Don't modify or free the content of the config file, unless the returned
   string is no longer used.
 */
-static String getLine(FileContent config, size_t start)
+static String getLine(String config, size_t start)
 {
   /* Find the index of the line ending. */
   size_t end = start;
-  while(end < config.size && config.content[end] != '\n') end++;
+  while(end < config.length && config.str[end] != '\n') end++;
 
-  return (String){ .str = &config.content[start], .length = end - start };
+  return (String){ .str = &config.str[start], .length = end - start };
 }
 
 /** Creates a new node and adds it to its parent node. This function does
@@ -158,14 +158,14 @@ static void inheritPolicyToSubnodes(SearchNode *parent_node)
   }
 }
 
-/** Loads a search tree from the specified config file.
+/** Parses the given config source into a search tree.
 
-  @param path The path to the config file.
+  @param path The source of the config file.
 
   @return The root node of the search tree. All nodes are allocated inside
   the internal memory pool and should not be freed by the caller.
 */
-SearchNode *searchTreeLoad(const char *path)
+SearchNode *searchTreeParse(String config)
 {
   /* Initialize the root node of this tree. */
   SearchNode *root_node = mpAlloc(sizeof *root_node);
@@ -199,18 +199,17 @@ SearchNode *searchTreeLoad(const char *path)
   size_t line_nr = 1;
   size_t parser_position = 0;
   BackupPolicy current_policy = BPOL_none;
-  FileContent config = sGetFilesContent(path);
 
   /* Skip UTF-8 BOM. */
-  if(config.size >= 3 &&
-     config.content[0] == (char)0xEF &&
-     config.content[1] == (char)0xBB &&
-     config.content[2] == (char)0xBF)
+  if(config.length >= 3 &&
+     config.str[0] == (char)0xEF &&
+     config.str[1] == (char)0xBB &&
+     config.str[2] == (char)0xBF)
   {
     parser_position = 3;
   }
 
-  while(parser_position < config.size)
+  while(parser_position < config.length)
   {
     String line = getLine(config, parser_position);
 
@@ -240,7 +239,6 @@ SearchNode *searchTreeLoad(const char *path)
       String policy =
         strCopy((String){ .str = &line.str[1], .length = line.length - 2});
       strtableFree(existing_nodes);
-      free(config.content);
 
       die("config: line %zu: invalid policy: \"%s\"", line_nr, policy.str);
     }
@@ -248,7 +246,6 @@ SearchNode *searchTreeLoad(const char *path)
     {
       String pattern = strCopy(line);
       strtableFree(existing_nodes);
-      free(config.content);
 
       die("config: line %zu: pattern without policy: \"%s\"",
           line_nr, pattern.str);
@@ -287,7 +284,6 @@ SearchNode *searchTreeLoad(const char *path)
       {
         String redefined_path = strCopy(line);
         strtableFree(existing_nodes);
-        free(config.content);
 
         die("config: line %zu: redefining %sline %zu: \"%s\"",
             line_nr, previous_definition->policy != current_policy ?
@@ -309,18 +305,38 @@ SearchNode *searchTreeLoad(const char *path)
     {
       String path = strCopy(line);
       strtableFree(existing_nodes);
-      free(config.content);
 
       die("config: line %zu: invalid path: \"%s\"", line_nr, path.str);
     }
 
     parser_position += line.length;
-    parser_position += parser_position < config.size;
+    parser_position += parser_position < config.length;
     line_nr++;
   }
 
   strtableFree(existing_nodes);
-  free(config.content);
+
+  return root_node;
+}
+
+/** Loads a search tree from the specified config file.
+
+  @param path The path to the config file.
+
+  @return The root node of the search tree. All nodes are allocated inside
+  the internal memory pool and should not be freed by the caller.
+*/
+SearchNode *searchTreeLoad(const char *path)
+{
+  FileContent content = sGetFilesContent(path);
+  String config = (String)
+  {
+    .str = content.content,
+    .length = content.size,
+  };
+
+  SearchNode *root_node = searchTreeParse(config);
+  free(content.content);
 
   return root_node;
 }

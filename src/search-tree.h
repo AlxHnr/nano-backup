@@ -106,6 +106,7 @@ struct SearchNode
   SearchNode *next;
 };
 
+extern SearchNode *searchTreeParse(String config);
 extern SearchNode *searchTreeLoad(const char *path);
 
 #endif
