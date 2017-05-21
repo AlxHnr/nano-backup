@@ -27,6 +27,7 @@
 
 #include "backup-helpers.h"
 
+#include <limits.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -92,6 +93,12 @@ void readSymlink(const char *path,
   if(buffer_length > SIZE_MAX)
   {
     die("symlink does not fit in memory: \"%s\"", path);
+  }
+  else if(buffer_length > SSIZE_MAX)
+  {
+    /* In this case the behaviour of readlink() is implementation
+       dependent and not portable. */
+    die("symlink is too large: \"%s\"", path);
   }
 
   bufferEnsureCapacity(buffer_ptr, buffer_length);
