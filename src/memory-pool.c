@@ -79,7 +79,7 @@ void *mpAlloc(size_t size)
 
     /* Add new slot to chunk array. */
     size_t new_chunk_array_size =
-      sSizeMul(sSizeAdd(chunks_allocated, 1), sizeof(chunks));
+      sSizeMul(sSizeAdd(chunks_allocated, 1), sizeof *chunks);
 
     chunks = sRealloc(chunks, new_chunk_array_size);
 
