@@ -167,6 +167,11 @@ static void inheritPolicyToSubnodes(SearchNode *parent_node)
 */
 SearchNode *searchTreeParse(String config)
 {
+  if(memchr(config.str, '\0', config.length) != NULL)
+  {
+    die("config: contains null-bytes");
+  }
+
   /* Initialize the root node of this tree. */
   SearchNode *root_node = mpAlloc(sizeof *root_node);
 

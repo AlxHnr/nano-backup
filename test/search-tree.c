@@ -30,6 +30,7 @@
 #include <stdlib.h>
 
 #include "test.h"
+#include "path-builder.h"
 #include "string-utils.h"
 #include "safe-wrappers.h"
 #include "error-handling.h"
@@ -403,6 +404,66 @@ static void assertParseError(const char *path, const char *message)
   free(content.content);
 }
 
+/** Loads the given config file, sets various bytes to '\0' and passes it
+  to searchTreeParse().
+
+  @param path The path to the config file.
+*/
+static void testInsertNullBytes(const char *path)
+{
+  FileContent content = sGetFilesContent(path);
+  if(content.size == 0)
+  {
+    return;
+  }
+
+  String config = { .str = content.content, .length = content.size };
+
+  for(size_t index = 0; index < content.size; index++)
+  {
+    const char old_char = content.content[index];
+    content.content[index] = '\0';
+
+    assert_error(searchTreeParse(config), "config: contains null-bytes");
+
+    content.content[index] = old_char;
+  }
+
+  free(content.content);
+}
+
+/** Searches for config files in various directories and passes them to
+  testInsertNullBytes(). */
+static void testNullBytesConfigFiles(void)
+{
+  static Buffer *buffer = NULL;
+  const char *config_paths[] =
+  {
+    "broken-config-files",
+    "generated-config-files",
+    "template-config-files",
+    "valid-config-files",
+  };
+
+  for(size_t dir_index = 0;
+      dir_index < sizeof(config_paths)/sizeof(config_paths[0]);
+      dir_index++)
+  {
+    const char *dir_path = config_paths[dir_index];
+    const size_t path_length = pathBuilderSet(&buffer, dir_path);
+    DIR *dir = sOpenDir(dir_path);
+
+    for(struct dirent *dir_entry = sReadDir(dir, dir_path);
+        dir_entry != NULL; dir_entry = sReadDir(dir, dir_path))
+    {
+      pathBuilderAppend(&buffer, path_length, dir_entry->d_name);
+      testInsertNullBytes(buffer->data);
+    }
+
+    sCloseDir(dir, dir_path);
+  }
+}
+
 int main(void)
 {
   testGroupStart("various config files");
@@ -508,5 +569,9 @@ int main(void)
 
   assertParseError("broken-config-files/BOM-simple-error.txt",
                    "config: line 3: invalid path: \"This file contains a UTF-8 BOM.\"");
+  testGroupEnd();
+
+  testGroupStart("config files containing null-bytes");
+  testNullBytesConfigFiles();
   testGroupEnd();
 }
