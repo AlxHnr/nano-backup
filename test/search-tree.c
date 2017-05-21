@@ -27,8 +27,11 @@
 
 #include "search-tree.h"
 
+#include <stdlib.h>
+
 #include "test.h"
 #include "string-utils.h"
+#include "safe-wrappers.h"
 #include "error-handling.h"
 
 /** Counts the subnodes of the given node.
@@ -380,6 +383,26 @@ static void testPathsWithWhitespaces(void)
             root, "foo bar ", 6, false, BPOL_mirror, false, 6, 0, false);
 }
 
+/** Asserts that parsing the given config file results in the given error
+  message.
+
+  @param path The path to the config file to parse.
+  @param message The error message to expect.
+*/
+static void assertParseError(const char *path, const char *message)
+{
+  FileContent content = sGetFilesContent(path);
+  String config = (String)
+  {
+    .str = content.content,
+    .length = content.size,
+  };
+
+  assert_error(searchTreeParse(config), message);
+
+  free(content.content);
+}
+
 int main(void)
 {
   testGroupStart("various config files");
@@ -417,73 +440,73 @@ int main(void)
   assert_error(searchTreeLoad("non-existing-file.txt"), "failed to access "
                "\"non-existing-file.txt\": No such file or directory");
 
-  assert_error(searchTreeLoad("broken-config-files/invalid-policy.txt"),
-               "config: line 7: invalid policy: \"trak\"");
+  assertParseError("broken-config-files/invalid-policy.txt",
+                   "config: line 7: invalid policy: \"trak\"");
 
-  assert_error(searchTreeLoad("broken-config-files/empty-policy-name.txt"),
-               "config: line 9: invalid policy: \"\"");
+  assertParseError("broken-config-files/empty-policy-name.txt",
+                   "config: line 9: invalid policy: \"\"");
 
-  assert_error(searchTreeLoad("broken-config-files/opening-brace.txt"),
-               "config: line 6: invalid path: \"[foo\"");
+  assertParseError("broken-config-files/opening-brace.txt",
+                   "config: line 6: invalid path: \"[foo\"");
 
-  assert_error(searchTreeLoad("broken-config-files/opening-brace-empty.txt"),
-               "config: line 9: invalid path: \"[\"");
+  assertParseError("broken-config-files/opening-brace-empty.txt",
+                   "config: line 9: invalid path: \"[\"");
 
-  assert_error(searchTreeLoad("broken-config-files/closing-brace.txt"),
-               "config: line 7: invalid path: \"foo]\"");
+  assertParseError("broken-config-files/closing-brace.txt",
+                   "config: line 7: invalid path: \"foo]\"");
 
-  assert_error(searchTreeLoad("broken-config-files/closing-brace-empty.txt"),
-               "config: line 3: invalid path: \"]\"");
+  assertParseError("broken-config-files/closing-brace-empty.txt",
+                   "config: line 3: invalid path: \"]\"");
 
-  assert_error(searchTreeLoad("broken-config-files/invalid-regex.txt"),
-               "config: line 5: Unmatched ( or \\(: \"(foo|bar\"");
+  assertParseError("broken-config-files/invalid-regex.txt",
+                   "config: line 5: Unmatched ( or \\(: \"(foo|bar\"");
 
-  assert_error(searchTreeLoad("broken-config-files/pattern-without-policy.txt"),
-               "config: line 8: pattern without policy: \"/home/user/foo/bar.txt\"");
+  assertParseError("broken-config-files/pattern-without-policy.txt",
+                   "config: line 8: pattern without policy: \"/home/user/foo/bar.txt\"");
 
-  assert_error(searchTreeLoad("broken-config-files/invalid-ignore-expression.txt"),
-               "config: line 6: Unmatched [ or [^: \" ([0-9A-Za-z)+///\"");
+  assertParseError("broken-config-files/invalid-ignore-expression.txt",
+                   "config: line 6: Unmatched [ or [^: \" ([0-9A-Za-z)+///\"");
 
-  assert_error(searchTreeLoad("broken-config-files/redefine-1.txt"),
-               "config: line 6: redefining line 4: \"/home/user/foo/Gentoo Packages/\"");
+  assertParseError("broken-config-files/redefine-1.txt",
+                   "config: line 6: redefining line 4: \"/home/user/foo/Gentoo Packages/\"");
 
-  assert_error(searchTreeLoad("broken-config-files/redefine-2.txt"),
-               "config: line 12: redefining line 6: \"/home/user/foo/Packages\"");
+  assertParseError("broken-config-files/redefine-2.txt",
+                   "config: line 12: redefining line 6: \"/home/user/foo/Packages\"");
 
-  assert_error(searchTreeLoad("broken-config-files/redefine-3.txt"),
-               "config: line 24: redefining line 12: \"/home/\"");
+  assertParseError("broken-config-files/redefine-3.txt",
+                   "config: line 24: redefining line 12: \"/home/\"");
 
-  assert_error(searchTreeLoad("broken-config-files/redefine-root-1.txt"),
-               "config: line 11: redefining line 7: \"/\"");
+  assertParseError("broken-config-files/redefine-root-1.txt",
+                   "config: line 11: redefining line 7: \"/\"");
 
-  assert_error(searchTreeLoad("broken-config-files/redefine-root-2.txt"),
-               "config: line 17: redefining line 9: \"/\"");
+  assertParseError("broken-config-files/redefine-root-2.txt",
+                   "config: line 17: redefining line 9: \"/\"");
 
-  assert_error(searchTreeLoad("broken-config-files/redefine-policy-1.txt"),
-               "config: line 8: redefining policy of line 4: \"/home/user/.config /\"");
+  assertParseError("broken-config-files/redefine-policy-1.txt",
+                   "config: line 8: redefining policy of line 4: \"/home/user/.config /\"");
 
-  assert_error(searchTreeLoad("broken-config-files/redefine-policy-2.txt"),
-               "config: line 21: redefining policy of line 12: \"/home/user/\"");
+  assertParseError("broken-config-files/redefine-policy-2.txt",
+                   "config: line 21: redefining policy of line 12: \"/home/user/\"");
 
-  assert_error(searchTreeLoad("broken-config-files/redefine-root-policy-1.txt"),
-               "config: line 5: redefining policy of line 2: \"/\"");
+  assertParseError("broken-config-files/redefine-root-policy-1.txt",
+                   "config: line 5: redefining policy of line 2: \"/\"");
 
-  assert_error(searchTreeLoad("broken-config-files/redefine-root-policy-2.txt"),
-               "config: line 15: redefining policy of line 6: \"/\"");
+  assertParseError("broken-config-files/redefine-root-policy-2.txt",
+                   "config: line 15: redefining policy of line 6: \"/\"");
 
-  assert_error(searchTreeLoad("broken-config-files/invalid-path-1.txt"),
-               "config: line 9: invalid path: \"     /foo/bar\"");
+  assertParseError("broken-config-files/invalid-path-1.txt",
+                   "config: line 9: invalid path: \"     /foo/bar\"");
 
-  assert_error(searchTreeLoad("broken-config-files/invalid-path-2.txt"),
-               "config: line 3: invalid path: \"~/.bashrc\"");
+  assertParseError("broken-config-files/invalid-path-2.txt",
+                   "config: line 3: invalid path: \"~/.bashrc\"");
 
-  assert_error(searchTreeLoad("broken-config-files/invalid-path-3.txt"),
-               "config: line 7: invalid path: \".bash_history\"");
+  assertParseError("broken-config-files/invalid-path-3.txt",
+                   "config: line 7: invalid path: \".bash_history\"");
 
-  assert_error(searchTreeLoad("broken-config-files/multiple-errors.txt"),
-               "config: line 9: Invalid preceding regular expression: \"???*\"");
+  assertParseError("broken-config-files/multiple-errors.txt",
+                   "config: line 9: Invalid preceding regular expression: \"???*\"");
 
-  assert_error(searchTreeLoad("broken-config-files/BOM-simple-error.txt"),
-               "config: line 3: invalid path: \"This file contains a UTF-8 BOM.\"");
+  assertParseError("broken-config-files/BOM-simple-error.txt",
+                   "config: line 3: invalid path: \"This file contains a UTF-8 BOM.\"");
   testGroupEnd();
 }
