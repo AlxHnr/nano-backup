@@ -496,6 +496,9 @@ static void testBrokenConfigFiles(void)
   assertParseError("broken-config-files/path-containing-dot-7.txt",
                    "config: line 2: path contains \".\" or \"..\": \"/broken/./path\"");
 
+  assertParseError("broken-config-files/path-containing-dot-8.txt",
+                   "config: line 4: path contains \".\" or \"..\": \"/home/user/./foo////\"");
+
   assertParseError("broken-config-files/path-containing-dotdot-1.txt",
                    "config: line 5: path contains \".\" or \"..\": \"/foo/bar/../test.txt\"");
 
@@ -516,6 +519,9 @@ static void testBrokenConfigFiles(void)
 
   assertParseError("broken-config-files/path-containing-dotdot-7.txt",
                    "config: line 2: path contains \".\" or \"..\": \"/broken/../path\"");
+
+  assertParseError("broken-config-files/path-containing-dotdot-8.txt",
+                   "config: line 4: path contains \".\" or \"..\": \"/home/user/../foo////\"");
 }
 
 /** Loads the given config file, sets various bytes to '\0' and passes it

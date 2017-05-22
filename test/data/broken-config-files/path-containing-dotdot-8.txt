@@ -1,0 +1,7 @@
+
+[track]
+[track]
+/home/user/../foo////
+[copy]
+[copy]
+
