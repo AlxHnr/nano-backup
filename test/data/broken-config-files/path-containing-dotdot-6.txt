@@ -1,0 +1,15 @@
+[copy]
+
+
+
+
+
+
+
+
+/home/foo/bar
+
+
+/home/../foo/../bar/.
+
+/etc/misc/foo.conf

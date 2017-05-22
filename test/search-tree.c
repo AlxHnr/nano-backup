@@ -474,6 +474,48 @@ static void testBrokenConfigFiles(void)
 
   assertParseError("broken-config-files/BOM-simple-error.txt",
                    "config: line 3: invalid path: \"This file contains a UTF-8 BOM.\"");
+
+  assertParseError("broken-config-files/path-containing-dot-1.txt",
+                   "config: line 5: path contains \".\" or \"..\": \"/foo/bar/./test.txt\"");
+
+  assertParseError("broken-config-files/path-containing-dot-2.txt",
+                   "config: line 5: redefining policy of line 2: \"/misc/\"");
+
+  assertParseError("broken-config-files/path-containing-dot-3.txt",
+                   "config: line 19: path contains \".\" or \"..\": \"/.\"");
+
+  assertParseError("broken-config-files/path-containing-dot-4.txt",
+                   "config: line 2: invalid path: \"./foo/bar\"");
+
+  assertParseError("broken-config-files/path-containing-dot-5.txt",
+                   "config: line 8: path contains \".\" or \"..\": \"/home/.../foo/bar/.\"");
+
+  assertParseError("broken-config-files/path-containing-dot-6.txt",
+                   "config: line 13: path contains \".\" or \"..\": \"/home/./foo/./bar/..\"");
+
+  assertParseError("broken-config-files/path-containing-dot-7.txt",
+                   "config: line 2: path contains \".\" or \"..\": \"/broken/./path\"");
+
+  assertParseError("broken-config-files/path-containing-dotdot-1.txt",
+                   "config: line 5: path contains \".\" or \"..\": \"/foo/bar/../test.txt\"");
+
+  assertParseError("broken-config-files/path-containing-dotdot-2.txt",
+                   "config: line 5: redefining policy of line 2: \"/misc/\"");
+
+  assertParseError("broken-config-files/path-containing-dotdot-3.txt",
+                   "config: line 19: path contains \".\" or \"..\": \"/..\"");
+
+  assertParseError("broken-config-files/path-containing-dotdot-4.txt",
+                   "config: line 2: invalid path: \"../foo/bar\"");
+
+  assertParseError("broken-config-files/path-containing-dotdot-5.txt",
+                   "config: line 8: path contains \".\" or \"..\": \"/home/.../foo/bar/..\"");
+
+  assertParseError("broken-config-files/path-containing-dotdot-6.txt",
+                   "config: line 13: path contains \".\" or \"..\": \"/home/../foo/../bar/.\"");
+
+  assertParseError("broken-config-files/path-containing-dotdot-7.txt",
+                   "config: line 2: path contains \".\" or \"..\": \"/broken/../path\"");
 }
 
 /** Loads the given config file, sets various bytes to '\0' and passes it

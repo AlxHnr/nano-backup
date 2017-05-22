@@ -1,0 +1,8 @@
+
+
+[track]
+
+/home/.../foo
+/home/.../foo/bar/...
+/home/.../foo/bar/....
+/home/.../foo/bar/..

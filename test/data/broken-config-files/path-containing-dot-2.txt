@@ -1,0 +1,6 @@
+[track]
+/misc
+
+[mirror]
+/misc/
+/foo/bar/./test.txt

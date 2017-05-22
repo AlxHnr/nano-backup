@@ -1,0 +1,8 @@
+
+
+[copy]
+
+/foo/bar/./test.txt
+
+
+

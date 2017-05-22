@@ -1,0 +1,6 @@
+[copy]
+/broken/./path
+more broken stuff
+more broken stuff
+more broken stuff
+more broken stuff

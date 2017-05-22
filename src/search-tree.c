@@ -279,6 +279,14 @@ SearchNode *searchTreeParse(String config)
     }
     else if(line.str[0] == '/')
     {
+      if(strPathContainsDotElements(line))
+      {
+        strtableFree(existing_nodes);
+
+        die("config: line %zu: path contains \".\" or \"..\": \"%s\"",
+            line_nr, strCopy(line).str);
+      }
+
       String path = strRemoveTrailingSlashes(line);
       SearchNode *previous_definition = strtableGet(existing_nodes, path);
 
