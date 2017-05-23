@@ -84,7 +84,7 @@ static SearchNode *newNode(StringTable *existing_nodes,
   StringSplit paths = strSplitPath(path);
 
   /* Ensure that a parent node exists. */
-  SearchNode *parent_node = strtableGet(existing_nodes, paths.head);
+  SearchNode *parent_node = strTableGet(existing_nodes, paths.head);
   if(parent_node == NULL)
   {
     parent_node = newNode(existing_nodes, paths.head, line_nr);
@@ -132,7 +132,7 @@ static SearchNode *newNode(StringTable *existing_nodes,
   node->next = parent_node->subnodes;
   parent_node->subnodes = node;
 
-  strtableMap(existing_nodes, path, node);
+  strTableMap(existing_nodes, path, node);
 
   return node;
 }
@@ -195,10 +195,10 @@ SearchNode *searchTreeParse(String config)
   *root_node->ignore_expressions = NULL;
 
   /* This table maps paths to existing nodes, without a trailing slash. */
-  StringTable *existing_nodes = strtableNew();
+  StringTable *existing_nodes = strTableNew();
 
   /* Associate an empty string with the root node. */
-  strtableMap(existing_nodes, str(""), root_node);
+  strTableMap(existing_nodes, str(""), root_node);
 
   /* Parse the specified config file. */
   size_t line_nr = 1;
@@ -243,14 +243,14 @@ SearchNode *searchTreeParse(String config)
       /* Slice out and copy the invalid policy name. */
       String policy =
         strCopy((String){ .str = &line.str[1], .length = line.length - 2});
-      strtableFree(existing_nodes);
+      strTableFree(existing_nodes);
 
       die("config: line %zu: invalid policy: \"%s\"", line_nr, policy.str);
     }
     else if(current_policy == BPOL_none)
     {
       String pattern = strCopy(line);
-      strtableFree(existing_nodes);
+      strTableFree(existing_nodes);
 
       die("config: line %zu: pattern without policy: \"%s\"",
           line_nr, pattern.str);
@@ -281,14 +281,14 @@ SearchNode *searchTreeParse(String config)
     {
       if(strPathContainsDotElements(line))
       {
-        strtableFree(existing_nodes);
+        strTableFree(existing_nodes);
 
         die("config: line %zu: path contains \".\" or \"..\": \"%s\"",
             line_nr, strCopy(line).str);
       }
 
       String path = strRemoveTrailingSlashes(line);
-      SearchNode *previous_definition = strtableGet(existing_nodes, path);
+      SearchNode *previous_definition = strTableGet(existing_nodes, path);
 
       /* Terminate with an error if the path was already defined. */
       if(previous_definition != NULL &&
@@ -296,7 +296,7 @@ SearchNode *searchTreeParse(String config)
          previous_definition->policy_inherited == false)
       {
         String redefined_path = strCopy(line);
-        strtableFree(existing_nodes);
+        strTableFree(existing_nodes);
 
         die("config: line %zu: redefining %sline %zu: \"%s\"",
             line_nr, previous_definition->policy != current_policy ?
@@ -317,7 +317,7 @@ SearchNode *searchTreeParse(String config)
     else
     {
       String path = strCopy(line);
-      strtableFree(existing_nodes);
+      strTableFree(existing_nodes);
 
       die("config: line %zu: invalid path: \"%s\"", line_nr, path.str);
     }
@@ -327,7 +327,7 @@ SearchNode *searchTreeParse(String config)
     line_nr++;
   }
 
-  strtableFree(existing_nodes);
+  strTableFree(existing_nodes);
 
   return root_node;
 }

@@ -102,9 +102,9 @@ static void doubleTableCapaticy(StringTable *table)
 /** Creates a new, dynamically growing StringTable.
 
   @return A StringTable which must be freed by the caller using
-  strtableFree().
+  strTableFree().
 */
-StringTable *strtableNew(void)
+StringTable *strTableNew(void)
 {
   StringTable *table = sMalloc(sizeof *table);
   table->alloc_function = sMalloc;
@@ -128,10 +128,10 @@ StringTable *strtableNew(void)
   with an error.
 
   @return A new StringTable allocated inside the internal memory pool
-  which should not be freed by the caller. Passing it to strtableFree() is
+  which should not be freed by the caller. Passing it to strTableFree() is
   safe and will do nothing.
 */
-StringTable *strtableNewFixed(size_t item_count)
+StringTable *strTableNewFixed(size_t item_count)
 {
   StringTable *table = mpAlloc(sizeof *table);
   table->capacity = sSizeMul(item_count, 2);
@@ -151,7 +151,7 @@ StringTable *strtableNewFixed(size_t item_count)
 
   @param table The StringTable that should be freed.
 */
-void strtableFree(StringTable *table)
+void strTableFree(StringTable *table)
 {
   if(table->alloc_function != sMalloc)
   {
@@ -185,7 +185,7 @@ void strtableFree(StringTable *table)
   will only store a reference to the data, so the caller should not move
   it unless the table is not used anymore.
 */
-void strtableMap(StringTable *table, String key, void *data)
+void strTableMap(StringTable *table, String key, void *data)
 {
   /* Try to resize hash table, if its capacity was reached. */
   if(table->associations == table->capacity)
@@ -216,7 +216,7 @@ void strtableMap(StringTable *table, String key, void *data)
 
   @return The associated data, or NULL if the key was not found.
 */
-void *strtableGet(StringTable *table, String key)
+void *strTableGet(StringTable *table, String key)
 {
   size_t bucket_id = strHash(key) % table->capacity;
 

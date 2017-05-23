@@ -492,7 +492,7 @@ static PathNode *readPathSubnodes(FileContent content,
     memcpy(&node->path, &full_path, sizeof(node->path));
 
     /* Read other node variables. */
-    strtableMap(metadata->path_table, node->path, node);
+    strTableMap(metadata->path_table, node->path, node);
 
     node->hint = BH_none;
     node->policy = read8(content, reader_position, metadata_path);
@@ -557,7 +557,7 @@ Metadata *metadataNew(void)
   metadata->config_history = NULL;
 
   metadata->total_path_count = 0;
-  metadata->path_table = strtableNewFixed(1);
+  metadata->path_table = strTableNewFixed(1);
   metadata->paths = NULL;
 
   return metadata;
@@ -616,11 +616,11 @@ Metadata *metadataLoad(const char *path)
   /* Create a dummy path table, if the path count is 0. */
   if(metadata->total_path_count == 0)
   {
-    metadata->path_table = strtableNewFixed(1);
+    metadata->path_table = strTableNewFixed(1);
   }
   else
   {
-    metadata->path_table = strtableNewFixed(metadata->total_path_count);
+    metadata->path_table = strTableNewFixed(metadata->total_path_count);
   }
 
   metadata->paths = readPathSubnodes(content, &reader_position,

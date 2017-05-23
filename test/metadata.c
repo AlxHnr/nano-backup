@@ -99,7 +99,7 @@ static PathNode *createPathNode(const char *path_str, BackupPolicy policy,
     parent_node->subnodes = node;
   }
 
-  strtableMap(metadata->path_table, node->path, node);
+  strTableMap(metadata->path_table, node->path, node);
   metadata->total_path_count = sSizeAdd(metadata->total_path_count, 1);
 
   return node;
@@ -328,7 +328,7 @@ static Metadata *createEmptyMetadata(size_t backup_history_length)
 
   metadata->config_history = NULL;
   metadata->total_path_count = 0;
-  metadata->path_table = strtableNewFixed(8);
+  metadata->path_table = strTableNewFixed(8);
   metadata->paths = NULL;
 
   return metadata;
@@ -912,7 +912,7 @@ static void generateBrokenMetadata(void)
 
   Metadata *metadata = metadataLoad("tmp/test-data-1");
   checkMetadata(metadata, 2, true);
-  PathNode *portage = strtableGet(metadata->path_table, str("/etc/portage"));
+  PathNode *portage = strTableGet(metadata->path_table, str("/etc/portage"));
   assert_true(portage != NULL);
 
   /* Truncate metadata file to provoke errors. */

@@ -508,7 +508,7 @@ static SearchResultType initiateMetadataRecursively(Metadata *metadata,
     return result.type;
   }
 
-  PathNode *node = strtableGet(metadata->path_table, result.path);
+  PathNode *node = strTableGet(metadata->path_table, result.path);
 
   if(node == NULL)
   {

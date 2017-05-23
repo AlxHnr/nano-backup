@@ -60,9 +60,9 @@ static void populateTableRecursively(StringTable *table, PathNode *node)
     repoBuildRegularFilePath(&path_buffer, &point->state.metadata.reg);
     String path = str(path_buffer->data);
 
-    if(strtableGet(table, path) == NULL)
+    if(strTableGet(table, path) == NULL)
     {
-      strtableMap(table, strCopy(path), (void *)0x1);
+      strTableMap(table, strCopy(path), (void *)0x1);
     }
   }
 
@@ -121,7 +121,7 @@ static bool recurseIntoDirectory(StringTable *table, size_t length,
         .length = length - repo_path_length - 1,
       };
 
-    item_required |= (strtableGet(table, path_in_repo) != NULL);
+    item_required |= (strTableGet(table, path_in_repo) != NULL);
   }
 
   if(item_required == false)
@@ -147,9 +147,9 @@ static bool recurseIntoDirectory(StringTable *table, size_t length,
 */
 GCStats collectGarbage(Metadata *metadata, const char *repo_path)
 {
-  StringTable *table = strtableNew();
-  strtableMap(table, str("config"),   (void *)0x1);
-  strtableMap(table, str("metadata"), (void *)0x1);
+  StringTable *table = strTableNew();
+  strTableMap(table, str("config"),   (void *)0x1);
+  strTableMap(table, str("metadata"), (void *)0x1);
 
   for(PathNode *node = metadata->paths; node != NULL; node = node->next)
   {
@@ -161,7 +161,7 @@ GCStats collectGarbage(Metadata *metadata, const char *repo_path)
   size_t length = pathBuilderSet(&path_buffer, repo_path);
   recurseIntoDirectory(table, length, length, &gc_stats);
 
-  strtableFree(table);
+  strTableFree(table);
 
   return gc_stats;
 }

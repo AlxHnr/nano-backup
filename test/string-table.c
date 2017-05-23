@@ -68,29 +68,29 @@ static const size_t lorem_count = sizeof(lorem_ipsum_chunks)/sizeof(void*);
 
   @param table The table which should be tested.
   @param spam_strtable_free True, if the table should be passed to
-  strtableFree() permanently. This can be used to test that strtableFree()
+  strTableFree() permanently. This can be used to test that strTableFree()
   ignores fixed-size string tables.
 */
 static void testStringTable(StringTable *table, bool spam_strtable_free)
 {
-  if(spam_strtable_free) strtableFree(table);
-  assert_true(strtableGet(table, str("")) == NULL);
+  if(spam_strtable_free) strTableFree(table);
+  assert_true(strTableGet(table, str("")) == NULL);
 
   /* Map the lorem-ipsum chunks to the zlib chunks. */
   for(size_t index = 0; index < zlib_count; index++)
   {
-    if(spam_strtable_free) strtableFree(table);
+    if(spam_strtable_free) strTableFree(table);
     String string = str(zlib_license_chunks[index]);
-    if(strtableGet(table, string) != NULL)
+    if(strTableGet(table, string) != NULL)
     {
       die("string \"%s\" already exists in string table",
           zlib_license_chunks[index]);
     }
 
-    strtableMap(table, string, &lorem_ipsum_chunks[index]);
-    if(spam_strtable_free) strtableFree(table);
+    strTableMap(table, string, &lorem_ipsum_chunks[index]);
+    if(spam_strtable_free) strTableFree(table);
 
-    if(strtableGet(table, string) != &lorem_ipsum_chunks[index])
+    if(strTableGet(table, string) != &lorem_ipsum_chunks[index])
     {
       die("failed to map \"%s\" to \"%s\"", zlib_license_chunks[index],
           lorem_ipsum_chunks[index]);
@@ -102,18 +102,18 @@ static void testStringTable(StringTable *table, bool spam_strtable_free)
   {
     String string = str(zlib_license_chunks[index]);
 
-    if(spam_strtable_free) strtableFree(table);
-    if(strtableGet(table, string) != &lorem_ipsum_chunks[index])
+    if(spam_strtable_free) strTableFree(table);
+    if(strTableGet(table, string) != &lorem_ipsum_chunks[index])
     {
       die("\"%s\" was not mapped to \"%s\"", zlib_license_chunks[index],
           lorem_ipsum_chunks[index]);
     }
   }
 
-  if(spam_strtable_free) strtableFree(table);
-  assert_true(strtableGet(table, str("lingula")) == NULL);
-  assert_true(strtableGet(table, str("origina")) == NULL);
-  assert_true(strtableGet(table, str("originall")) == NULL);
+  if(spam_strtable_free) strTableFree(table);
+  assert_true(strTableGet(table, str("lingula")) == NULL);
+  assert_true(strTableGet(table, str("origina")) == NULL);
+  assert_true(strTableGet(table, str("originall")) == NULL);
 }
 
 int main(void)
@@ -121,32 +121,32 @@ int main(void)
   testGroupStart("dynamic string table");
   assert_true(zlib_count == lorem_count);
 
-  StringTable *table = strtableNew();
+  StringTable *table = strTableNew();
   testStringTable(table, false);
-  strtableFree(table);
+  strTableFree(table);
   testGroupEnd();
 
   testGroupStart("fixed table with size 0");
-  assert_error(strtableNewFixed(0), "memory pool: unable to allocate 0 bytes");
+  assert_error(strTableNewFixed(0), "memory pool: unable to allocate 0 bytes");
   testGroupEnd();
 
   testGroupStart("fixed table with size 1");
-  testStringTable(strtableNewFixed(1), true);
-  testStringTable(strtableNewFixed(1), false);
+  testStringTable(strTableNewFixed(1), true);
+  testStringTable(strTableNewFixed(1), false);
   testGroupEnd();
 
   testGroupStart("fixed table with size 8");
-  testStringTable(strtableNewFixed(8), true);
-  testStringTable(strtableNewFixed(8), false);
+  testStringTable(strTableNewFixed(8), true);
+  testStringTable(strTableNewFixed(8), false);
   testGroupEnd();
 
   testGroupStart("fixed table with size 64");
-  testStringTable(strtableNewFixed(64), true);
-  testStringTable(strtableNewFixed(64), false);
+  testStringTable(strTableNewFixed(64), true);
+  testStringTable(strTableNewFixed(64), false);
   testGroupEnd();
 
   testGroupStart("fixed table with size 4096");
-  testStringTable(strtableNewFixed(4096), true);
-  testStringTable(strtableNewFixed(4096), false);
+  testStringTable(strTableNewFixed(4096), true);
+  testStringTable(strTableNewFixed(4096), false);
   testGroupEnd();
 }

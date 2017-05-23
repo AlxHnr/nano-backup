@@ -385,12 +385,12 @@ static StringTable *stat_cache = NULL;
 */
 static struct stat cachedStat(String path, struct stat (*stat_fun)(const char *))
 {
-  struct stat *cache = strtableGet(stat_cache, path);
+  struct stat *cache = strTableGet(stat_cache, path);
   if(cache == NULL)
   {
     cache = mpAlloc(sizeof *cache);
     *cache = stat_fun(path.str);
-    strtableMap(stat_cache, path, cache);
+    strTableMap(stat_cache, path, cache);
   }
 
   return *cache;
@@ -399,8 +399,8 @@ static struct stat cachedStat(String path, struct stat (*stat_fun)(const char *)
 /** Resets the stat cache. */
 static void resetStatCache(void)
 {
-  strtableFree(stat_cache);
-  stat_cache = strtableNew();
+  strTableFree(stat_cache);
+  stat_cache = strTableNew();
 }
 
 /** Like mustHaveRegular(), but takes a stat struct instead. */
@@ -6651,7 +6651,7 @@ int main(void)
   SearchNode *change_from_mirror_init  = searchTreeLoad("generated-config-files/policy-change-from-mirror-init.txt");
   SearchNode *change_from_mirror_final = searchTreeLoad("generated-config-files/policy-change-from-mirror-final.txt");
 
-  stat_cache = strtableNew();
+  stat_cache = strTableNew();
   makeDir("tmp/repo");
   makeDir("tmp/files");
   testGroupEnd();
@@ -6774,5 +6774,5 @@ int main(void)
   phase("collision slot overflow handling", runPhaseSlotOverflow, phase_collision_node, cwd, cwd_depth);
 
   free(phase_timestamps);
-  strtableFree(stat_cache);
+  strTableFree(stat_cache);
 }

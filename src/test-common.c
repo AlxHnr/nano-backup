@@ -184,7 +184,7 @@ static size_t checkPathTree(PathNode *parent_node, Metadata *metadata,
           strCopy(node->path).str);
     }
     else if(check_path_table == true &&
-            strtableGet(metadata->path_table, node->path) == NULL)
+            strTableGet(metadata->path_table, node->path) == NULL)
     {
       die("path was not mapped in metadata: \"%s\"", node->path.str);
     }

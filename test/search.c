@@ -224,7 +224,7 @@ static size_t populateDirectoryTable(SearchContext *context,
     {
       checkSearchResult(result);
       String relative_path = trimCwd(result.path, cwd);
-      if(strtableGet(table, relative_path) != NULL)
+      if(strTableGet(table, relative_path) != NULL)
       {
         die("path \"%s\" was found twice during search",
             relative_path.str);
@@ -237,7 +237,7 @@ static size_t populateDirectoryTable(SearchContext *context,
       FoundPathInfo *info = mpAlloc(sizeof *info);
       info->policy = result.policy;
       info->node = result.node;
-      strtableMap(table, relative_path, info);
+      strTableMap(table, relative_path, info);
     }
   }
 
@@ -254,7 +254,7 @@ static size_t populateDirectoryTable(SearchContext *context,
 static void checkFoundPath(StringTable *table, const char *path,
                            BackupPolicy policy, SearchNode *node)
 {
-  FoundPathInfo *info = strtableGet(table, str(path));
+  FoundPathInfo *info = strTableGet(table, str(path));
 
   if(info == NULL)
   {
@@ -276,11 +276,11 @@ static void checkFoundPath(StringTable *table, const char *path,
 */
 static void checkHasIgnoredProperly(StringTable *table)
 {
-  assert_true(strtableGet(table, str("valid-config-files"))        == NULL);
-  assert_true(strtableGet(table, str("broken-config-files"))       == NULL);
-  assert_true(strtableGet(table, str("template-config-files"))     == NULL);
-  assert_true(strtableGet(table, str("generated-config-files"))    == NULL);
-  assert_true(strtableGet(table, str("tmp"))                       == NULL);
+  assert_true(strTableGet(table, str("valid-config-files"))        == NULL);
+  assert_true(strTableGet(table, str("broken-config-files"))       == NULL);
+  assert_true(strTableGet(table, str("template-config-files"))     == NULL);
+  assert_true(strTableGet(table, str("generated-config-files"))    == NULL);
+  assert_true(strTableGet(table, str("tmp"))                       == NULL);
 }
 
 /** Asserts that a subnode with the given properties exists or terminate
@@ -342,7 +342,7 @@ static void testSimpleSearch(String cwd)
   assert_true(context != NULL);
 
   size_t cwd_depth = skipCwd(context, cwd, root);
-  StringTable *paths = strtableNew();
+  StringTable *paths = strTableNew();
   assert_true(populateDirectoryTable(context, paths, cwd) == 29);
   finishSearch(context, cwd_depth);
 
@@ -369,9 +369,9 @@ static void testSimpleSearch(String cwd)
 
   /* Check found paths. */
   checkHasIgnoredProperly(paths);
-  assert_true(strtableGet(paths, str("non-existing-directory"))               == NULL);
-  assert_true(strtableGet(paths, str("test directory/non-existing-file.txt")) == NULL);
-  assert_true(strtableGet(paths, str("test directory/non-existing-regex"))    == NULL);
+  assert_true(strTableGet(paths, str("non-existing-directory"))               == NULL);
+  assert_true(strTableGet(paths, str("test directory/non-existing-file.txt")) == NULL);
+  assert_true(strTableGet(paths, str("test directory/non-existing-regex"))    == NULL);
 
   checkFoundPath(paths, "empty.txt",                                 BPOL_track,  n_e_txt);
   checkFoundPath(paths, "example.txt",                               BPOL_track,  n_e_txt);
@@ -408,7 +408,7 @@ static void testSimpleSearch(String cwd)
   checkFoundPath(paths, "test directory/symlink",                    BPOL_mirror, n_symlink);
   checkFoundPath(paths, "test directory/φ.txt",                      BPOL_copy,   NULL);
   checkFoundPath(paths, "test directory/€.txt",                      BPOL_copy,   NULL);
-  strtableFree(paths);
+  strTableFree(paths);
 }
 
 /** Tests a search by using the generated config "ignore-expressions.txt".
@@ -422,7 +422,7 @@ static void testIgnoreExpressions(String cwd)
   assert_true(context != NULL);
 
   size_t cwd_depth = skipCwd(context, cwd, root);
-  StringTable *paths = strtableNew();
+  StringTable *paths = strTableNew();
   assert_true(populateDirectoryTable(context, paths, cwd) == 19);
   finishSearch(context, cwd_depth);
 
@@ -435,8 +435,8 @@ static void testIgnoreExpressions(String cwd)
 
   /* Check found paths. */
   checkHasIgnoredProperly(paths);
-  assert_true(strtableGet(paths, str("empty.txt"))   == NULL);
-  assert_true(strtableGet(paths, str("example.txt")) == NULL);
+  assert_true(strTableGet(paths, str("empty.txt"))   == NULL);
+  assert_true(strTableGet(paths, str("example.txt")) == NULL);
 
   checkFoundPath(paths, "symlink.txt",                               BPOL_mirror, n_symlink);
   checkFoundPath(paths, "test directory",                            BPOL_copy,   n_test_dir);
@@ -453,25 +453,25 @@ static void testIgnoreExpressions(String cwd)
   checkFoundPath(paths, "test directory/.hidden 3",                  BPOL_copy,   NULL);
   checkFoundPath(paths, "test directory/.hidden symlink",            BPOL_mirror, n_hidden_symlink);
   checkFoundPath(paths, "test directory/bar-a.txt",                  BPOL_track,  n_bar_a_txt);
-  assert_true(strtableGet(paths, str("test directory/bar-b.txt"))       == NULL);
-  assert_true(strtableGet(paths, str("test directory/empty-directory")) == NULL);
+  assert_true(strTableGet(paths, str("test directory/bar-b.txt"))       == NULL);
+  assert_true(strTableGet(paths, str("test directory/empty-directory")) == NULL);
   checkFoundPath(paths, "test directory/foo 1",                      BPOL_copy,   NULL);
   checkFoundPath(paths, "test directory/foo 1/bar",                  BPOL_copy,   NULL);
-  assert_true(strtableGet(paths, str("test directory/foo 1/bar/1.txt")) == NULL);
+  assert_true(strTableGet(paths, str("test directory/foo 1/bar/1.txt")) == NULL);
   checkFoundPath(paths, "test directory/foo 1/bar/2.txt",            BPOL_copy,   NULL);
   checkFoundPath(paths, "test directory/foo 1/bar/3.txt",            BPOL_copy,   NULL);
   checkFoundPath(paths, "test directory/foo 1/test-file-a.txt",      BPOL_copy,   NULL);
-  assert_true(strtableGet(paths, str("test directory/foo 1/test-file-b.txt")) == NULL);
+  assert_true(strTableGet(paths, str("test directory/foo 1/test-file-b.txt")) == NULL);
   checkFoundPath(paths, "test directory/foo 1/test-file-c.txt",      BPOL_copy,   NULL);
   checkFoundPath(paths, "test directory/foo 1/♞.☂",                  BPOL_copy,   NULL);
-  assert_true(strtableGet(paths, str("test directory/foobar a1.txt")) == NULL);
+  assert_true(strTableGet(paths, str("test directory/foobar a1.txt")) == NULL);
   checkFoundPath(paths, "test directory/foobar a2.txt",              BPOL_copy,   NULL);
-  assert_true(strtableGet(paths, str("test directory/foobar b1.txt")) == NULL);
+  assert_true(strTableGet(paths, str("test directory/foobar b1.txt")) == NULL);
   checkFoundPath(paths, "test directory/foobar b2.txt",              BPOL_copy,   NULL);
-  assert_true(strtableGet(paths, str("test directory/symlink")) == NULL);
+  assert_true(strTableGet(paths, str("test directory/symlink")) == NULL);
   checkFoundPath(paths, "test directory/φ.txt",                      BPOL_copy,   NULL);
-  assert_true(strtableGet(paths, str("test directory/€.txt")) == NULL);
-  strtableFree(paths);
+  assert_true(strTableGet(paths, str("test directory/€.txt")) == NULL);
+  strTableFree(paths);
 
   /* Check ignore expressions. */
   checkIgnoreExpression(root, "test/data/.*(tmp|config-files|metadata)$", true);
@@ -496,7 +496,7 @@ static void testSymlinkFollowing(String cwd)
   assert_true(context != NULL);
 
   size_t cwd_depth = skipCwd(context, cwd, root);
-  StringTable *paths = strtableNew();
+  StringTable *paths = strTableNew();
   assert_true(populateDirectoryTable(context, paths, cwd) == 20);
   finishSearch(context, cwd_depth);
 
@@ -512,9 +512,9 @@ static void testSymlinkFollowing(String cwd)
 
   /* Check found paths. */
   checkHasIgnoredProperly(paths);
-  assert_true(strtableGet(paths, str("empty.txt"))   == NULL);
-  assert_true(strtableGet(paths, str("example.txt")) == NULL);
-  assert_true(strtableGet(paths, str("symlink.txt")) == NULL);
+  assert_true(strTableGet(paths, str("empty.txt"))   == NULL);
+  assert_true(strTableGet(paths, str("example.txt")) == NULL);
+  assert_true(strTableGet(paths, str("symlink.txt")) == NULL);
 
   checkFoundPath(paths, "test directory",                            BPOL_track, n_test_dir);
   checkFoundPath(paths, "test directory/.empty",                     BPOL_track, NULL);
@@ -535,7 +535,7 @@ static void testSymlinkFollowing(String cwd)
   checkFoundPath(paths, "test directory/bar-a.txt",                  BPOL_track, NULL);
   checkFoundPath(paths, "test directory/bar-b.txt",                  BPOL_track, NULL);
   checkFoundPath(paths, "test directory/empty-directory",            BPOL_track, n_empty_dir);
-  assert_true(strtableGet(paths, str("test directory/foo 1")) == NULL);
+  assert_true(strTableGet(paths, str("test directory/foo 1")) == NULL);
   checkFoundPath(paths, "test directory/foobar a1.txt",              BPOL_track, NULL);
   checkFoundPath(paths, "test directory/foobar a2.txt",              BPOL_track, NULL);
   checkFoundPath(paths, "test directory/foobar b1.txt",              BPOL_track, NULL);
@@ -543,7 +543,7 @@ static void testSymlinkFollowing(String cwd)
   checkFoundPath(paths, "test directory/symlink",                    BPOL_track, NULL);
   checkFoundPath(paths, "test directory/φ.txt",                      BPOL_track, NULL);
   checkFoundPath(paths, "test directory/€.txt",                      BPOL_track, NULL);
-  strtableFree(paths);
+  strTableFree(paths);
 
   /* Check ignore expressions. */
   checkIgnoreExpression(root, "test/data/[^/]+$", true);
@@ -563,7 +563,7 @@ static void testMismatchedPaths(String cwd)
   assert_true(context != NULL);
 
   size_t cwd_depth = skipCwd(context, cwd, root);
-  StringTable *paths = strtableNew();
+  StringTable *paths = strTableNew();
   assert_true(populateDirectoryTable(context, paths, cwd) == 2);
   finishSearch(context, cwd_depth);
 
@@ -581,32 +581,32 @@ static void testMismatchedPaths(String cwd)
 
   /* Check found paths. */
   checkHasIgnoredProperly(paths);
-  assert_true(strtableGet(paths, str("example.txt")) == NULL);
+  assert_true(strTableGet(paths, str("example.txt")) == NULL);
 
   checkFoundPath(paths, "empty.txt", BPOL_none, n_empty_txt);
-  assert_true(strtableGet(paths, str("empty.txt/file 1.txt")) == NULL);
+  assert_true(strTableGet(paths, str("empty.txt/file 1.txt")) == NULL);
   checkFoundPath(paths, "symlink.txt", BPOL_none, n_symlink_txt);
-  assert_true(strtableGet(paths, str("symlink.txt/foo-bar.txt")) == NULL);
+  assert_true(strTableGet(paths, str("symlink.txt/foo-bar.txt")) == NULL);
   checkFoundPath(paths, "test directory", BPOL_none, n_test_dir);
-  assert_true(strtableGet(paths, str("test directory/super-file.txt"))  == NULL);
-  assert_true(strtableGet(paths, str("test directory/.empty"))          == NULL);
-  assert_true(strtableGet(paths, str("test directory/.hidden"))         == NULL);
-  assert_true(strtableGet(paths, str("test directory/.hidden 1"))       == NULL);
-  assert_true(strtableGet(paths, str("test directory/.hidden 2"))       == NULL);
-  assert_true(strtableGet(paths, str("test directory/.hidden 3"))       == NULL);
-  assert_true(strtableGet(paths, str("test directory/.hidden symlink")) == NULL);
-  assert_true(strtableGet(paths, str("test directory/bar-a.txt"))       == NULL);
-  assert_true(strtableGet(paths, str("test directory/bar-b.txt"))       == NULL);
-  assert_true(strtableGet(paths, str("test directory/empty-directory")) == NULL);
-  assert_true(strtableGet(paths, str("test directory/foo 1"))           == NULL);
-  assert_true(strtableGet(paths, str("test directory/foobar a1.txt"))   == NULL);
-  assert_true(strtableGet(paths, str("test directory/foobar a2.txt"))   == NULL);
-  assert_true(strtableGet(paths, str("test directory/foobar b1.txt"))   == NULL);
-  assert_true(strtableGet(paths, str("test directory/foobar b2.txt"))   == NULL);
-  assert_true(strtableGet(paths, str("test directory/symlink"))         == NULL);
-  assert_true(strtableGet(paths, str("test directory/φ.txt"))           == NULL);
-  assert_true(strtableGet(paths, str("test directory/€.txt"))           == NULL);
-  strtableFree(paths);
+  assert_true(strTableGet(paths, str("test directory/super-file.txt"))  == NULL);
+  assert_true(strTableGet(paths, str("test directory/.empty"))          == NULL);
+  assert_true(strTableGet(paths, str("test directory/.hidden"))         == NULL);
+  assert_true(strTableGet(paths, str("test directory/.hidden 1"))       == NULL);
+  assert_true(strTableGet(paths, str("test directory/.hidden 2"))       == NULL);
+  assert_true(strTableGet(paths, str("test directory/.hidden 3"))       == NULL);
+  assert_true(strTableGet(paths, str("test directory/.hidden symlink")) == NULL);
+  assert_true(strTableGet(paths, str("test directory/bar-a.txt"))       == NULL);
+  assert_true(strTableGet(paths, str("test directory/bar-b.txt"))       == NULL);
+  assert_true(strTableGet(paths, str("test directory/empty-directory")) == NULL);
+  assert_true(strTableGet(paths, str("test directory/foo 1"))           == NULL);
+  assert_true(strTableGet(paths, str("test directory/foobar a1.txt"))   == NULL);
+  assert_true(strTableGet(paths, str("test directory/foobar a2.txt"))   == NULL);
+  assert_true(strTableGet(paths, str("test directory/foobar b1.txt"))   == NULL);
+  assert_true(strTableGet(paths, str("test directory/foobar b2.txt"))   == NULL);
+  assert_true(strTableGet(paths, str("test directory/symlink"))         == NULL);
+  assert_true(strTableGet(paths, str("test directory/φ.txt"))           == NULL);
+  assert_true(strTableGet(paths, str("test directory/€.txt"))           == NULL);
+  strTableFree(paths);
 }
 
 /** Performs a search by using the generated config file
@@ -621,7 +621,7 @@ static void testComplexSearch(String cwd)
   assert_true(context != NULL);
 
   size_t cwd_depth = skipCwd(context, cwd, root);
-  StringTable *paths = strtableNew();
+  StringTable *paths = strTableNew();
   assert_true(populateDirectoryTable(context, paths, cwd) == 26);
   finishSearch(context, cwd_depth);
 
@@ -664,21 +664,21 @@ static void testComplexSearch(String cwd)
   checkFoundPath(paths, "test directory/empty-directory",            BPOL_mirror, NULL);
   checkFoundPath(paths, "test directory/foo 1",                      BPOL_mirror, NULL);
   checkFoundPath(paths, "test directory/foo 1/bar",                  BPOL_mirror, NULL);
-  assert_true(strtableGet(paths, str("test directory/foo 1/bar/1.txt")) == NULL);
+  assert_true(strTableGet(paths, str("test directory/foo 1/bar/1.txt")) == NULL);
   checkFoundPath(paths, "test directory/foo 1/bar/2.txt",            BPOL_mirror, NULL);
   checkFoundPath(paths, "test directory/foo 1/bar/3.txt",            BPOL_mirror, NULL);
   checkFoundPath(paths, "test directory/foo 1/test-file-a.txt",      BPOL_mirror, NULL);
   checkFoundPath(paths, "test directory/foo 1/test-file-b.txt",      BPOL_mirror, NULL);
   checkFoundPath(paths, "test directory/foo 1/test-file-c.txt",      BPOL_mirror, NULL);
   checkFoundPath(paths, "test directory/foo 1/♞.☂",                  BPOL_mirror, NULL);
-  assert_true(strtableGet(paths, str("test directory/foobar a1.txt")) == NULL);
-  assert_true(strtableGet(paths, str("test directory/foobar a2.txt")) == NULL);
-  assert_true(strtableGet(paths, str("test directory/foobar b1.txt")) == NULL);
-  assert_true(strtableGet(paths, str("test directory/foobar b2.txt")) == NULL);
+  assert_true(strTableGet(paths, str("test directory/foobar a1.txt")) == NULL);
+  assert_true(strTableGet(paths, str("test directory/foobar a2.txt")) == NULL);
+  assert_true(strTableGet(paths, str("test directory/foobar b1.txt")) == NULL);
+  assert_true(strTableGet(paths, str("test directory/foobar b2.txt")) == NULL);
   checkFoundPath(paths, "test directory/symlink",                    BPOL_mirror, NULL);
   checkFoundPath(paths, "test directory/φ.txt",                      BPOL_mirror, NULL);
   checkFoundPath(paths, "test directory/€.txt",                      BPOL_mirror, NULL);
-  strtableFree(paths);
+  strTableFree(paths);
 
   /* Check ignore expressions. */
   checkIgnoreExpression(root, "test/data/.*(tmp|config-files|metadata)$", true);
