@@ -96,7 +96,9 @@ static uint32_t convertEndian32(uint32_t value)
   else
   {
     die("failed to convert value: Unsupported endianness");
+#ifndef __GNUC__
     return 0;
+#endif
   }
 }
 
@@ -118,7 +120,9 @@ static uint64_t convertEndian64(uint64_t value)
   else
   {
     die("failed to convert value: Unsupported endianness");
+#ifndef __GNUC__
     return 0;
+#endif
   }
 }
 

@@ -85,7 +85,18 @@ static void populateTestErrorMessage(const char *format, va_list arguments,
     dieTest("failed to allocate space to store the error message");
   }
 
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#ifndef __clang__
+#pragma GCC diagnostic ignored "-Wsuggest-attribute=format"
+#endif
+#endif
   int bytes_copied = vsprintf(test_error_message, format, arguments);
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
+
   if(bytes_copied != length)
   {
     dieTest("failed to copy the error message");

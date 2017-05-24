@@ -150,12 +150,13 @@ static RepoWriter *createRepoWriter(const char *repo_path,
                                     const char *source_file_path,
                                     bool raw_mode)
 {
+  FileStream *stream = sFopenWrite(repo_tmp_file_path);
   RepoWriter *writer = sMalloc(sizeof *writer);
 
   writer->repo_path = repo_path;
   writer->repo_tmp_file_path = repo_tmp_file_path;
   writer->source_file_path = source_file_path;
-  writer->stream = sFopenWrite(repo_tmp_file_path);
+  writer->stream = stream;
   writer->raw_mode = raw_mode;
 
   return writer;

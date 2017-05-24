@@ -65,7 +65,7 @@ static void checkSearchResult(SearchResult result)
     case SRT_other:
       break;
     default:
-      die("unexpected search result type: %i", result.type);
+      die("unexpected search result type: %u", result.type);
   }
 
   assert_true(result.path.str[result.path.length] == '\0');

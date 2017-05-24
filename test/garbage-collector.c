@@ -107,7 +107,7 @@ int main(void)
   sSymlink("non-existing", "tmp/link-to-repo");
 
   assert_error(collectGarbage(empty_metadata, "tmp/link-to-repo"),
-               "failed to access \"tmp/link-to-repo\": No such file or directory")
+               "failed to access \"tmp/link-to-repo\": No such file or directory");
 
   assert_true(countItemsInDir("tmp/repo") == 25);
   assert_true(sPathExists("tmp/link-to-repo"));
