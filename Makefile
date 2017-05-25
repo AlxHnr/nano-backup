@@ -11,7 +11,7 @@ TESTS   := $(patsubst test/%.c,build/test/%,$(wildcard test/*.c))
 GENERATED_CONFIGS := $(patsubst test/data/template%,test/data/generated%,\
   $(wildcard test/data/template-config-files/*))
 
-.PHONY: all test doc clean
+.PHONY: all test clean
 all: build/nb
 
 -include build/dependencies.makefile
@@ -53,11 +53,8 @@ test/data/generated-config-files/%: test/data/template-config-files/%
 test/data/test\ directory/.empty/:
 	mkdir -p "$@"
 
-doc:
-	doxygen
-
 clean:
-	rm -rf build/ doc/ test/data/generated-*/ test/data/tmp/
+	rm -rf build/ test/data/generated-*/ test/data/tmp/
 	rmdir "test/data/test directory/.empty/" || true
 	@(for test_dir in "test/full program tests"/*/*; do \
 	  test -d "$$test_dir" || continue; \

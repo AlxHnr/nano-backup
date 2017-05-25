@@ -3,4 +3,3 @@ test/data/generated-*/
 test/data/tmp/
 .ycm_extra_conf.pyc
 build/
-doc/
