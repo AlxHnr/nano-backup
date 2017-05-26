@@ -1,0 +1,100 @@
+.TH nb 1 "26 May 2017" "nano-backup 0.1.1"
+
+.SH NAME
+nb - A minimal backup tool for POSIX systems
+
+.SH SYNOPSIS
+nb /path/to/repo [ARGUMENT]...
+
+.SH DESCRIPTION
+nb is a tool for tracking and managing changes in files.
+
+To do a backup, run nb with the path to the repository as argument.
+
+.SH ARGUMENTS
+Various arguments can be passed to nb in addition to the repository path:
+
+.TP
+gc
+Run the garbage collector on the given repository to delete unneeded files.
+
+.TP
+NUMBER [PATH]
+Restore PATH to the state of the backup NUMBER. 0 is the latest backup, 1
+the backup before it, etc. Omitting PATH will restore everything. This
+number will be ignored for copied/mirrored files, which will always be
+restored to their latest state.
+
+.SH CONFIGURATION
+
+Each repository contains a file named "config". It has the following
+syntax:
+
+.nf
+  [policy]
+  /home/user/file.txt
+  /home/user//regular-expression
+  /home/user//regular-expression/file.txt
+.fi
+
+Paths must be absolute. A double slash in a path denotes a POSIX extended
+regular expression. This expression will not match recursively and can be
+terminated by a slash.
+
+Multiple distinct expressions that match the same files should be avoided.
+Expressions are matched in undefined order and the first one that matches
+will be used. This may lead to unexpected results:
+
+.nf
+  [copy]
+  /etc//.*\\.conf$
+
+  [mirror]
+  /etc//.*
+.fi
+
+Symlinks are not followed, unless they correspond to a parent directory in
+the configuration:
+
+.nf
+  [copy]
+  /home/user/dir/
+.fi
+
+In this example "home" and "user" will be followed, while "dir" and
+everything inside it will not.
+
+.SH POLICIES
+
+.TP
+copy
+Backup only the latest version of a file.
+
+.TP
+mirror
+Like copy, but if a file gets removed from the system, it will also be removed from the backup.
+
+.TP
+track
+Keep a full history of every change.
+
+.TP
+ignore
+Allows specifying regular expressions for excluding paths. These
+expressions will be matched against full, absolute paths. The ignore policy
+has a lower priority than the others:
+
+.nf
+  [copy]
+  /home//^foo.txt$
+
+  [ignore]
+  ^/home/.*$
+.fi
+
+"foo.txt" will still be backed up, because it was explicitly matched by a
+copy rule.
+
+.SH AUTHOR
+
+Copyright (c) 2017 Alexander Heinrich
