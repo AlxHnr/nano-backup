@@ -1,0 +1,2 @@
+config: line 3: regex never matched a directory: "^.$"
+config: line 5: regex never matched a directory: "^..$"

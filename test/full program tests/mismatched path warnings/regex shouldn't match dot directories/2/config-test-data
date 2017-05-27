@@ -1,0 +1,7 @@
+
+[copy]
+
+//^..$
+//^.$
+/test directory//^..$/foo//
+/example.txt

@@ -1,0 +1,8 @@
+?? /test directory/ (0 items)
+config: line 4: regex never matched a file: "^..$"
+config: line 5: regex never matched a file: "^.$"
+config: line 6: regex never matched a directory: "^..$"
+
+Lost: 1 (0 b)
+
+proceed? (y/n) 

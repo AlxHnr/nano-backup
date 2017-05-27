@@ -1,0 +1,7 @@
+[copy]
+
+//^.$/foo
+
+//^..$/bar
+
+/example.txt
