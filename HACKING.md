@@ -6,6 +6,11 @@ provided.
 **Warning**: never call die(), dieErrno() or any safe function from a
 function registered with atexit().
 
+The source code conforms strictly to C99 and POSIX.1-2001 with the XSI
+extension lchown(). When using a library function that can fail or result
+in undefined/implementation dependent behaviour, write a safe wrapper for
+it. See safe-wrappers.h for examples.
+
 ## Memory management
 
 Nano-backup uses almost all of its allocated data right until it
@@ -14,9 +19,9 @@ management, a memory pool is provided. This pool gets freed automatically
 when the program terminates, even if this happens via die() or dieErrno().
 See the documentation of mpAlloc() for more informations.
 
-Data with a shorter lifetime than the program is not managed by the memory
-pool. The drawback of this is that such data will leak if the program
-aborts with an error:
+Data with a shorter lifetime than the program has to be managed manually.
+The drawback of this is that such data will leak if the program aborts with
+an error:
 
 ```c
 void *foo = sMalloc(100);
@@ -26,6 +31,9 @@ void *foo = sMalloc(100);
 FileStream *reader = sFopenRead("/etc/init.conf");
 ```
 In this case its up to the OS to reclaim the memory.
+
+**Note**: Use sSizeAdd() and sSizeMul() to calculate the amount of data to
+allocate. This prevents unexpected behaviour resulting from overflows.
 
 ## Handling strings
 
