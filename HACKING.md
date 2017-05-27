@@ -92,7 +92,7 @@ It is usually not required to implement `"init.sh"`, `"run.sh"` or
 `"clean.sh"`. The fallback scripts should be flexible enough and can be
 complemented with scripts like `"pre-run.sh"` or `"post-init.sh"`, etc. The
 fallback scripts will create the directory `"generated/"`, where all the
-data generated during the test should be stored. Additionally the
+data generated during the test should be stored. Additionally the directory
 `"generated/repo/"` will be created and contains the repository to test.
 
 The fallback scripts _must_ be configured by creating one of the following
@@ -117,8 +117,8 @@ expected-repo-files | A list of files expected to be inside the repository after
 #### Multiple test phases
 
 To test multiple backups using the same repository, the test must be broken
-down into phases. This can be done by moving all files described above into
-a directory named `"1/"`. The 1 stands for the first phase. Additional
+down into phases. This can be done by moving all the files described above
+into a directory named `"1/"`. The 1 stands for the first phase. Additional
 directories named `"2/"`, `"3/"`, etc. can be created. Each phase will
 reuse the following files and directories from preceding phases:
 
