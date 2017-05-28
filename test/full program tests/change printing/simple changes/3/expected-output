@@ -1,0 +1,12 @@
+-- /generated/files/copy_remove/foo.txt
+-- ^/generated/files/copy_remove/symlink -> foo.txt
+-- /generated/files/copy_remove_time/foo.txt
+xx /generated/files/mirror_remove/foo.txt
+xx ^/generated/files/mirror_remove/symlink -> /dev/null
+xx /generated/files/mirror_remove_time/foo.txt
+-- /generated/files/track_remove/foo.txt
+
+Removed: 4 (160 b), Lost: 3 (120 b)
+
+proceed? (y/n) 
+Discarded unreferenced items: 5 (120 b)

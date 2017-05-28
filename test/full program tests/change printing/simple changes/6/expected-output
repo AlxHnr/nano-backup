@@ -1,0 +1,8 @@
+?? /generated/files/track_remove/foo.txt
+?? /generated/files/track_remove_time/foo.txt
+config: line 9: regex never matched a path: "generated/files/track_remove[^/]*/[^/]+$"
+
+Lost: 2 (77 b)
+
+proceed? (y/n) 
+Discarded unreferenced items: 6 (77 b)

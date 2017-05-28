@@ -1,0 +1,9 @@
+[copy]
+/generated/files//^copy_remove
+
+[track]
+/generated/files//^track_remove
+/generated/files//^content_change
+
+[mirror]
+/generated/files//^mirror_remove

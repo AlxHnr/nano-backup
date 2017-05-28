@@ -328,7 +328,8 @@ static void printNode(PathNode *node, MetadataChanges subnode_changes)
     printf("permissions");
   }
 
-  if(!(node->hint & BH_timestamp_changed) !=
+  if(node->history->state.type != PST_symlink &&
+     !(node->hint & BH_timestamp_changed) !=
      !(node->hint & BH_content_changed))
   {
     printPrefix(&printed_details);

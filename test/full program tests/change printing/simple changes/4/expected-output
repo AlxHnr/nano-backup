@@ -1,0 +1,7 @@
+-- /generated/files/copy_remove/foo.txt
+-- ^/generated/files/copy_remove/symlink -> foo.txt
+-- /generated/files/copy_remove_time/foo.txt
+
+Removed: 3 (121 b)
+
+proceed? (y/n) 

@@ -1,0 +1,12 @@
+-- /generated/files/copy_remove/foo.txt
+-- ^/generated/files/copy_remove/symlink -> foo.txt
+-- /generated/files/copy_remove_time/foo.txt
+!! /generated/files/content_change/foo.txt
+!! ^/generated/files/content_change/symlink -> foobar1234567890abcdefg
+!! ^/generated/files/content_change_time/symlink -> /dev/foo/0987654321
+!! /generated/files/track_remove/foo.txt (same timestamp)
+-- /generated/files/track_remove_time/foo.txt
+
+Removed: 4 (159 b)
+
+proceed? (y/n) 
