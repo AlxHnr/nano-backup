@@ -3,12 +3,12 @@ mkdir generated/files/
 # Used for setting the modificateion time of files independend of the
 # systems time.
 timestamp="03120812"
+directories="copy_remove copy_remove_time content_change
+content_change_time mirror_remove mirror_remove_time
+track_remove track_remove_time"
 
-for dir in copy_remove copy_remove_time content_change \
-  content_change_time mirror_remove mirror_remove_time \
-  track_remove track_remove_time; do
+for dir in $directories; do
   mkdir "generated/files/$dir"
-  touch -m -t "$timestamp" "generated/files/$dir"
 done
 
 echo "Nano-backup provides a precise way to track files. It was intended for" > generated/files/copy_remove/foo.txt
@@ -28,3 +28,7 @@ ln -s foo.txt generated/files/copy_remove/symlink
 ln -s non-existing.txt generated/files/content_change/symlink
 ln -s ../content_change/foo.txt generated/files/content_change_time/symlink
 ln -s /dev/null generated/files/mirror_remove/symlink
+
+for dir in $directories; do
+  touch -m -t "$timestamp" "generated/files/$dir"
+done
