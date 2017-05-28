@@ -1,0 +1,8 @@
+-- /generated/files/copied_remove/ (-3 items, -61 b)
+xx /generated/files/mirrored_remove/foo/ (-3 items, -130 b)
+config: line 2: string never matched a file: "copied_remove"
+
+Removed: 4 (61 b), Lost: 4 (130 b)
+
+proceed? (y/n) 
+Discarded unreferenced items: 9 (130 b)
