@@ -1,5 +1,3 @@
-mkdir generated/files/
-
 # Used for setting the modificateion time of files independend of the
 # systems time.
 timestamp="03120812"
@@ -7,6 +5,7 @@ directories="copy_remove copy_remove_time content_change
 content_change_time mirror_remove mirror_remove_time
 track_remove track_remove_time"
 
+mkdir generated/files/
 for dir in $directories; do
   mkdir "generated/files/$dir"
 done
