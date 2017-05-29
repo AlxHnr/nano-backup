@@ -61,7 +61,7 @@ void bufferEnsureCapacity(Buffer **buffer_ptr, size_t capacity)
 
   if(buffer == NULL)
   {
-    if(buffers == NULL) atexit(freeBuffers);
+    if(buffers == NULL) sAtexit(freeBuffers);
 
     size_t new_buffer_array_size =
       sSizeMul(sSizeAdd(buffers_allocated, 1), sizeof *buffers);

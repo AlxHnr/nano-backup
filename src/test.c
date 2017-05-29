@@ -74,7 +74,11 @@ static void populateTestErrorMessage(const char *format, va_list arguments,
                                      int length, size_t buffer_length)
 {
   /* Register cleanup function on the first call of this function. */
-  if(test_error_message == NULL) atexit(freeTestErrorMessage);
+  if(test_error_message == NULL &&
+     atexit(freeTestErrorMessage) != 0)
+  {
+    dieTest("failed to register function with atexit");
+  }
 
   /* Free the previous memory stored in test_error_message. */
   free(test_error_message);

@@ -36,6 +36,24 @@
 
 #include "test.h"
 
+static bool test_atexit_1_called = false;
+
+/** Dummy function for testing sAtexit(). */
+static void testAtExit1(void)
+{
+  test_atexit_1_called = true;
+}
+
+/** Dummy function for testing sAtexit(). */
+static void testAtExit2(void)
+{
+  if(test_atexit_1_called == false)
+  {
+    fprintf(stderr, "fatal: behaviour of atexit() violates C99\n");
+    abort();
+  }
+}
+
 /** Calls sReadDir() with the given arguments and checks its result. This
   function asserts that errno doesn't get modified. Errno must be set to 0
   before this function can be called. */
@@ -160,6 +178,11 @@ int main(void)
   assert_error(sUint64Add(UINT64_MAX, UINT64_MAX), expected_error_u64);
   assert_error(sUint64Add(512, UINT64_MAX - 90), expected_error_u64);
   assert_error(sUint64Add(UINT64_MAX, 1), expected_error_u64);
+  testGroupEnd();
+
+  testGroupStart("sAtexit()");
+  sAtexit(testAtExit2);
+  sAtexit(testAtExit1);
   testGroupEnd();
 
   testGroupStart("sPathExists()");

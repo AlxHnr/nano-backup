@@ -189,6 +189,15 @@ uint64_t sUint64Add(uint64_t a, uint64_t b)
   return a + b;
 }
 
+/** Safe wrapper around atexit(). */
+void sAtexit(void (*function)(void))
+{
+  if(atexit(function) != 0)
+  {
+    die("failed to register function with atexit");
+  }
+}
+
 /** Safe wrapper around fopen().
 
   @param path The path to the file which should be opened for reading. The

@@ -75,7 +75,7 @@ void *mpAlloc(size_t size)
 
   if(size > chunk_size - chunk_used)
   {
-    if(chunks == NULL) atexit(freeMemoryPool);
+    if(chunks == NULL) sAtexit(freeMemoryPool);
 
     /* Add new slot to chunk array. */
     size_t new_chunk_array_size =

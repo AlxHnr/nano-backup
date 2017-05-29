@@ -67,7 +67,7 @@ const regex_t *rpCompile(const char *expression,
   /* Grow regex pool if its used up. */
   if(regex_pool_used == regex_pool_capacity)
   {
-    if(regex_pool == NULL) atexit(freeRegexPool);
+    if(regex_pool == NULL) sAtexit(freeRegexPool);
 
     size_t new_pool_length =
       regex_pool_capacity == 0 ? 4 : sSizeMul(regex_pool_capacity, 2);

@@ -45,6 +45,8 @@ extern size_t sSizeAdd(size_t a, size_t b);
 extern size_t sSizeMul(size_t a, size_t b);
 extern uint64_t sUint64Add(uint64_t a, uint64_t b);
 
+extern void sAtexit(void (*function)(void));
+
 /** An opaque wrapper around FILE, which stores additional informations for
   printing better error messages. */
 typedef struct FileStream FileStream;
