@@ -216,6 +216,14 @@ StringSplit strSplitPath(String path)
   };
 }
 
+/** Returns true if the given string is "." or "..". */
+bool strIsDotElement(String string)
+{
+  return
+    (string.length == 1 && string.str[0] == '.') ||
+    (string.length == 2 && string.str[0] == '.' && string.str[1] == '.');
+}
+
 /** Checks if a path contains the elements "." or "..". E.g.
   "/home/foo/../test.txt". Multiple slashes will be treated like in
   strSplitPath(). E.g. "/home/foo//." will return false.
@@ -229,11 +237,7 @@ bool strPathContainsDotElements(String path)
   StringSplit split = strSplitPath(path);
 
   return
-    (split.tail.length == 1 &&
-     split.tail.str[0] == '.') ||
-    (split.tail.length == 2 &&
-     split.tail.str[0] == '.' &&
-     split.tail.str[1] == '.') ||
+    strIsDotElement(split.tail) ||
     (split.head.length > 0 &&
      strPathContainsDotElements(split.head));
 }
