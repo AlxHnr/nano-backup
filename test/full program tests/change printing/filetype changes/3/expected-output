@@ -1,0 +1,7 @@
+<> /generated/files/mirror-dir/symlink-to-empty-directory/ (Symlink -> Directory, 0 items)
+<> /generated/files/empty-directory-to-file (Directory -> File, 0 items)
+<> ^/generated/files/track-dir-same-time/directory-to-symlink (Directory -> Symlink, -3 items, -104 b) -> non-existing.txt
+
+Removed: 3 (104 b)
+
+proceed? (y/n) 

@@ -1,0 +1,10 @@
+[copy]
+/generated/files//^copy-dir
+
+[mirror]
+/generated/files/mirror-dir
+/generated/files/file-to-directory
+/generated/files/empty-directory-to-file
+
+[track]
+/generated/files/track-dir-same-time

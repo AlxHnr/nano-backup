@@ -1,0 +1,8 @@
+<> ^/generated/files/copy-dir/file-to-symlink (File -> Symlink) -> ../../files
+<> /generated/files/copy-dir-same-time/symlink-to-file (Symlink -> File)
+<> /generated/files/file-to-directory/ (File -> Directory, +2 items, +61 b)
+
+New: 2 (61 b)
+
+proceed? (y/n) 
+Discarded unreferenced items: 3 (40 b)
