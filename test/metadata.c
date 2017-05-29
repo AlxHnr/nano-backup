@@ -966,6 +966,58 @@ static void generateBrokenMetadata(void)
   free(test_data);
 }
 
+/** Tests detection of corruption in metadata. */
+static void testRejectingCorruptedMetadata(void)
+{
+  generateBrokenMetadata();
+  assert_error(metadataLoad("non-existing.txt"),
+               "failed to access \"non-existing.txt\": No such file or directory");
+  assert_error(metadataLoad("tmp/missing-byte"),
+               "corrupted metadata: expected 1 byte, got 0: \"tmp/missing-byte\"");
+  assert_error(metadataLoad("tmp/missing-slot"),
+               "corrupted metadata: expected 1 byte, got 0: \"tmp/missing-slot\"");
+  assert_error(metadataLoad("tmp/invalid-path-state-type"),
+               "invalid PathStateType in \"tmp/invalid-path-state-type\"");
+  assert_error(metadataLoad("tmp/missing-path-state-type"),
+               "corrupted metadata: expected 1 byte, got 0: \"tmp/missing-path-state-type\"");
+  assert_error(metadataLoad("tmp/incomplete-32-bit-value"),
+               "corrupted metadata: expected 4 bytes, got 3: \"tmp/incomplete-32-bit-value\"");
+  assert_error(metadataLoad("tmp/missing-32-bit-value"),
+               "corrupted metadata: expected 4 bytes, got 0: \"tmp/missing-32-bit-value\"");
+  assert_error(metadataLoad("tmp/incomplete-size"),
+               "corrupted metadata: expected 8 bytes, got 3: \"tmp/incomplete-size\"");
+  assert_error(metadataLoad("tmp/missing-size"),
+               "corrupted metadata: expected 8 bytes, got 0: \"tmp/missing-size\"");
+  assert_error(metadataLoad("tmp/backup-id-out-of-range-1"),
+               "backup id is out of range in \"tmp/backup-id-out-of-range-1\"");
+  assert_error(metadataLoad("tmp/backup-id-out-of-range-2"),
+               "backup id is out of range in \"tmp/backup-id-out-of-range-2\"");
+  assert_error(metadataLoad("tmp/backup-id-out-of-range-3"),
+               "backup id is out of range in \"tmp/backup-id-out-of-range-3\"");
+  assert_error(metadataLoad("tmp/incomplete-time"),
+               "corrupted metadata: expected 8 bytes, got 7: \"tmp/incomplete-time\"");
+  assert_error(metadataLoad("tmp/missing-time"),
+               "corrupted metadata: expected 8 bytes, got 0: \"tmp/missing-time\"");
+  assert_error(metadataLoad("tmp/incomplete-hash"),
+               "corrupted metadata: expected 20 bytes, got 5: \"tmp/incomplete-hash\"");
+  assert_error(metadataLoad("tmp/missing-hash"),
+               "corrupted metadata: expected 20 bytes, got 0: \"tmp/missing-hash\"");
+  assert_error(metadataLoad("tmp/incomplete-path"),
+               "corrupted metadata: expected 7 bytes, got 4: \"tmp/incomplete-path\"");
+  assert_error(metadataLoad("tmp/missing-path"),
+               "corrupted metadata: expected 3 bytes, got 0: \"tmp/missing-path\"");
+  assert_error(metadataLoad("tmp/incomplete-symlink-target-path"),
+               "corrupted metadata: expected 16 bytes, got 6: \"tmp/incomplete-symlink-target-path\"");
+  assert_error(metadataLoad("tmp/missing-symlink-target-path"),
+               "corrupted metadata: expected 16 bytes, got 0: \"tmp/missing-symlink-target-path\"");
+  assert_error(metadataLoad("tmp/last-byte-missing"),
+               "corrupted metadata: expected 8 bytes, got 7: \"tmp/last-byte-missing\"");
+  assert_error(metadataLoad("tmp/unneeded-trailing-bytes"),
+               "unneeded trailing bytes in \"tmp/unneeded-trailing-bytes\"");
+  assert_error(metadataLoad("tmp/path-count-zero"),
+               "unneeded trailing bytes in \"tmp/path-count-zero\"");
+}
+
 int main(void)
 {
   testGroupStart("metadataNew()");
@@ -1079,52 +1131,6 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("reject corrupted metadata");
-  generateBrokenMetadata();
-  assert_error(metadataLoad("non-existing.txt"),
-               "failed to access \"non-existing.txt\": No such file or directory");
-  assert_error(metadataLoad("tmp/missing-byte"),
-               "corrupted metadata: expected 1 byte, got 0: \"tmp/missing-byte\"");
-  assert_error(metadataLoad("tmp/missing-slot"),
-               "corrupted metadata: expected 1 byte, got 0: \"tmp/missing-slot\"");
-  assert_error(metadataLoad("tmp/invalid-path-state-type"),
-               "invalid PathStateType in \"tmp/invalid-path-state-type\"");
-  assert_error(metadataLoad("tmp/missing-path-state-type"),
-               "corrupted metadata: expected 1 byte, got 0: \"tmp/missing-path-state-type\"");
-  assert_error(metadataLoad("tmp/incomplete-32-bit-value"),
-               "corrupted metadata: expected 4 bytes, got 3: \"tmp/incomplete-32-bit-value\"");
-  assert_error(metadataLoad("tmp/missing-32-bit-value"),
-               "corrupted metadata: expected 4 bytes, got 0: \"tmp/missing-32-bit-value\"");
-  assert_error(metadataLoad("tmp/incomplete-size"),
-               "corrupted metadata: expected 8 bytes, got 3: \"tmp/incomplete-size\"");
-  assert_error(metadataLoad("tmp/missing-size"),
-               "corrupted metadata: expected 8 bytes, got 0: \"tmp/missing-size\"");
-  assert_error(metadataLoad("tmp/backup-id-out-of-range-1"),
-               "backup id is out of range in \"tmp/backup-id-out-of-range-1\"");
-  assert_error(metadataLoad("tmp/backup-id-out-of-range-2"),
-               "backup id is out of range in \"tmp/backup-id-out-of-range-2\"");
-  assert_error(metadataLoad("tmp/backup-id-out-of-range-3"),
-               "backup id is out of range in \"tmp/backup-id-out-of-range-3\"");
-  assert_error(metadataLoad("tmp/incomplete-time"),
-               "corrupted metadata: expected 8 bytes, got 7: \"tmp/incomplete-time\"");
-  assert_error(metadataLoad("tmp/missing-time"),
-               "corrupted metadata: expected 8 bytes, got 0: \"tmp/missing-time\"");
-  assert_error(metadataLoad("tmp/incomplete-hash"),
-               "corrupted metadata: expected 20 bytes, got 5: \"tmp/incomplete-hash\"");
-  assert_error(metadataLoad("tmp/missing-hash"),
-               "corrupted metadata: expected 20 bytes, got 0: \"tmp/missing-hash\"");
-  assert_error(metadataLoad("tmp/incomplete-path"),
-               "corrupted metadata: expected 7 bytes, got 4: \"tmp/incomplete-path\"");
-  assert_error(metadataLoad("tmp/missing-path"),
-               "corrupted metadata: expected 3 bytes, got 0: \"tmp/missing-path\"");
-  assert_error(metadataLoad("tmp/incomplete-symlink-target-path"),
-               "corrupted metadata: expected 16 bytes, got 6: \"tmp/incomplete-symlink-target-path\"");
-  assert_error(metadataLoad("tmp/missing-symlink-target-path"),
-               "corrupted metadata: expected 16 bytes, got 0: \"tmp/missing-symlink-target-path\"");
-  assert_error(metadataLoad("tmp/last-byte-missing"),
-               "corrupted metadata: expected 8 bytes, got 7: \"tmp/last-byte-missing\"");
-  assert_error(metadataLoad("tmp/unneeded-trailing-bytes"),
-               "unneeded trailing bytes in \"tmp/unneeded-trailing-bytes\"");
-  assert_error(metadataLoad("tmp/path-count-zero"),
-               "unneeded trailing bytes in \"tmp/path-count-zero\"");
+  testRejectingCorruptedMetadata();
   testGroupEnd();
 }
