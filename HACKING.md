@@ -120,7 +120,8 @@ To test multiple backups using the same repository, the test must be broken
 down into phases. This can be done by moving all the files described above
 into a directory named `"1/"`. The 1 stands for the first phase. Additional
 directories named `"2/"`, `"3/"`, etc. can be created. Each phase will
-reuse the following files and directories from preceding phases:
+reuse the following files and directories from preceding phases, if they
+are not overridden:
 
 * generated/
 * generated/repo/
