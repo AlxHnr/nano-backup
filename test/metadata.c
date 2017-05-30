@@ -1109,6 +1109,24 @@ static void generateBrokenMetadata(void)
   writeBytesToFile(700, test_data, "tmp/null-byte-filename-7");
   copyStringRaw(make_conf_bytes, "make.conf");
 
+  /* Generate metadata with both slashes and null-bytes in filenames. */
+  conf_d_bytes[2] = '\0';
+  conf_d_bytes[4] = '/';
+  writeBytesToFile(700, test_data, "tmp/slash-and-null-byte-filename-1");
+  copyStringRaw(conf_d_bytes, "conf.d");
+
+  portage_bytes[2] = '/';
+  portage_bytes[6] = '\0';
+  writeBytesToFile(700, test_data, "tmp/slash-and-null-byte-filename-2");
+  copyStringRaw(portage_bytes, "portage");
+
+  make_conf_bytes[0] = '\0';
+  make_conf_bytes[1] = '/';
+  make_conf_bytes[2] = '/';
+  make_conf_bytes[5] = '\0';
+  writeBytesToFile(700, test_data, "tmp/slash-and-null-byte-filename-3");
+  copyStringRaw(make_conf_bytes, "make.conf");
+
   /* Assert that all bytes got reset properly. */
   checkTestData1(metadata);
 
@@ -1210,6 +1228,13 @@ static void testRejectingCorruptedMetadata(void)
                "contains filename with null-bytes: \"tmp/null-byte-filename-6\"");
   assert_error(metadataLoad("tmp/null-byte-filename-7"),
                "contains filename with null-bytes: \"tmp/null-byte-filename-7\"");
+
+  assert_error(metadataLoad("tmp/slash-and-null-byte-filename-1"),
+               "contains filename with null-bytes: \"tmp/slash-and-null-byte-filename-1\"");
+  assert_error(metadataLoad("tmp/slash-and-null-byte-filename-2"),
+               "contains filename with null-bytes: \"tmp/slash-and-null-byte-filename-2\"");
+  assert_error(metadataLoad("tmp/slash-and-null-byte-filename-3"),
+               "contains filename with null-bytes: \"tmp/slash-and-null-byte-filename-3\"");
 }
 
 int main(void)

@@ -495,14 +495,15 @@ static PathNode *readPathSubnodes(FileContent content,
       };
     *reader_position += name_length;
 
-    if(strIsDotElement(name) || memchr(name.str, '/', name.length) != NULL)
+    if(memchr(name.str, '\0', name.length) != NULL)
+    {
+      die("contains filename with null-bytes: \"%s\"", metadata_path);
+    }
+    else if(memchr(name.str, '/', name.length) != NULL ||
+            strIsDotElement(name))
     {
       die("contains invalid filename \"%s\": \"%s\"",
           strCopy(name).str, metadata_path);
-    }
-    else if(memchr(name.str, '\0', name.length) != NULL)
-    {
-      die("contains filename with null-bytes: \"%s\"", metadata_path);
     }
 
     String full_path = strAppendPath(parent_node == NULL? str(""):
