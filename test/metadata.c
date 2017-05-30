@@ -917,11 +917,21 @@ static void writeWithBrokenChar3(Metadata *metadata, String *path,
 {
   const char old_byte = path->str[path->length - 3];
 
+  /* To generate broken metadata at runtime it is required to overwrite
+     const data. This data is allocated on the heap and can be overwritten
+     safely. */
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
+#endif
   *((char   *)&path->str[path->length - 3]) = byte;
   *((size_t *)&path->length) -= 2;
   metadataWrite(metadata, "tmp", "tmp/tmp-file", filename);
   *((size_t *)&path->length) += 2;
   *((char   *)&path->str[path->length - 3]) = old_byte;
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
 }
 
 /** Searches for a string in the given data.
@@ -932,7 +942,7 @@ static void writeWithBrokenChar3(Metadata *metadata, String *path,
 
   @return The address of the first byte of `string`.
 */
-static char *findString(char *data, char *string, size_t data_length)
+static char *findString(char *data, const char *string, size_t data_length)
 {
   const size_t string_length = strlen(string);
   assert_true(string_length > 0);
@@ -951,7 +961,7 @@ static char *findString(char *data, char *string, size_t data_length)
 }
 
 /** Copies the given string into data without the terminating null-byte. */
-static void copyStringRaw(char *data, char *string)
+static void copyStringRaw(char *data, const char *string)
 {
   memcpy(data, string, strlen(string));
 }
@@ -1018,9 +1028,20 @@ static void generateBrokenMetadata(void)
   /* Generate metadata containing zero-length filenames. */
   PathNode *etc = strTableGet(metadata->path_table, str("/etc"));
   assert_true(etc != NULL);
+  PathNode *conf_d = strTableGet(metadata->path_table, str("/etc/conf.d"));
+  assert_true(conf_d != NULL);
   PathNode *foo = strTableGet(metadata->path_table, str("/etc/conf.d/foo"));
   assert_true(foo != NULL);
+  PathNode *bar = strTableGet(metadata->path_table, str("/etc/conf.d/bar"));
+  assert_true(bar != NULL);
 
+  /* To generate broken metadata at runtime it is required to overwrite
+     const data. This data is allocated on the heap and can be overwritten
+     safely. */
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
+#endif
   *((size_t *)&etc->path.length) -= 3;
   metadataWrite(metadata, "tmp", "tmp/tmp-file", "tmp/filename-with-length-zero-1");
   *((size_t *)&etc->path.length) += 3;
@@ -1030,13 +1051,6 @@ static void generateBrokenMetadata(void)
   *((size_t *)&foo->path.length) += 3;
 
   /* Generate metadata containing dot filenames. */
-  PathNode *conf_d = strTableGet(metadata->path_table, str("/etc/conf.d"));
-  assert_true(conf_d != NULL);
-  PathNode *bar = strTableGet(metadata->path_table, str("/etc/conf.d/bar"));
-  assert_true(bar != NULL);
-
-  writeWithBrokenChar3(metadata, &etc->path, '.', "tmp/dot-filename-1");
-
   *((char   *)&conf_d->path.str[conf_d->path.length - 6]) = '.';
   *((char   *)&conf_d->path.str[conf_d->path.length - 5]) = '.';
   *((size_t *)&conf_d->path.length) -= 4;
@@ -1044,7 +1058,11 @@ static void generateBrokenMetadata(void)
   *((size_t *)&conf_d->path.length) += 4;
   *((char   *)&conf_d->path.str[conf_d->path.length - 5]) = 'o';
   *((char   *)&conf_d->path.str[conf_d->path.length - 6]) = 'c';
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
 
+  writeWithBrokenChar3(metadata, &etc->path, '.', "tmp/dot-filename-1");
   writeWithBrokenChar3(metadata, &bar->path, '.', "tmp/dot-filename-3");
 
   /* Generate metadata containing slashes in filenames. */
