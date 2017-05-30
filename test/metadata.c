@@ -904,6 +904,58 @@ static void writeBytesToFile(size_t size,
   sFclose(writer);
 }
 
+/** Replaces the -3th byte in the given string, truncates it to length -2,
+  writes the metadata and undoes the changes.
+
+  @param metadata The metadata to write.
+  @param path The path to manipulate.
+  @param byte The character which should replace the old one.
+  @param filename The name of the final metadata file.
+*/
+static void writeWithBrokenChar3(Metadata *metadata, String *path,
+                                char byte, const char *filename)
+{
+  const char old_byte = path->str[path->length - 3];
+
+  *((char   *)&path->str[path->length - 3]) = byte;
+  *((size_t *)&path->length) -= 2;
+  metadataWrite(metadata, "tmp", "tmp/tmp-file", filename);
+  *((size_t *)&path->length) += 2;
+  *((char   *)&path->str[path->length - 3]) = old_byte;
+}
+
+/** Searches for a string in the given data.
+
+  @param data The data to search.
+  @param string The string to find.
+  @param data_length The length of data.
+
+  @return The address of the first byte of `string`.
+*/
+static char *findString(char *data, char *string, size_t data_length)
+{
+  const size_t string_length = strlen(string);
+  assert_true(string_length > 0);
+  assert_true(string_length < data_length);
+
+  const size_t max = data_length - string_length;
+  for(size_t index = 0; index < max; index++)
+  {
+    if(memcmp(&data[index], string, string_length) == 0)
+    {
+      return &data[index];
+    }
+  }
+
+  die("unable to find string in memory: \"%s\"", string);
+}
+
+/** Copies the given string into data without the terminating null-byte. */
+static void copyStringRaw(char *data, char *string)
+{
+  memcpy(data, string, strlen(string));
+}
+
 /** Generates various broken metadata files. */
 static void generateBrokenMetadata(void)
 {
@@ -963,6 +1015,88 @@ static void generateBrokenMetadata(void)
   writeBytesToFile(700, test_data, "tmp/path-count-zero");
   test_data[172] = 1;
 
+  /* Generate metadata containing zero-length filenames. */
+  PathNode *etc = strTableGet(metadata->path_table, str("/etc"));
+  assert_true(etc != NULL);
+  PathNode *foo = strTableGet(metadata->path_table, str("/etc/conf.d/foo"));
+  assert_true(foo != NULL);
+
+  *((size_t *)&etc->path.length) -= 3;
+  metadataWrite(metadata, "tmp", "tmp/tmp-file", "tmp/filename-with-length-zero-1");
+  *((size_t *)&etc->path.length) += 3;
+
+  *((size_t *)&foo->path.length) -= 3;
+  metadataWrite(metadata, "tmp", "tmp/tmp-file", "tmp/filename-with-length-zero-2");
+  *((size_t *)&foo->path.length) += 3;
+
+  /* Generate metadata containing dot filenames. */
+  PathNode *conf_d = strTableGet(metadata->path_table, str("/etc/conf.d"));
+  assert_true(conf_d != NULL);
+  PathNode *bar = strTableGet(metadata->path_table, str("/etc/conf.d/bar"));
+  assert_true(bar != NULL);
+
+  writeWithBrokenChar3(metadata, &etc->path, '.', "tmp/dot-filename-1");
+
+  *((char   *)&conf_d->path.str[conf_d->path.length - 6]) = '.';
+  *((char   *)&conf_d->path.str[conf_d->path.length - 5]) = '.';
+  *((size_t *)&conf_d->path.length) -= 4;
+  metadataWrite(metadata, "tmp", "tmp/tmp-file", "tmp/dot-filename-2");
+  *((size_t *)&conf_d->path.length) += 4;
+  *((char   *)&conf_d->path.str[conf_d->path.length - 5]) = 'o';
+  *((char   *)&conf_d->path.str[conf_d->path.length - 6]) = 'c';
+
+  writeWithBrokenChar3(metadata, &bar->path, '.', "tmp/dot-filename-3");
+
+  /* Generate metadata containing slashes in filenames. */
+  char *conf_d_bytes    = findString(test_data, "conf.d",    700);
+  char *portage_bytes   = findString(test_data, "portage",   700);
+  char *make_conf_bytes = findString(test_data, "make.conf", 700);
+  writeWithBrokenChar3(metadata, &bar->path, '/', "tmp/slash-filename-1");
+
+  conf_d_bytes[0] = '/';
+  writeBytesToFile(700, test_data, "tmp/slash-filename-2");
+  copyStringRaw(conf_d_bytes, "conf.d");
+
+  portage_bytes[2] = '/';
+  writeBytesToFile(700, test_data, "tmp/slash-filename-3");
+  portage_bytes[4] = '/';
+  writeBytesToFile(700, test_data, "tmp/slash-filename-4");
+  portage_bytes[6] = '/';
+  writeBytesToFile(700, test_data, "tmp/slash-filename-5");
+  portage_bytes[3] = '/';
+  writeBytesToFile(700, test_data, "tmp/slash-filename-6");
+  copyStringRaw(portage_bytes, "portage");
+
+  make_conf_bytes[8] = '/';
+  writeBytesToFile(700, test_data, "tmp/slash-filename-7");
+  copyStringRaw(make_conf_bytes, "make.conf");
+
+  /* Generate metadata containing null-bytes in filenames. */
+  writeWithBrokenChar3(metadata, &foo->path,    '\0', "tmp/null-byte-filename-1");
+  writeWithBrokenChar3(metadata, &conf_d->path, '\0', "tmp/null-byte-filename-2");
+
+  portage_bytes[2] = '\0';
+  writeBytesToFile(700, test_data, "tmp/null-byte-filename-3");
+  portage_bytes[4] = '\0';
+  writeBytesToFile(700, test_data, "tmp/null-byte-filename-4");
+  portage_bytes[3] = '\0';
+  writeBytesToFile(700, test_data, "tmp/null-byte-filename-5");
+  copyStringRaw(portage_bytes, "portage");
+
+  make_conf_bytes[0] = '\0';
+  writeBytesToFile(700, test_data, "tmp/null-byte-filename-6");
+  copyStringRaw(make_conf_bytes, "make.conf");
+
+  make_conf_bytes[8] = '\0';
+  writeBytesToFile(700, test_data, "tmp/null-byte-filename-7");
+  copyStringRaw(make_conf_bytes, "make.conf");
+
+  /* Assert that all bytes got reset properly. */
+  checkTestData1(metadata);
+
+  writeBytesToFile(700, test_data, "tmp/test-data-1");
+  checkTestData1(metadataLoad("tmp/test-data-1"));
+
   free(test_data);
 }
 
@@ -1016,6 +1150,48 @@ static void testRejectingCorruptedMetadata(void)
                "unneeded trailing bytes in \"tmp/unneeded-trailing-bytes\"");
   assert_error(metadataLoad("tmp/path-count-zero"),
                "unneeded trailing bytes in \"tmp/path-count-zero\"");
+
+  assert_error(metadataLoad("tmp/filename-with-length-zero-1"),
+               "contains filename with length zero: \"tmp/filename-with-length-zero-1\"");
+  assert_error(metadataLoad("tmp/filename-with-length-zero-2"),
+               "contains filename with length zero: \"tmp/filename-with-length-zero-2\"");
+
+  assert_error(metadataLoad("tmp/dot-filename-1"),
+               "contains invalid filename \".\": \"tmp/dot-filename-1\"");
+  assert_error(metadataLoad("tmp/dot-filename-2"),
+               "contains invalid filename \"..\": \"tmp/dot-filename-2\"");
+  assert_error(metadataLoad("tmp/dot-filename-3"),
+               "contains invalid filename \".\": \"tmp/dot-filename-3\"");
+
+  assert_error(metadataLoad("tmp/slash-filename-1"),
+               "contains invalid filename \"/\": \"tmp/slash-filename-1\"");
+  assert_error(metadataLoad("tmp/slash-filename-2"),
+               "contains invalid filename \"/onf.d\": \"tmp/slash-filename-2\"");
+  assert_error(metadataLoad("tmp/slash-filename-3"),
+               "contains invalid filename \"po/tage\": \"tmp/slash-filename-3\"");
+  assert_error(metadataLoad("tmp/slash-filename-4"),
+               "contains invalid filename \"po/t/ge\": \"tmp/slash-filename-4\"");
+  assert_error(metadataLoad("tmp/slash-filename-5"),
+               "contains invalid filename \"po/t/g/\": \"tmp/slash-filename-5\"");
+  assert_error(metadataLoad("tmp/slash-filename-6"),
+               "contains invalid filename \"po///g/\": \"tmp/slash-filename-6\"");
+  assert_error(metadataLoad("tmp/slash-filename-7"),
+               "contains invalid filename \"make.con/\": \"tmp/slash-filename-7\"");
+
+  assert_error(metadataLoad("tmp/null-byte-filename-1"),
+               "contains filename with null-bytes: \"tmp/null-byte-filename-1\"");
+  assert_error(metadataLoad("tmp/null-byte-filename-2"),
+               "contains filename with null-bytes: \"tmp/null-byte-filename-2\"");
+  assert_error(metadataLoad("tmp/null-byte-filename-3"),
+               "contains filename with null-bytes: \"tmp/null-byte-filename-3\"");
+  assert_error(metadataLoad("tmp/null-byte-filename-4"),
+               "contains filename with null-bytes: \"tmp/null-byte-filename-4\"");
+  assert_error(metadataLoad("tmp/null-byte-filename-5"),
+               "contains filename with null-bytes: \"tmp/null-byte-filename-5\"");
+  assert_error(metadataLoad("tmp/null-byte-filename-6"),
+               "contains filename with null-bytes: \"tmp/null-byte-filename-6\"");
+  assert_error(metadataLoad("tmp/null-byte-filename-7"),
+               "contains filename with null-bytes: \"tmp/null-byte-filename-7\"");
 }
 
 int main(void)

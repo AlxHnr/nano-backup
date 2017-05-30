@@ -480,6 +480,11 @@ static PathNode *readPathSubnodes(FileContent content,
 
     /* Read the name and append it to the parent nodes path. */
     size_t name_length = readSize(content, reader_position, metadata_path);
+    if(name_length == 0)
+    {
+      die("contains filename with length zero: \"%s\"", metadata_path);
+    }
+
     assertBytesLeft(*reader_position, name_length, content, metadata_path);
 
     String name =
@@ -489,6 +494,16 @@ static PathNode *readPathSubnodes(FileContent content,
         .length = name_length
       };
     *reader_position += name_length;
+
+    if(strIsDotElement(name) || memchr(name.str, '/', name.length) != NULL)
+    {
+      die("contains invalid filename \"%s\": \"%s\"",
+          strCopy(name).str, metadata_path);
+    }
+    else if(memchr(name.str, '\0', name.length) != NULL)
+    {
+      die("contains filename with null-bytes: \"%s\"", metadata_path);
+    }
 
     String full_path = strAppendPath(parent_node == NULL? str(""):
                                      parent_node->path, name);
