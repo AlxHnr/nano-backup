@@ -998,10 +998,10 @@ static void generateBrokenMetadata(void)
   /* Generate files with out-of-range backup IDs. */
   Backup broken_backup = { .id = 4 };
 
-  Backup *old_backup = metadata->config_history[1].backup;
-  metadata->config_history[1].backup = &broken_backup;
+  Backup *old_backup = metadata->config_history->next->backup;
+  metadata->config_history->next->backup = &broken_backup;
   metadataWrite(metadata, "tmp", "tmp/tmp-file", "tmp/backup-id-out-of-range-1");
-  metadata->config_history[1].backup = old_backup;
+  metadata->config_history->next->backup = old_backup;
 
   old_backup = portage->history->backup;
   portage->history->backup = &broken_backup;
