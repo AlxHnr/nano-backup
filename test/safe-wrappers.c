@@ -412,6 +412,9 @@ int main(void)
 
   assert_true(sPathExists("tmp/file-2"));
   assert_true(sStat("tmp/file-2").st_size == 0);
+
+  sRename("tmp/file-2", "tmp/file-2");
+  assert_true(sStat("tmp/file-2").st_size == 0);
   testGroupEnd();
 
   testGroupStart("sChmod()");

@@ -33,6 +33,7 @@
 
 #include "test.h"
 #include "safe-wrappers.h"
+#include "error-handling.h"
 
 #define TMP_FILE_PATH "tmp/tmp-file"
 
@@ -75,13 +76,30 @@ static void writeTestFile(RepoWriter *writer)
   repoWriterWrite("!",      1, writer);
 }
 
+/** Asserts that the given file contains the specified content. */
+static void checkFilesContent(const char *file_path,
+                              const char *expected_content)
+{
+  const size_t expected_size = strlen(expected_content);
+  FileContent content = sGetFilesContent(file_path);
+
+  if(content.size != expected_size)
+  {
+    die("content size: %zu != %zu: \"%s\"",
+        content.size, expected_size, file_path);
+  }
+  else if(memcmp(content.content, expected_content, expected_size) != 0)
+  {
+    die("file has invalid content: \"%s\"", file_path);
+  }
+
+  free(content.content);
+}
+
 /** Asserts that the given file contains the string "Hello backup!". */
 static void checkTestFile(const char *file_path)
 {
-  FileContent content = sGetFilesContent(file_path);
-  assert_true(content.size == 13);
-  assert_true(memcmp(content.content, "Hello backup!", 13) == 0);
-  free(content.content);
+  checkFilesContent(file_path, "Hello backup!");
 }
 
 /** Overwrites the given filepath with the file represented by the
@@ -110,10 +128,7 @@ static void testSafeOverwriting(RepoWriter *writer, const char *final_path)
   assert_true(sPathExists(TMP_FILE_PATH) == false);
   assert_true(sPathExists(final_path)    == true);
 
-  FileContent content = sGetFilesContent(final_path);
-  assert_true(content.size == 15);
-  assert_true(memcmp(content.content, "This is a test.", content.size) == 0);
-  free(content.content);
+  checkFilesContent(final_path, "This is a test.");
 }
 
 /** Tests the given RepoWriter. The repositories temporary file must have
@@ -136,10 +151,7 @@ static void testWithExistingTmpFile(RepoWriter *writer,
   assert_true(sPathExists(TMP_FILE_PATH) == false);
   assert_true(sPathExists(final_path)    == true);
 
-  FileContent content = sGetFilesContent(final_path);
-  assert_true(content.size == 11);
-  assert_true(memcmp(content.content, "Nano Backup", content.size) == 0);
-  free(content.content);
+  checkFilesContent(final_path, "Nano Backup");
 }
 
 /** Tests repoBuildRegularFilePath().
@@ -365,6 +377,28 @@ int main(void)
   testWithExistingTmpFile(repoWriterOpenRaw("tmp", TMP_FILE_PATH, "another-file", "tmp/another-file"), "tmp/another-file");
   testGroupEnd();
 
+  testGroupStart("overwriting tmp-file with itself");
+  FileStream *stream = sFopenWrite(TMP_FILE_PATH);
+  sFwrite("-include build/dependencies.makefile\n", 37, stream);
+  sFclose(stream);
+
+  checkFilesContent(TMP_FILE_PATH, "-include build/dependencies.makefile\n");
+
+  writer = repoWriterOpenRaw("tmp", TMP_FILE_PATH, TMP_FILE_PATH, TMP_FILE_PATH);
+  assert_true(writer != NULL);
+  repoWriterWrite("nano-backup backups files", 25, writer);
+  repoWriterClose(writer);
+
+  checkFilesContent(TMP_FILE_PATH, "nano-backup backups files");
+
+  writer = repoWriterOpenRaw("tmp", TMP_FILE_PATH, TMP_FILE_PATH, TMP_FILE_PATH);
+  assert_true(writer != NULL);
+  repoWriterWrite("FOO BAR 321", 11, writer);
+  repoWriterClose(writer);
+
+  checkFilesContent(TMP_FILE_PATH, "FOO BAR 321");
+  testGroupEnd();
+
   testGroupStart("overwrite with empty file");
   repoWriterClose(repoWriterOpenFile("tmp", TMP_FILE_PATH, "info_2", &info_2));
   assert_true(sPathExists(TMP_FILE_PATH) == false);
@@ -383,7 +417,7 @@ int main(void)
                "failed to open \"info_1\" in \"tmp\": Permission denied");
   assert_true(rmdir(info_1_path) == 0);
 
-  FileStream *stream = sFopenWrite(info_1_path);
+  stream = sFopenWrite(info_1_path);
   sFwrite("This is an example text.", 24, stream);
   sFclose(stream);
 
