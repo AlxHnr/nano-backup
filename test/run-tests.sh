@@ -3,7 +3,8 @@
 # Names of tests specified in the order to run.
 tests="safe-wrappers memory-pool buffer path-builder file-hash colors
 regex-pool string-utils string-table search-tree search repository
-metadata backup backup-policy-changes garbage-collector"
+metadata backup backup-policy-changes backup-filetype-changes
+garbage-collector"
 
 cd test/data/
 
