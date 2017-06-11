@@ -67,7 +67,7 @@ int main(void)
 }
 ```
 
-Now "foo" must be added to the makefiles test target. This has to be done
+Now "foo" must be added to `"test/run-tests.sh"`. This has to be done
 manually to ensure that tests run in the correct order.
 
 ### Testing the final executable

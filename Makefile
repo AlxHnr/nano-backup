@@ -11,6 +11,7 @@ TEST_PROGRAMS    := $(patsubst %.c,build/%,$(TEST_PROGRAMS))
 TEST_LIB_OBJECTS := $(patsubst %.c,build/%.o,$(TEST_LIB_OBJECTS)) \
   $(filter-out build/nb.o build/error-handling.o,$(OBJECTS))
 
+EMPTY_DIR         := test/data/test\ directory/.empty/
 GENERATED_CONFIGS := $(patsubst test/data/template%,test/data/generated%,\
   $(wildcard test/data/template-config-files/*))
 
@@ -32,36 +33,17 @@ build/%.o:
 build/test/%: build/test/%.o $(TEST_LIB_OBJECTS)
 	$(CC) $(LDFLAGS) $^ -o $@
 
-test: build/nb $(TEST_PROGRAMS) $(GENERATED_CONFIGS) \
-  test/data/test\ directory/.empty/
-	@(cd test/data/ && \
-	  for test in safe-wrappers memory-pool buffer path-builder \
-	  file-hash colors regex-pool string-utils string-table \
-	  search-tree search repository metadata backup \
-	  garbage-collector; do \
-	  rm -rf tmp/; \
-	  mkdir -p tmp/; \
-	  test -t 1 && printf "Running \033[0;33m%s\033[0m:\n" "$$test" || \
-	  printf "Running %s\n" "$$test:"; \
-	  "../../build/test/$$test" || exit 1; \
-	  printf "\n"; \
-	  done && \
-	  rm -rf tmp/)
-	@./test/run-full-program-tests.sh
+# Workaround for Gits inability to track empty directories.
+$(EMPTY_DIR):
+	mkdir -p "$@"
 
 test/data/generated-config-files/%: test/data/template-config-files/%
 	mkdir -p "$(dir $@)" && sed -r "s,^/,$$PWD/test/data/,g" "$<" > "$@"
 
-test/data/test\ directory/.empty/:
-	mkdir -p "$@"
+test: build/nb $(TEST_PROGRAMS) $(GENERATED_CONFIGS) $(EMPTY_DIR)
+	./test/run-tests.sh && ./test/run-full-program-tests.sh
 
 clean:
 	rm -rf build/ test/data/generated-*/ test/data/tmp/
-	test ! -e "test/data/test directory/.empty/" || \
-	  rmdir "test/data/test directory/.empty/"
-	@(for test_dir in "test/full program tests"/*/*; do \
-	  test -d "$$test_dir" || continue; \
-	  cd "$$test_dir" && \
-	  sh -e "../../fallback targets/clean.sh" || exit 1; \
-	  cd - >&/dev/null; \
-	  done)
+	test ! -e $(EMPTY_DIR) || rmdir $(EMPTY_DIR)
+	./test/clean-full-program-tests.sh
