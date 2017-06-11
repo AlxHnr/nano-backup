@@ -1,4 +1,3 @@
 coverage:
   ignore:
-    - src/test*
     - test/
