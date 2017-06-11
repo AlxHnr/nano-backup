@@ -1,6 +1,5 @@
 /** @file
-  Contains various hashes of shared dummy files generated to test the
-  backup implementation.
+  Contains hashes of dummy files generated during tests.
 */
 
 #ifndef NANO_BACKUP_BACKUP_DUMMY_HASHES_H

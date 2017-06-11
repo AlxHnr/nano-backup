@@ -1,5 +1,5 @@
 /** @file
-  Implements testing of policy changes during a backup.
+  Tests handling of policy changes.
 */
 
 #include "backup.h"

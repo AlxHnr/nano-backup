@@ -1,5 +1,5 @@
 /** @file
-  Declares various functions shared across backup tests.
+  Various functions shared across backup tests.
 */
 
 #ifndef NANO_BACKUP_BACKUP_COMMON_H
@@ -35,6 +35,7 @@ extern PathHistory *findExistingHistPoint(PathNode *node);
 
 extern void restoreRegularFile(const char *path, const RegularFileInfo *info);
 extern void restoreWithTimeRecursively(PathNode *node);
+
 extern struct stat cachedStat(String path,
                               struct stat (*stat_fun)(const char *));
 extern void resetStatCache(void);
@@ -67,7 +68,6 @@ extern PathNode *findFilesNode(Metadata *metadata,
                                BackupHint hint,
                                size_t subnode_count);
 extern size_t cwd_depth(void);
-
 extern void completeBackup(Metadata *metadata);
 extern time_t phase_timestamps(size_t index);
 extern size_t backup_counter(void);

@@ -1,5 +1,5 @@
 /** @file
-  Tests handling of filetype changes during a backup.
+  Tests handling of filetype changes.
 */
 
 #include "backup.h"
