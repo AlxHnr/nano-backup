@@ -8,16 +8,11 @@
 #include <stdlib.h>
 
 #include "test.h"
-#include "restore.h"
 #include "metadata.h"
-#include "memory-pool.h"
 #include "search-tree.h"
 #include "test-common.h"
-#include "path-builder.h"
-#include "string-table.h"
 #include "backup-common.h"
 #include "safe-wrappers.h"
-#include "error-handling.h"
 #include "backup-dummy-hashes.h"
 
 /** Performs an initial backup. */
