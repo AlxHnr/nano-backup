@@ -31,7 +31,7 @@ build/%.o:
 	$(CC) $(CFLAGS) -Isrc/ -c $< -o $@
 
 build/test/%: build/test/%.o $(TEST_LIB_OBJECTS)
-	$(CC) $(LDFLAGS) $^ -o $@
+	$(CC) $^ $(LDFLAGS) -o $@
 
 # Workaround for Gits inability to track empty directories.
 $(EMPTY_DIR):
