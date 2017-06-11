@@ -2,9 +2,9 @@
   Implements testing of policy changes during a backup.
 */
 
-#include "test.h"
-
 #include "backup.h"
+
+#include "test.h"
 #include "metadata.h"
 #include "search-tree.h"
 #include "test-common.h"
