@@ -1,7 +1,7 @@
 [copy]
-/test directory/.hidden 2
+/test directory/.hidden 2/a/b/c/1/2/3/
 
 /test directory/bar-a.txt
 /test directory/non-existing.txt
 
-/test directory//^.hidden
+/test directory//^.hidden/a/b/c/1/2/3/
