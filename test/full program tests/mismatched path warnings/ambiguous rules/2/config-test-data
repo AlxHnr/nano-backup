@@ -1,0 +1,6 @@
+
+[track]
+/test directory//o 1
+[mirror]
+/test directory//^.*$
+

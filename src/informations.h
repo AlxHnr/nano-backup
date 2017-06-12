@@ -39,5 +39,6 @@ typedef struct
 extern void printHumanReadableSize(uint64_t size);
 extern void printSearchTreeInfos(SearchNode *root_node);
 extern MetadataChanges printMetadataChanges(Metadata *metadata);
+extern void warnNodeMatches(SearchNode *node, const char *string);
 
 #endif

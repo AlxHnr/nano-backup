@@ -1,0 +1,7 @@
+[copy]
+/test directory/.hidden 2
+
+/test directory/bar-a.txt
+/test directory/non-existing.txt
+
+/test directory//^.hidden

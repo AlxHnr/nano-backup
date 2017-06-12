@@ -19,13 +19,33 @@ static void warnConfigLineNr(size_t line_nr)
   fprintf(stderr, ": ");
 }
 
+/** Prints the given path in quotes to stderr, colorized. */
+static void warnPath(String path)
+{
+  fprintf(stderr, "\"");
+  colorPrintf(stderr, TC_red, "%s", path.str);
+  fprintf(stderr, "\"");
+}
+
 /** Prints the given path in quotes to stderr, colorized and followed by a
   newline. */
 static void warnPathNewline(String path)
 {
-  fprintf(stderr, "\"");
-  colorPrintf(stderr, TC_red, "%s", path.str);
-  fprintf(stderr, "\"\n");
+  warnPath(path);
+  fputc('\n', stderr);
+}
+
+/** Returns either "regex" or "string" depending on the given node. */
+static const char *typeOf(SearchNode *node)
+{
+  if(node->regex != NULL)
+  {
+    return "regex";
+  }
+  else
+  {
+    return "string";
+  }
 }
 
 /** Recursively prints informations about all nodes in the given search
@@ -42,8 +62,7 @@ static void printSearchNodeInfos(SearchNode *root_node)
     if(node->search_match == SRT_none)
     {
       warnConfigLineNr(node->line_nr);
-      fprintf(stderr, "%s never matched a %s: ",
-              node->regex?"regex":"string",
+      fprintf(stderr, "%s never matched a %s: ", typeOf(node),
               node->subnodes?"directory":"file");
       warnPathNewline(node->name);
     }
@@ -52,15 +71,13 @@ static void printSearchNodeInfos(SearchNode *root_node)
       if(!(node->search_match & SRT_directory))
       {
         warnConfigLineNr(node->line_nr);
-        fprintf(stderr, "%s matches, but not a directory: ",
-                node->regex?"regex":"string");
+        fprintf(stderr, "%s matches, but not a directory: ", typeOf(node));
         warnPathNewline(node->name);
       }
       else if(node->search_match & ~SRT_directory)
       {
         warnConfigLineNr(node->line_nr);
-        fprintf(stderr, "%s matches not only directories: ",
-                node->regex?"regex":"string");
+        fprintf(stderr, "%s matches not only directories: ", typeOf(node));
         warnPathNewline(node->name);
         printSearchNodeInfos(node);
       }
@@ -487,4 +504,15 @@ void printSearchTreeInfos(SearchNode *root_node)
 MetadataChanges printMetadataChanges(Metadata *metadata)
 {
   return recursePrintOverTree(metadata, metadata->paths, true);
+}
+
+/** Prints a warning on how the specified node matches the given string. */
+void warnNodeMatches(SearchNode *node, const char *string)
+{
+  warnConfigLineNr(node->line_nr);
+  fprintf(stderr, "%s ", typeOf(node));
+  warnPath(node->name);
+  fprintf(stderr, " matches \"");
+  colorPrintf(stderr, TC_yellow, "%s", string);
+  fprintf(stderr, "\"\n");
 }

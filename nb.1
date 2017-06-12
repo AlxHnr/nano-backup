@@ -42,18 +42,6 @@ Paths must be absolute. A double slash in a path denotes a POSIX extended
 regular expression. This expression will not match recursively and can be
 terminated by a slash.
 
-Multiple distinct expressions that match the same files should be avoided.
-Expressions are matched in undefined order and the first one that matches
-will be used. This may lead to unexpected results:
-
-.nf
-  [copy]
-  /etc//.*\\.conf$
-
-  [mirror]
-  /etc//.*
-.fi
-
 Symlinks are not followed, unless they correspond to a parent directory in
 the configuration:
 

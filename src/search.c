@@ -7,7 +7,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "informations.h"
 #include "safe-wrappers.h"
+#include "error-handling.h"
 
 /** A simple string buffer. */
 typedef struct
@@ -285,6 +287,19 @@ static SearchResult finishDirectory(SearchContext *context)
   }
 }
 
+/** Returns true if the specified node matches the given string. */
+static bool nodeMatches(SearchNode *node, String string)
+{
+  if(node->regex)
+  {
+    return regexec(node->regex, string.str, 0, NULL, 0) == 0;
+  }
+  else
+  {
+    return strCompare(node->name, string);
+  }
+}
+
 /** Completes a search step by querying the next file from the currently
   active directory stream. If this file is a directory, a recursion step
   into it will be initialized.
@@ -312,20 +327,28 @@ static SearchResult finishSearchStep(SearchContext *context)
   setPathToFile(context, dir_entry_name);
 
   /* Match subnodes against dir_entry. */
+  SearchNode *matched_node = NULL;
   for(SearchNode *node = context->state.access.search.subnodes;
       node != NULL; node = node->next)
   {
-    if(node->regex)
+    if(nodeMatches(node, dir_entry_name))
     {
-      if(regexec(node->regex, dir_entry_name.str, 0, NULL, 0) == 0)
+      if(matched_node == NULL)
       {
-        return finishNodeStep(context, node, node->policy);
+        matched_node = node;
+      }
+      else
+      {
+        warnNodeMatches(node, dir_entry_name.str);
+        warnNodeMatches(matched_node, dir_entry_name.str);
+        die("ambiguous rules for path: \"%s\"", context->buffer.str);
       }
     }
-    else if(strCompare(node->name, dir_entry_name))
-    {
-      return finishNodeStep(context, node, node->policy);
-    }
+  }
+
+  if(matched_node != NULL)
+  {
+    return finishNodeStep(context, matched_node, matched_node->policy);
   }
 
   /* Skip current path, if no fallback policy was defined. */
