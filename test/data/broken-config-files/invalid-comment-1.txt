@@ -1,0 +1,13 @@
+# This is a valid comment.
+[copy]
+
+/home/foo/bar.txt
+
+[ignore]
+  # This is not a comment.
+
+[mirror]
+# foo.
+ # bar. 
+
+/home/foo/bar.txt

@@ -361,6 +361,25 @@ static void testPathsWithWhitespaces(void)
             root, "foo bar ", 6, false, BPOL_mirror, false, 6, 0, false);
 }
 
+/** Tests parsing "valid-config-files/comment.txt". */
+static void testIgnoringComments(void)
+{
+  SearchNode *root = searchTreeLoad("valid-config-files/comment.txt");
+  checkRootNode(root, BPOL_none, 0, 1, false, 2);
+
+  SearchNode *etc = findSubnode(root, "#etc");
+  checkNode(etc, root, "#etc", 10, false, BPOL_none, false, 10, 1, false);
+
+  SearchNode *portage = findSubnode(etc, "portage");
+  checkNode(portage, root, "portage", 10, false, BPOL_copy, false, 10, 1, true);
+
+  checkNode(findSubnode(portage, "^make.conf$"),
+            root, "^make.conf$", 24, true, BPOL_track, false, 24, 0, false);
+
+  assert_true(checkIgnoreExpression(root, " # Pattern 1.",    16));
+  assert_true(checkIgnoreExpression(root, "   # Pattern 2. ", 20));
+}
+
 /** Asserts that parsing the given config file results in the given error
   message.
 
@@ -499,6 +518,12 @@ static void testBrokenConfigFiles(void)
 
   assertParseError("broken-config-files/path-containing-dotdot-8.txt",
                    "config: line 4: path contains \".\" or \"..\": \"/home/user/../foo////\"");
+
+  assertParseError("broken-config-files/invalid-comment-1.txt",
+                   "config: line 11: invalid path: \" # bar. \"");
+
+  assertParseError("broken-config-files/invalid-comment-2.txt",
+                   "config: line 3: pattern without policy: \"   # Comment without policy.\"");
 }
 
 /** Loads the given config file, sets various bytes to '\0' and passes it
@@ -585,6 +610,8 @@ int main(void)
   assert_true(checkIgnoreExpression(ignore_2, "bar",      9));
   assert_true(checkIgnoreExpression(ignore_2, "foo-bar",  12));
   assert_true(checkIgnoreExpression(ignore_2, ".*\\.png", 17));
+
+  testIgnoringComments();
   testGroupEnd();
 
   testGroupStart("BOM and EOL variations");

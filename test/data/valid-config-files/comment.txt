@@ -1,0 +1,24 @@
+# Comments
+# to
+# push
+# line
+# numbers.
+
+[copy]
+# Comment.
+
+/#etc/portage/
+#/usr/portage/foo/
+# /#etc/portage/
+
+[ignore]
+# Comment.
+ # Pattern 1.
+
+[ignore]
+
+   # Pattern 2. 
+# Another comment.
+
+[track]
+/#etc/portage//^make.conf$

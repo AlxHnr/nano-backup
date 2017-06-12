@@ -1,0 +1,6 @@
+
+
+   # Comment without policy.
+# Valid comment.
+[copy]
+/etc/portage/

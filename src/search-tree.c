@@ -195,7 +195,7 @@ SearchNode *searchTreeParse(String config)
   {
     String line = getLine(config, parser_position);
 
-    if(strWhitespaceOnly(line))
+    if(strWhitespaceOnly(line) || (line.length > 0 && line.str[0] == '#'))
     {
       /* Ignore. */
     }
