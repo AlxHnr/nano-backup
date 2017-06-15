@@ -228,7 +228,7 @@ static void printPrefix(bool *printed_prefix)
   "/" if the node represents a directory. */
 static void printNodePath(PathNode *node, TextColor color)
 {
-  PathState *state = getExistingState(node);;
+  PathState *state = getExistingState(node);
 
   colorPrintf(stdout, color, "%s%s%s", state->type == PST_symlink? "^":"",
               node->path.str, state->type == PST_directory? "/":"");

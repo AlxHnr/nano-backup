@@ -1226,7 +1226,7 @@ static void trackChangeDetectionTest(SearchNode *track_detection_node)
 
   PathNode *node_37 = findSubnode(files, "37", BH_content_changed, BPOL_track, 2, 0);
   mustHaveRegularStat(node_37, &metadata->current_backup,    0,  nested_2_hash, 0);
-  mustHaveRegularStat(node_37, &metadata->backup_history[1], 56, nested_2_hash, 0);;
+  mustHaveRegularStat(node_37, &metadata->backup_history[1], 56, nested_2_hash, 0);
 
   PathNode *node_38 = findSubnode(files, "38", BH_content_changed, BPOL_track, 2, 0);
   node_38->history->state.metadata.reg.hash[0] = 'P';
