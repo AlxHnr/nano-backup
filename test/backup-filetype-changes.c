@@ -1245,6 +1245,4 @@ int main(void)
   trackFiletypeChangePost(track_filetype_node, 3);
   trackFiletypeChangePost(track_filetype_node, 4);
   testGroupEnd();
-
-  freeBackupCommon();
 }

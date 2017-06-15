@@ -73,6 +73,5 @@ extern time_t phase_timestamps(size_t index);
 extern size_t backup_counter(void);
 
 extern void initBackupCommon(void);
-extern void freeBackupCommon(void);
 
 #endif

@@ -502,6 +502,13 @@ size_t backup_counter(void)
   return phases_completed;
 }
 
+/** Counterpart to initBackupCommon(). */
+static void freeBackupCommon(void)
+{
+  free(phase_timestamp_array);
+  strTableFree(stat_cache);
+}
+
 /** Initializes data this functions use. */
 void initBackupCommon(void)
 {
@@ -515,11 +522,6 @@ void initBackupCommon(void)
   }
 
   stat_cache = strTableNew();
-}
 
-/** Counterpart to initBackupCommon(). */
-void freeBackupCommon(void)
-{
-  free(phase_timestamp_array);
-  strTableFree(stat_cache);
+  sAtexit(freeBackupCommon);
 }

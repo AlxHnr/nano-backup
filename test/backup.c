@@ -2290,6 +2290,4 @@ int main(void)
   SearchNode *phase_collision_node = searchTreeLoad("generated-config-files/backup-phase-collision.txt");
   phase("file hash collision handling",     runPhaseCollision,    phase_collision_node);
   phase("collision slot overflow handling", runPhaseSlotOverflow, phase_collision_node);
-
-  freeBackupCommon();
 }

@@ -941,6 +941,4 @@ int main(void)
   policyChangeFromMirrorChange(change_from_mirror_final);
   policyChangeFromMirrorPost(change_from_mirror_final);
   testGroupEnd();
-
-  freeBackupCommon();
 }

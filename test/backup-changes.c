@@ -1688,6 +1688,4 @@ int main(void)
   trackChangeDetectionTest(track_detection_node);
   trackPostDetectionTest(track_detection_node);
   testGroupEnd();
-
-  freeBackupCommon();
 }
