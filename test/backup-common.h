@@ -36,6 +36,7 @@ extern PathHistory *findExistingHistPoint(PathNode *node);
 extern void restoreRegularFile(const char *path, const RegularFileInfo *info);
 extern void restoreWithTimeRecursively(PathNode *node);
 
+extern void setStatCache(size_t index);
 extern struct stat cachedStat(String path,
                               struct stat (*stat_fun)(const char *));
 extern void resetStatCache(void);
@@ -72,6 +73,6 @@ extern void completeBackup(Metadata *metadata);
 extern time_t phase_timestamps(size_t index);
 extern size_t backup_counter(void);
 
-extern void initBackupCommon(void);
+extern void initBackupCommon(size_t stat_cache_count);
 
 #endif

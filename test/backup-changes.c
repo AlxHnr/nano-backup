@@ -1651,7 +1651,7 @@ static void trackPostDetectionTest(SearchNode *track_detection_node)
 
 int main(void)
 {
-  initBackupCommon();
+  initBackupCommon(1);
 
   testGroupStart("detecting changes in nodes with no policy");
   SearchNode *none_detection_node = searchTreeLoad("generated-config-files/backup-phase-17.txt");

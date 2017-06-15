@@ -913,7 +913,7 @@ static void policyChangeFromMirrorPost(SearchNode *change_from_mirror_final)
 
 int main(void)
 {
-  initBackupCommon();
+  initBackupCommon(1);
 
   testGroupStart("policy change from none");
   SearchNode *change_from_none_init  = searchTreeLoad("generated-config-files/policy-change-from-none-init.txt");

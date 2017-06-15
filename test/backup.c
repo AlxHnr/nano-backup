@@ -2247,7 +2247,7 @@ int main(void)
   SearchNode *phase_13_node = searchTreeLoad("generated-config-files/backup-phase-13.txt");
   SearchNode *phase_14_node = searchTreeLoad("generated-config-files/backup-phase-14.txt");
 
-  initBackupCommon();
+  initBackupCommon(1);
   makeDir("tmp/repo");
   makeDir("tmp/files");
   testGroupEnd();

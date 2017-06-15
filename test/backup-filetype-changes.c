@@ -1203,7 +1203,7 @@ static void trackFiletypeChangePost(SearchNode *filetype_node,
 
 int main(void)
 {
-  initBackupCommon();
+  initBackupCommon(1);
 
   testGroupStart("filetype changes in nodes with no policy");
   SearchNode *none_filetype_node    = searchTreeLoad("generated-config-files/filetype-changes-none.txt");

@@ -325,8 +325,37 @@ void restoreWithTimeRecursively(PathNode *node)
   }
 }
 
-/** Associates a file path with its stats. */
+/* Associates a file path with its stats. */
 static StringTable *stat_cache = NULL;
+static StringTable **stat_cache_array = NULL;
+static size_t stat_cache_array_length = 0;
+
+/** Populates the stat_cache_array with new string tables. */
+static void initStatCache(void)
+{
+  for(size_t index = 0; index < stat_cache_array_length; index++)
+  {
+    stat_cache_array[index] = strTableNew();
+  }
+
+  stat_cache = stat_cache_array[0];
+}
+
+/** Frees the string tables in stat_cache_array. */
+static void freeStatCache(void)
+{
+  for(size_t index = 0; index < stat_cache_array_length; index++)
+  {
+    free(stat_cache_array[index]);
+  }
+}
+
+/** Selects the stat cache with the given index. */
+void setStatCache(size_t index)
+{
+  assert_true(index < stat_cache_array_length);
+  stat_cache = stat_cache_array[index];
+}
 
 /** Stats a file and caches the result for subsequent runs.
 
@@ -353,8 +382,8 @@ struct stat cachedStat(String path, struct stat (*stat_fun)(const char *))
 /** Resets the stat cache. */
 void resetStatCache(void)
 {
-  strTableFree(stat_cache);
-  stat_cache = strTableNew();
+  freeStatCache();
+  initStatCache();
 }
 
 /** Like mustHaveRegular(), but takes a stat struct instead. */
@@ -506,12 +535,22 @@ size_t backup_counter(void)
 static void freeBackupCommon(void)
 {
   free(phase_timestamp_array);
-  strTableFree(stat_cache);
+  freeStatCache();
 }
 
-/** Initializes data this functions use. */
-void initBackupCommon(void)
+/** Initializes data this functions use.
+
+  @param stat_cache_count The amount of stat caches to create.
+*/
+void initBackupCommon(size_t stat_cache_count)
 {
+  assert_true(stat_cache_count > 0);
+
+  stat_cache_array_length = stat_cache_count;
+  stat_cache_array =
+    mpAlloc(sizeof *stat_cache_array * stat_cache_array_length);
+  initStatCache();
+
   String tmp_cwd_path = getCwd();
   memcpy(&cwd_path, &tmp_cwd_path, sizeof(cwd_path));
 
@@ -520,8 +559,6 @@ void initBackupCommon(void)
   {
     cwd_depth_count += cwd_path.str[index] == '/';
   }
-
-  stat_cache = strTableNew();
 
   sAtexit(freeBackupCommon);
 }
