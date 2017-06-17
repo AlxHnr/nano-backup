@@ -1381,7 +1381,7 @@ static void policyChangeFromTrackInitCheck(SearchNode *change_from_track_init)
   mustHaveSymlinkLCached(p_2, &metadata->backup_history[2], "non-existing.txt");
 }
 
-static void policyChangeFromTrackCopy(SearchNode *change_from_track_final)
+static void policyChangeFromTrackChange(SearchNode *change_from_track_final)
 {
   /* Remove files. */
   removePath("tmp/files/i/1");
@@ -1587,6 +1587,6 @@ int main(void)
   policyChangeFromTrackInit2(change_from_track_init);
   policyChangeFromTrackInit3(change_from_track_init);
   policyChangeFromTrackInitCheck(change_from_track_init);
-  policyChangeFromTrackCopy(change_from_track_final);
+  policyChangeFromTrackChange(change_from_track_final);
   testGroupEnd();
 }
