@@ -1269,7 +1269,6 @@ static void policyChangeFromTrackInitCheck(SearchNode *change_from_track_init)
   PathNode *f = findSubnode(files, "f", BH_unchanged, BPOL_track, 4, 1);
   mustHaveDirectoryStat(f, &metadata->backup_history[0]);
   mustHaveNonExisting(f, &metadata->backup_history[1]);
-  setStatCache(1);
   mustHaveDirectoryCached(f, &metadata->backup_history[2]);
   setStatCache(0);
   mustHaveDirectoryCached(f, &metadata->backup_history[3]);
