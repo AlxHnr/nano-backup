@@ -210,7 +210,11 @@ static void prepareNodeForWipingRecursively(Metadata *metadata,
 static void markAsRemovedRecursively(Metadata *metadata, PathNode *node,
                                      bool extend_tracked_histories)
 {
-  if(node->history->state.type == PST_non_existing)
+  if(backupHintNoPol(node->hint) == BH_not_part_of_repository)
+  {
+    return;
+  }
+  else if(node->history->state.type == PST_non_existing)
   {
     backupHintSet(node->hint, BH_unchanged);
   }
@@ -296,6 +300,12 @@ static void handleRemovedPath(Metadata *metadata, PathNode *node,
   if(policy == BPOL_mirror)
   {
     prepareNodeForWipingRecursively(metadata, node);
+  }
+  else if(policy == BPOL_none &&
+          (node->subnodes == NULL ||
+           node->history->state.type != PST_directory))
+  {
+    prepareNodeForWiping(metadata, node);
   }
   else
   {
