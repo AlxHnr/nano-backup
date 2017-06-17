@@ -346,7 +346,7 @@ static void freeStatCache(void)
 {
   for(size_t index = 0; index < stat_cache_array_length; index++)
   {
-    free(stat_cache_array[index]);
+    strTableFree(stat_cache_array[index]);
   }
 }
 
