@@ -1,16 +1,16 @@
 [![travis](https://travis-ci.org/AlxHnr/nano-backup.svg?branch=master)](https://travis-ci.org/AlxHnr/nano-backup)
 [![codecov](https://codecov.io/github/AlxHnr/nano-backup/coverage.svg?branch=master)](https://codecov.io/github/AlxHnr/nano-backup?branch=master)
 [![license](https://img.shields.io/badge/license-MIT-brightgreen.svg)](https://github.com/AlxHnr/nano-backup/blob/master/LICENSE)
-[![release](https://img.shields.io/badge/version-0.1.1-lightgrey.svg)](https://github.com/AlxHnr/nano-backup/releases/tag/v0.1.1)
+[![release](https://img.shields.io/badge/version-0.2.0-lightgrey.svg)](https://github.com/AlxHnr/nano-backup/releases/tag/v0.2.0)
 [![overlay](https://img.shields.io/badge/gentoo-overlay-62548F.svg)](https://github.com/AlxHnr/gentoo-overlay)
-![screenshot](https://cdn.rawgit.com/AlxHnr/nano-backup/master/screenshot.svg)
+![screenshot](https://cdn.rawgit.com/AlxHnr/nano-backup/1729b21e/screenshot.svg)
 
 ## Installation
 
 Building nano-backup requires a C99 compiler,
 [pkg-config](http://www.freedesktop.org/wiki/Software/pkg-config/) and
 [OpenSSL](https://www.openssl.org/). Download the
-[latest release](https://github.com/AlxHnr/nano-backup/releases/tag/v0.1.1)
+[latest release](https://github.com/AlxHnr/nano-backup/releases/tag/v0.2.0)
 and run the following commands inside the project directory:
 
 ```sh
