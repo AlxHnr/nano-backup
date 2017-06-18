@@ -3,10 +3,6 @@
 [![license](https://img.shields.io/badge/license-MIT-brightgreen.svg)](https://github.com/AlxHnr/nano-backup/blob/master/LICENSE)
 [![release](https://img.shields.io/badge/version-0.1.1-lightgrey.svg)](https://github.com/AlxHnr/nano-backup/releases/tag/v0.1.1)
 [![overlay](https://img.shields.io/badge/gentoo-overlay-62548F.svg)](https://github.com/AlxHnr/gentoo-overlay)
-
-Nano-backup is a minimal backup tool with almost no dependencies. It
-provides a simple and precise way to track changes in files.
-
 ![screenshot](https://cdn.rawgit.com/AlxHnr/nano-backup/master/screenshot.svg)
 
 ## Installation
@@ -14,8 +10,8 @@ provides a simple and precise way to track changes in files.
 Building nano-backup requires a C99 compiler,
 [pkg-config](http://www.freedesktop.org/wiki/Software/pkg-config/) and
 [OpenSSL](https://www.openssl.org/). Download the
-[latest release](https://github.com/AlxHnr/nano-backup/releases) and run
-the following commands inside the project directory:
+[latest release](https://github.com/AlxHnr/nano-backup/releases/tag/v0.1.1)
+and run the following commands inside the project directory:
 
 ```sh
 make
@@ -63,9 +59,11 @@ Just prefix a pattern with an additional slash:
 ```
 [copy]
 /home/user//\.(png|jpg)$
+/home//^(foo|bar)$/.bashrc
 ```
 
-**Note**: A regular expression can not contain a slash.
+**Note**: This expression will not match recursively and can be terminated
+by a slash.
 
 ### Restoring files
 
@@ -79,8 +77,8 @@ nb repo/ 0 file.txt
 The _0_ is the id of the latest backup. The backup before it would be _1_,
 etc.
 
-**Note**: The number is only relevant for tracked paths since only they
-have a history.
+**Note**: This number will be ignored for copied/mirrored files, which will
+always be restored to their latest state.
 
 ## Policies
 
@@ -96,7 +94,7 @@ Policy name | Description
 ------------|-------------
 copy        | Backup only the latest version of a file.
 mirror      | Like copy, but if a file gets removed from the system, it will also be removed from the backup.
-track       | Keep a history of every change, including modification timestamps, owner, group and permission bits.
+track       | Keep a full history of every change.
 ignore      | Allows specifying regular expressions for excluding paths.
 
 ## Frequently asked questions
@@ -121,8 +119,7 @@ backing up large VM images.
 Nano-backup shines in tracking stuff like system config files and binpkg
 cache directories, without polluting the repository/history with stuff you
 never want to restore again. It allows you to wipe files completely from
-the repository by simply removing their entries from the config file.
-Nano-backup will then discard everything associated with those files. This
+the repository by simply removing their entries from the config file. This
 keeps the repository as lean as possible.
 
 ### Why don't use Git for backups?
