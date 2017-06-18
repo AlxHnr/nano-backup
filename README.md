@@ -29,7 +29,7 @@ mkdir repo/
 The repository can be configured via the file `config` inside it. Here is
 an example for backing up two directories:
 
-```
+```desktop
 [copy]
 /home/user/Videos
 /home/user/Pictures
@@ -47,7 +47,7 @@ To prevent files from being backed up, set the ignore policy. This allows
 specifying regular expressions, which will be matched against full,
 absolute filepaths. They must be valid POSIX extended regular expressions:
 
-```
+```desktop
 [ignore]
 \.(pyc|class)$
 ^/home/user/.+~$
@@ -56,7 +56,7 @@ absolute filepaths. They must be valid POSIX extended regular expressions:
 Regular expressions can also be used for matching files you want to backup.
 Just prefix a pattern with an additional slash:
 
-```
+```desktop
 [copy]
 /home/user//\.(png|jpg)$
 /home//^(foo|bar)$/.bashrc
@@ -85,7 +85,7 @@ always be restored to their latest state.
 Policies specify how files should be backed up. They apply only to the last
 element of a path:
 
-```
+```desktop
 [policy]
 /home/user/last-element
 ```
@@ -138,13 +138,11 @@ content is still the same. While this method is extremely fast, it could
 allow an attacker to tamper with files. But then again, an attacker with
 file access could also tamper with the repository directly, or even replace
 the nb binary. On an uncompromised system with a working clock this
-shouldn't be an issue. Otherwise consider running some serious integrity
-checker or [IDS](https://en.wikipedia.org/wiki/Intrusion_detection_system)
-from a hardened live CD on an air-gapped system.
+shouldn't be an issue.
 
 ### Why does it still use SHA-1? It is broken!
 
 Nano-backup doesn't even use SHA-1 for its cryptographic properties. It
-uses it to to _roughly_ estimate whether a file has changed or not. Hash
+uses it to _roughly_ estimate whether a file has changed or not. Hash
 collisions are still handled properly. You don't need to worry if two
 _distinct_ files have the same size and hash.
