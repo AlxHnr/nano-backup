@@ -1,5 +1,8 @@
-[![Build Status](https://travis-ci.org/AlxHnr/nano-backup.svg?branch=master)](https://travis-ci.org/AlxHnr/nano-backup)
-[![codecov.io](https://codecov.io/github/AlxHnr/nano-backup/coverage.svg?branch=master)](https://codecov.io/github/AlxHnr/nano-backup?branch=master)
+[![travis](https://travis-ci.org/AlxHnr/nano-backup.svg?branch=master)](https://travis-ci.org/AlxHnr/nano-backup)
+[![codecov](https://codecov.io/github/AlxHnr/nano-backup/coverage.svg?branch=master)](https://codecov.io/github/AlxHnr/nano-backup?branch=master)
+[![license](https://img.shields.io/badge/license-MIT-brightgreen.svg)](https://github.com/AlxHnr/nano-backup/blob/master/LICENSE)
+[![release](https://img.shields.io/badge/version-0.1.1-lightgrey.svg)](https://github.com/AlxHnr/nano-backup/releases/tag/v0.1.1)
+[![overlay](https://img.shields.io/badge/gentoo-overlay-62548F.svg)](https://github.com/AlxHnr/gentoo-overlay)
 
 Nano-backup provides a precise way to track files. It was intended for
 power-users who want to keep track of their fully customized Unix system.
@@ -8,7 +11,7 @@ restore your system. Nano-backup does not try to replace existing backup
 tools and focuses only on local backups. It stores full snapshots of files
 and may not be suited for backing up large VM images.
 
-![screenshot.svg](https://cdn.rawgit.com/AlxHnr/nano-backup/master/screenshot.svg)
+![screenshot](https://cdn.rawgit.com/AlxHnr/nano-backup/master/screenshot.svg)
 
 ## Installation
 
@@ -22,9 +25,6 @@ the following commands inside the project directory:
 make
 cp build/nb /usr/bin
 ```
-
-**Note:** Gentoo users can install nano-backup directly from my
-[overlay](https://github.com/AlxHnr/gentoo-overlay).
 
 ## Usage
 
