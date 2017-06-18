@@ -4,12 +4,8 @@
 [![release](https://img.shields.io/badge/version-0.1.1-lightgrey.svg)](https://github.com/AlxHnr/nano-backup/releases/tag/v0.1.1)
 [![overlay](https://img.shields.io/badge/gentoo-overlay-62548F.svg)](https://github.com/AlxHnr/gentoo-overlay)
 
-Nano-backup provides a precise way to track files. It was intended for
-power-users who want to keep track of their fully customized Unix system.
-It makes it easy to backup only the least amount of files required to
-restore your system. Nano-backup does not try to replace existing backup
-tools and focuses only on local backups. It stores full snapshots of files
-and may not be suited for backing up large VM images.
+Nano-backup is a minimal backup tool with almost no dependencies. It
+provides a simple and precise way to track changes in files.
 
 ![screenshot](https://cdn.rawgit.com/AlxHnr/nano-backup/master/screenshot.svg)
 
@@ -17,7 +13,7 @@ and may not be suited for backing up large VM images.
 
 Building nano-backup requires a C99 compiler,
 [pkg-config](http://www.freedesktop.org/wiki/Software/pkg-config/) and
-[OpenSSL](https://www.openssl.org/). Clone this repository or download the
+[OpenSSL](https://www.openssl.org/). Download the
 [latest release](https://github.com/AlxHnr/nano-backup/releases) and run
 the following commands inside the project directory:
 
@@ -115,6 +111,29 @@ cp current/{config,metadata} old/
 nb old/ gc
 ```
 
+### Why another backup tool?
+
+There are many _good_ backup tools, implementing many _different_ backup
+strategies. Nano-backup does not try to replace them and focuses only on
+local backups. It stores full snapshots of files and may not be suited for
+backing up large VM images.
+
+Nano-backup shines in tracking stuff like system config files and binpkg
+cache directories, without polluting the repository/history with stuff you
+never want to restore again. It allows you to wipe files completely from
+the repository by simply removing their entries from the config file.
+Nano-backup will then discard everything associated with those files. This
+keeps the repository as lean as possible.
+
+### Why don't use Git for backups?
+
+Git can't backup empty directories, doesn't handle binary files well and
+always keeps a history of everything. Sometimes it is desired to backup
+only the latest version of a file/directory, or even discard them like a
+mirror-style sync would do. Git usually requires more commands to do a
+backup and provides only a very dull change summary in its staging area.
+E.g. lack of explicit changes in file permissions, owner, etc.
+
 ### Why does it rely on timestamps and file sizes to check for changes?
 
 If a files size and timestamp has not changed, it is assumed that its
@@ -128,20 +147,7 @@ from a hardened live CD on an air-gapped system.
 
 ### Why does it still use SHA-1? It is broken!
 
-This doesn't affect nano-backup. Any hash would do, as long as it can be
-used to:
-
-* _roughly_ estimate whether a file has changed
-* generate unique filenames for the backup repository
-
-Collisions are handled properly.
-
-### Why don't use Git for backups?
-
-Git can't backup empty directories, doesn't handle binary files well and
-always keeps a history of everything. Sometimes it is desired to backup
-only the latest version of a file/directory, or even discard them like a
-mirror-style sync would do. Wiping a single file from a repository,
-including its history and residue is trivial with nano-backup. Git also has
-a completely different workflow and usually requires more commands to do a
-backup.
+Nano-backup doesn't even use SHA-1 for its cryptographic properties. It
+uses it to to _roughly_ estimate whether a file has changed or not. Hash
+collisions are still handled properly. You don't need to worry if two
+_distinct_ files have the same size and hash.
