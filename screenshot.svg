@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="888" height="320">
+  <rect width="888" height="320" style="fill:#262626"/>
+  <text fill="#bcbcbc" font-size="18" font-family="DejaVu Sans Mono, Monospace">
+    <tspan x="10" dy="25">
+      <tspan fill="#607b8b">root</tspan><tspan fill="#7B9EB3">@</tspan><tspan fill="#8b7765">host</tspan>
+      <tspan fill="#87afd7">~</tspan> <tspan fill="#959595">$</tspan> nb backup/
+    </tspan>
+
+    <tspan x="10" dy="23" fill="#87af5f"><tspan font-weight="bold">++</tspan> /etc/init.d/</tspan> (+39 items, +201.79 KiB)
+    <tspan x="10" dy="21" fill="#87af5f"><tspan font-weight="bold">++</tspan> /etc/conf.d/</tspan> (+27 items, +98.02 KiB)
+    <tspan x="10" dy="21" fill="#af87af"><tspan font-weight="bold">@@</tspan> /etc/sudoers.d/</tspan> (permissions)
+    <tspan x="10" dy="21" fill="#af87af"><tspan font-weight="bold">@@</tspan> /etc/rc.conf</tspan> (owner, permissions)
+    <tspan x="10" dy="21" fill="#d7af87"><tspan font-weight="bold">!!</tspan> /home/user/.bashrc</tspan>
+    <tspan x="10" dy="21" fill="#d7af87"><tspan font-weight="bold">!!</tspan> /home/user/.profile</tspan>
+    <tspan x="10" dy="21" fill="#d7af87"><tspan font-weight="bold">!!</tspan> /home/user/.config/nvim/init.vim</tspan>
+    <tspan x="10" dy="21" fill="#ff5f5f"><tspan font-weight="bold">xx</tspan> /home/user/Pictures/</tspan> (-171 items, -823.43 MiB)
+    <tspan x="10" dy="21" fill="#ff5f5f"><tspan font-weight="bold">xx</tspan> /home/user/Documents/</tspan> (-1198 items, -2.08 GiB)
+
+    <tspan x="10" dy="42">
+      New: <tspan fill="#87af5f" font-weight="bold">68</tspan> (299.81 KiB),
+      Lost: <tspan fill="#87afd7" font-weight="bold">1371</tspan> (2.91 GiB)
+    </tspan>
+    <tspan x="10" dy="42">proceed? (y/n)</tspan>
+  </text>
+  <rect x="174" y="283" width="11" height="21" fill="#bcbcbc">
+    <animate
+      attributeType="XML" attributeName="fill"
+      values="#606060;#bcbcbc;#bcbcbc;#606060" dur="1.0s"
+      repeatCount="indefinite"/>
+  </rect>
+</svg>

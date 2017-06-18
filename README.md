@@ -8,6 +8,8 @@ restore your system. Nano-backup does not try to replace existing backup
 tools and focuses only on local backups. It stores full snapshots of files
 and may not be suited for backing up large VM images.
 
+![screenshot.svg](https://cdn.rawgit.com/AlxHnr/nano-backup/master/screenshot.svg)
+
 ## Installation
 
 Building nano-backup requires a C99 compiler,
