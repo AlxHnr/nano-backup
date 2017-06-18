@@ -22,11 +22,11 @@
       Lost: <tspan fill="#87afd7" font-weight="bold">1371</tspan> (2.91 GiB)
     </tspan>
     <tspan x="10" dy="42">proceed? (y/n)</tspan>
+    <tspan>█
+      <animate
+        attributeType="XML" attributeName="fill"
+        values="#606060;#bcbcbc;#bcbcbc;#606060" dur="1.0s"
+        repeatCount="indefinite"/>
+    </tspan>
   </text>
-  <rect x="174" y="283" width="11" height="21" fill="#bcbcbc">
-    <animate
-      attributeType="XML" attributeName="fill"
-      values="#606060;#bcbcbc;#bcbcbc;#606060" dur="1.0s"
-      repeatCount="indefinite"/>
-  </rect>
 </svg>
