@@ -7,15 +7,12 @@
 
 ## Installation
 
-Building nano-backup requires a C99 compiler,
-[pkg-config](http://www.freedesktop.org/wiki/Software/pkg-config/) and
-[OpenSSL](https://www.openssl.org/). Download the
+Download the
 [latest release](https://github.com/AlxHnr/nano-backup/releases/tag/v0.2.0)
-and run the following commands inside the project directory:
+and run the following command inside the project directory:
 
 ```sh
-make
-cp build/nb /usr/bin
+make && cp build/nb /usr/bin
 ```
 
 ## Usage
@@ -139,10 +136,3 @@ allow an attacker to tamper with files. But then again, an attacker with
 file access could also tamper with the repository directly, or even replace
 the nb binary. On an uncompromised system with a working clock this
 shouldn't be an issue.
-
-### Why does it still use SHA-1? It is broken!
-
-Nano-backup doesn't even use SHA-1 for its cryptographic properties. It
-uses it to _roughly_ estimate whether a file has changed or not. Hash
-collisions are still handled properly. You don't need to worry if two
-_distinct_ files have the same size and hash.
