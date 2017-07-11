@@ -1,14 +1,12 @@
 [![travis](https://travis-ci.org/AlxHnr/nano-backup.svg?branch=master)](https://travis-ci.org/AlxHnr/nano-backup)
 [![codecov](https://codecov.io/github/AlxHnr/nano-backup/coverage.svg?branch=master)](https://codecov.io/github/AlxHnr/nano-backup?branch=master)
 [![license](https://img.shields.io/badge/license-MIT-brightgreen.svg)](https://github.com/AlxHnr/nano-backup/blob/master/LICENSE)
-[![release](https://img.shields.io/badge/version-0.2.0-lightgrey.svg)](https://github.com/AlxHnr/nano-backup/releases/tag/v0.2.0)
 [![overlay](https://img.shields.io/badge/gentoo-overlay-62548F.svg)](https://github.com/AlxHnr/gentoo-overlay)
 ![screenshot](https://cdn.rawgit.com/AlxHnr/nano-backup/1729b21e/screenshot.svg)
 
 ## Installation
 
-Download the
-[latest release](https://github.com/AlxHnr/nano-backup/releases/tag/v0.2.0)
+Download the [latest release](https://github.com/AlxHnr/nano-backup/releases/latest)
 and run the following command inside the project directory:
 
 ```sh
