@@ -59,6 +59,7 @@ extern char *sGetCwd(void);
 extern char *sReadLine(FILE *stream);
 extern size_t sStringToSize(const char *string);
 extern time_t sTime(void);
+extern int sRand(void);
 
 /** A simple struct, containing the content of the file and its size. */
 typedef struct

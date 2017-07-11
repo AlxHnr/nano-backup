@@ -720,6 +720,20 @@ time_t sTime(void)
   return current_time;
 }
 
+/** Wrapper around rand() which seeds srand() the first time its called. */
+int sRand(void)
+{
+  static bool already_seeded = false;
+
+  if(already_seeded == false)
+  {
+    srand((sTime() << 9) + getpid());
+    already_seeded = true;
+  }
+
+  return rand();
+}
+
 /** Reads an entire file into memory.
 
   @param path The path to the file.
