@@ -8,10 +8,8 @@
 #include <stdint.h>
 #include <sys/stat.h>
 
-#include <openssl/sha.h>
-
 /** The amount of bytes required to store a files hash. */
-#define FILE_HASH_SIZE SHA_DIGEST_LENGTH
+#define FILE_HASH_SIZE 20
 
 extern void fileHash(const char *path, struct stat stats, uint8_t *hash);
 

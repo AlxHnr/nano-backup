@@ -10,6 +10,8 @@
 #include "safe-wrappers.h"
 #include "error-handling.h"
 
+#include "blake2.h"
+
 static Buffer *io_buffer = NULL;
 
 /** Calculates the hash of a file.
@@ -30,15 +32,15 @@ void fileHash(const char *path, struct stat stats, uint8_t *hash)
   bufferEnsureCapacity(&io_buffer, blocksize);
   char *buffer = io_buffer->data;
 
-  SHA_CTX context;
-  SHA1_Init(&context);
+  blake2b_state state;
+  blake2b_init(&state, FILE_HASH_SIZE);
 
   while(bytes_left > 0)
   {
     size_t bytes_to_read = bytes_left > blocksize ? blocksize : bytes_left;
 
     sFread(buffer, bytes_to_read, stream);
-    SHA1_Update(&context, buffer, bytes_to_read);
+    blake2b_update(&state, buffer, bytes_to_read);
     bytes_left -= bytes_to_read;
   }
 
@@ -50,5 +52,5 @@ void fileHash(const char *path, struct stat stats, uint8_t *hash)
     die("file changed while calculating hash: \"%s\"", path);
   }
 
-  SHA1_Final(hash, &context);
+  blake2b_final(&state, hash, FILE_HASH_SIZE);
 }
