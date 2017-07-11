@@ -23,11 +23,11 @@ build/dependencies.makefile:
 build/nb: $(OBJECTS)
 	$(CC) $^ $(LDFLAGS) -o $@
 
-build/%.o:
-	$(CC) $(CFLAGS) -Isrc/ -Ithird-party/ -c $< -o $@
-
 build/third-party/%.o: third-party/%.c
 	$(CC) $(CFLAGS) -O3 -c $< -o $@
+
+build/%.o:
+	$(CC) $(CFLAGS) -Isrc/ -Ithird-party/ -c $< -o $@
 
 build/test/%: build/test/%.o $(TEST_LIB_OBJECTS)
 	$(CC) $^ $(LDFLAGS) -o $@
