@@ -11,12 +11,14 @@
 #include "memory-pool.h"
 #include "safe-wrappers.h"
 
+#include "siphash.h"
+
 /** A string table bucket. */
 typedef struct Bucket Bucket;
 struct Bucket
 {
   /** The hash of the key. Required to resize the string table. */
-  uint32_t hash;
+  uint64_t hash;
 
   String key; /**< The key that was mapped. */
   void *data; /**< The data associated with the key. */
@@ -29,6 +31,7 @@ struct StringTable
   Bucket **buckets; /**< An array of buckets. */
   size_t capacity; /**< The amount of buckets in the String table. */
   size_t associations; /**< The amount of associations in the table. */
+  uint32_t secret_key[4]; /**< Secret key for the hash function. */
 
   /** A pointer to the function used for allocating the table and its
     buckets. */
@@ -76,6 +79,18 @@ static void doubleTableCapaticy(StringTable *table)
   table->capacity = new_capacity;
 }
 
+/** Initializes the secret_key in the given StringTable. */
+static void initSecretKey(StringTable *table)
+{
+  static const size_t secret_key_length =
+    sizeof(table->secret_key)/sizeof(table->secret_key[0]);
+
+  for(size_t index = 0; index < secret_key_length; index++)
+  {
+    table->secret_key[index] = sRand();
+  }
+}
+
 /** Creates a new, dynamically growing StringTable.
 
   @return A StringTable which must be freed by the caller using
@@ -87,6 +102,7 @@ StringTable *strTableNew(void)
   table->alloc_function = sMalloc;
   table->associations = 0;
   table->capacity = 32;
+  initSecretKey(table);
 
   size_t array_size = sSizeMul(table->capacity, sizeof *table->buckets);
   table->buckets = sMalloc(array_size);
@@ -114,6 +130,7 @@ StringTable *strTableNewFixed(size_t item_count)
   table->capacity = sSizeMul(item_count, 2);
   table->alloc_function = mpAlloc;
   table->associations = 0;
+  initSecretKey(table);
 
   size_t array_size = sSizeMul(table->capacity, sizeof *table->buckets);
   table->buckets = mpAlloc(array_size);
@@ -172,7 +189,8 @@ void strTableMap(StringTable *table, String key, void *data)
 
   /* Initialize bucket. */
   Bucket *bucket = table->alloc_function(sizeof *bucket);
-  bucket->hash = strHash(key);
+  bucket->hash = siphash((const uint8_t *)key.str, key.length,
+                         (const uint8_t *)table->secret_key);
   bucket->data = data;
 
   /* Copy the given key into a String with const members. */
@@ -195,7 +213,9 @@ void strTableMap(StringTable *table, String key, void *data)
 */
 void *strTableGet(StringTable *table, String key)
 {
-  size_t bucket_id = strHash(key) % table->capacity;
+  const size_t hash = siphash((const uint8_t *)key.str, key.length,
+                              (const uint8_t *)table->secret_key);
+  const size_t bucket_id = hash % table->capacity;
 
   for(Bucket *bucket = table->buckets[bucket_id];
       bucket != NULL; bucket = bucket->next)
