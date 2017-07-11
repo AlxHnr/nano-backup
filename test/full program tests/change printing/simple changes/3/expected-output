@@ -9,4 +9,4 @@ xx /generated/files/mirror_remove_time/foo.txt
 Removed: 4 (160 b), Lost: 3 (120 b)
 
 proceed? (y/n) 
-Discarded unreferenced items: 5 (120 b)
+Discarded unreferenced items: 6 (120 b)

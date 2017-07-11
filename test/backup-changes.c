@@ -430,7 +430,7 @@ static void initChangeDetectionTest(SearchNode *change_detection_node,
 
   /* Finish the backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countItemsInDir("tmp/repo") == 33);
+  assert_true(countItemsInDir("tmp/repo") == 31);
   mustHaveRegularStat(node_7,  &metadata->current_backup, 400,  three_hash,                    0);
   mustHaveRegularStat(node_9,  &metadata->current_backup, 15,   (uint8_t *)"This is a file\n", 0);
   mustHaveRegularStat(node_10, &metadata->current_backup, 11,   (uint8_t *)"GID and UID",      0);
@@ -683,7 +683,7 @@ static void modifyChangeDetectionTest(SearchNode *change_detection_node,
 
   /* Finish the backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countItemsInDir("tmp/repo") == 33);
+  assert_true(countItemsInDir("tmp/repo") == 31);
 }
 
 /** Tests the changes injected by modifyChangeDetectionTest(). */
@@ -817,7 +817,7 @@ static void changeDetectionTest(SearchNode *change_detection_node,
 
   /* Finish the backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countItemsInDir("tmp/repo") == 49);
+  assert_true(countItemsInDir("tmp/repo") == 47);
   mustHaveRegularStat(node_7,  &metadata->current_backup,    400,  three_hash,                        0);
   mustHaveRegularStat(node_9,  &metadata->current_backup,    12,   (uint8_t *)"This is test",         0);
   mustHaveRegularStat(node_10, &metadata->current_backup,    11,   (uint8_t *)"GID and UID",          0);
@@ -970,7 +970,7 @@ static void postDetectionTest(SearchNode *change_detection_node,
 
   /* Finish the backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countItemsInDir("tmp/repo") == 49);
+  assert_true(countItemsInDir("tmp/repo") == 47);
 }
 
 /** Tests change detection in tracked nodes. */
@@ -1285,7 +1285,7 @@ static void trackChangeDetectionTest(SearchNode *track_detection_node)
 
   /* Finish the backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countItemsInDir("tmp/repo") == 49);
+  assert_true(countItemsInDir("tmp/repo") == 47);
   mustHaveRegularStat(node_7,  &metadata->current_backup,    400,  three_hash,                        0);
   mustHaveRegularStat(node_9,  &metadata->current_backup,    12,   (uint8_t *)"This is test",         0);
   mustHaveRegularStat(node_10, &metadata->current_backup,    11,   (uint8_t *)"GID and UID",          0);
@@ -1646,7 +1646,7 @@ static void trackPostDetectionTest(SearchNode *track_detection_node)
 
   /* Finish the backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countItemsInDir("tmp/repo") == 49);
+  assert_true(countItemsInDir("tmp/repo") == 47);
 }
 
 int main(void)

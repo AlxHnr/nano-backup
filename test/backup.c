@@ -134,7 +134,7 @@ static void runPhase2(SearchNode *phase_1_node)
   completeBackup(metadata);
   mustHaveRegularStat(super, &metadata->current_backup, 2100, super_hash, 0);
   mustHaveRegularStat(file,  &metadata->current_backup, 10, (uint8_t *)"dummy file", 0);
-  assert_true(countItemsInDir("tmp/repo") == 10);
+  assert_true(countItemsInDir("tmp/repo") == 9);
 }
 
 /** Performs a third backup by removing files. */
@@ -196,7 +196,7 @@ static void runPhase3(SearchNode *phase_3_node)
 
   /* Finish backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countItemsInDir("tmp/repo") == 10);
+  assert_true(countItemsInDir("tmp/repo") == 9);
 }
 
 /** Performs a fourth backup, which doesn't do anything. */
@@ -241,7 +241,7 @@ static void runPhase4(SearchNode *phase_4_node)
 
   /* Finish backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countItemsInDir("tmp/repo") == 10);
+  assert_true(countItemsInDir("tmp/repo") == 9);
 
   /* Clean up after test. */
   removePath("tmp/files/foo/bar/3.txt");
@@ -394,7 +394,7 @@ static void runPhase5(SearchNode *phase_5_node)
 
   /* Finish backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countItemsInDir("tmp/repo") == 22);
+  assert_true(countItemsInDir("tmp/repo") == 19);
   mustHaveRegularStat(subdir_a1, &metadata->current_backup, 1,    (uint8_t *)"1???????????????????", 0);
   mustHaveRegularStat(subdir_c,  &metadata->current_backup, 20,   (uint8_t *)"11111111111111111111", 0);
   mustHaveRegularStat(subdir_f,  &metadata->current_backup, 12,   (uint8_t *)"TestTestTest????????", 0);
@@ -532,7 +532,7 @@ static void runPhase6(SearchNode *phase_6_node)
 
   /* Finish backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countItemsInDir("tmp/repo") == 22);
+  assert_true(countItemsInDir("tmp/repo") == 19);
 
   /* Clean up after test. */
   removePath("tmp/files/foo/bar/subdir/a1");
@@ -637,7 +637,7 @@ static void runPhase7(SearchNode *phase_7_node)
 
   /* Finish backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countItemsInDir("tmp/repo") == 22);
+  assert_true(countItemsInDir("tmp/repo") == 19);
   mustHaveRegularCached(directory_c, &metadata->current_backup, 14,
                        (uint8_t *)"ContentContent??????", 0);
   mustHaveRegularCached(directory_f, &metadata->current_backup, 16,
@@ -740,7 +740,7 @@ static void runPhase8(SearchNode *phase_8_node)
 
   /* Finish backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countItemsInDir("tmp/repo") == 22);
+  assert_true(countItemsInDir("tmp/repo") == 19);
 
   /* Clean up after test. */
   removePath("tmp/files/home/user/text.txt");
@@ -1029,7 +1029,7 @@ static void runPhase9(SearchNode *phase_9_node)
 
   /* Finish backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countItemsInDir("tmp/repo") == 30);
+  assert_true(countItemsInDir("tmp/repo") == 28);
   mustHaveRegularCached(dir_b,          &metadata->current_backup, 8,    (uint8_t *)"12321232",             0);
   mustHaveRegularCached(dir_c,          &metadata->current_backup, 8,    (uint8_t *)"abcdedcb",             0);
   mustHaveRegularCached(three_c,        &metadata->current_backup, 12,   (uint8_t *)"FooFooFooFoo",         0);
@@ -1353,7 +1353,7 @@ static void runPhase10(SearchNode *phase_9_node)
 
   /* Finish backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countItemsInDir("tmp/repo") == 30);
+  assert_true(countItemsInDir("tmp/repo") == 28);
 }
 
 /** Performs a backup with no changes. */
@@ -1539,7 +1539,7 @@ static void runPhase11(SearchNode *phase_9_node)
 
   /* Finish backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countItemsInDir("tmp/repo") == 30);
+  assert_true(countItemsInDir("tmp/repo") == 28);
 }
 
 /** Performs a backup after restoring files removed in phase 10. */
@@ -1741,7 +1741,7 @@ static void runPhase12(SearchNode *phase_9_node)
 
   /* Finish backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countItemsInDir("tmp/repo") == 30);
+  assert_true(countItemsInDir("tmp/repo") == 28);
   mustHaveRegularCached(bin_3, &metadata->current_backup, 144, nested_1_hash, 0);
 }
 
@@ -1938,7 +1938,7 @@ static void runPhase13(SearchNode *phase_13_node)
 
   /* Finish backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countItemsInDir("tmp/repo") == 33);
+  assert_true(countItemsInDir("tmp/repo") == 31);
   mustHaveRegularStat(bin, &metadata->current_backup, 2123, bin_hash, 0);
 }
 
@@ -2099,28 +2099,28 @@ static void runPhaseCollision(SearchNode *phase_collision_node)
 
   const uint8_t hash_1[] =
   {
-    0x0d, 0x83, 0x17, 0x31, 0x73, 0x95, 0xe7, 0x71, 0xeb, 0xa0,
-    0xdd, 0xb7, 0xfb, 0xb3, 0xec, 0xf0, 0xb6, 0x1c, 0x56, 0x2e,
+    0xf4, 0x89, 0xac, 0xbd, 0xe8, 0x76, 0x95, 0xb9, 0x7c, 0x9b,
+    0x58, 0x78, 0x2e, 0x6d, 0x94, 0x06, 0xeb, 0x90, 0x19, 0xe7,
   };
   const uint8_t hash_3[] =
   {
-    0xcc, 0x90, 0x70, 0xc2, 0x38, 0xf7, 0x4f, 0x58, 0xb4, 0xc7,
-    0x6d, 0x79, 0x1f, 0x19, 0x9c, 0xb8, 0xa9, 0xae, 0x83, 0xe8,
+    0x4d, 0x31, 0x16, 0x71, 0xf4, 0xda, 0xf9, 0xa2, 0x95, 0x9f,
+    0x27, 0xbf, 0x9c, 0x34, 0x33, 0x23, 0x01, 0xcc, 0x8f, 0xe7,
   };
   const uint8_t hash_19[] =
   {
-    0x13, 0xa9, 0xd1, 0x6d, 0xec, 0xb2, 0x5b, 0xc1, 0xa8, 0x14,
-    0x23, 0x91, 0xf0, 0x94, 0x7a, 0xd3, 0x4a, 0xc4, 0xb9, 0xd6,
+    0xed, 0x67, 0xfe, 0x80, 0x85, 0xfc, 0x3a, 0x67, 0xb2, 0x10,
+    0x8d, 0xde, 0x27, 0xf1, 0xf4, 0x69, 0x81, 0x92, 0xda, 0xac,
   };
   const uint8_t hash_255[] =
   {
-    0x1f, 0xd8, 0x4a, 0xc5, 0xa2, 0x87, 0x7e, 0x7b, 0xa9, 0x59,
-    0xaf, 0x33, 0x91, 0xc9, 0x5e, 0xa4, 0xee, 0x81, 0xf7, 0x9a,
+    0xcb, 0x91, 0x3e, 0x98, 0xa8, 0x0a, 0x55, 0x33, 0x7a, 0x33,
+    0x8a, 0x42, 0x32, 0xbb, 0x8f, 0x7a, 0x76, 0x1a, 0xcc, 0xe1,
   };
   const uint8_t hash_test[] =
   {
-    0x14, 0xd1, 0xa2, 0x08, 0x35, 0x1d, 0xc7, 0x1c, 0x2d, 0x56,
-    0x8d, 0x8f, 0xc5, 0x11, 0x06, 0x60, 0xcd, 0xca, 0x7c, 0xa5,
+    0x6b, 0xee, 0x5d, 0xab, 0xcc, 0xab, 0x32, 0x12, 0x9e, 0x5d,
+    0xd8, 0x82, 0x4b, 0x92, 0xb4, 0x18, 0x64, 0x0d, 0x91, 0xeb,
   };
 
   generateCollidingFiles(hash_1,   27850, 1);
@@ -2164,7 +2164,7 @@ static void runPhaseCollision(SearchNode *phase_collision_node)
 
   /* Finish backup and perform additional checks. */
   completeBackup(metadata);
-  assert_true(countItemsInDir("tmp/repo") == 292);
+  assert_true(countItemsInDir("tmp/repo") == 294);
   mustHaveRegularStat(foo,       &metadata->current_backup, 27850, hash_1,    1);
   mustHaveRegularStat(bar,       &metadata->current_backup, 2006,  hash_3,    3);
   mustHaveRegularStat(a_1,       &metadata->current_backup, 297,   hash_19,   19);
@@ -2186,8 +2186,8 @@ static void runPhaseSlotOverflow(SearchNode *phase_collision_node)
 
   const uint8_t hash_256[] =
   {
-    0x38, 0x36, 0xaa, 0x06, 0x87, 0xa0, 0x67, 0xef, 0x4e, 0x38,
-    0x99, 0x3f, 0x97, 0x0d, 0x19, 0x90, 0x63, 0xb5, 0x9b, 0xfd,
+    0x00, 0x33, 0x90, 0x47, 0x97, 0xec, 0x01, 0x47, 0xf3, 0x2b,
+    0x11, 0xe0, 0xd8, 0x9a, 0xf2, 0xfb, 0xf0, 0x00, 0x2b, 0xe2,
   };
 
   generateCollidingFiles(hash_256, 214, 256);

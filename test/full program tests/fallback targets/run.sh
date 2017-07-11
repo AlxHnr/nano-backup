@@ -37,16 +37,6 @@ for path in generated/repo/?/??/*; do
   test -e "$path" || continue
   file=${path#generated/repo/}
 
-  hash=$(printf "%s" "$file" | tr -d /)
-  hash=${hash%%x*}
-  real_hash=$(sha1sum "$path")
-  real_hash=${real_hash%% *}
-  test "$hash" = "$real_hash" ||
-    {
-      echo "wrong hash in filename: \"$file\" (expected $real_hash)"
-      false
-    }
-
   size=${file%x*}
   size=${size##*x}
   real_size=$(printf "%x" "$(wc -c < "$path")")
