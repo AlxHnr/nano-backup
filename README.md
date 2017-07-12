@@ -25,7 +25,7 @@ handle binary files well and always keep a history of everything. This
 makes it useless for for backing up binpkg cache directories. I also want
 to know exactly _what_ has changed on my system since the last backup. This
 includes file permissions, timestamps, etc. All that in a simple,
-straightforward and atomic way, so no changes can sneak in without my
+straightforward and atomic way, preventing changes to sneak in without
 approval.
 
 I _greatly_ disagree with the crowd that recommends you to just `dd` or
