@@ -1,8 +1,45 @@
 [![travis](https://travis-ci.org/AlxHnr/nano-backup.svg?branch=master)](https://travis-ci.org/AlxHnr/nano-backup)
 [![codecov](https://codecov.io/github/AlxHnr/nano-backup/coverage.svg?branch=master)](https://codecov.io/github/AlxHnr/nano-backup?branch=master)
 [![license](https://img.shields.io/badge/license-MIT-brightgreen.svg)](https://github.com/AlxHnr/nano-backup/blob/master/LICENSE)
-[![overlay](https://img.shields.io/badge/gentoo-overlay-62548F.svg)](https://github.com/AlxHnr/gentoo-overlay)
 ![screenshot](https://cdn.rawgit.com/AlxHnr/nano-backup/1729b21e/screenshot.svg)
+
+* **Precise** - Displays a good, concise summary about _what_ has changed
+  on your system
+* **Consesual** - Never sneaks in changes without the users approval¹
+* **Atomic** - If it crashes, the backup will be like it was before
+* **Handles filenames** - In the sad world we live, many programs still
+  choke on `white spaces` and ✨𝓤𝓷𝓲𝓬𝓸𝓭𝓮✨
+* **Few dependencies** - Only needs a C Compiler and GNU Make
+* **Portable** - Conforms strictly to C99 and POSIX.1-2001 (with the XSI
+  extension _lchown()_)
+* **Fast and snappy** - Reduces friction and is satisfying to use
+
+¹ The printing of changes doesn't cover all edge cases yet, but most of
+the time its _good enough_.
+
+## Why?
+
+I needed something to track files precisely. Without polluting the change
+history with stuff i never want to restore again. Tools like git don't
+handle binary files well and always keep a history of everything. This
+makes it useless for for backing up binpkg cache directories. I also want
+to know exactly _what_ has changed on my system since the last backup. This
+includes file permissions, timestamps, etc. All that in a simple,
+straightforward and atomic way, so no changes can sneak in without my
+approval.
+
+I _greatly_ disagree with the crowd that recommends you to just `dd` or
+`rsync` your entire hard-drive. Sometimes you may tinker around with config
+files you never need again, probably leaving them in an inconsistent state.
+There is no reason to have those files polluting your backup history.
+Nano-backup makes it easy to track only the few files you really need. To
+wipe files completely from the repository, simply remove their entries from
+the config file. This keeps the backup as lean as possible.
+
+**Note**: Nano-backup does not try to replace existing backup tools and
+implements only a handful of backup strategies. It focuses on local backups
+and stores full snapshots of files. This makes it unsuitable for backing up
+large VM images.
 
 ## Installation
 
@@ -12,6 +49,9 @@ and run the following command inside the project directory:
 ```sh
 make && cp build/nb /usr/bin
 ```
+
+**Note:** Gentoo users can install nano-backup directly from my
+[overlay](https://github.com/AlxHnr/gentoo-overlay).
 
 ## Usage
 
@@ -104,27 +144,37 @@ cp current/{config,metadata} old/
 nb old/ gc
 ```
 
-### Why another backup tool?
+### Can i run a hook before/after each backup?
 
-There are many _good_ backup tools, implementing many _different_ backup
-strategies. Nano-backup does not try to replace them and focuses only on
-local backups. It stores full snapshots of files and may not be suited for
-backing up large VM images.
+No. Nano-backup tries to be as minimal as possible. The recommended way is
+to write a wrapper:
 
-Nano-backup shines in tracking stuff like system config files and binpkg
-cache directories, without polluting the repository/history with stuff you
-never want to restore again. It allows you to wipe files completely from
-the repository by simply removing their entries from the config file. This
-keeps the repository as lean as possible.
+```sh
+#/bin/sh -e
 
-### Why don't use Git for backups?
+... # Run stuff before the backup.
 
-Git can't backup empty directories, doesn't handle binary files well and
-always keeps a history of everything. Sometimes it is desired to backup
-only the latest version of a file/directory, or even discard them like a
-mirror-style sync would do. Git usually requires more commands to do a
-backup and provides only a very dull change summary in its staging area.
-E.g. lack of explicit changes in file permissions, owner, etc.
+nb "$HOME/backup"
+
+... # Run stuff after the backup.
+```
+
+### Does it support encrypted backups?
+
+No. There are many filesystems solving this problem, some even support
+distributed cloud storage. Use them for housing your repository.
+
+### Does it deduplicate data chunks of variable length?
+
+No, it does only whole-file deduplication. Implementing such a feature
+_properly_ as a single developer with very limited time is not possible.
+The cost greatly exceeds the benefit, especially in times of modern
+deduplicating filesystems.
+
+### Does it compress the backed up files?
+
+No. It would make the codebase more complicated, may introduce additional
+dependencies and take quite some time to test properly.
 
 ### Why does it rely on timestamps and file sizes to check for changes?
 
