@@ -174,7 +174,7 @@ deduplicating filesystems.
 ### Does it compress the backed up files?
 
 No. It would make the codebase more complicated, may introduce additional
-dependencies and take quite some time to test properly.
+dependencies and would take quite some time to test properly.
 
 ### Why does it rely on timestamps and file sizes to check for changes?
 
