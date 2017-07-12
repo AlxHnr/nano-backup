@@ -28,13 +28,13 @@ includes file permissions, timestamps, etc. All that in a simple,
 straightforward and atomic way, preventing changes to sneak in without
 approval.
 
-I _greatly_ disagree with the crowd that recommends you to just `dd` or
-`rsync` your entire hard-drive. Sometimes you may tinker around with config
-files you never need again, probably leaving them in an inconsistent state.
-There is no reason to have those files polluting your backup history.
-Nano-backup makes it easy to track only the few files you really need. To
-wipe files completely from the repository, simply remove their entries from
-the config file. This keeps the backup as lean as possible.
+I _greatly_ disagree with the idea to just `dd` or `rsync` the entire
+hard-drive. Sometimes you may tinker around with config files you never
+need again, probably leaving them in an inconsistent state. There is no
+reason to have those files polluting the backup history. Nano-backup makes
+it easy to track only the few files you really need. To wipe files
+completely from the repository, simply remove their entries from the config
+file. This keeps the backup as lean as possible.
 
 **Note**: Nano-backup does not try to replace existing backup tools and
 implements only a handful of backup strategies. It focuses on local backups
