@@ -20,7 +20,7 @@ the time its _good enough_.
 ## Why?
 
 I needed something to track files precisely. Without polluting the change
-history with stuff i never want to restore again. Tools like git don't
+history with stuff I never want to restore again. Tools like git don't
 handle binary files well and always keep a history of everything. This
 makes it useless for for backing up binpkg cache directories. I also want
 to know exactly _what_ has changed on my system since the last backup. This
@@ -134,7 +134,7 @@ ignore      | Allows specifying regular expressions for excluding paths.
 
 ## Frequently asked questions
 
-### How do i synchronize two repositories?
+### How do I synchronize two repositories?
 
 Here is an example for the repositories _old/_ and _current/_:
 
@@ -144,7 +144,7 @@ cp current/{config,metadata} old/
 nb old/ gc
 ```
 
-### Can i run a hook before/after each backup?
+### Can I run a hook before/after each backup?
 
 No. Nano-backup tries to be as minimal as possible. The recommended way is
 to write a wrapper:
