@@ -159,6 +159,14 @@ nb "$HOME/backup"
 ... # Run stuff after the backup.
 ```
 
+### How do I tell it to do automatic backups once a day?
+
+You can't. This is the task of tools like cron. But doing so would
+completely defeat the purpose of using nano-backup in the first place.
+Nano-backup was written for precise and explicit backups, providing full
+control over changes. If you still want to go the cron-way, make sure to
+log the output to get a useful changelog.
+
 ### Does it support encrypted backups?
 
 No. There are many filesystems solving this problem, some even support
