@@ -54,6 +54,12 @@
         v2 = ROTL(v2, 32);                                                     \
     } while (0)
 
+#if defined __GNUC__ && !defined __clang__ && __GNUC__ >= 7
+#define attribute_fallthrough __attribute__((fallthrough));
+#else
+#define attribute_fallthrough
+#endif
+
 uint64_t siphash(const uint8_t *in, const size_t inlen, const uint8_t *k)
 {
     uint64_t v0 = 0x736f6d6570736575ULL;
@@ -87,16 +93,22 @@ uint64_t siphash(const uint8_t *in, const size_t inlen, const uint8_t *k)
     switch (left) {
     case 7:
         b |= ((uint64_t)in[6]) << 48;
+        attribute_fallthrough
     case 6:
         b |= ((uint64_t)in[5]) << 40;
+        attribute_fallthrough
     case 5:
         b |= ((uint64_t)in[4]) << 32;
+        attribute_fallthrough
     case 4:
         b |= ((uint64_t)in[3]) << 24;
+        attribute_fallthrough
     case 3:
         b |= ((uint64_t)in[2]) << 16;
+        attribute_fallthrough
     case 2:
         b |= ((uint64_t)in[1]) << 8;
+        attribute_fallthrough
     case 1:
         b |= ((uint64_t)in[0]);
         break;
