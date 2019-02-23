@@ -5,7 +5,7 @@
 
 * **Precise** - Displays a good, concise summary about _what_ has changed
   on your system
-* **Consesual** - Never sneaks in changes without the users approval¹
+* **Consesual** - Never sneaks in changes without the users approval
 * **Atomic** - If it crashes, the backup will be like it was before
 * **Handles filenames** - In the sad world we live, many programs still
   choke on `white spaces` and ✨𝓤𝓷𝓲𝓬𝓸𝓭𝓮✨
@@ -13,9 +13,6 @@
 * **Portable** - Conforms strictly to C99 and POSIX.1-2001 (with the XSI
   extension _lchown()_)
 * **Fast and snappy** - Reduces friction and is satisfying to use
-
-¹ The printing of changes doesn't cover all edge cases yet, but most of
-the time its _good enough_.
 
 ## Why?
 
@@ -43,8 +40,8 @@ large VM images.
 
 ## Installation
 
-Download the [latest release](https://github.com/AlxHnr/nano-backup/releases/latest)
-and run the following command inside the project directory:
+Clone this repository and run the following command inside the project
+directory:
 
 ```sh
 make && cp build/nb /usr/bin
