@@ -1,5 +1,7 @@
 #!/bin/sh -e
 
+export LANG=C
+
 # Names of tests specified in the order to run.
 tests="safe-wrappers memory-pool buffer path-builder file-hash colors
 regex-pool string-utils string-table search-tree search repository

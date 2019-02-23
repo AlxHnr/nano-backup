@@ -427,7 +427,12 @@ static void testBrokenConfigFiles(void)
                    "config: line 8: pattern without policy: \"/home/user/foo/bar.txt\"");
 
   assertParseError("broken-config-files/invalid-ignore-expression.txt",
-                   "config: line 6: Unmatched [ or [^: \" ([0-9A-Za-z)+///\"");
+#if defined __GLIBC_MINOR__ && __GLIBC_MINOR__ >= 28
+                   "config: line 6: Unmatched [, [^, [:, [., or [=: \" ([0-9A-Za-z)+///\""
+#else
+                   "config: line 6: Unmatched [ or [^: \" ([0-9A-Za-z)+///\""
+#endif
+                   );
 
   assertParseError("broken-config-files/redefine-1.txt",
                    "config: line 6: redefining line 4: \"/home/user/foo/Gentoo Packages/\"");

@@ -1,5 +1,7 @@
 #!/bin/sh
 
+export LANG=C
+
 # Define some color codes.
 unset blue
 unset green
