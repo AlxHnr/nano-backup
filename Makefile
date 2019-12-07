@@ -2,6 +2,8 @@ CFLAGS           += -std=c99 -D_XOPEN_SOURCE=600 -D_FILE_OFFSET_BITS=64
 OBJECTS          := $(patsubst src/%.c,build/%.o,$(wildcard src/*.c))
 OBJECTS          += build/third-party/BLAKE2/blake2b.o
 OBJECTS          += build/third-party/SipHash/siphash.o
+OBJECTS          += $(patsubst third-party/CRegion/%.c,build/third-party/CRegion/%.o,\
+  $(wildcard third-party/CRegion/*.c))
 TEST_PROGRAMS    := $(shell grep -l '^int main' test/*.c)
 TEST_LIB_OBJECTS := $(filter-out $(TEST_PROGRAMS),$(wildcard test/*.c))
 TEST_PROGRAMS    := $(patsubst %.c,build/%,$(TEST_PROGRAMS))
@@ -27,6 +29,10 @@ build/nb: $(OBJECTS)
 build/third-party/BLAKE2/%.o: third-party/BLAKE2/%.c
 	mkdir -p build/third-party/BLAKE2
 	$(CC) $(CFLAGS) -O3 -c $< -o $@
+
+build/third-party/CRegion/%.o: third-party/CRegion/%.c
+	mkdir -p build/third-party/CRegion
+	$(CC) $(CFLAGS) -c $< -o $@
 
 build/third-party/SipHash/%.o: third-party/SipHash/%.c
 	mkdir -p build/third-party/SipHash
