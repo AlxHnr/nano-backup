@@ -611,9 +611,9 @@ static void copyFileIntoRepo(PathNode *node, String repo_path,
   uint64_t bytes_left = reg->size;
 
   FileStream *reader = sFopenRead(node->path);
-  RepoWriter *writer = repoWriterOpenFile(repo_path.content,
-                                          repo_tmp_file_path.content,
-                                          node->path.content, reg);
+  RepoWriter *writer = repoWriterOpenFile(repo_path,
+                                          repo_tmp_file_path,
+                                          node->path, reg);
 
   bufferEnsureCapacity(&io_buffer, blocksize);
   char *buffer = io_buffer->data;
@@ -664,8 +664,7 @@ static bool equalsToStoredFile(PathNode *node, String repo_path,
   bufferEnsureCapacity(&io_buffer, sSizeMul(blocksize, 2));
   char *buffer = io_buffer->data;
 
-  RepoReader *repo_stream =
-    repoReaderOpenFile(repo_path.content, node->path.content, reg);
+  RepoReader *repo_stream = repoReaderOpenFile(repo_path, node->path, reg);
   char *repo_buffer = &buffer[blocksize];
 
   bool files_equal = true;

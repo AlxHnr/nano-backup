@@ -21,15 +21,15 @@
 struct RepoWriter
 {
   /** The path to the repository. */
-  const char *repo_path;
+  String repo_path;
 
   /** The path to the repositories temporary dummy file. */
-  const char *repo_tmp_file_path;
+  String repo_tmp_file_path;
 
   /** The path to the source file in the filesystem, which gets written
     to the repository trough this writer. This is required for printing
     useful error messages. */
-  const char *source_file_path;
+  String source_file_path;
 
   /** The FileStream wrapped by this struct. */
   FileStream *stream;
@@ -43,7 +43,7 @@ struct RepoWriter
   {
     /** If the repo writer was opened in raw mode, it will contain the
       final path to which the temporary file will be renamed to. */
-    const char *path;
+    String path;
 
     /** If the repo writer was not opened in raw mode, the final filepath
       will be generated from this file info. */
@@ -55,11 +55,11 @@ struct RepoWriter
 struct RepoReader
 {
   /** The path to the repository. */
-  const char *repo_path;
+  String repo_path;
 
   /** The original filepath representing the file read trough this reader.
     This is required for printing useful error messages. */
-  const char *source_file_path;
+  String source_file_path;
 
   /** The FILE stream wrapped by this struct. */
   FILE *stream;
@@ -123,17 +123,17 @@ static void fillPathBufferWithInfo(String repo_path,
 
 /** Creates a new RepoWriter from its arguments. Contains the core logic
   behind repoWriterOpenFile() and repoWriterOpenRaw(). */
-static RepoWriter *createRepoWriter(const char *repo_path,
-                                    const char *repo_tmp_file_path,
-                                    const char *source_file_path,
+static RepoWriter *createRepoWriter(String repo_path,
+                                    String repo_tmp_file_path,
+                                    String source_file_path,
                                     bool raw_mode)
 {
-  FileStream *stream = sFopenWrite(strWrap(repo_tmp_file_path));
+  FileStream *stream = sFopenWrite(repo_tmp_file_path);
   RepoWriter *writer = sMalloc(sizeof *writer);
 
-  writer->repo_path = repo_path;
-  writer->repo_tmp_file_path = repo_tmp_file_path;
-  writer->source_file_path = source_file_path;
+  strSet(&writer->repo_path, repo_path);
+  strSet(&writer->repo_tmp_file_path, repo_tmp_file_path);
+  strSet(&writer->source_file_path, source_file_path);
   writer->stream = stream;
   writer->raw_mode = raw_mode;
 
@@ -180,21 +180,21 @@ void repoBuildRegularFilePath(Buffer **buffer, const RegularFileInfo *info)
 
   @return A new RepoReader which must be closed using repoReaderClose().
 */
-RepoReader *repoReaderOpenFile(const char *repo_path,
-                               const char *source_file_path,
+RepoReader *repoReaderOpenFile(String repo_path,
+                               String source_file_path,
                                const RegularFileInfo *info)
 {
-  fillPathBufferWithInfo(strWrap(repo_path), info);
+  fillPathBufferWithInfo(repo_path, info);
   FILE *stream = fopen(path_buffer->data, "rb");
   if(stream == NULL)
   {
     dieErrno("failed to open \"%s\" in \"%s\"",
-             source_file_path, repo_path);
+             source_file_path.content, repo_path.content);
   }
 
   RepoReader *reader = sMalloc(sizeof *reader);
-  reader->repo_path = repo_path;
-  reader->source_file_path = source_file_path;
+  strSet(&reader->repo_path, repo_path);
+  strSet(&reader->source_file_path, source_file_path);
   reader->stream = stream;
 
   return reader;
@@ -210,8 +210,8 @@ void repoReaderRead(void *data, size_t size, RepoReader *reader)
 {
   if(fread(data, 1, size, reader->stream) != size)
   {
-    const char *repo_path = reader->repo_path;
-    const char *source_file_path = reader->source_file_path;
+    String repo_path = reader->repo_path;
+    String source_file_path = reader->source_file_path;
     bool reached_end_of_file = feof(reader->stream);
 
     int old_errno = errno;
@@ -223,12 +223,12 @@ void repoReaderRead(void *data, size_t size, RepoReader *reader)
     if(reached_end_of_file)
     {
       die("reading \"%s\" from \"%s\": reached end of file unexpectedly",
-          source_file_path, repo_path);
+          source_file_path.content, repo_path.content);
     }
     else
     {
       dieErrno("IO error while reading \"%s\" from \"%s\"",
-               source_file_path, repo_path);
+               source_file_path.content, repo_path.content);
     }
   }
 }
@@ -246,7 +246,7 @@ void repoReaderClose(RepoReader *reader_to_close)
   if(fclose(reader.stream) != 0)
   {
     dieErrno("failed to close \"%s\" in \"%s\"",
-             reader.source_file_path, reader.repo_path);
+             reader.source_file_path.content, reader.repo_path.content);
   }
 }
 
@@ -276,9 +276,9 @@ void repoReaderClose(RepoReader *reader_to_close)
   @return A new RepoWriter, which must be closed by the caller using
   repoWriterClose().
 */
-RepoWriter *repoWriterOpenFile(const char *repo_path,
-                               const char *repo_tmp_file_path,
-                               const char *source_file_path,
+RepoWriter *repoWriterOpenFile(String repo_path,
+                               String repo_tmp_file_path,
+                               String source_file_path,
                                const RegularFileInfo *info)
 {
   RepoWriter *writer = createRepoWriter(repo_path, repo_tmp_file_path,
@@ -295,14 +295,14 @@ RepoWriter *repoWriterOpenFile(const char *repo_path,
   returned RepoWriter will keep a reference to this string, so make sure
   not to modify or free it as long as the writer is in use.
 */
-RepoWriter *repoWriterOpenRaw(const char *repo_path,
-                              const char *repo_tmp_file_path,
-                              const char *source_file_path,
-                              const char *final_path)
+RepoWriter *repoWriterOpenRaw(String repo_path,
+                              String repo_tmp_file_path,
+                              String source_file_path,
+                              String final_path)
 {
   RepoWriter *writer = createRepoWriter(repo_path, repo_tmp_file_path,
                                         source_file_path, true);
-  writer->rename_to.path = final_path;
+  strSet(&writer->rename_to.path, final_path);
 
   return writer;
 }
@@ -318,14 +318,14 @@ void repoWriterWrite(const void *data, size_t size, RepoWriter *writer)
 {
   if(Fwrite(data, size, writer->stream) == false)
   {
-    const char *repo_path = writer->repo_path;
-    const char *source_file_path = writer->source_file_path;
+    String repo_path = writer->repo_path;
+    String source_file_path = writer->source_file_path;
 
     Fdestroy(writer->stream);
     free(writer);
 
     dieErrno("IO error while writing \"%s\" to \"%s\"",
-             source_file_path, repo_path);
+             source_file_path.content, repo_path.content);
   }
 }
 
@@ -333,14 +333,14 @@ void repoWriterWrite(const void *data, size_t size, RepoWriter *writer)
 
   @param path The path to the directory to sync to disk.
 */
-static void fdatasyncDirectory(const char *path)
+static void fdatasyncDirectory(String path)
 {
-  int dir_descriptor = open(path, O_RDONLY, 0);
+  int dir_descriptor = open(path.content, O_RDONLY, 0);
   if(dir_descriptor == -1 ||
      fdatasync(dir_descriptor) != 0 ||
      close(dir_descriptor) != 0)
   {
-    dieErrno("failed to sync directory to device: \"%s\"", path);
+    dieErrno("failed to sync directory to device: \"%s\"", path.content);
   }
 }
 
@@ -360,18 +360,18 @@ void repoWriterClose(RepoWriter *writer_to_close)
   {
     Fdestroy(writer.stream);
     dieErrno("failed to flush/sync \"%s\" to \"%s\"",
-             writer.source_file_path, writer.repo_path);
+             writer.source_file_path.content, writer.repo_path.content);
   }
 
   sFclose(writer.stream);
 
   if(writer.raw_mode == true)
   {
-    sRename(strWrap(writer.repo_tmp_file_path), strWrap(writer.rename_to.path));
+    sRename(writer.repo_tmp_file_path, writer.rename_to.path);
   }
   else
   {
-    String repo_path = strWrap(writer.repo_path);
+    String repo_path = writer.repo_path;
     fillPathBufferWithInfo(repo_path, writer.rename_to.info);
 
     /* Ensure that the final paths parent directories exists. */
@@ -389,14 +389,14 @@ void repoWriterClose(RepoWriter *writer_to_close)
       sMkdir(strWrap(path_buffer->data));
 
       path_buffer->data[repo_path.length + 2] = '\0';
-      fdatasyncDirectory(path_buffer->data);
+      fdatasyncDirectory(strWrap(path_buffer->data));
       path_buffer->data[repo_path.length + 2] = '/';
     }
     path_buffer->data[repo_path.length + 5] = '/';
 
-    sRename(strWrap(writer.repo_tmp_file_path), strWrap(path_buffer->data));
+    sRename(writer.repo_tmp_file_path, strWrap(path_buffer->data));
     path_buffer->data[repo_path.length + 5] = '\0';
-    fdatasyncDirectory(path_buffer->data);
+    fdatasyncDirectory(strWrap(path_buffer->data));
   }
 
   fdatasyncDirectory(writer.repo_path);

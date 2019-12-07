@@ -647,8 +647,8 @@ void metadataWrite(Metadata *metadata,
                    String repo_tmp_file_path,
                    String repo_metadata_path)
 {
-  RepoWriter *writer = repoWriterOpenRaw(repo_path.content, repo_tmp_file_path.content,
-                                         "metadata", repo_metadata_path.content);
+  RepoWriter *writer = repoWriterOpenRaw(repo_path, repo_tmp_file_path,
+                                         strWrap("metadata"), repo_metadata_path);
 
   /* Count referenced history points and update IDs. */
   size_t id_counter = metadata->current_backup.ref_count > 0;

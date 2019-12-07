@@ -229,16 +229,18 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("write regular files to repository");
-  assert_error(repoWriterOpenFile("non-existing-directory", "non-existing-directory/tmp-file", "foo", &info_1),
+  assert_error(repoWriterOpenFile(strWrap("non-existing-directory"),
+                                  strWrap("non-existing-directory/tmp-file"), strWrap("foo"), &info_1),
                "failed to open \"non-existing-directory/tmp-file\" for writing: No such file or directory");
-  assert_error(repoWriterOpenFile("example.txt", "example.txt/tmp-file", "foo", &info_2),
+  assert_error(repoWriterOpenFile(strWrap("example.txt"), strWrap("example.txt/tmp-file"),
+                                  strWrap("foo"), &info_2),
                "failed to open \"example.txt/tmp-file\" for writing: Not a directory");
 
   /* Write a new file without existing parent directories. */
   assert_true(sPathExists(strWrap("tmp/0")) == false);
   assert_true(sPathExists(TMP_FILE_PATH) == false);
 
-  RepoWriter *writer = repoWriterOpenFile("tmp", TMP_FILE_PATH.content, "info_1", &info_1);
+  RepoWriter *writer = repoWriterOpenFile(strWrap("tmp"), TMP_FILE_PATH, strWrap("info_1"), &info_1);
 
   assert_true(writer != NULL);
   assert_true(sPathExists(strWrap("tmp/0")) == false);
@@ -260,7 +262,7 @@ int main(void)
   assert_true(sPathExists(strWrap("tmp/0/fb")) == false);
   assert_true(sPathExists(TMP_FILE_PATH) == false);
 
-  writer = repoWriterOpenFile("tmp", TMP_FILE_PATH.content, "info_5", &info_5);
+  writer = repoWriterOpenFile(strWrap("tmp"), TMP_FILE_PATH, strWrap("info_5"), &info_5);
 
   assert_true(writer != NULL);
   assert_true(sPathExists(strWrap("tmp/0")) == true);
@@ -284,7 +286,7 @@ int main(void)
   assert_true(sPathExists(info_6_path) == false);
   assert_true(sPathExists(TMP_FILE_PATH) == false);
 
-  writer = repoWriterOpenFile("tmp", TMP_FILE_PATH.content, "info_6", &info_6);
+  writer = repoWriterOpenFile(strWrap("tmp"), TMP_FILE_PATH, strWrap("info_6"), &info_6);
 
   assert_true(writer != NULL);
   assert_true(sPathExists(strWrap("tmp/0/fb")) == true);
@@ -305,15 +307,17 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("write to repository in raw mode");
-  assert_error(repoWriterOpenRaw("non-existing-directory", "non-existing-directory/tmp-file", "foo", "tmp/foo"),
+  assert_error(repoWriterOpenRaw(strWrap("non-existing-directory"), strWrap("non-existing-directory/tmp-file"),
+                                 strWrap("foo"), strWrap("tmp/foo")),
                "failed to open \"non-existing-directory/tmp-file\" for writing: No such file or directory");
-  assert_error(repoWriterOpenRaw("example.txt", "example.txt/tmp-file", "bar", "tmp/bar"),
+  assert_error(repoWriterOpenRaw(strWrap("example.txt"), strWrap("example.txt/tmp-file"),
+                                 strWrap("bar"), strWrap("tmp/bar")),
                "failed to open \"example.txt/tmp-file\" for writing: Not a directory");
 
   assert_true(sPathExists(strWrap("some-file")) == false);
   assert_true(sPathExists(TMP_FILE_PATH) == false);
 
-  writer = repoWriterOpenRaw("tmp", TMP_FILE_PATH.content, "some-file", "tmp/some-file");
+  writer = repoWriterOpenRaw(strWrap("tmp"), TMP_FILE_PATH, strWrap("some-file"), strWrap("tmp/some-file"));
 
   assert_true(writer != NULL);
   assert_true(sPathExists(strWrap("tmp/some-file")) == false);
@@ -334,22 +338,24 @@ int main(void)
   testGroupStart("safe overwriting");
   assert_true(sPathExists(TMP_FILE_PATH) == false);
   assert_true(sPathExists(info_1_path)   == true);
-  testSafeOverwriting(repoWriterOpenFile("tmp", TMP_FILE_PATH.content, "info_1", &info_1), info_1_path);
+  testSafeOverwriting(repoWriterOpenFile(strWrap("tmp"), TMP_FILE_PATH, strWrap("info_1"), &info_1), info_1_path);
 
   assert_true(sPathExists(TMP_FILE_PATH)   == false);
   assert_true(sPathExists(strWrap("tmp/some-file")) == true);
-  testSafeOverwriting(repoWriterOpenRaw("tmp", TMP_FILE_PATH.content, "some-file", "tmp/some-file"), strWrap("tmp/some-file"));
+  testSafeOverwriting(repoWriterOpenRaw(strWrap("tmp"), TMP_FILE_PATH, strWrap("some-file"),
+                                        strWrap("tmp/some-file")), strWrap("tmp/some-file"));
   testGroupEnd();
 
   testGroupStart("behaviour with existing tmp-file");
   sRename(info_1_path, TMP_FILE_PATH);
   assert_true(sStat(TMP_FILE_PATH).st_size == 15);
   assert_true(sPathExists(strWrap("tmp/2")) == false);
-  testWithExistingTmpFile(repoWriterOpenFile("tmp", TMP_FILE_PATH.content, "info_2", &info_2), info_2_path);
+  testWithExistingTmpFile(repoWriterOpenFile(strWrap("tmp"), TMP_FILE_PATH, strWrap("info_2"), &info_2), info_2_path);
 
   sRename(strWrap("tmp/some-file"), TMP_FILE_PATH);
   assert_true(sStat(TMP_FILE_PATH).st_size == 15);
-  testWithExistingTmpFile(repoWriterOpenRaw("tmp", TMP_FILE_PATH.content, "another-file", "tmp/another-file"), strWrap("tmp/another-file"));
+  testWithExistingTmpFile(repoWriterOpenRaw(strWrap("tmp"), TMP_FILE_PATH, strWrap("another-file"),
+                                            strWrap("tmp/another-file")), strWrap("tmp/another-file"));
   testGroupEnd();
 
   testGroupStart("overwriting tmp-file with itself");
@@ -359,14 +365,14 @@ int main(void)
 
   checkFilesContent(TMP_FILE_PATH, "-include build/dependencies.makefile\n");
 
-  writer = repoWriterOpenRaw("tmp", TMP_FILE_PATH.content, TMP_FILE_PATH.content, TMP_FILE_PATH.content);
+  writer = repoWriterOpenRaw(strWrap("tmp"), TMP_FILE_PATH, TMP_FILE_PATH, TMP_FILE_PATH);
   assert_true(writer != NULL);
   repoWriterWrite("nano-backup backups files", 25, writer);
   repoWriterClose(writer);
 
   checkFilesContent(TMP_FILE_PATH, "nano-backup backups files");
 
-  writer = repoWriterOpenRaw("tmp", TMP_FILE_PATH.content, TMP_FILE_PATH.content, TMP_FILE_PATH.content);
+  writer = repoWriterOpenRaw(strWrap("tmp"), TMP_FILE_PATH, TMP_FILE_PATH, TMP_FILE_PATH);
   assert_true(writer != NULL);
   repoWriterWrite("FOO BAR 321", 11, writer);
   repoWriterClose(writer);
@@ -375,20 +381,21 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("overwrite with empty file");
-  repoWriterClose(repoWriterOpenFile("tmp", TMP_FILE_PATH.content, "info_2", &info_2));
+  repoWriterClose(repoWriterOpenFile(strWrap("tmp"), TMP_FILE_PATH, strWrap("info_2"), &info_2));
   assert_true(sPathExists(TMP_FILE_PATH) == false);
   assert_true(sStat(info_2_path).st_size == 0);
 
-  repoWriterClose(repoWriterOpenRaw("tmp", TMP_FILE_PATH.content, "another-file", "tmp/another-file"));
+  repoWriterClose(repoWriterOpenRaw(strWrap("tmp"), TMP_FILE_PATH,
+                                    strWrap("another-file"), strWrap("tmp/another-file")));
   assert_true(sPathExists(TMP_FILE_PATH)        == false);
   assert_true(sStat(strWrap("tmp/another-file")).st_size == 0);
   testGroupEnd();
 
   testGroupStart("reading from repository");
-  assert_error(repoReaderOpenFile("tmp", "info_1", &info_1),
+  assert_error(repoReaderOpenFile(strWrap("tmp"), strWrap("info_1"), &info_1),
                "failed to open \"info_1\" in \"tmp\": No such file or directory");
   assert_true(mkdir(info_1_path.content, 0) == 0);
-  assert_error(repoReaderOpenFile("tmp", "info_1", &info_1),
+  assert_error(repoReaderOpenFile(strWrap("tmp"), strWrap("info_1"), &info_1),
                "failed to open \"info_1\" in \"tmp\": Permission denied");
   assert_true(rmdir(info_1_path.content) == 0);
 
@@ -396,7 +403,7 @@ int main(void)
   sFwrite("This is an example text.", 24, stream);
   sFclose(stream);
 
-  RepoReader *reader = repoReaderOpenFile("tmp", "info_1", &info_1);
+  RepoReader *reader = repoReaderOpenFile(strWrap("tmp"), strWrap("info_1"), &info_1);
   assert_true(reader != NULL);
 
   char buffer[25] = { 0 };
@@ -408,13 +415,13 @@ int main(void)
   assert_true(strcmp(buffer, "mple text.") == 0);
   repoReaderClose(reader);
 
-  reader = repoReaderOpenFile("tmp", "info_1", &info_1);
+  reader = repoReaderOpenFile(strWrap("tmp"), strWrap("info_1"), &info_1);
   assert_true(reader != NULL);
 
   assert_error(repoReaderRead(buffer, 25, reader),
                "reading \"info_1\" from \"tmp\": reached end of file unexpectedly");
 
-  reader = repoReaderOpenFile("tmp", "info_1", &info_1);
+  reader = repoReaderOpenFile(strWrap("tmp"), strWrap("info_1"), &info_1);
   assert_true(reader != NULL);
 
   memset(buffer, 0, sizeof(buffer));

@@ -275,7 +275,8 @@ void restoreFile(const char *path,
 {
   if(info->size > FILE_HASH_SIZE)
   {
-    RepoReader *reader = repoReaderOpenFile(repo_path, path, info);
+    RepoReader *reader =
+      repoReaderOpenFile(strWrap(repo_path), strWrap(path), info);
     FileStream *writer = sFopenWrite(strWrap(path));
     uint64_t bytes_left = info->size;
     char buffer[4096];
