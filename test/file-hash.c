@@ -10,7 +10,7 @@
 /** Simplified wrapper around fileHash(). */
 static void fileHashWrapper(const char *path, uint8_t *hash)
 {
-  fileHash(path, sStat(strWrap(path)), hash);
+  fileHash(strWrap(path), sStat(strWrap(path)), hash);
 }
 
 int main(void)
@@ -20,11 +20,11 @@ int main(void)
 
   testGroupStart("fileHash()");
   stats = sStat(strWrap("example.txt"));
-  assert_error(fileHash("non-existing.txt", stats, hash),
+  assert_error(fileHash(strWrap("non-existing.txt"), stats, hash),
                "failed to open \"non-existing.txt\" for reading: No such file or directory");
-  assert_error(fileHash("test directory", stats, hash),
+  assert_error(fileHash(strWrap("test directory"), stats, hash),
                "IO error while reading \"test directory\": Is a directory");
-  assert_error(fileHash("test directory", sStat(strWrap("empty.txt")), hash),
+  assert_error(fileHash(strWrap("test directory"), sStat(strWrap("empty.txt")), hash),
                "failed to check for remaining bytes in \"test directory\": Is a directory");
 
   const uint8_t empty_hash[FILE_HASH_SIZE] =
@@ -72,16 +72,16 @@ int main(void)
 
   stats = sStat(strWrap("valid-config-files/inheritance-1.txt"));
   stats.st_size += 1;
-  assert_error(fileHash("valid-config-files/inheritance-1.txt", stats, hash),
+  assert_error(fileHash(strWrap("valid-config-files/inheritance-1.txt"), stats, hash),
                "reading \"valid-config-files/inheritance-1.txt\": reached end of file unexpectedly");
 
   stats.st_size -= 2;
-  assert_error(fileHash("valid-config-files/inheritance-1.txt", stats, hash),
+  assert_error(fileHash(strWrap("valid-config-files/inheritance-1.txt"), stats, hash),
                "file changed while calculating hash: \"valid-config-files/inheritance-1.txt\"");
 
   stats.st_size += 1;
   stats.st_blksize = 1;
-  fileHash("valid-config-files/inheritance-1.txt", stats, hash);
+  fileHash(strWrap("valid-config-files/inheritance-1.txt"), stats, hash);
   assert_true(memcmp(hash, inheritance_1, FILE_HASH_SIZE) == 0);
 
   testGroupEnd();

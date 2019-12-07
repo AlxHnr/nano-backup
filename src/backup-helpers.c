@@ -30,7 +30,7 @@ static void checkFileContentChanges(PathNode *node, PathState *state,
 
   if(state->metadata.reg.size > FILE_HASH_SIZE)
   {
-    fileHash(node->path.content, stats, hash);
+    fileHash(node->path, stats, hash);
   }
   else
   {

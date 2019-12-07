@@ -23,11 +23,11 @@ static Buffer *io_buffer = NULL;
   @param hash The location to which the hash will be written. Its size must
   be at least FILE_HASH_SIZE.
 */
-void fileHash(const char *path, struct stat stats, uint8_t *hash)
+void fileHash(String path, struct stat stats, uint8_t *hash)
 {
   size_t blocksize    = stats.st_blksize;
   uint64_t bytes_left = stats.st_size;
-  FileStream *stream  = sFopenRead(strWrap(path));
+  FileStream *stream  = sFopenRead(path);
 
   bufferEnsureCapacity(&io_buffer, blocksize);
   char *buffer = io_buffer->data;
@@ -49,7 +49,7 @@ void fileHash(const char *path, struct stat stats, uint8_t *hash)
 
   if(stream_not_at_end)
   {
-    die("file changed while calculating hash: \"%s\"", path);
+    die("file changed while calculating hash: \"%s\"", path.content);
   }
 
   blake2b_final(&state, hash, FILE_HASH_SIZE);

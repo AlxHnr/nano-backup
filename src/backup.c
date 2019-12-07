@@ -757,7 +757,7 @@ static void addFileToRepo(PathNode *node, String repo_path,
   {
     if((node->hint & BH_fresh_hash) == false)
     {
-      fileHash(node->path.content, stats, reg->hash);
+      fileHash(node->path, stats, reg->hash);
     }
 
     if(searchFileDuplicates(node, repo_path, stats) == false)
