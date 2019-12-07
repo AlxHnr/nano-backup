@@ -63,20 +63,20 @@ static void checkFileContentChanges(PathNode *node, PathState *state,
   @param stats The stats of the symlink.
   @param buffer_ptr The Buffer in which the string will be stored.
 */
-void readSymlink(const char *path,
+void readSymlink(String path,
                  struct stat stats,
                  Buffer **buffer_ptr)
 {
   uint64_t buffer_length = sUint64Add(stats.st_size, 1);
   if(buffer_length > SIZE_MAX)
   {
-    die("symlink does not fit in memory: \"%s\"", path);
+    die("symlink does not fit in memory: \"%s\"", path.content);
   }
   else if(buffer_length > SSIZE_MAX)
   {
     /* In this case the behaviour of readlink() is implementation
        dependent and not portable. */
-    die("symlink is too large: \"%s\"", path);
+    die("symlink is too large: \"%s\"", path.content);
   }
 
   bufferEnsureCapacity(buffer_ptr, buffer_length);
@@ -84,15 +84,15 @@ void readSymlink(const char *path,
   /* Although st_size bytes are enough to store the symlinks target path,
      the full buffer is used. This allows to detect whether the symlink
      has increased in size since its last lstat() or not. */
-  ssize_t read_bytes = readlink(path, (*buffer_ptr)->data, buffer_length);
+  ssize_t read_bytes = readlink(path.content, (*buffer_ptr)->data, buffer_length);
 
   if(read_bytes == -1)
   {
-    dieErrno("failed to read symlink: \"%s\"", path);
+    dieErrno("failed to read symlink: \"%s\"", path.content);
   }
   else if(read_bytes != stats.st_size)
   {
-    die("symlink changed while reading: \"%s\"", path);
+    die("symlink changed while reading: \"%s\"", path.content);
   }
 
   (*buffer_ptr)->data[stats.st_size] = '\0';
@@ -143,7 +143,7 @@ void applyNodeChanges(PathNode *node, PathState *state, struct stat stats)
   }
   else if(state->type == PST_symlink)
   {
-    readSymlink(node->path.content, stats, &io_buffer);
+    readSymlink(node->path, stats, &io_buffer);
 
     if(strcmp(state->metadata.sym_target, io_buffer->data) != 0)
     {

@@ -9,8 +9,9 @@
 
 #include "buffer.h"
 #include "metadata.h"
+#include "str.h"
 
-extern void readSymlink(const char *path,
+extern void readSymlink(String path,
                         struct stat stats,
                         Buffer **buffer_ptr);
 extern void applyNodeChanges(PathNode *node, PathState *state,
