@@ -11,6 +11,7 @@
 
 #include "file-hash.h"
 #include "memory-pool.h"
+#include "safe-math.h"
 #include "safe-wrappers.h"
 #include "error-handling.h"
 

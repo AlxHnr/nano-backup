@@ -7,6 +7,7 @@
 #include <stdio.h>
 
 #include "colors.h"
+#include "safe-math.h"
 #include "safe-wrappers.h"
 
 /** Prints the given config line number in colors to stderr. */

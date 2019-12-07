@@ -10,6 +10,7 @@
 #include "buffer.h"
 #include "search.h"
 #include "file-hash.h"
+#include "safe-math.h"
 #include "repository.h"
 #include "memory-pool.h"
 #include "safe-wrappers.h"

@@ -13,6 +13,7 @@
 #include <stdbool.h>
 #include <inttypes.h>
 
+#include "safe-math.h"
 #include "safe-wrappers.h"
 #include "error-handling.h"
 

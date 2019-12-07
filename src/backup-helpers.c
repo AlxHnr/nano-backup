@@ -8,6 +8,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "safe-math.h"
 #include "safe-wrappers.h"
 #include "error-handling.h"
 

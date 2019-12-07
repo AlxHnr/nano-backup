@@ -10,6 +10,7 @@
 #include "file-hash.h"
 #include "test-common.h"
 #include "memory-pool.h"
+#include "safe-math.h"
 #include "safe-wrappers.h"
 #include "error-handling.h"
 

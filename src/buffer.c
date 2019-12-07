@@ -6,6 +6,7 @@
 
 #include <stdlib.h>
 
+#include "safe-math.h"
 #include "safe-wrappers.h"
 
 static Buffer **buffers = NULL;

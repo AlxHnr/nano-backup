@@ -8,6 +8,7 @@
 
 #include "path-builder.h"
 #include "string-table.h"
+#include "safe-math.h"
 #include "safe-wrappers.h"
 
 static Buffer *path_buffer = NULL;

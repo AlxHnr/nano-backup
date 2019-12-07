@@ -6,6 +6,7 @@
 
 #include <string.h>
 
+#include "safe-math.h"
 #include "safe-wrappers.h"
 
 /** Copies the given path into the specified Buffer.

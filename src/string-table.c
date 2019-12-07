@@ -9,6 +9,7 @@
 #include <string.h>
 
 #include "memory-pool.h"
+#include "safe-math.h"
 #include "safe-wrappers.h"
 
 #include "SipHash/siphash.h"

@@ -10,7 +10,7 @@
 #include "CRegion/global-region.h"
 #include "CRegion/region.h"
 
-#include "safe-wrappers.h"
+#include "safe-math.h"
 
 /** Wraps the given C string into a String.
 
