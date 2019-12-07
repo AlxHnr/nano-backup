@@ -88,8 +88,7 @@ bool strEqual(String a, String b)
   @param string The string to terminate.
   @param buffer A buffer to use in case the given string is not terminated
   and needs to be copied. This pointer to a buffer will be updated on
-  allocations. See the documentation of dynamicAlloc() and ensureCapacity()
-  for more informations on behaviour and lifetimes.
+  allocations.
 
   @return A pointer to either the given strings content, or to the given
   buffer.
@@ -135,7 +134,7 @@ String strRemoveTrailingSlashes(String string)
 }
 
 /** Appends the two given strings with a slash in between. E.g.
-  strAppendPath(r, "/etc", "init.d") -> "/etc/init.d".
+  strAppendPath("/etc", "init.d") -> "/etc/init.d".
 
   @param a The string to which b will be appended.
   @param b The string which will be appended to a.
