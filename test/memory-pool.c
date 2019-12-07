@@ -57,6 +57,6 @@ int main(void)
   assert_true(data80 != data16384);
 
   /* mpAlloc() must fail if called with 0 as argument. */
-  assert_error(mpAlloc(0), "memory pool: unable to allocate 0 bytes");
+  assert_error(mpAlloc(0), "unable to allocate 0 bytes");
   testGroupEnd();
 }

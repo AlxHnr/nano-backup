@@ -6,33 +6,8 @@
 
 #include "memory-pool.h"
 
-#include <stdlib.h>
-
-#include "error-handling.h"
-#include "safe-wrappers.h"
-
-/** Stores the references to all chunks. */
-static char **chunks = NULL;
-static size_t chunks_allocated = 0;
-
-/** A pointer to the beginning of the current chunk. */
-static char *chunk = NULL;
-static size_t chunk_used = 0;
-static size_t chunk_size = 0;
-
-/** A helper variable for calculating the size of the next chunk. */
-static size_t least_chunk_size = 1024;
-
-/** Frees the internal memory pool. */
-static void freeMemoryPool(void)
-{
-  for(size_t index = 0; index < chunks_allocated; index++)
-  {
-    free(chunks[index]);
-  }
-
-  free(chunks);
-}
+#include "CRegion/global-region.h"
+#include "CRegion/region.h"
 
 /** Allocates memory from the internal memory pool. This function will
   terminate the program on failure.
@@ -45,37 +20,5 @@ static void freeMemoryPool(void)
 */
 void *mpAlloc(size_t size)
 {
-  if(size == 0)
-  {
-    die("memory pool: unable to allocate 0 bytes");
-  }
-
-  if(size > chunk_size - chunk_used)
-  {
-    if(chunks == NULL) sAtexit(freeMemoryPool);
-
-    /* Add new slot to chunk array. */
-    size_t new_chunk_array_size =
-      sSizeMul(sSizeAdd(chunks_allocated, 1), sizeof *chunks);
-
-    chunks = sRealloc(chunks, new_chunk_array_size);
-
-    /* Allocate new chunk. */
-    least_chunk_size = sSizeMul(least_chunk_size, 2);
-    chunk_size = size > least_chunk_size ? size : least_chunk_size;
-    chunk = sMalloc(chunk_size);
-
-    /* Update static variables. */
-    chunks[chunks_allocated] = chunk;
-    chunks_allocated++;
-    chunk_used = size;
-
-    return chunk;
-  }
-  else
-  {
-    void *data = &chunk[chunk_used];
-    chunk_used += size;
-    return data;
-  }
+  return CR_RegionAlloc(CR_GetGlobalRegion(), size);
 }

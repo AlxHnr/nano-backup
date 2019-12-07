@@ -104,7 +104,7 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("fixed table with size 0");
-  assert_error(strTableNewFixed(0), "memory pool: unable to allocate 0 bytes");
+  assert_error(strTableNewFixed(0), "unable to allocate 0 bytes");
   testGroupEnd();
 
   testGroupStart("fixed table with size 1");
