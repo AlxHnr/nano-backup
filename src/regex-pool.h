@@ -8,8 +8,10 @@
 
 #include <regex.h>
 
-extern const regex_t *rpCompile(const char *expression,
-                                const char *file_name,
+#include "str.h"
+
+extern const regex_t *rpCompile(String expression,
+                                String file_name,
                                 size_t line_nr);
 
 #endif

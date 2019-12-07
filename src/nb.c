@@ -247,8 +247,8 @@ int main(const int arg_count, const char **arg_list)
 
     runGC(metadataLoadFromRepo(arg_list[1]), arg_list[1], false);
   }
-  else if(regexec(rpCompile("^[0-9]+$", __FILE__, __LINE__),
-                  arg_list[2], 0, NULL, 0) == 0)
+  else if(regexec(rpCompile(strWrap("^[0-9]+$"), strWrap(__FILE__),
+                            __LINE__), arg_list[2], 0, NULL, 0) == 0)
   {
     if(arg_count > 4)
     {

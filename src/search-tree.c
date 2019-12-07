@@ -81,7 +81,7 @@ static SearchNode *newNode(StringTable *existing_nodes,
     String copy = strCopy(expression);
     memcpy(&node->name, &copy, sizeof(node->name));
 
-    node->regex = rpCompile(node->name.content, "config", line_nr);
+    node->regex = rpCompile(node->name, strWrap("config"), line_nr);
 
     parent_node->subnodes_contain_regex = true;
   }
@@ -246,7 +246,7 @@ SearchNode *searchTreeParse(String config)
       /* Pass the copy of the current line, to ensure that the string is
          null-terminated. */
       ignore_expression->regex =
-        rpCompile(ignore_expression->expression.content, "config", line_nr);
+        rpCompile(ignore_expression->expression, strWrap("config"), line_nr);
 
       ignore_expression->has_matched = false;
 
