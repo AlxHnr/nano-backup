@@ -2213,7 +2213,7 @@ static void runPhaseSlotOverflow(SearchNode *phase_collision_node)
   mustHaveRegularStat(b, &metadata->current_backup, 214, NULL, 0);
 
   /* Finish backup. */
-  assert_error(finishBackup(metadata, "tmp/repo", "tmp/repo/tmp-file"),
+  assert_error(finishBackup(metadata, strWrap("tmp/repo"), strWrap("tmp/repo/tmp-file")),
                "overflow calculating slot number");
 }
 

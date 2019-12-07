@@ -160,7 +160,7 @@ static void backup(const char *repo_arg)
     }
 
     ensureUserConsent("proceed?");
-    finishBackup(metadata, repo_arg, tmp_file_path.content);
+    finishBackup(metadata, strWrap(repo_arg), tmp_file_path);
     metadataWrite(metadata, repo_arg, tmp_file_path.content,
                   metadata_path.content);
 

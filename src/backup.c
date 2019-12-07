@@ -602,8 +602,8 @@ static SearchResultType initiateMetadataRecursively(Metadata *metadata,
   @param stats The stats of the file represented by the node. Required to
   determine the ideal block size.
 */
-static void copyFileIntoRepo(PathNode *node, const char *repo_path,
-                             const char *repo_tmp_file_path,
+static void copyFileIntoRepo(PathNode *node, String repo_path,
+                             String repo_tmp_file_path,
                              struct stat stats)
 {
   RegularFileInfo *reg = &node->history->state.metadata.reg;
@@ -611,7 +611,8 @@ static void copyFileIntoRepo(PathNode *node, const char *repo_path,
   uint64_t bytes_left = reg->size;
 
   FileStream *reader = sFopenRead(node->path);
-  RepoWriter *writer = repoWriterOpenFile(repo_path, repo_tmp_file_path,
+  RepoWriter *writer = repoWriterOpenFile(repo_path.content,
+                                          repo_tmp_file_path.content,
                                           node->path.content, reg);
 
   bufferEnsureCapacity(&io_buffer, blocksize);
@@ -651,7 +652,7 @@ static void copyFileIntoRepo(PathNode *node, const char *repo_path,
   @return True if the file represented by the node is equal to its stored
   counterpart.
 */
-static bool equalsToStoredFile(PathNode *node, const char *repo_path,
+static bool equalsToStoredFile(PathNode *node, String repo_path,
                                struct stat stats)
 {
   RegularFileInfo *reg = &node->history->state.metadata.reg;
@@ -664,7 +665,7 @@ static bool equalsToStoredFile(PathNode *node, const char *repo_path,
   char *buffer = io_buffer->data;
 
   RepoReader *repo_stream =
-    repoReaderOpenFile(repo_path, node->path.content, reg);
+    repoReaderOpenFile(repo_path.content, node->path.content, reg);
   char *repo_buffer = &buffer[blocksize];
 
   bool files_equal = true;
@@ -709,14 +710,13 @@ static bool equalsToStoredFile(PathNode *node, const char *repo_path,
   number will be set to the already existing files slot number. If false is
   returned, the nodes slot number will contain the next free slot number.
 */
-static bool searchFileDuplicates(PathNode *node, const char *repo_path,
+static bool searchFileDuplicates(PathNode *node, String repo_path,
                                  struct stat stats)
 {
   RegularFileInfo *reg = &node->history->state.metadata.reg;
-  String repo_path_str = strWrap(repo_path);
   reg->slot = 0;
 
-  while(repoRegularFileExists(repo_path_str, reg))
+  while(repoRegularFileExists(repo_path, reg))
   {
     if(equalsToStoredFile(node, repo_path, stats))
     {
@@ -742,8 +742,8 @@ static bool searchFileDuplicates(PathNode *node, const char *repo_path,
   @param repo_path The path to the repository.
   @param repo_tmp_file_path The path to the repositories temporary file.
 */
-static void addFileToRepo(PathNode *node, const char *repo_path,
-                          const char *repo_tmp_file_path)
+static void addFileToRepo(PathNode *node, String repo_path,
+                          String repo_tmp_file_path)
 {
   RegularFileInfo *reg = &node->history->state.metadata.reg;
 
@@ -792,8 +792,8 @@ static void addFileToRepo(PathNode *node, const char *repo_path,
 */
 static void finishBackupRecursively(Metadata *metadata,
                                     PathNode *node_list,
-                                    const char *repo_path,
-                                    const char *repo_tmp_file_path)
+                                    String repo_path,
+                                    String repo_tmp_file_path)
 {
   for(PathNode *node = node_list; node != NULL; node = node->next)
   {
@@ -850,8 +850,8 @@ void initiateBackup(Metadata *metadata, SearchNode *root_node)
   @param repo_path The path to the repository.
   @param repo_tmp_file_path The path to the repositories temporary file.
 */
-void finishBackup(Metadata *metadata, const char *repo_path,
-                  const char *repo_tmp_file_path)
+void finishBackup(Metadata *metadata, String repo_path,
+                  String repo_tmp_file_path)
 {
   finishBackupRecursively(metadata, metadata->paths, repo_path,
                           repo_tmp_file_path);

@@ -508,7 +508,7 @@ void completeBackup(Metadata *metadata)
     sRealloc(phase_timestamp_array, sizeof *phase_timestamp_array * phases_completed);
 
   time_t before_finishing = sTime();
-  finishBackup(metadata,  "tmp/repo", "tmp/repo/tmp-file");
+  finishBackup(metadata,  strWrap("tmp/repo"), strWrap("tmp/repo/tmp-file"));
   time_t after_finishing = sTime();
 
   assert_true(metadata->current_backup.timestamp >= before_finishing);
