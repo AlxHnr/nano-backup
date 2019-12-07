@@ -340,8 +340,8 @@ static SearchResult finishSearchStep(SearchContext *context)
       }
       else
       {
-        warnNodeMatches(node, dir_entry_name.content);
-        warnNodeMatches(matched_node, dir_entry_name.content);
+        warnNodeMatches(node, dir_entry_name);
+        warnNodeMatches(matched_node, dir_entry_name);
         die("ambiguous rules for path: \"%s\"", context->buffer.str);
       }
     }

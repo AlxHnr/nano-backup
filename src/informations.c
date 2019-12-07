@@ -508,12 +508,12 @@ MetadataChanges printMetadataChanges(Metadata *metadata)
 }
 
 /** Prints a warning on how the specified node matches the given string. */
-void warnNodeMatches(SearchNode *node, const char *string)
+void warnNodeMatches(SearchNode *node, String string)
 {
   warnConfigLineNr(node->line_nr);
   fprintf(stderr, "%s ", typeOf(node));
   warnPath(node->name);
   fprintf(stderr, " matches \"");
-  colorPrintf(stderr, TC_yellow, "%s", string);
+  colorPrintf(stderr, TC_yellow, "%s", string.content);
   fprintf(stderr, "\"\n");
 }
