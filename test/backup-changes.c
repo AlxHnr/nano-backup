@@ -995,78 +995,78 @@ static void trackChangeDetectionTest(SearchNode *track_detection_node)
 
   PathNode *node_0 = findSubnode(files, "0", BH_owner_changed, BPOL_track, 2, 1);
   mustHaveDirectoryStat(node_0, &metadata->current_backup);
-  struct stat node_0_stats = sStat(node_0->path.content);
+  struct stat node_0_stats = sStat(node_0->path);
   node_0_stats.st_uid++;
   mustHaveDirectoryStats(node_0, &metadata->backup_history[1], node_0_stats);
 
   PathNode *node_1 = findSubnode(node_0, "1", BH_owner_changed, BPOL_track, 2, 0);
   mustHaveDirectoryStat(node_1, &metadata->current_backup);
-  struct stat node_1_stats = sStat(node_1->path.content);
+  struct stat node_1_stats = sStat(node_1->path);
   node_1_stats.st_gid++;
   mustHaveDirectoryStats(node_1, &metadata->backup_history[1], node_1_stats);
 
   PathNode *node_2 = findSubnode(files, "2", BH_permissions_changed, BPOL_track, 2, 0);
   mustHaveDirectoryStat(node_2, &metadata->current_backup);
-  struct stat node_2_stats = sStat(node_2->path.content);
+  struct stat node_2_stats = sStat(node_2->path);
   node_2_stats.st_mode++;
   mustHaveDirectoryStats(node_2, &metadata->backup_history[1], node_2_stats);
 
   PathNode *node_3 = findSubnode(files, "3", BH_timestamp_changed, BPOL_track, 2, 0);
   mustHaveDirectoryStat(node_3, &metadata->current_backup);
-  struct stat node_3_stats = sStat(node_3->path.content);
+  struct stat node_3_stats = sStat(node_3->path);
   node_3_stats.st_mtime++;
   mustHaveDirectoryStats(node_3, &metadata->backup_history[1], node_3_stats);
 
   PathNode *node_4 = findSubnode(files, "4", BH_permissions_changed | BH_timestamp_changed, BPOL_track, 2, 0);
   mustHaveDirectoryStat(node_4, &metadata->current_backup);
-  struct stat node_4_stats = sStat(node_4->path.content);
+  struct stat node_4_stats = sStat(node_4->path);
   node_4_stats.st_mode++;
   node_4_stats.st_mtime++;
   mustHaveDirectoryStats(node_4, &metadata->backup_history[1], node_4_stats);
 
   PathNode *node_5 = findSubnode(files, "5", BH_owner_changed | BH_permissions_changed, BPOL_track, 2, 2);
   mustHaveDirectoryStat(node_5, &metadata->current_backup);
-  struct stat node_5_stats = sStat(node_5->path.content);
+  struct stat node_5_stats = sStat(node_5->path);
   node_5_stats.st_uid++;
   node_5_stats.st_mode++;
   mustHaveDirectoryStats(node_5, &metadata->backup_history[1], node_5_stats);
 
   PathNode *node_6 = findSubnode(node_5, "6", BH_owner_changed | BH_content_changed, BPOL_track, 2, 0);
   mustHaveSymlinkLStat(node_6, &metadata->current_backup, "/dev/null");
-  struct stat node_6_stats = sLStat(node_6->path.content);
+  struct stat node_6_stats = sLStat(node_6->path);
   node_6_stats.st_uid++;
   mustHaveSymlinkStats(node_6, &metadata->backup_history[1], node_6_stats, "/dev/non-existing");
 
   PathNode *node_7 = findSubnode(node_5, "7", BH_owner_changed, BPOL_track, 2, 0);
   mustHaveRegularStat(node_7, &metadata->current_backup, 400, three_hash, 0);
-  struct stat node_7_stats = sStat(node_7->path.content);
+  struct stat node_7_stats = sStat(node_7->path);
   node_7_stats.st_uid++;
   mustHaveRegularStats(node_7, &metadata->backup_history[1], node_7_stats, 400, three_hash, 0);
 
   PathNode *node_8 = findSubnode(files, "8", BH_owner_changed | BH_timestamp_changed, BPOL_track, 2, 4);
   mustHaveDirectoryStat(node_8, &metadata->current_backup);
-  struct stat node_8_stats = sStat(node_8->path.content);
+  struct stat node_8_stats = sStat(node_8->path);
   node_8_stats.st_gid++;
   node_8_stats.st_mtime++;
   mustHaveDirectoryStats(node_8, &metadata->backup_history[1], node_8_stats);
 
   PathNode *node_9 = findSubnode(node_8, "9", BH_owner_changed | BH_content_changed, BPOL_track, 2, 0);
   mustHaveRegularStat(node_9, &metadata->current_backup, 12, (uint8_t *)"This is a file\n", 0);
-  struct stat node_9_stats = sStat(node_9->path.content);
+  struct stat node_9_stats = sStat(node_9->path);
   node_9_stats.st_uid++;
   mustHaveRegularStats(node_9, &metadata->backup_history[1], node_9_stats, 15,
                        (uint8_t *)"This is a file\n", 0);
 
   PathNode *node_10 = findSubnode(node_8, "10", BH_timestamp_changed, BPOL_track, 2, 0);
   mustHaveRegularStat(node_10, &metadata->current_backup, 11, (uint8_t *)"GID and UID", 0);
-  struct stat node_10_stats = sStat(node_10->path.content);
+  struct stat node_10_stats = sStat(node_10->path);
   node_10_stats.st_mtime++;
   mustHaveRegularStats(node_10, &metadata->backup_history[1], node_10_stats, 11,
                        (uint8_t *)"GID and UID", 0);
 
   PathNode *node_11 = findSubnode(node_8, "11", BH_owner_changed | BH_permissions_changed, BPOL_track, 2, 0);
   mustHaveRegularStat(node_11, &metadata->current_backup, 0, (uint8_t *)"", 0);
-  struct stat node_11_stats = sStat(node_11->path.content);
+  struct stat node_11_stats = sStat(node_11->path);
   node_11_stats.st_uid++;
   node_11_stats.st_mode++;
   mustHaveRegularStats(node_11, &metadata->backup_history[1], node_11_stats, 0, (uint8_t *)"", 0);
@@ -1074,7 +1074,7 @@ static void trackChangeDetectionTest(SearchNode *track_detection_node)
   PathNode *node_12 = findSubnode(node_8, "12", BH_owner_changed | BH_permissions_changed |
                                   BH_content_changed, BPOL_track, 2, 0);
   mustHaveRegularStat(node_12, &metadata->current_backup, 14, some_file_hash, 0);
-  struct stat node_12_stats = sStat(node_12->path.content);
+  struct stat node_12_stats = sStat(node_12->path);
   node_12_stats.st_gid++;
   node_12_stats.st_mode++;
   mustHaveRegularStats(node_12, &metadata->backup_history[1], node_12_stats, 84, some_file_hash, 0);
@@ -1082,7 +1082,7 @@ static void trackChangeDetectionTest(SearchNode *track_detection_node)
   PathNode *node_13 = findSubnode(files, "13", BH_owner_changed | BH_permissions_changed |
                                   BH_timestamp_changed, BPOL_track, 2, 0);
   mustHaveDirectoryStat(node_13, &metadata->current_backup);
-  struct stat node_13_stats = sStat(node_13->path.content);
+  struct stat node_13_stats = sStat(node_13->path);
   node_13_stats.st_gid++;
   node_13_stats.st_mode++;
   node_13_stats.st_mtime++;
@@ -1090,20 +1090,20 @@ static void trackChangeDetectionTest(SearchNode *track_detection_node)
 
   PathNode *node_14 = findSubnode(files, "14", BH_owner_changed | BH_timestamp_changed, BPOL_track, 2, 0);
   mustHaveDirectoryStat(node_14, &metadata->current_backup);
-  struct stat node_14_stats = sStat(node_14->path.content);
+  struct stat node_14_stats = sStat(node_14->path);
   node_14_stats.st_uid++;
   node_14_stats.st_mtime++;
   mustHaveDirectoryStats(node_14, &metadata->backup_history[1], node_14_stats);
 
   PathNode *node_15 = findSubnode(files, "15", BH_owner_changed, BPOL_track, 2, 0);
   mustHaveSymlinkLStat(node_15, &metadata->current_backup, "uid changing symlink");
-  struct stat node_15_stats = sLStat(node_15->path.content);
+  struct stat node_15_stats = sLStat(node_15->path);
   node_15_stats.st_uid++;
   mustHaveSymlinkStats(node_15, &metadata->backup_history[1], node_15_stats, "uid changing symlink");
 
   PathNode *node_16 = findSubnode(files, "16", BH_owner_changed, BPOL_track, 2, 0);
   mustHaveSymlinkLStat(node_16, &metadata->current_backup, "gid changing symlink");
-  struct stat node_16_stats = sLStat(node_16->path.content);
+  struct stat node_16_stats = sLStat(node_16->path);
   node_16_stats.st_gid++;
   mustHaveSymlinkStats(node_16, &metadata->backup_history[1], node_16_stats, "gid changing symlink");
 
@@ -1117,32 +1117,32 @@ static void trackChangeDetectionTest(SearchNode *track_detection_node)
 
   PathNode *node_19 = findSubnode(files, "19", BH_owner_changed | BH_content_changed, BPOL_track, 2, 0);
   mustHaveSymlinkLStat(node_19, &metadata->current_backup, "uid + content");
-  struct stat node_19_stats = sLStat(node_19->path.content);
+  struct stat node_19_stats = sLStat(node_19->path);
   node_19_stats.st_gid++;
   mustHaveSymlinkStats(node_19, &metadata->backup_history[1], node_19_stats, "gid + content");
 
   PathNode *node_20 = findSubnode(files, "20", BH_owner_changed | BH_content_changed, BPOL_track, 2, 0);
   mustHaveSymlinkLStat(node_20, &metadata->current_backup, "content, uid, gid ");
-  struct stat node_20_stats = sLStat(node_20->path.content);
+  struct stat node_20_stats = sLStat(node_20->path);
   node_20_stats.st_uid++;
   node_20_stats.st_gid++;
   mustHaveSymlinkStats(node_20, &metadata->backup_history[1], node_20_stats, "content, uid, gid");
 
   PathNode *node_21 = findSubnode(files, "21", BH_owner_changed, BPOL_track, 2, 0);
   mustHaveRegularStat(node_21, &metadata->current_backup, 2100, super_hash, 0);
-  struct stat node_21_stats = sStat(node_21->path.content);
+  struct stat node_21_stats = sStat(node_21->path);
   node_21_stats.st_gid++;
   mustHaveRegularStats(node_21, &metadata->backup_history[1], node_21_stats, 2100, super_hash, 0);
 
   PathNode *node_22 = findSubnode(files, "22", BH_permissions_changed, BPOL_track, 2, 0);
   mustHaveRegularStat(node_22, &metadata->current_backup, 1200, data_d_hash, 0);
-  struct stat node_22_stats = sStat(node_22->path.content);
+  struct stat node_22_stats = sStat(node_22->path);
   node_22_stats.st_mode++;
   mustHaveRegularStats(node_22, &metadata->backup_history[1], node_22_stats, 1200, data_d_hash, 0);
 
   PathNode *node_23 = findSubnode(files, "23", BH_timestamp_changed, BPOL_track, 2, 0);
   mustHaveRegularStat(node_23, &metadata->current_backup, 144, nested_1_hash, 0);
-  struct stat node_23_stats = sStat(node_23->path.content);
+  struct stat node_23_stats = sStat(node_23->path);
   node_23_stats.st_mtime++;
   mustHaveRegularStats(node_23, &metadata->backup_history[1], node_23_stats, 144, nested_1_hash, 0);
 
@@ -1155,26 +1155,26 @@ static void trackChangeDetectionTest(SearchNode *track_detection_node)
 
   PathNode *node_26 = findSubnode(files, "26", BH_owner_changed | BH_content_changed, BPOL_track, 2, 0);
   mustHaveRegularStat(node_26, &metadata->current_backup, 22, nb_a_abc_1_hash, 0);
-  struct stat node_26_stats = sStat(node_26->path.content);
+  struct stat node_26_stats = sStat(node_26->path);
   node_26_stats.st_gid++;
   mustHaveRegularStats(node_26, &metadata->backup_history[1], node_26_stats, 24, nb_a_abc_1_hash, 0);
 
   PathNode *node_27 = findSubnode(files, "27", BH_permissions_changed, BPOL_track, 2, 0);
   mustHaveRegularStat(node_27, &metadata->current_backup, 21, nb_manual_b_hash, 0);
-  struct stat node_27_stats = sStat(node_27->path.content);
+  struct stat node_27_stats = sStat(node_27->path);
   node_27_stats.st_mode++;
   mustHaveRegularStats(node_27, &metadata->backup_history[1], node_27_stats, 21, nb_manual_b_hash, 0);
 
   PathNode *node_28 = findSubnode(files, "28", BH_timestamp_changed | BH_content_changed, BPOL_track, 2, 0);
   mustHaveRegularStat(node_28, &metadata->current_backup, 2124, bin_hash, 0);
-  struct stat node_28_stats = sStat(node_28->path.content);
+  struct stat node_28_stats = sStat(node_28->path);
   node_28_stats.st_mtime++;
   mustHaveRegularStats(node_28, &metadata->backup_history[1], node_28_stats, 2123, bin_hash, 0);
 
   PathNode *node_29 = findSubnode(files, "29", BH_owner_changed | BH_timestamp_changed |
                                   BH_content_changed | BH_fresh_hash, BPOL_track, 2, 0);
   mustHaveRegularStat(node_29, &metadata->current_backup, 1200, node_29_hash, 0);
-  struct stat node_29_stats = sStat(node_29->path.content);
+  struct stat node_29_stats = sStat(node_29->path);
   node_29_stats.st_uid++;
   node_29_stats.st_mtime++;
   mustHaveRegularStats(node_29, &metadata->backup_history[1], node_29_stats, 1200, bin_c_1_hash, 0);
@@ -1182,7 +1182,7 @@ static void trackChangeDetectionTest(SearchNode *track_detection_node)
   PathNode *node_30 = findSubnode(files, "30", BH_owner_changed | BH_permissions_changed |
                                   BH_timestamp_changed, BPOL_track, 2, 0);
   mustHaveRegularStat(node_30, &metadata->current_backup, 400, three_hash, 0);
-  struct stat node_30_stats = sStat(node_30->path.content);
+  struct stat node_30_stats = sStat(node_30->path);
   node_30_stats.st_uid++;
   node_30_stats.st_mode++;
   node_30_stats.st_mtime++;
@@ -1190,7 +1190,7 @@ static void trackChangeDetectionTest(SearchNode *track_detection_node)
 
   PathNode *node_31 = findSubnode(files, "31", BH_owner_changed, BPOL_track, 2, 0);
   mustHaveRegularStat(node_31, &metadata->current_backup, 2100, super_hash, 0);
-  struct stat node_31_stats = sStat(node_31->path.content);
+  struct stat node_31_stats = sStat(node_31->path);
   node_31_stats.st_uid++;
   node_31_stats.st_gid++;
   mustHaveRegularStats(node_31, &metadata->backup_history[1], node_31_stats, 2100, super_hash, 0);
@@ -1206,20 +1206,20 @@ static void trackChangeDetectionTest(SearchNode *track_detection_node)
   PathNode *node_34 = findSubnode(files, "34", BH_timestamp_changed | BH_content_changed |
                                   BH_fresh_hash, BPOL_track, 2, 0);
   mustHaveRegularStat(node_34, &metadata->current_backup, 15, (uint8_t *)"some dummy text", 0);
-  struct stat node_34_stats = sStat(node_34->path.content);
+  struct stat node_34_stats = sStat(node_34->path);
   node_34_stats.st_mtime++;
   mustHaveRegularStats(node_34, &metadata->backup_history[1], node_34_stats,
                        15, (uint8_t *)"Some dummy text", 0);
 
   PathNode *node_35 = findSubnode(files, "35", BH_permissions_changed | BH_content_changed, BPOL_track, 2, 0);
   mustHaveRegularStat(node_35, &metadata->current_backup, 1, (uint8_t *)"abcdefghijkl", 0);
-  struct stat node_35_stats = sStat(node_35->path.content);
+  struct stat node_35_stats = sStat(node_35->path);
   node_35_stats.st_mode++;
   mustHaveRegularStats(node_35, &metadata->backup_history[1], node_35_stats, 12, (uint8_t *)"abcdefghijkl", 0);
 
   PathNode *node_36 = findSubnode(files, "36", BH_owner_changed | BH_permissions_changed, BPOL_track, 2, 0);
   mustHaveRegularStat(node_36, &metadata->current_backup, 11, (uint8_t *)"Nano Backup", 0);
-  struct stat node_36_stats = sStat(node_36->path.content);
+  struct stat node_36_stats = sStat(node_36->path);
   node_36_stats.st_gid++;
   node_36_stats.st_mode++;
   mustHaveRegularStats(node_36, &metadata->backup_history[1], node_36_stats, 11, (uint8_t *)"Nano Backup", 0);
@@ -1235,19 +1235,19 @@ static void trackChangeDetectionTest(SearchNode *track_detection_node)
 
   PathNode *node_39 = findSubnode(files, "39", BH_owner_changed, BPOL_track, 2, 0);
   mustHaveRegularStat(node_39, &metadata->current_backup, 0, (uint8_t *)"", 0);
-  struct stat node_39_stats = sStat(node_39->path.content);
+  struct stat node_39_stats = sStat(node_39->path);
   node_39_stats.st_gid++;
   mustHaveRegularStats(node_39, &metadata->backup_history[1], node_39_stats, 0, (uint8_t *)"", 0);
 
   PathNode *node_40 = findSubnode(files, "40", BH_timestamp_changed, BPOL_track, 2, 0);
   mustHaveRegularStat(node_40, &metadata->current_backup, 0, (uint8_t *)"", 0);
-  struct stat node_40_stats = sStat(node_40->path.content);
+  struct stat node_40_stats = sStat(node_40->path);
   node_40_stats.st_mtime++;
   mustHaveRegularStats(node_40, &metadata->backup_history[1], node_40_stats, 0, (uint8_t *)"", 0);
 
   PathNode *node_41 = findSubnode(files, "41", BH_permissions_changed | BH_content_changed, BPOL_track, 2, 0);
   mustHaveRegularStat(node_41, &metadata->current_backup, 0, (uint8_t *)"random file", 0);
-  struct stat node_41_stats = sStat(node_41->path.content);
+  struct stat node_41_stats = sStat(node_41->path);
   node_41_stats.st_mode++;
   mustHaveRegularStats(node_41, &metadata->backup_history[1], node_41_stats, 11, (uint8_t *)"random file", 0);
 
@@ -1255,13 +1255,13 @@ static void trackChangeDetectionTest(SearchNode *track_detection_node)
   memset(node_42->history->state.metadata.reg.hash, 'X', FILE_HASH_SIZE);
   node_42->history->state.metadata.reg.slot = 7;
   mustHaveRegularStat(node_42, &metadata->current_backup, 518, (uint8_t *)"XXXXXXXXXXXXXXXXXXXX", 7);
-  struct stat node_42_stats = sStat(node_42->path.content);
+  struct stat node_42_stats = sStat(node_42->path);
   node_42_stats.st_gid++;
   mustHaveRegularStats(node_42, &metadata->backup_history[1], node_42_stats, 0, (uint8_t *)"", 0);
 
   PathNode *node_43 = findSubnode(files, "43", BH_timestamp_changed | BH_content_changed, BPOL_track, 2, 0);
   mustHaveRegularStat(node_43, &metadata->current_backup, 12, data_d_hash, 0);
-  struct stat node_43_stats = sStat(node_43->path.content);
+  struct stat node_43_stats = sStat(node_43->path);
   node_43_stats.st_mtime++;
   mustHaveRegularStats(node_43, &metadata->backup_history[1], node_43_stats, 1200, data_d_hash, 0);
 
@@ -1279,7 +1279,7 @@ static void trackChangeDetectionTest(SearchNode *track_detection_node)
   memset(&node_46->history->state.metadata.reg.hash[9], '=', 11);
   node_46->history->state.metadata.reg.slot = 0;
   mustHaveRegularStat(node_46, &metadata->current_backup, 615, (uint8_t *)"Test file===========", 0);
-  struct stat node_46_stats = sStat(node_46->path.content);
+  struct stat node_46_stats = sStat(node_46->path);
   node_46_stats.st_uid++;
   mustHaveRegularStats(node_46, &metadata->backup_history[1], node_46_stats, 9, (uint8_t *)"Test file", 0);
 
@@ -1372,90 +1372,90 @@ static void trackPostDetectionTest(SearchNode *track_detection_node)
 
   PathNode *node_0 = findSubnode(files, "0", BH_unchanged, BPOL_track, 2, 1);
   mustHaveDirectoryStat(node_0, &metadata->backup_history[0]);
-  struct stat node_0_stats = sStat(node_0->path.content);
+  struct stat node_0_stats = sStat(node_0->path);
   node_0_stats.st_uid++;
   mustHaveDirectoryStats(node_0, &metadata->backup_history[1], node_0_stats);
 
   PathNode *node_1 = findSubnode(node_0, "1", BH_unchanged, BPOL_track, 2, 0);
   mustHaveDirectoryStat(node_1, &metadata->backup_history[0]);
-  struct stat node_1_stats = sStat(node_1->path.content);
+  struct stat node_1_stats = sStat(node_1->path);
   node_1_stats.st_gid++;
   mustHaveDirectoryStats(node_1, &metadata->backup_history[1], node_1_stats);
 
   PathNode *node_2 = findSubnode(files, "2", BH_unchanged, BPOL_track, 2, 0);
   mustHaveDirectoryStat(node_2, &metadata->backup_history[0]);
-  struct stat node_2_stats = sStat(node_2->path.content);
+  struct stat node_2_stats = sStat(node_2->path);
   node_2_stats.st_mode++;
   mustHaveDirectoryStats(node_2, &metadata->backup_history[1], node_2_stats);
 
   PathNode *node_3 = findSubnode(files, "3", BH_unchanged, BPOL_track, 2, 0);
   mustHaveDirectoryStat(node_3, &metadata->backup_history[0]);
-  struct stat node_3_stats = sStat(node_3->path.content);
+  struct stat node_3_stats = sStat(node_3->path);
   node_3_stats.st_mtime++;
   mustHaveDirectoryStats(node_3, &metadata->backup_history[1], node_3_stats);
 
   PathNode *node_4 = findSubnode(files, "4", BH_unchanged, BPOL_track, 2, 0);
   mustHaveDirectoryStat(node_4, &metadata->backup_history[0]);
-  struct stat node_4_stats = sStat(node_4->path.content);
+  struct stat node_4_stats = sStat(node_4->path);
   node_4_stats.st_mode++;
   node_4_stats.st_mtime++;
   mustHaveDirectoryStats(node_4, &metadata->backup_history[1], node_4_stats);
 
   PathNode *node_5 = findSubnode(files, "5", BH_unchanged, BPOL_track, 2, 2);
   mustHaveDirectoryStat(node_5, &metadata->backup_history[0]);
-  struct stat node_5_stats = sStat(node_5->path.content);
+  struct stat node_5_stats = sStat(node_5->path);
   node_5_stats.st_uid++;
   node_5_stats.st_mode++;
   mustHaveDirectoryStats(node_5, &metadata->backup_history[1], node_5_stats);
 
   PathNode *node_6 = findSubnode(node_5, "6", BH_unchanged, BPOL_track, 2, 0);
   mustHaveSymlinkLStat(node_6, &metadata->backup_history[0], "/dev/null");
-  struct stat node_6_stats = sLStat(node_6->path.content);
+  struct stat node_6_stats = sLStat(node_6->path);
   node_6_stats.st_uid++;
   mustHaveSymlinkStats(node_6, &metadata->backup_history[1], node_6_stats, "/dev/non-existing");
 
   PathNode *node_7 = findSubnode(node_5, "7", BH_unchanged, BPOL_track, 2, 0);
   mustHaveRegularStat(node_7, &metadata->backup_history[0], 400, three_hash, 0);
-  struct stat node_7_stats = sStat(node_7->path.content);
+  struct stat node_7_stats = sStat(node_7->path);
   node_7_stats.st_uid++;
   mustHaveRegularStats(node_7, &metadata->backup_history[1], node_7_stats, 400, three_hash, 0);
 
   PathNode *node_8 = findSubnode(files, "8", BH_unchanged, BPOL_track, 2, 4);
   mustHaveDirectoryStat(node_8, &metadata->backup_history[0]);
-  struct stat node_8_stats = sStat(node_8->path.content);
+  struct stat node_8_stats = sStat(node_8->path);
   node_8_stats.st_gid++;
   node_8_stats.st_mtime++;
   mustHaveDirectoryStats(node_8, &metadata->backup_history[1], node_8_stats);
 
   PathNode *node_9 = findSubnode(node_8, "9", BH_unchanged, BPOL_track, 2, 0);
   mustHaveRegularStat(node_9, &metadata->backup_history[0], 12, (uint8_t *)"This is test", 0);
-  struct stat node_9_stats = sStat(node_9->path.content);
+  struct stat node_9_stats = sStat(node_9->path);
   node_9_stats.st_uid++;
   mustHaveRegularStats(node_9, &metadata->backup_history[1], node_9_stats, 15, (uint8_t *)"This is a file\n", 0);
 
   PathNode *node_10 = findSubnode(node_8, "10", BH_unchanged, BPOL_track, 2, 0);
   mustHaveRegularStat(node_10, &metadata->backup_history[0], 11, (uint8_t *)"GID and UID", 0);
-  struct stat node_10_stats = sStat(node_10->path.content);
+  struct stat node_10_stats = sStat(node_10->path);
   node_10_stats.st_mtime++;
   mustHaveRegularStats(node_10, &metadata->backup_history[1], node_10_stats, 11, (uint8_t *)"GID and UID", 0);
 
   PathNode *node_11 = findSubnode(node_8, "11", BH_unchanged, BPOL_track, 2, 0);
   mustHaveRegularStat(node_11, &metadata->backup_history[0], 0, (uint8_t *)"", 0);
-  struct stat node_11_stats = sStat(node_11->path.content);
+  struct stat node_11_stats = sStat(node_11->path);
   node_11_stats.st_uid++;
   node_11_stats.st_mode++;
   mustHaveRegularStats(node_11, &metadata->backup_history[1], node_11_stats, 0, (uint8_t *)"", 0);
 
   PathNode *node_12 = findSubnode(node_8, "12", BH_unchanged, BPOL_track, 2, 0);
   mustHaveRegularStat(node_12, &metadata->backup_history[0], 14, (uint8_t *)"a short string", 0);
-  struct stat node_12_stats = sStat(node_12->path.content);
+  struct stat node_12_stats = sStat(node_12->path);
   node_12_stats.st_gid++;
   node_12_stats.st_mode++;
   mustHaveRegularStats(node_12, &metadata->backup_history[1], node_12_stats, 84, some_file_hash, 0);
 
   PathNode *node_13 = findSubnode(files, "13", BH_unchanged, BPOL_track, 2, 0);
   mustHaveDirectoryStat(node_13, &metadata->backup_history[0]);
-  struct stat node_13_stats = sStat(node_13->path.content);
+  struct stat node_13_stats = sStat(node_13->path);
   node_13_stats.st_gid++;
   node_13_stats.st_mode++;
   node_13_stats.st_mtime++;
@@ -1463,20 +1463,20 @@ static void trackPostDetectionTest(SearchNode *track_detection_node)
 
   PathNode *node_14 = findSubnode(files, "14", BH_unchanged, BPOL_track, 2, 0);
   mustHaveDirectoryStat(node_14, &metadata->backup_history[0]);
-  struct stat node_14_stats = sStat(node_14->path.content);
+  struct stat node_14_stats = sStat(node_14->path);
   node_14_stats.st_uid++;
   node_14_stats.st_mtime++;
   mustHaveDirectoryStats(node_14, &metadata->backup_history[1], node_14_stats);
 
   PathNode *node_15 = findSubnode(files, "15", BH_unchanged, BPOL_track, 2, 0);
   mustHaveSymlinkLStat(node_15, &metadata->backup_history[0], "uid changing symlink");
-  struct stat node_15_stats = sLStat(node_15->path.content);
+  struct stat node_15_stats = sLStat(node_15->path);
   node_15_stats.st_uid++;
   mustHaveSymlinkStats(node_15, &metadata->backup_history[1], node_15_stats, "uid changing symlink");
 
   PathNode *node_16 = findSubnode(files, "16", BH_unchanged, BPOL_track, 2, 0);
   mustHaveSymlinkLStat(node_16, &metadata->backup_history[0], "gid changing symlink");
-  struct stat node_16_stats = sLStat(node_16->path.content);
+  struct stat node_16_stats = sLStat(node_16->path);
   node_16_stats.st_gid++;
   mustHaveSymlinkStats(node_16, &metadata->backup_history[1], node_16_stats, "gid changing symlink");
 
@@ -1490,32 +1490,32 @@ static void trackPostDetectionTest(SearchNode *track_detection_node)
 
   PathNode *node_19 = findSubnode(files, "19", BH_unchanged, BPOL_track, 2, 0);
   mustHaveSymlinkLStat(node_19, &metadata->backup_history[0], "uid + content");
-  struct stat node_19_stats = sLStat(node_19->path.content);
+  struct stat node_19_stats = sLStat(node_19->path);
   node_19_stats.st_gid++;
   mustHaveSymlinkStats(node_19, &metadata->backup_history[1], node_19_stats, "gid + content");
 
   PathNode *node_20 = findSubnode(files, "20", BH_unchanged, BPOL_track, 2, 0);
   mustHaveSymlinkLStat(node_20, &metadata->backup_history[0], "content, uid, gid ");
-  struct stat node_20_stats = sLStat(node_20->path.content);
+  struct stat node_20_stats = sLStat(node_20->path);
   node_20_stats.st_uid++;
   node_20_stats.st_gid++;
   mustHaveSymlinkStats(node_20, &metadata->backup_history[1], node_20_stats, "content, uid, gid");
 
   PathNode *node_21 = findSubnode(files, "21", BH_unchanged, BPOL_track, 2, 0);
   mustHaveRegularStat(node_21, &metadata->backup_history[0], 2100, super_hash, 0);
-  struct stat node_21_stats = sStat(node_21->path.content);
+  struct stat node_21_stats = sStat(node_21->path);
   node_21_stats.st_gid++;
   mustHaveRegularStats(node_21, &metadata->backup_history[1], node_21_stats, 2100, super_hash, 0);
 
   PathNode *node_22 = findSubnode(files, "22", BH_unchanged, BPOL_track, 2, 0);
   mustHaveRegularStat(node_22, &metadata->backup_history[0], 1200, data_d_hash, 0);
-  struct stat node_22_stats = sStat(node_22->path.content);
+  struct stat node_22_stats = sStat(node_22->path);
   node_22_stats.st_mode++;
   mustHaveRegularStats(node_22, &metadata->backup_history[1], node_22_stats, 1200, data_d_hash, 0);
 
   PathNode *node_23 = findSubnode(files, "23", BH_unchanged, BPOL_track, 2, 0);
   mustHaveRegularStat(node_23, &metadata->backup_history[0], 144, nested_1_hash, 0);
-  struct stat node_23_stats = sStat(node_23->path.content);
+  struct stat node_23_stats = sStat(node_23->path);
   node_23_stats.st_mtime++;
   mustHaveRegularStats(node_23, &metadata->backup_history[1], node_23_stats, 144, nested_1_hash, 0);
 
@@ -1528,32 +1528,32 @@ static void trackPostDetectionTest(SearchNode *track_detection_node)
 
   PathNode *node_26 = findSubnode(files, "26", BH_unchanged, BPOL_track, 2, 0);
   mustHaveRegularStat(node_26, &metadata->backup_history[0], 22, node_26_hash, 0);
-  struct stat node_26_stats = sStat(node_26->path.content);
+  struct stat node_26_stats = sStat(node_26->path);
   node_26_stats.st_gid++;
   mustHaveRegularStats(node_26, &metadata->backup_history[1], node_26_stats, 24, nb_a_abc_1_hash, 0);
 
   PathNode *node_27 = findSubnode(files, "27", BH_unchanged, BPOL_track, 2, 0);
   mustHaveRegularStat(node_27, &metadata->backup_history[0], 21, nb_manual_b_hash, 0);
-  struct stat node_27_stats = sStat(node_27->path.content);
+  struct stat node_27_stats = sStat(node_27->path);
   node_27_stats.st_mode++;
   mustHaveRegularStats(node_27, &metadata->backup_history[1], node_27_stats, 21, nb_manual_b_hash, 0);
 
   PathNode *node_28 = findSubnode(files, "28", BH_unchanged, BPOL_track, 2, 0);
   mustHaveRegularStat(node_28, &metadata->backup_history[0], 2124, node_28_hash, 0);
-  struct stat node_28_stats = sStat(node_28->path.content);
+  struct stat node_28_stats = sStat(node_28->path);
   node_28_stats.st_mtime++;
   mustHaveRegularStats(node_28, &metadata->backup_history[1], node_28_stats, 2123, bin_hash, 0);
 
   PathNode *node_29 = findSubnode(files, "29", BH_unchanged, BPOL_track, 2, 0);
   mustHaveRegularStat(node_29, &metadata->backup_history[0], 1200, node_29_hash, 0);
-  struct stat node_29_stats = sStat(node_29->path.content);
+  struct stat node_29_stats = sStat(node_29->path);
   node_29_stats.st_uid++;
   node_29_stats.st_mtime++;
   mustHaveRegularStats(node_29, &metadata->backup_history[1], node_29_stats, 1200, bin_c_1_hash, 0);
 
   PathNode *node_30 = findSubnode(files, "30", BH_unchanged, BPOL_track, 2, 0);
   mustHaveRegularStat(node_30, &metadata->backup_history[0], 400, three_hash, 0);
-  struct stat node_30_stats = sStat(node_30->path.content);
+  struct stat node_30_stats = sStat(node_30->path);
   node_30_stats.st_uid++;
   node_30_stats.st_mode++;
   node_30_stats.st_mtime++;
@@ -1561,7 +1561,7 @@ static void trackPostDetectionTest(SearchNode *track_detection_node)
 
   PathNode *node_31 = findSubnode(files, "31", BH_unchanged, BPOL_track, 2, 0);
   mustHaveRegularStat(node_31, &metadata->backup_history[0], 2100, super_hash, 0);
-  struct stat node_31_stats = sStat(node_31->path.content);
+  struct stat node_31_stats = sStat(node_31->path);
   node_31_stats.st_uid++;
   node_31_stats.st_gid++;
   mustHaveRegularStats(node_31, &metadata->backup_history[1], node_31_stats, 2100, super_hash, 0);
@@ -1575,19 +1575,19 @@ static void trackPostDetectionTest(SearchNode *track_detection_node)
 
   PathNode *node_34 = findSubnode(files, "34", BH_unchanged, BPOL_track, 2, 0);
   mustHaveRegularStat(node_34, &metadata->backup_history[0], 15, (uint8_t *)"some dummy text", 0);
-  struct stat node_34_stats = sStat(node_34->path.content);
+  struct stat node_34_stats = sStat(node_34->path);
   node_34_stats.st_mtime++;
   mustHaveRegularStats(node_34, &metadata->backup_history[1], node_34_stats, 15, (uint8_t *)"Some dummy text", 0);
 
   PathNode *node_35 = findSubnode(files, "35", BH_unchanged, BPOL_track, 2, 0);
   mustHaveRegularStat(node_35, &metadata->backup_history[0], 1, (uint8_t *)"?", 0);
-  struct stat node_35_stats = sStat(node_35->path.content);
+  struct stat node_35_stats = sStat(node_35->path);
   node_35_stats.st_mode++;
   mustHaveRegularStats(node_35, &metadata->backup_history[1], node_35_stats, 12, (uint8_t *)"abcdefghijkl", 0);
 
   PathNode *node_36 = findSubnode(files, "36", BH_unchanged, BPOL_track, 2, 0);
   mustHaveRegularStat(node_36, &metadata->backup_history[0], 11, (uint8_t *)"Nano Backup", 0);
-  struct stat node_36_stats = sStat(node_36->path.content);
+  struct stat node_36_stats = sStat(node_36->path);
   node_36_stats.st_gid++;
   node_36_stats.st_mode++;
   mustHaveRegularStats(node_36, &metadata->backup_history[1], node_36_stats, 11, (uint8_t *)"Nano Backup", 0);
@@ -1602,31 +1602,31 @@ static void trackPostDetectionTest(SearchNode *track_detection_node)
 
   PathNode *node_39 = findSubnode(files, "39", BH_unchanged, BPOL_track, 2, 0);
   mustHaveRegularStat(node_39, &metadata->backup_history[0], 0, (uint8_t *)"", 0);
-  struct stat node_39_stats = sStat(node_39->path.content);
+  struct stat node_39_stats = sStat(node_39->path);
   node_39_stats.st_gid++;
   mustHaveRegularStats(node_39, &metadata->backup_history[1], node_39_stats, 0, (uint8_t *)"", 0);
 
   PathNode *node_40 = findSubnode(files, "40", BH_unchanged, BPOL_track, 2, 0);
   mustHaveRegularStat(node_40, &metadata->backup_history[0], 0, (uint8_t *)"", 0);
-  struct stat node_40_stats = sStat(node_40->path.content);
+  struct stat node_40_stats = sStat(node_40->path);
   node_40_stats.st_mtime++;
   mustHaveRegularStats(node_40, &metadata->backup_history[1], node_40_stats, 0, (uint8_t *)"", 0);
 
   PathNode *node_41 = findSubnode(files, "41", BH_unchanged, BPOL_track, 2, 0);
   mustHaveRegularStat(node_41, &metadata->backup_history[0], 0, (uint8_t *)"", 0);
-  struct stat node_41_stats = sStat(node_41->path.content);
+  struct stat node_41_stats = sStat(node_41->path);
   node_41_stats.st_mode++;
   mustHaveRegularStats(node_41, &metadata->backup_history[1], node_41_stats, 11, (uint8_t *)"random file", 0);
 
   PathNode *node_42 = findSubnode(files, "42", BH_unchanged, BPOL_track, 2, 0);
   mustHaveRegularStat(node_42, &metadata->backup_history[0], 518, node_42_hash, 0);
-  struct stat node_42_stats = sStat(node_42->path.content);
+  struct stat node_42_stats = sStat(node_42->path);
   node_42_stats.st_gid++;
   mustHaveRegularStats(node_42, &metadata->backup_history[1], node_42_stats, 0, (uint8_t *)"", 0);
 
   PathNode *node_43 = findSubnode(files, "43", BH_unchanged, BPOL_track, 2, 0);
   mustHaveRegularStat(node_43, &metadata->backup_history[0], 12, (uint8_t *)"Large\nLarge\n", 0);
-  struct stat node_43_stats = sStat(node_43->path.content);
+  struct stat node_43_stats = sStat(node_43->path);
   node_43_stats.st_mtime++;
   mustHaveRegularStats(node_43, &metadata->backup_history[1], node_43_stats, 1200, data_d_hash, 0);
 
@@ -1640,7 +1640,7 @@ static void trackPostDetectionTest(SearchNode *track_detection_node)
 
   PathNode *node_46 = findSubnode(files, "46", BH_unchanged, BPOL_track, 2, 0);
   mustHaveRegularStat(node_46, &metadata->backup_history[0], 615, node_46_hash, 0);
-  struct stat node_46_stats = sStat(node_46->path.content);
+  struct stat node_46_stats = sStat(node_46->path);
   node_46_stats.st_uid++;
   mustHaveRegularStats(node_46, &metadata->backup_history[1], node_46_stats, 9, (uint8_t *)"Test file", 0);
 

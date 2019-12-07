@@ -610,7 +610,7 @@ static void copyFileIntoRepo(PathNode *node, const char *repo_path,
   size_t blocksize = stats.st_blksize;
   uint64_t bytes_left = reg->size;
 
-  FileStream *reader = sFopenRead(node->path.content);
+  FileStream *reader = sFopenRead(node->path);
   RepoWriter *writer = repoWriterOpenFile(repo_path, repo_tmp_file_path,
                                           node->path.content, reg);
 
@@ -658,7 +658,7 @@ static bool equalsToStoredFile(PathNode *node, const char *repo_path,
   size_t blocksize = stats.st_blksize;
   uint64_t bytes_left = reg->size;
 
-  FileStream *stream = sFopenRead(node->path.content);
+  FileStream *stream = sFopenRead(node->path);
 
   bufferEnsureCapacity(&io_buffer, sSizeMul(blocksize, 2));
   char *buffer = io_buffer->data;
@@ -748,7 +748,7 @@ static void addFileToRepo(PathNode *node, const char *repo_path,
   RegularFileInfo *reg = &node->history->state.metadata.reg;
 
   /* Die if the file has changed since the metadata was initiated. */
-  struct stat stats = sStat(node->path.content);
+  struct stat stats = sStat(node->path);
   if(node->history->state.metadata.reg.timestamp != stats.st_mtime)
   {
     die("file has changed during backup: \"%s\"", node->path.content);
@@ -768,7 +768,7 @@ static void addFileToRepo(PathNode *node, const char *repo_path,
   else if((node->hint & BH_fresh_hash) == false)
   {
     /* Store small files directly in its hash buffer. */
-    FileStream *stream = sFopenRead(node->path.content);
+    FileStream *stream = sFopenRead(node->path);
     sFread(&reg->hash, reg->size, stream);
     bool stream_not_at_end = sFbytesLeft(stream);
     sFclose(stream);

@@ -38,7 +38,7 @@ extern void restoreWithTimeRecursively(PathNode *node);
 
 extern void setStatCache(size_t index);
 extern struct stat cachedStat(String path,
-                              struct stat (*stat_fun)(const char *));
+                              struct stat (*stat_fun)(String));
 extern void resetStatCache(void);
 
 extern void mustHaveRegularStats(PathNode *node, const Backup *backup,

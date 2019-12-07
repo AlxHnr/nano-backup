@@ -30,7 +30,7 @@ int main(void)
   assert_true(errno == 0);
   fclose(file_1);
 
-  FileContent file_1_content = sGetFilesContent("tmp/file-1");
+  FileContent file_1_content = sGetFilesContent(strWrap("tmp/file-1"));
   assert_true(file_1_content.size == 20);
   assert_true(memcmp(file_1_content.content, "This is a test file.", file_1_content.size) == 0);
   free(file_1_content.content);
@@ -49,7 +49,7 @@ int main(void)
   assert_true(errno == 0);
   fclose(file_2);
 
-  FileContent file_2_content = sGetFilesContent("tmp/file-2");
+  FileContent file_2_content = sGetFilesContent(strWrap("tmp/file-2"));
   assert_true(file_2_content.size == 12);
   assert_true(memcmp(file_2_content.content, "Hello world.", file_2_content.size) == 0);
   free(file_2_content.content);

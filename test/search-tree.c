@@ -388,7 +388,7 @@ static void testIgnoringComments(void)
 */
 static void assertParseError(const char *path, const char *message)
 {
-  FileContent content = sGetFilesContent(path);
+  FileContent content = sGetFilesContent(strWrap(path));
   String config = { .content = content.content, .length = content.size };
 
   assert_error(searchTreeParse(config), message);
@@ -538,7 +538,7 @@ static void testBrokenConfigFiles(void)
 */
 static void testInsertNullBytes(const char *path)
 {
-  FileContent content = sGetFilesContent(path);
+  FileContent content = sGetFilesContent(strWrap(path));
   if(content.size == 0)
   {
     return;
@@ -576,8 +576,8 @@ static void testNullBytesConfigFiles(void)
       dir_index < sizeof(config_paths)/sizeof(config_paths[0]);
       dir_index++)
   {
-    const char *dir_path = config_paths[dir_index];
-    const size_t path_length = pathBuilderSet(&buffer, dir_path);
+    String dir_path = strWrap(config_paths[dir_index]);
+    const size_t path_length = pathBuilderSet(&buffer, dir_path.content);
     DIR *dir = sOpenDir(dir_path);
 
     for(struct dirent *dir_entry = sReadDir(dir, dir_path);

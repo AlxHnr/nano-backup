@@ -27,7 +27,7 @@ void fileHash(const char *path, struct stat stats, uint8_t *hash)
 {
   size_t blocksize    = stats.st_blksize;
   uint64_t bytes_left = stats.st_size;
-  FileStream *stream  = sFopenRead(path);
+  FileStream *stream  = sFopenRead(strWrap(path));
 
   bufferEnsureCapacity(&io_buffer, blocksize);
   char *buffer = io_buffer->data;

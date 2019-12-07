@@ -15,6 +15,8 @@
 #include <dirent.h>
 #include <sys/stat.h>
 
+#include "str.h"
+
 extern void *sMalloc(size_t size);
 extern void *sRealloc(void *ptr, size_t size);
 
@@ -24,36 +26,36 @@ extern void sAtexit(void (*function)(void));
   printing better error messages. */
 typedef struct FileStream FileStream;
 
-extern FileStream *sFopenRead(const char *path);
-extern FileStream *sFopenWrite(const char *path);
+extern FileStream *sFopenRead(String path);
+extern FileStream *sFopenWrite(String path);
 extern void sFread(void *ptr, size_t size, FileStream *stream);
 extern void sFwrite(const void *ptr, size_t size, FileStream *stream);
 extern bool Fwrite(const void *ptr, size_t size, FileStream *stream);
 extern bool Ftodisk(FileStream *stream);
 extern bool sFbytesLeft(FileStream *stream);
 extern void sFclose(FileStream *stream);
-extern const char *Fdestroy(FileStream *stream);
+extern String Fdestroy(FileStream *stream);
 
-extern DIR *sOpenDir(const char *path);
-extern struct dirent *sReadDir(DIR *dir, const char *path);
-extern void sCloseDir(DIR *dir, const char *path);
+extern DIR *sOpenDir(String path);
+extern struct dirent *sReadDir(DIR *dir, String path);
+extern void sCloseDir(DIR *dir, String path);
 
-extern bool sPathExists(const char *path);
-extern struct stat sStat(const char *path);
-extern struct stat sLStat(const char *path);
-extern void sMkdir(const char *path);
-extern void sSymlink(const char *target, const char *path);
-extern void sRename(const char *oldpath, const char *newpath);
-extern void sChmod(const char *path, mode_t mode);
-extern void sChown(const char *path, uid_t user, gid_t group);
-extern void sLChown(const char *path, uid_t user, gid_t group);
-extern void sUtime(const char *path, time_t time);
-extern void sRemove(const char *path);
-extern void sRemoveRecursively(const char *path);
+extern bool sPathExists(String path);
+extern struct stat sStat(String path);
+extern struct stat sLStat(String path);
+extern void sMkdir(String path);
+extern void sSymlink(String target, String path);
+extern void sRename(String oldpath, String newpath);
+extern void sChmod(String path, mode_t mode);
+extern void sChown(String path, uid_t user, gid_t group);
+extern void sLChown(String path, uid_t user, gid_t group);
+extern void sUtime(String path, time_t time);
+extern void sRemove(String path);
+extern void sRemoveRecursively(String path);
 
 extern char *sGetCwd(void);
 extern char *sReadLine(FILE *stream);
-extern size_t sStringToSize(const char *string);
+extern size_t sStringToSize(String string);
 extern time_t sTime(void);
 extern int sRand(void);
 
@@ -68,6 +70,6 @@ typedef struct
   size_t size;
 }FileContent;
 
-extern FileContent sGetFilesContent(const char *path);
+extern FileContent sGetFilesContent(String path);
 
 #endif

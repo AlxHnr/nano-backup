@@ -69,15 +69,15 @@ static bool recurseIntoDirectory(StringTable *table, size_t length,
   bool item_required = length == repo_path_length;
   struct stat stats =
     length == repo_path_length?
-    sStat(path_buffer->data):
-    sLStat(path_buffer->data);
+    sStat(strWrap(path_buffer->data)):
+    sLStat(strWrap(path_buffer->data));
 
   if(S_ISDIR(stats.st_mode))
   {
-    DIR *dir = sOpenDir(path_buffer->data);
+    DIR *dir = sOpenDir(strWrap(path_buffer->data));
 
-    for(struct dirent *dir_entry = sReadDir(dir, path_buffer->data);
-        dir_entry != NULL; dir_entry = sReadDir(dir, path_buffer->data))
+    for(struct dirent *dir_entry = sReadDir(dir, strWrap(path_buffer->data));
+        dir_entry != NULL; dir_entry = sReadDir(dir, strWrap(path_buffer->data)))
     {
       size_t sub_path_length =
         pathBuilderAppend(&path_buffer, length, dir_entry->d_name);
@@ -88,7 +88,7 @@ static bool recurseIntoDirectory(StringTable *table, size_t length,
       path_buffer->data[length] = '\0';
     }
 
-    sCloseDir(dir, path_buffer->data);
+    sCloseDir(dir, strWrap(path_buffer->data));
   }
   else if(length != repo_path_length)
   {
@@ -104,7 +104,7 @@ static bool recurseIntoDirectory(StringTable *table, size_t length,
 
   if(item_required == false)
   {
-    sRemove(path_buffer->data);
+    sRemove(strWrap(path_buffer->data));
     gc_stats->count = sSizeAdd(gc_stats->count, 1);
 
     if(S_ISREG(stats.st_mode))

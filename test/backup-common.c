@@ -91,13 +91,13 @@ PathNode *findSubnode(PathNode *node,
 /** Creates a backup of the given paths parent directories timestamps. */
 time_t getParentTime(const char *path)
 {
-  return sStat(strCopy(strSplitPath(strWrap(path)).head).content).st_mtime;
+  return sStat(strCopy(strSplitPath(strWrap(path)).head)).st_mtime;
 }
 
 /** Counterpart to getParentTime(). */
 void restoreParentTime(const char *path, time_t time)
 {
-  const char *parent_path = strCopy(strSplitPath(strWrap(path)).head).content;
+  String parent_path = strCopy(strSplitPath(strWrap(path)).head);
   sUtime(parent_path, time);
 }
 
@@ -105,7 +105,7 @@ void restoreParentTime(const char *path, time_t time)
 void makeDir(const char *path)
 {
   time_t parent_time = getParentTime(path);
-  sMkdir(path);
+  sMkdir(strWrap(path));
   restoreParentTime(path, parent_time);
 }
 
@@ -113,7 +113,7 @@ void makeDir(const char *path)
 void makeSymlink(const char *target, const char *linkpath)
 {
   time_t parent_time = getParentTime(linkpath);
-  sSymlink(target, linkpath);
+  sSymlink(strWrap(target), strWrap(linkpath));
   restoreParentTime(linkpath, parent_time);
 }
 
@@ -127,13 +127,13 @@ void makeSymlink(const char *target, const char *linkpath)
 void generateFile(const char *path, const char *content,
                   size_t repetitions)
 {
-  if(sPathExists(path))
+  if(sPathExists(strWrap(path)))
   {
     die("failed to generate file: Already existing: \"%s\"", path);
   }
 
   time_t parent_time = getParentTime(path);
-  FileStream *stream = sFopenWrite(path);
+  FileStream *stream = sFopenWrite(strWrap(path));
   size_t content_length = strlen(content);
 
   for(size_t index = 0; index < repetitions; index++)
@@ -171,16 +171,16 @@ void generateCollidingFiles(const uint8_t *hash, size_t size,
   pathBuilderAppend(&path_buffer, 8, path_in_repo->data);
 
   path_buffer->data[13] = '\0';
-  if(sPathExists(path_buffer->data) == false)
+  if(sPathExists(strWrap(path_buffer->data)) == false)
   {
     path_buffer->data[10] = '\0';
-    if(sPathExists(path_buffer->data) == false)
+    if(sPathExists(strWrap(path_buffer->data)) == false)
     {
-      sMkdir(path_buffer->data);
+      sMkdir(strWrap(path_buffer->data));
     }
     path_buffer->data[10] = '/';
 
-    sMkdir(path_buffer->data);
+    sMkdir(strWrap(path_buffer->data));
   }
   path_buffer->data[13] = '/';
 
@@ -189,7 +189,7 @@ void generateCollidingFiles(const uint8_t *hash, size_t size,
     info.slot = (uint8_t)slot;
     repoBuildRegularFilePath(&path_in_repo, &info);
     pathBuilderAppend(&path_buffer, 8, path_in_repo->data);
-    FileStream *stream = sFopenWrite(path_buffer->data);
+    FileStream *stream = sFopenWrite(strWrap(path_buffer->data));
 
     const uint8_t bytes_to_write[] = { info.slot, 0 };
     size_t bytes_left = size;
@@ -211,7 +211,7 @@ void generateCollidingFiles(const uint8_t *hash, size_t size,
 void removePath(const char *path)
 {
   time_t parent_time = getParentTime(path);
-  sRemove(path);
+  sRemove(strWrap(path));
   restoreParentTime(path, parent_time);
 }
 
@@ -231,7 +231,7 @@ void regenerateFile(PathNode *node, const char *content,
 
   removePath(node->path.content);
   generateFile(node->path.content, content, repetitions);
-  sUtime(node->path.content, node->history->state.metadata.reg.timestamp);
+  sUtime(node->path, node->history->state.metadata.reg.timestamp);
 }
 
 /** Changes the path to which a symlink points.
@@ -248,10 +248,10 @@ void remakeSymlink(const char *new_target, const char *linkpath)
 /** Asserts that "tmp" contains only "repo" and "files". */
 void assertTmpIsCleared(void)
 {
-  sRemoveRecursively("tmp");
-  sMkdir("tmp");
-  sMkdir("tmp/repo");
-  sMkdir("tmp/files");
+  sRemoveRecursively(strWrap("tmp"));
+  sMkdir(strWrap("tmp"));
+  sMkdir(strWrap("tmp/repo"));
+  sMkdir(strWrap("tmp/files"));
 }
 
 /** Finds the first point in the nodes history, which is not
@@ -283,7 +283,7 @@ void restoreRegularFile(const char *path, const RegularFileInfo *info)
   time_t parent_time = getParentTime(path);
 
   restoreFile(path, info, "tmp/repo");
-  sUtime(path, info->timestamp);
+  sUtime(strWrap(path), info->timestamp);
 
   restoreParentTime(path, parent_time);
 }
@@ -295,7 +295,7 @@ void restoreRegularFile(const char *path, const RegularFileInfo *info)
 */
 void restoreWithTimeRecursively(PathNode *node)
 {
-  if(sPathExists(node->path.content) == false)
+  if(sPathExists(node->path) == false)
   {
     PathHistory *point = findExistingHistPoint(node);
     switch(point->state.type)
@@ -308,14 +308,14 @@ void restoreWithTimeRecursively(PathNode *node)
         break;
       case PST_directory:
         makeDir(node->path.content);
-        sUtime(node->path.content, point->state.metadata.dir.timestamp);
+        sUtime(node->path, point->state.metadata.dir.timestamp);
         break;
       default:
         die("unable to restore \"%s\"", node->path.content);
     }
   }
 
-  if(S_ISDIR(sLStat(node->path.content).st_mode))
+  if(S_ISDIR(sLStat(node->path).st_mode))
   {
     for(PathNode *subnode = node->subnodes;
         subnode != NULL; subnode = subnode->next)
@@ -366,13 +366,13 @@ void setStatCache(size_t index)
   @return The stats which the given path had on its first access trough
   this function.
 */
-struct stat cachedStat(String path, struct stat (*stat_fun)(const char *))
+struct stat cachedStat(String path, struct stat (*stat_fun)(String))
 {
   struct stat *cache = strTableGet(stat_cache, path);
   if(cache == NULL)
   {
     cache = mpAlloc(sizeof *cache);
-    *cache = stat_fun(path.content);
+    *cache = stat_fun(path);
     strTableMap(stat_cache, path, cache);
   }
 
@@ -401,7 +401,7 @@ void mustHaveRegularStat(PathNode *node, const Backup *backup,
                          uint64_t size, const uint8_t *hash,
                          uint8_t slot)
 {
-  mustHaveRegularStats(node, backup, sStat(node->path.content),
+  mustHaveRegularStats(node, backup, sStat(node->path),
                        size, hash, slot);
 }
 
@@ -425,7 +425,7 @@ void mustHaveSymlinkStats(PathNode *node, const Backup *backup,
 void mustHaveSymlinkLStat(PathNode *node, const Backup *backup,
                           const char *sym_target)
 {
-  mustHaveSymlinkStats(node, backup, sLStat(node->path.content), sym_target);
+  mustHaveSymlinkStats(node, backup, sLStat(node->path), sym_target);
 }
 
 /** Cached version of mustHaveSymlinkLStat(). */
@@ -447,7 +447,7 @@ void mustHaveDirectoryStats(PathNode *node, const Backup *backup,
 /** Like mustHaveRegularStat(), but for mustHaveDirectory(). */
 void mustHaveDirectoryStat(PathNode *node, const Backup *backup)
 {
-  mustHaveDirectoryStats(node, backup, sStat(node->path.content));
+  mustHaveDirectoryStats(node, backup, sStat(node->path));
 }
 
 /** Cached version of mustHaveDirectoryStat(). */

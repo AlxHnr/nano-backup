@@ -570,7 +570,7 @@ Metadata *metadataNew(void)
 */
 Metadata *metadataLoad(const char *path)
 {
-  FileContent content = sGetFilesContent(path);
+  FileContent content = sGetFilesContent(strWrap(path));
 
   /* Allocate and initialize metadata. */
   Metadata *metadata = mpAlloc(sizeof *metadata);

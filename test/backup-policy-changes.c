@@ -919,10 +919,10 @@ static void policyChangeFromTrackInit0(SearchNode *change_from_track_init)
   makeDir("tmp/files/d");
   makeDir("tmp/files/d/1");
   makeDir("tmp/files/f");
-  sUtime("tmp/files/f", 12);
+  sUtime(strWrap("tmp/files/f"), 12);
   makeDir("tmp/files/g");
   makeDir("tmp/files/h");
-  sUtime("tmp/files/h", 9912);
+  sUtime(strWrap("tmp/files/h"), 9912);
   makeDir("tmp/files/h/1");
   makeDir("tmp/files/h/5");
   makeDir("tmp/files/i");
@@ -941,7 +941,7 @@ static void policyChangeFromTrackInit0(SearchNode *change_from_track_init)
   generateFile("tmp/files/d/1/2", "NanoBackup",         1);
   generateFile("tmp/files/e",     "nb repo/ gc",        1);
   generateFile("tmp/files/f/1",   "nb backup/",         1);
-  sUtime("tmp/files/f/1", 19);
+  sUtime(strWrap("tmp/files/f/1"), 19);
   generateFile("tmp/files/g/1",   "",                   0);
   generateFile("tmp/files/h/1/2", "__REMOVED__",        1);
   generateFile("tmp/files/i/1",   "-file-",             1);
@@ -1068,17 +1068,17 @@ static void policyChangeFromTrackInit1(SearchNode *change_from_track_init)
   makeDir("tmp/files/h/1/2");
   makeDir("tmp/files/l/1");
   makeDir("tmp/files/p");
-  sUtime("tmp/files/p", 139);
+  sUtime(strWrap("tmp/files/p"), 139);
   makeDir("tmp/files/p/1");
   generateFile("tmp/files/d",       "?",                17);
   generateFile("tmp/files/e/1",     "backup tool",      1);
   generateFile("tmp/files/e/2",     "__BACKUP__TOOL__", 1);
   generateFile("tmp/files/h/1/2/3", "This is a file\n", 1);
   generateFile("tmp/files/o",       "file content",     1);
-  sUtime("tmp/files/o", 567123);
+  sUtime(strWrap("tmp/files/o"), 567123);
   makeSymlink("non-existing.txt", "tmp/files/p/1/2");
-  sUtime("tmp/files/f", 17288);
-  sUtime("tmp/files/h", 491212);
+  sUtime(strWrap("tmp/files/f"), 17288);
+  sUtime(strWrap("tmp/files/h"), 491212);
 
   /* Initiate backup. */
   Metadata *metadata = metadataLoad("tmp/repo/metadata");
@@ -1153,9 +1153,9 @@ static void policyChangeFromTrackInit2(SearchNode *change_from_track_init)
   generateFile("tmp/files/c", "generated file c", 1);
   generateFile("tmp/files/h", "_GENERATED_FILE_H_", 1);
   generateFile("tmp/files/o", "foo bar 123.", 1);
-  sUtime("tmp/files/o", 791);
+  sUtime(strWrap("tmp/files/o"), 791);
   makeSymlink("../../tmp", "tmp/files/n");
-  sUtime("tmp/files/p", 140);
+  sUtime(strWrap("tmp/files/p"), 140);
 
   /* Initiate backup. */
   Metadata *metadata = metadataLoad("tmp/repo/metadata");
@@ -1187,7 +1187,7 @@ static void policyChangeFromTrackInit3(SearchNode *change_from_track_init)
   removePath("tmp/files/h");
   makeDir("tmp/files/f");
   generateFile("tmp/files/f/1", "nb backup/", 1);
-  sUtime("tmp/files/f/1", 19);
+  sUtime(strWrap("tmp/files/f/1"), 19);
 
   Metadata *metadata = metadataLoad("tmp/repo/metadata");
   initiateBackup(metadata, change_from_track_init);

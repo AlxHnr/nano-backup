@@ -128,12 +128,12 @@ static void handleFiletypeChanges(PathNode *node, PathState *state,
 static void checkAndHandleChanges(PathNode *node, PathState *state,
                                   bool could_exist)
 {
-  if(could_exist && sPathExists(node->path.content))
+  if(could_exist && sPathExists(node->path))
   {
     struct stat stats =
       state->type == PST_symlink?
-      sLStat(node->path.content):
-      sStat(node->path.content);
+      sLStat(node->path):
+      sStat(node->path);
 
     handleFiletypeChanges(node, state, stats);
     if(backupHintNoPol(node->hint) == BH_none)
@@ -276,7 +276,7 @@ void restoreFile(const char *path,
   if(info->size > FILE_HASH_SIZE)
   {
     RepoReader *reader = repoReaderOpenFile(repo_path, path, info);
-    FileStream *writer = sFopenWrite(path);
+    FileStream *writer = sFopenWrite(strWrap(path));
     uint64_t bytes_left = info->size;
     char buffer[4096];
 
@@ -296,7 +296,7 @@ void restoreFile(const char *path,
   }
   else
   {
-    FileStream *writer = sFopenWrite(path);
+    FileStream *writer = sFopenWrite(strWrap(path));
     sFwrite(info->hash, info->size, writer);
     sFclose(writer);
   }
@@ -314,21 +314,21 @@ static void restorePath(PathNode *node, PathState *state,
   if(state->type == PST_regular)
   {
     restoreFile(node->path.content, &state->metadata.reg, repo_path);
-    sChown(node->path.content, state->uid, state->gid);
-    sChmod(node->path.content, state->metadata.reg.mode);
-    sUtime(node->path.content, state->metadata.reg.timestamp);
+    sChown(node->path, state->uid, state->gid);
+    sChmod(node->path, state->metadata.reg.mode);
+    sUtime(node->path, state->metadata.reg.timestamp);
   }
   else if(state->type == PST_symlink)
   {
-    sSymlink(state->metadata.sym_target, node->path.content);
-    sLChown(node->path.content, state->uid, state->gid);
+    sSymlink(strWrap(state->metadata.sym_target), node->path);
+    sLChown(node->path, state->uid, state->gid);
   }
   else if(state->type == PST_directory)
   {
-    sMkdir(node->path.content);
-    sChown(node->path.content, state->uid, state->gid);
-    sChmod(node->path.content, state->metadata.dir.mode);
-    sUtime(node->path.content, state->metadata.dir.timestamp);
+    sMkdir(node->path);
+    sChown(node->path, state->uid, state->gid);
+    sChmod(node->path, state->metadata.dir.mode);
+    sUtime(node->path, state->metadata.dir.timestamp);
   }
 }
 
@@ -362,11 +362,11 @@ static bool finishRestoreRecursively(PathNode *node, size_t id,
     if(backupHintNoPol(node->hint) == BH_directory_to_regular ||
        backupHintNoPol(node->hint) == BH_directory_to_symlink)
     {
-      sRemoveRecursively(node->path.content);
+      sRemoveRecursively(node->path);
     }
     else
     {
-      sRemove(node->path.content);
+      sRemove(node->path);
     }
 
     restorePath(node, state, repo_path);
@@ -378,22 +378,22 @@ static bool finishRestoreRecursively(PathNode *node, size_t id,
     {
       if(state->type == PST_symlink)
       {
-        sLChown(node->path.content, state->uid, state->gid);
+        sLChown(node->path, state->uid, state->gid);
       }
       else
       {
-        sChown(node->path.content, state->uid, state->gid);
+        sChown(node->path, state->uid, state->gid);
       }
     }
     if(node->hint & BH_permissions_changed)
     {
       if(state->type == PST_regular)
       {
-        sChmod(node->path.content, state->metadata.reg.mode);
+        sChmod(node->path, state->metadata.reg.mode);
       }
       else if(state->type == PST_directory)
       {
-        sChmod(node->path.content, state->metadata.dir.mode);
+        sChmod(node->path, state->metadata.dir.mode);
       }
     }
 
@@ -402,11 +402,11 @@ static bool finishRestoreRecursively(PathNode *node, size_t id,
       if(state->type == PST_regular)
       {
         restoreFile(node->path.content, &state->metadata.reg, repo_path);
-        sUtime(node->path.content, state->metadata.reg.timestamp);
+        sUtime(node->path, state->metadata.reg.timestamp);
       }
       else if(state->type == PST_symlink)
       {
-        sRemove(node->path.content);
+        sRemove(node->path);
         restorePath(node, state, repo_path);
         affects_parent_timestamp = true;
       }
@@ -415,11 +415,11 @@ static bool finishRestoreRecursively(PathNode *node, size_t id,
     {
       if(state->type == PST_regular)
       {
-        sUtime(node->path.content, state->metadata.reg.timestamp);
+        sUtime(node->path, state->metadata.reg.timestamp);
       }
       else if(state->type == PST_directory)
       {
-        sUtime(node->path.content, state->metadata.dir.timestamp);
+        sUtime(node->path, state->metadata.dir.timestamp);
       }
     }
   }
@@ -437,7 +437,7 @@ static bool finishRestoreRecursively(PathNode *node, size_t id,
 
     if(subnode_changes_timestamp && node->policy != BPOL_none)
     {
-      sUtime(node->path.content, state->metadata.dir.timestamp);
+      sUtime(node->path, state->metadata.dir.timestamp);
     }
   }
 

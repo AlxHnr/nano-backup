@@ -26,7 +26,7 @@ struct FileStream
 
   /** The full or relative path representing the open stream. Needed for
     simplified printing of error messages. */
-  const char *path;
+  String path;
 };
 
 /** Wraps the given arguments in a new FileStream struct.
@@ -37,11 +37,11 @@ struct FileStream
   @return A new FileStream, containing the arguments of this function. It
   must be freed by the caller using free().
 */
-static FileStream *newFileStream(FILE *file, const char *path)
+static FileStream *newFileStream(FILE *file, String path)
 {
   FileStream *stream = sMalloc(sizeof *stream);
   stream->file = file;
-  stream->path = path;
+  strSet(&stream->path, path);
   return stream;
 }
 
@@ -53,13 +53,13 @@ static FileStream *newFileStream(FILE *file, const char *path)
 
   @return Informations about the given file.
 */
-static struct stat safeStat(const char *path,
+static struct stat safeStat(String path,
                             int (*stat_fun)(const char *, struct stat *))
 {
   struct stat buffer;
-  if(stat_fun(path, &buffer) == -1)
+  if(stat_fun(path.content, &buffer) == -1)
   {
-    dieErrno("failed to access \"%s\"", path);
+    dieErrno("failed to access \"%s\"", path.content);
   }
 
   return buffer;
@@ -134,12 +134,12 @@ void sAtexit(void (*function)(void))
   @return A file stream that can be used for reading. Must be closed by the
   caller.
 */
-FileStream *sFopenRead(const char *path)
+FileStream *sFopenRead(String path)
 {
-  FILE *file = fopen(path, "rb");
+  FILE *file = fopen(path.content, "rb");
   if(file == NULL)
   {
-    dieErrno("failed to open \"%s\" for reading", path);
+    dieErrno("failed to open \"%s\" for reading", path.content);
   }
 
   return newFileStream(file, path);
@@ -147,12 +147,12 @@ FileStream *sFopenRead(const char *path)
 
 /** Almost identical to sFopenRead(), but with the difference that the file
   gets opened for writing. */
-FileStream *sFopenWrite(const char *path)
+FileStream *sFopenWrite(String path)
 {
-  FILE *file = fopen(path, "wb");
+  FILE *file = fopen(path.content, "wb");
   if(file == NULL)
   {
-    dieErrno("failed to open \"%s\" for writing", path);
+    dieErrno("failed to open \"%s\" for writing", path.content);
   }
 
   return newFileStream(file, path);
@@ -173,11 +173,11 @@ void sFread(void *ptr, size_t size, FileStream *stream)
     if(feof(stream->file))
     {
       die("reading \"%s\": reached end of file unexpectedly",
-          Fdestroy(stream));
+          Fdestroy(stream).content);
     }
     else
     {
-      dieErrno("IO error while reading \"%s\"", Fdestroy(stream));
+      dieErrno("IO error while reading \"%s\"", Fdestroy(stream).content);
     }
   }
 }
@@ -187,7 +187,7 @@ void sFwrite(const void *ptr, size_t size, FileStream *stream)
 {
   if(fwrite(ptr, 1, size, stream->file) != size)
   {
-    dieErrno("failed to write to \"%s\"", Fdestroy(stream));
+    dieErrno("failed to write to \"%s\"", Fdestroy(stream).content);
   }
 }
 
@@ -225,12 +225,12 @@ bool Ftodisk(FileStream *stream)
 void sFclose(FileStream *stream)
 {
   FILE *file = stream->file;
-  const char *path = stream->path;
+  String path = stream->path;
   free(stream);
 
   if(fclose(file) != 0)
   {
-    dieErrno("failed to close \"%s\"", path);
+    dieErrno("failed to close \"%s\"", path.content);
   }
 }
 
@@ -242,9 +242,9 @@ void sFclose(FileStream *stream)
 
   @return The path from the stream. Should not be freed by the caller.
 */
-const char *Fdestroy(FileStream *stream)
+String Fdestroy(FileStream *stream)
 {
-  const char *path = stream->path;
+  String path = stream->path;
 
   int old_errno = errno;
   fclose(stream->file);
@@ -261,12 +261,12 @@ const char *Fdestroy(FileStream *stream)
 
   @return A pointer to a valid directory stream.
 */
-DIR *sOpenDir(const char *path)
+DIR *sOpenDir(String path)
 {
-  DIR *dir = opendir(path);
+  DIR *dir = opendir(path.content);
   if(dir == NULL)
   {
-    dieErrno("failed to open directory \"%s\"", path);
+    dieErrno("failed to open directory \"%s\"", path.content);
   }
 
   return dir;
@@ -282,7 +282,7 @@ DIR *sOpenDir(const char *path)
   @return A pointer to the next entry in the given directory, or NULL if
   the stream reached its end.
 */
-struct dirent *sReadDir(DIR *dir, const char *path)
+struct dirent *sReadDir(DIR *dir, String path)
 {
   struct dirent *dir_entry;
   int old_errno = errno;
@@ -294,7 +294,7 @@ struct dirent *sReadDir(DIR *dir, const char *path)
 
     if(dir_entry == NULL && errno != 0)
     {
-      dieErrno("failed to read directory \"%s\"", path);
+      dieErrno("failed to read directory \"%s\"", path.content);
     }
   }
   while(dir_entry != NULL &&
@@ -322,14 +322,14 @@ bool sFbytesLeft(FileStream *stream)
   if(character == EOF && errno != 0)
   {
     dieErrno("failed to check for remaining bytes in \"%s\"",
-             Fdestroy(stream));
+             Fdestroy(stream).content);
   }
   errno = old_errno;
 
   if(ungetc(character, stream->file) != character)
   {
     die("failed to check for remaining bytes in \"%s\"",
-        Fdestroy(stream));
+        Fdestroy(stream).content);
   }
 
   return character != EOF;
@@ -341,11 +341,11 @@ bool sFbytesLeft(FileStream *stream)
   @param path The directory path of the given stream. Needed for printing
   useful error messages.
 */
-void sCloseDir(DIR *dir, const char *path)
+void sCloseDir(DIR *dir, String path)
 {
   if(closedir(dir) != 0)
   {
-    dieErrno("failed to close directory \"%s\"", path);
+    dieErrno("failed to close directory \"%s\"", path.content);
   }
 }
 
@@ -356,18 +356,18 @@ void sCloseDir(DIR *dir, const char *path)
 
   @return True if the path exists, false if not.
 */
-bool sPathExists(const char *path)
+bool sPathExists(String path)
 {
   int old_errno = errno;
   bool exists = true;
   struct stat stats;
   errno = 0;
 
-  if(lstat(path, &stats) != 0)
+  if(lstat(path.content, &stats) != 0)
   {
     if(errno != 0 && errno != ENOENT)
     {
-      dieErrno("failed to check existence of \"%s\"", path);
+      dieErrno("failed to check existence of \"%s\"", path.content);
     }
 
     exists = false;
@@ -383,7 +383,7 @@ bool sPathExists(const char *path)
 
   @return Informations about the given file.
 */
-struct stat sStat(const char *path)
+struct stat sStat(String path)
 {
   return safeStat(path, stat);
 }
@@ -394,7 +394,7 @@ struct stat sStat(const char *path)
 
   @return Informations about the given file.
 */
-struct stat sLStat(const char *path)
+struct stat sLStat(String path)
 {
   return safeStat(path, lstat);
 }
@@ -403,11 +403,11 @@ struct stat sLStat(const char *path)
 
   @param path The path to the directory to create.
 */
-void sMkdir(const char *path)
+void sMkdir(String path)
 {
-  if(mkdir(path, 0755) != 0)
+  if(mkdir(path.content, 0755) != 0)
   {
-    dieErrno("failed to create directory: \"%s\"", path);
+    dieErrno("failed to create directory: \"%s\"", path.content);
   }
 }
 
@@ -416,11 +416,11 @@ void sMkdir(const char *path)
   @param target The path to which the symlink should point.
   @param path The path to the symlink to create.
 */
-void sSymlink(const char *target, const char *path)
+void sSymlink(String target, String path)
 {
-  if(symlink(target, path) != 0)
+  if(symlink(target.content, path.content) != 0)
   {
-    dieErrno("failed to create symlink: \"%s\"", path);
+    dieErrno("failed to create symlink: \"%s\"", path.content);
   }
 }
 
@@ -429,43 +429,43 @@ void sSymlink(const char *target, const char *path)
   @param oldpath Path to the file which should be renamed.
   @param newpath The new filepath.
 */
-void sRename(const char *oldpath, const char *newpath)
+void sRename(String oldpath, String newpath)
 {
-  if(rename(oldpath, newpath) != 0)
+  if(rename(oldpath.content, newpath.content) != 0)
   {
-    dieErrno("failed to rename \"%s\" to \"%s\"", oldpath, newpath);
+    dieErrno("failed to rename \"%s\" to \"%s\"", oldpath.content, newpath.content);
   }
 }
 
 /** Safe wrapper around chmod(). */
-void sChmod(const char *path, mode_t mode)
+void sChmod(String path, mode_t mode)
 {
-  if(chmod(path, mode) != 0)
+  if(chmod(path.content, mode) != 0)
   {
-    dieErrno("failed to change permissions of \"%s\"", path);
+    dieErrno("failed to change permissions of \"%s\"", path.content);
   }
 }
 
 /** Safe wrapper around chown(). */
-void sChown(const char *path, uid_t user, gid_t group)
+void sChown(String path, uid_t user, gid_t group)
 {
-  if(chown(path, user, group) != 0)
+  if(chown(path.content, user, group) != 0)
   {
-    dieErrno("failed to change owner of \"%s\"", path);
+    dieErrno("failed to change owner of \"%s\"", path.content);
   }
 }
 
 /** Safe wrapper around lchown(). */
-void sLChown(const char *path, uid_t user, gid_t group)
+void sLChown(String path, uid_t user, gid_t group)
 {
-  if(lchown(path, user, group) != 0)
+  if(lchown(path.content, user, group) != 0)
   {
-    dieErrno("failed to change owner of \"%s\"", path);
+    dieErrno("failed to change owner of \"%s\"", path.content);
   }
 }
 
 /** Simplified safe wrapper around utime(). */
-void sUtime(const char *path, time_t time)
+void sUtime(String path, time_t time)
 {
   struct utimbuf time_buffer =
   {
@@ -473,9 +473,9 @@ void sUtime(const char *path, time_t time)
     .modtime = time,
   };
 
-  if(utime(path, &time_buffer) != 0)
+  if(utime(path.content, &time_buffer) != 0)
   {
-    dieErrno("failed to set timestamp of \"%s\"", path);
+    dieErrno("failed to set timestamp of \"%s\"", path.content);
   }
 }
 
@@ -483,11 +483,11 @@ void sUtime(const char *path, time_t time)
 
   @param path The path to remove.
 */
-void sRemove(const char *path)
+void sRemove(String path)
 {
-  if(remove(path) != 0)
+  if(remove(path.content) != 0)
   {
-    dieErrno("failed to remove \"%s\"", path);
+    dieErrno("failed to remove \"%s\"", path.content);
   }
 }
 
@@ -498,14 +498,14 @@ void sRemove(const char *path)
 */
 static void removeRecursively(Buffer *buffer, size_t length)
 {
-  struct stat stats = sLStat(buffer->data);
+  struct stat stats = sLStat(strWrap(buffer->data));
 
   if(S_ISDIR(stats.st_mode))
   {
-    DIR *dir = sOpenDir(buffer->data);
+    DIR *dir = sOpenDir(strWrap(buffer->data));
 
-    for(struct dirent *dir_entry = sReadDir(dir, buffer->data);
-        dir_entry != NULL; dir_entry = sReadDir(dir, buffer->data))
+    for(struct dirent *dir_entry = sReadDir(dir, strWrap(buffer->data));
+        dir_entry != NULL; dir_entry = sReadDir(dir, strWrap(buffer->data)))
     {
       size_t sub_path_length =
         pathBuilderAppend(&buffer, length, dir_entry->d_name);
@@ -515,17 +515,17 @@ static void removeRecursively(Buffer *buffer, size_t length)
       buffer->data[length] = '\0';
     }
 
-    sCloseDir(dir, buffer->data);
+    sCloseDir(dir, strWrap(buffer->data));
   }
 
-  sRemove(buffer->data);
+  sRemove(strWrap(buffer->data));
 }
 
 /** Recursive version of sRemove(). */
-void sRemoveRecursively(const char *path)
+void sRemoveRecursively(String path)
 {
   static Buffer *buffer = NULL;
-  size_t length = pathBuilderSet(&buffer, path);
+  size_t length = pathBuilderSet(&buffer, path.content);
 
   removeRecursively(buffer, length);
 }
@@ -628,26 +628,26 @@ char *sReadLine(FILE *stream)
 
   @return The value represented by the given string.
 */
-size_t sStringToSize(const char *string)
+size_t sStringToSize(String string)
 {
   int old_errno = errno;
   errno = 0;
 
   char *endptr;
-  long long int value = strtoll(string, &endptr, 10);
+  long long int value = strtoll(string.content, &endptr, 10);
 
-  if(endptr == string)
+  if(endptr == string.content)
   {
-    die("unable to convert to size: \"%s\"", string);
+    die("unable to convert to size: \"%s\"", string.content);
   }
   else if(value < 0)
   {
-    die("unable to convert negative value to size: \"%s\"", string);
+    die("unable to convert negative value to size: \"%s\"", string.content);
   }
   else if((value == LLONG_MAX && errno == ERANGE) ||
           (unsigned long long int)value > SIZE_MAX)
   {
-    die("value too large to convert to size: \"%s\"", string);
+    die("value too large to convert to size: \"%s\"", string.content);
   }
 
   errno = old_errno;
@@ -692,18 +692,18 @@ int sRand(void)
   using free(). The content member will be NULL if the file has a size of
   zero.
 */
-FileContent sGetFilesContent(const char *path)
+FileContent sGetFilesContent(String path)
 {
   struct stat file_stats = sStat(path);
   if(!S_ISREG(file_stats.st_mode))
   {
-    die("\"%s\" is not a regular file", path);
+    die("\"%s\" is not a regular file", path.content);
   }
 
   /* On 32-bit systems off_t is often larger than size_t. */
   if((uint64_t)file_stats.st_size > SIZE_MAX)
   {
-    die("unable to load file into mem due to its size: \"%s\"", path);
+    die("unable to load file into mem due to its size: \"%s\"", path.content);
   }
 
   char *content = NULL;
@@ -718,7 +718,7 @@ FileContent sGetFilesContent(const char *path)
     if(stream_not_at_end)
     {
       free(content);
-      die("file changed while reading: \"%s\"", path);
+      die("file changed while reading: \"%s\"", path.content);
     }
   }
 

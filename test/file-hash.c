@@ -10,7 +10,7 @@
 /** Simplified wrapper around fileHash(). */
 static void fileHashWrapper(const char *path, uint8_t *hash)
 {
-  fileHash(path, sStat(path), hash);
+  fileHash(path, sStat(strWrap(path)), hash);
 }
 
 int main(void)
@@ -19,12 +19,12 @@ int main(void)
   uint8_t hash[FILE_HASH_SIZE];
 
   testGroupStart("fileHash()");
-  stats = sStat("example.txt");
+  stats = sStat(strWrap("example.txt"));
   assert_error(fileHash("non-existing.txt", stats, hash),
                "failed to open \"non-existing.txt\" for reading: No such file or directory");
   assert_error(fileHash("test directory", stats, hash),
                "IO error while reading \"test directory\": Is a directory");
-  assert_error(fileHash("test directory", sStat("empty.txt"), hash),
+  assert_error(fileHash("test directory", sStat(strWrap("empty.txt")), hash),
                "failed to check for remaining bytes in \"test directory\": Is a directory");
 
   const uint8_t empty_hash[FILE_HASH_SIZE] =
@@ -70,7 +70,7 @@ int main(void)
   fileHashWrapper("valid-config-files/inheritance-1.txt", hash);
   assert_true(memcmp(hash, inheritance_1, FILE_HASH_SIZE) == 0);
 
-  stats = sStat("valid-config-files/inheritance-1.txt");
+  stats = sStat(strWrap("valid-config-files/inheritance-1.txt"));
   stats.st_size += 1;
   assert_error(fileHash("valid-config-files/inheritance-1.txt", stats, hash),
                "reading \"valid-config-files/inheritance-1.txt\": reached end of file unexpectedly");

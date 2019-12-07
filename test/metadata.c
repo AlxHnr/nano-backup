@@ -877,7 +877,7 @@ static void writeBytesToFile(size_t size,
                              const char *data,
                              const char *path)
 {
-  FileStream *writer = sFopenWrite(path);
+  FileStream *writer = sFopenWrite(strWrap(path));
   sFwrite(data, size, writer);
   sFclose(writer);
 }
@@ -948,7 +948,7 @@ static void copyStringRaw(char *data, const char *string)
 static void generateBrokenMetadata(void)
 {
   metadataWrite(genTestData1(), "tmp", "tmp/tmp-file", "tmp/test-data-1");
-  char *test_data = sGetFilesContent("tmp/test-data-1").content;
+  char *test_data = sGetFilesContent(strWrap("tmp/test-data-1")).content;
 
   Metadata *metadata = metadataLoad("tmp/test-data-1");
   checkMetadata(metadata, 2, true);
@@ -994,7 +994,7 @@ static void generateBrokenMetadata(void)
   portage->history->next->state.type = PST_directory;
 
   /* Generate file with unneeded trailing bytes. */
-  FileStream *stream = sFopenWrite("tmp/unneeded-trailing-bytes");
+  FileStream *stream = sFopenWrite(strWrap("tmp/unneeded-trailing-bytes"));
   sFwrite(test_data, 700, stream);
   sFwrite("   ", 3, stream);
   sFclose(stream);

@@ -163,8 +163,8 @@ static SearchResult buildSearchResult(SearchContext *context,
 {
   struct stat stats =
     node != NULL && node->subnodes != NULL?
-    sStat(context->buffer.str):
-    sLStat(context->buffer.str);
+    sStat(strWrap(context->buffer.str)):
+    sLStat(strWrap(context->buffer.str));
 
   return (SearchResult)
   {
@@ -211,7 +211,7 @@ static void recursionStepRaw(SearchContext *context, SearchNode *node,
   else
   {
     context->state.is_dir_search = true;
-    context->state.access.search.dir = sOpenDir(context->buffer.str);
+    context->state.access.search.dir = sOpenDir(strWrap(context->buffer.str));
     context->state.access.search.subnodes = node? node->subnodes : NULL;
     context->state.access.search.fallback_policy = policy;
   }
@@ -315,11 +315,11 @@ static bool nodeMatches(SearchNode *node, String string)
 static SearchResult finishSearchStep(SearchContext *context)
 {
   struct dirent *dir_entry =
-    sReadDir(context->state.access.search.dir, context->buffer.str);
+    sReadDir(context->state.access.search.dir, strWrap(context->buffer.str));
 
   if(dir_entry == NULL)
   {
-    sCloseDir(context->state.access.search.dir, context->buffer.str);
+    sCloseDir(context->state.access.search.dir, strWrap(context->buffer.str));
     return finishDirectory(context);
   }
 
@@ -395,7 +395,7 @@ static SearchResult finishCurrentNode(SearchContext *context)
 
   setPathToFile(context, node->name);
 
-  if(sPathExists(context->buffer.str))
+  if(sPathExists(strWrap(context->buffer.str)))
   {
     return finishNodeStep(context, node, node->policy);
   }

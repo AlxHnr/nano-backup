@@ -119,14 +119,14 @@ static void backup(const char *repo_arg)
   String metadata_path = strAppendPath(repo_path, strWrap("metadata"));
   String tmp_file_path = strAppendPath(repo_path, strWrap("tmp-file"));
 
-  if(!sPathExists(config_path.content))
+  if(!sPathExists(config_path))
   {
     die("repository has no config file: \"%s\"", repo_arg);
   }
   SearchNode *root_node = searchTreeLoad(config_path.content);
 
   Metadata *metadata =
-    sPathExists(metadata_path.content)?
+    sPathExists(metadata_path)?
     metadataLoad(metadata_path.content):
     metadataNew();
 
@@ -174,7 +174,7 @@ static Metadata *metadataLoadFromRepo(const char *repo_arg)
   String repo_path = strRemoveTrailingSlashes(strWrap(repo_arg));
   String metadata_path = strAppendPath(repo_path, strWrap("metadata"));
 
-  if(!sPathExists(metadata_path.content))
+  if(!sPathExists(metadata_path))
   {
     die("repository has no metadata: \"%s\"", repo_arg);
   }
@@ -225,11 +225,11 @@ int main(const int arg_count, const char **arg_list)
   {
     die("no repository specified");
   }
-  else if(!sPathExists(arg_list[1]))
+  else if(!sPathExists(strWrap(arg_list[1])))
   {
     die("repository doesn't exist: \"%s\"", arg_list[1]);
   }
-  else if(!S_ISDIR(sStat(arg_list[1]).st_mode))
+  else if(!S_ISDIR(sStat(strWrap(arg_list[1])).st_mode))
   {
     die("not a directory: \"%s\"", arg_list[1]);
   }
@@ -255,7 +255,7 @@ int main(const int arg_count, const char **arg_list)
       die("too many paths to restore");
     }
 
-    restore(arg_list[1], sStringToSize(arg_list[2]),
+    restore(arg_list[1], sStringToSize(strWrap(arg_list[2])),
             arg_count == 4? arg_list[3]:"/");
   }
   else

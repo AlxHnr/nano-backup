@@ -128,7 +128,7 @@ static RepoWriter *createRepoWriter(const char *repo_path,
                                     const char *source_file_path,
                                     bool raw_mode)
 {
-  FileStream *stream = sFopenWrite(repo_tmp_file_path);
+  FileStream *stream = sFopenWrite(strWrap(repo_tmp_file_path));
   RepoWriter *writer = sMalloc(sizeof *writer);
 
   writer->repo_path = repo_path;
@@ -151,7 +151,7 @@ static RepoWriter *createRepoWriter(const char *repo_path,
 bool repoRegularFileExists(String repo_path, const RegularFileInfo *info)
 {
   fillPathBufferWithInfo(repo_path, info);
-  return sPathExists(path_buffer->data);
+  return sPathExists(strWrap(path_buffer->data));
 }
 
 /** Builds the unique path of the file represented by the given info.
@@ -367,7 +367,7 @@ void repoWriterClose(RepoWriter *writer_to_close)
 
   if(writer.raw_mode == true)
   {
-    sRename(writer.repo_tmp_file_path, writer.rename_to.path);
+    sRename(strWrap(writer.repo_tmp_file_path), strWrap(writer.rename_to.path));
   }
   else
   {
@@ -376,17 +376,17 @@ void repoWriterClose(RepoWriter *writer_to_close)
 
     /* Ensure that the final paths parent directories exists. */
     path_buffer->data[repo_path.length + 5] = '\0';
-    if(sPathExists(path_buffer->data) == false)
+    if(sPathExists(strWrap(path_buffer->data)) == false)
     {
       path_buffer->data[repo_path.length + 2] = '\0';
-      if(sPathExists(path_buffer->data) == false)
+      if(sPathExists(strWrap(path_buffer->data)) == false)
       {
-        sMkdir(path_buffer->data);
+        sMkdir(strWrap(path_buffer->data));
         fdatasyncDirectory(writer.repo_path);
       }
       path_buffer->data[repo_path.length + 2] = '/';
 
-      sMkdir(path_buffer->data);
+      sMkdir(strWrap(path_buffer->data));
 
       path_buffer->data[repo_path.length + 2] = '\0';
       fdatasyncDirectory(path_buffer->data);
@@ -394,7 +394,7 @@ void repoWriterClose(RepoWriter *writer_to_close)
     }
     path_buffer->data[repo_path.length + 5] = '/';
 
-    sRename(writer.repo_tmp_file_path, path_buffer->data);
+    sRename(strWrap(writer.repo_tmp_file_path), strWrap(path_buffer->data));
     path_buffer->data[repo_path.length + 5] = '\0';
     fdatasyncDirectory(path_buffer->data);
   }

@@ -14,10 +14,10 @@
 #include "error-handling.h"
 
 /* Helper strings for parsing the config file. */
-static String copy_token   = { .content = "[copy]",   .length = 6 };
-static String mirror_token = { .content = "[mirror]", .length = 8 };
-static String track_token  = { .content = "[track]",  .length = 7 };
-static String ignore_token = { .content = "[ignore]", .length = 8 };
+static String copy_token   = { .content = "[copy]",   .length = 6, .is_terminated = true };
+static String mirror_token = { .content = "[mirror]", .length = 8, .is_terminated = true };
+static String track_token  = { .content = "[track]",  .length = 7, .is_terminated = true };
+static String ignore_token = { .content = "[ignore]", .length = 8, .is_terminated = true };
 
 /** Returns a string slice, containing the current line in the given config
   files data.
@@ -318,7 +318,7 @@ SearchNode *searchTreeParse(String config)
 */
 SearchNode *searchTreeLoad(const char *path)
 {
-  FileContent content = sGetFilesContent(path);
+  FileContent content = sGetFilesContent(strWrap(path));
   String config = { .content = content.content, .length = content.size };
 
   SearchNode *root_node = searchTreeParse(config);

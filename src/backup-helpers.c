@@ -36,7 +36,7 @@ static void checkFileContentChanges(PathNode *node, PathState *state,
   {
     bytes_used = state->metadata.reg.size;
 
-    FileStream *stream = sFopenRead(node->path.content);
+    FileStream *stream = sFopenRead(node->path);
     sFread(hash, bytes_used, stream);
     bool stream_not_at_end = sFbytesLeft(stream);
     sFclose(stream);

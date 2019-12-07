@@ -2264,18 +2264,18 @@ int main(void)
   phase("recursive removing of paths with varying policies", runPhase10, phase_9_node);
 
   /* Create a backup of the current metadata. */
-  time_t tmp_timestamp = sStat("tmp").st_mtime;
+  time_t tmp_timestamp = sStat(strWrap("tmp")).st_mtime;
   metadataWrite(metadataLoad("tmp/repo/metadata"), "tmp", "tmp/tmp-file", "tmp/metadata-backup");
-  sUtime("tmp", tmp_timestamp);
+  sUtime(strWrap("tmp"), tmp_timestamp);
 
   /* Run some backup phases. */
   phase("backup with no changes",                        runPhase11, phase_9_node);
   phase("recreating nested files with varying policies", runPhase12, phase_9_node);
 
   /* Restore metadata from phase 10. */
-  tmp_timestamp = sStat("tmp").st_mtime;
-  sRename("tmp/metadata-backup", "tmp/repo/metadata");
-  sUtime("tmp", tmp_timestamp);
+  tmp_timestamp = sStat(strWrap("tmp")).st_mtime;
+  sRename(strWrap("tmp/metadata-backup"), strWrap("tmp/repo/metadata"));
+  sUtime(strWrap("tmp"), tmp_timestamp);
 
   /* Run more backup phases. */
   phase("a variation of the previous backup", runPhase13, phase_13_node);
