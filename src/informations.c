@@ -384,7 +384,7 @@ static void printNode(PathNode *node, MetadataChanges subnode_changes)
   {
     colorPrintf(stdout, TC_magenta, " -> ");
     colorPrintf(stdout, TC_cyan, "%s",
-                existing_state->metadata.sym_target);
+                existing_state->metadata.sym_target.content);
   }
 
   printf("\n");

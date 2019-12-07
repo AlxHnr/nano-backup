@@ -43,7 +43,7 @@ typedef struct
   union
   {
     RegularFileInfo reg;    /**< The metadata of a regular file. */
-    const char *sym_target; /**< The target path of a symlink. */
+    String sym_target; /**< The target path of a symlink. */
     DirectoryInfo dir;     /**< The permission bits of a directory. */
   }metadata;
 }PathState;
@@ -221,10 +221,10 @@ typedef struct
 }Metadata;
 
 extern Metadata *metadataNew(void);
-extern Metadata *metadataLoad(const char *path);
+extern Metadata *metadataLoad(String path);
 extern void metadataWrite(Metadata *metadata,
-                          const char *repo_path,
-                          const char *repo_tmp_file_path,
-                          const char *repo_metadata_path);
+                          String repo_path,
+                          String repo_tmp_file_path,
+                          String repo_metadata_path);
 
 #endif

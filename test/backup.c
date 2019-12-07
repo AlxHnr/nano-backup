@@ -85,7 +85,7 @@ static void runPhase2(SearchNode *phase_1_node)
   generateFile("tmp/files/foo/dummy/file", "dummy file", 1);
 
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad("tmp/repo/metadata");
+  Metadata *metadata = metadataLoad(strWrap("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 12);
   checkHistPoint(metadata, 0, 0, phase_timestamps(0), cwd_depth() + 12);
   initiateBackup(metadata, phase_1_node);
@@ -146,7 +146,7 @@ static void runPhase3(SearchNode *phase_3_node)
   removePath("tmp/files/foo/super.txt");
 
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad("tmp/repo/metadata");
+  Metadata *metadata = metadataLoad(strWrap("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 15);
   checkHistPoint(metadata, 0, 0, phase_timestamps(1), cwd_depth() + 7);
   checkHistPoint(metadata, 1, 1, phase_timestamps(0), 8);
@@ -203,7 +203,7 @@ static void runPhase3(SearchNode *phase_3_node)
 static void runPhase4(SearchNode *phase_4_node)
 {
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad("tmp/repo/metadata");
+  Metadata *metadata = metadataLoad(strWrap("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 10);
   checkHistPoint(metadata, 0, 0, phase_timestamps(2), cwd_depth() + 5);
   checkHistPoint(metadata, 1, 1, phase_timestamps(0), 6);
@@ -288,7 +288,7 @@ static void runPhase5(SearchNode *phase_5_node)
   generateFile("tmp/files/test/a/b/d/f",              "CONTENT",      1);
 
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad("tmp/repo/metadata");
+  Metadata *metadata = metadataLoad(strWrap("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 10);
   checkHistPoint(metadata, 0, 0, phase_timestamps(3), cwd_depth() + 4);
   checkHistPoint(metadata, 1, 1, phase_timestamps(2), 1);
@@ -426,7 +426,7 @@ static void runPhase6(SearchNode *phase_6_node)
   removePath("tmp/files/test/a/b");
 
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad("tmp/repo/metadata");
+  Metadata *metadata = metadataLoad(strWrap("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 41);
   checkHistPoint(metadata, 0, 0, phase_timestamps(4), cwd_depth() + 35);
   checkHistPoint(metadata, 1, 1, phase_timestamps(2), 1);
@@ -569,7 +569,7 @@ static void runPhase7(SearchNode *phase_7_node)
   makeSymlink("../../b/c", "tmp/files/unneeded/directory/a/g/h/i");
 
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad("tmp/repo/metadata");
+  Metadata *metadata = metadataLoad(strWrap("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 12);
   checkHistPoint(metadata, 0, 0, phase_timestamps(5), cwd_depth() + 4);
   checkHistPoint(metadata, 1, 1, phase_timestamps(4), 2);
@@ -661,7 +661,7 @@ static void runPhase8(SearchNode *phase_8_node)
   generateFile("tmp/files/home/user/text.txt", "0xff\n", 500);
 
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad("tmp/repo/metadata");
+  Metadata *metadata = metadataLoad(strWrap("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 22);
   checkHistPoint(metadata, 0, 0, phase_timestamps(6), cwd_depth() + 14);
   checkHistPoint(metadata, 1, 1, phase_timestamps(4), 2);
@@ -836,7 +836,7 @@ static void runPhase9(SearchNode *phase_9_node)
   makeSymlink("/root/.vimrc",           "tmp/files/bin/two/three");
 
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad("tmp/repo/metadata");
+  Metadata *metadata = metadataLoad(strWrap("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 10);
   checkHistPoint(metadata, 0, 0, phase_timestamps(7), cwd_depth() + 4);
   checkHistPoint(metadata, 1, 1, phase_timestamps(2), 1);
@@ -1149,7 +1149,7 @@ static void runPhase10(SearchNode *phase_9_node)
   removePath("tmp/files/nb");
 
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad("tmp/repo/metadata");
+  Metadata *metadata = metadataLoad(strWrap("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 84);
   checkHistPoint(metadata, 0, 0, phase_timestamps(8), cwd_depth() + 78);
   checkHistPoint(metadata, 1, 1, phase_timestamps(2), 1);
@@ -1360,7 +1360,7 @@ static void runPhase10(SearchNode *phase_9_node)
 static void runPhase11(SearchNode *phase_9_node)
 {
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad("tmp/repo/metadata");
+  Metadata *metadata = metadataLoad(strWrap("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 71);
   checkHistPoint(metadata, 0, 0, phase_timestamps(9), cwd_depth() + 14);
   checkHistPoint(metadata, 1, 1, phase_timestamps(8), 62);
@@ -1546,7 +1546,7 @@ static void runPhase11(SearchNode *phase_9_node)
 static void runPhase12(SearchNode *phase_9_node)
 {
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad("tmp/repo/metadata");
+  Metadata *metadata = metadataLoad(strWrap("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 71);
   checkHistPoint(metadata, 0, 0, phase_timestamps(10), cwd_depth() + 3);
   checkHistPoint(metadata, 1, 1, phase_timestamps(9), 11);
@@ -1758,7 +1758,7 @@ static void runPhase13(SearchNode *phase_13_node)
   generateFile("tmp/files/bin", "0", 2123);
 
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad("tmp/repo/metadata");
+  Metadata *metadata = metadataLoad(strWrap("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 71);
   checkHistPoint(metadata, 0, 0, phase_timestamps(9), cwd_depth() + 14);
   checkHistPoint(metadata, 1, 1, phase_timestamps(8), 62);
@@ -2007,7 +2007,7 @@ static void runPhase15(SearchNode *phase_14_node)
   phase15RemoveFiles();
 
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad("tmp/repo/metadata");
+  Metadata *metadata = metadataLoad(strWrap("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 9);
   checkHistPoint(metadata, 0, 0, phase_timestamps(13), cwd_depth() + 9);
   initiateBackup(metadata, phase_14_node);
@@ -2044,7 +2044,7 @@ static void runPhase15(SearchNode *phase_14_node)
 static void runPhase16(SearchNode *phase_14_node)
 {
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad("tmp/repo/metadata");
+  Metadata *metadata = metadataLoad(strWrap("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 9);
   checkHistPoint(metadata, 0, 0, phase_timestamps(14), cwd_depth() + 2);
   checkHistPoint(metadata, 1, 1, phase_timestamps(13), 7);
@@ -2265,7 +2265,9 @@ int main(void)
 
   /* Create a backup of the current metadata. */
   time_t tmp_timestamp = sStat(strWrap("tmp")).st_mtime;
-  metadataWrite(metadataLoad("tmp/repo/metadata"), "tmp", "tmp/tmp-file", "tmp/metadata-backup");
+  metadataWrite(metadataLoad(strWrap("tmp/repo/metadata")),
+                strWrap("tmp"), strWrap("tmp/tmp-file"),
+                strWrap("tmp/metadata-backup"));
   sUtime(strWrap("tmp"), tmp_timestamp);
 
   /* Run some backup phases. */

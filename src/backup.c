@@ -43,7 +43,7 @@ static void setPathHistoryState(PathState *state, SearchResult result)
   {
     state->type = PST_symlink;
     readSymlink(result.path, result.stats, &io_buffer);
-    state->metadata.sym_target = strCopy(strWrap(io_buffer->data)).content;
+    strSet(&state->metadata.sym_target, strCopy(strWrap(io_buffer->data)));
   }
   else if(result.type == SRT_directory)
   {
@@ -417,7 +417,7 @@ static void handleFoundNode(Metadata *metadata, PathNode *node,
     {
       PathHistory *point = mpAlloc(sizeof *point);
 
-      point->state = state;
+      memcpy(&point->state, &state, sizeof(point->state));
       point->backup = &metadata->current_backup;
       point->backup->ref_count = sSizeAdd(point->backup->ref_count, 1);
 

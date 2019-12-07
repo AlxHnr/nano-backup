@@ -320,7 +320,7 @@ static void restorePath(PathNode *node, PathState *state,
   }
   else if(state->type == PST_symlink)
   {
-    sSymlink(strWrap(state->metadata.sym_target), node->path);
+    sSymlink(state->metadata.sym_target, node->path);
     sLChown(node->path, state->uid, state->gid);
   }
   else if(state->type == PST_directory)

@@ -43,12 +43,12 @@ static const union
   messages.
 */
 static void assertBytesLeft(size_t reader_position, size_t bytes,
-                            FileContent content, const char *metadata_path)
+                            FileContent content, String metadata_path)
 {
   if(sSizeAdd(reader_position, bytes) > content.size)
   {
     die("corrupted metadata: expected %zu byte%s, got %zu: \"%s\"", bytes,
-        bytes == 1? "":"s", content.size - reader_position, metadata_path);
+        bytes == 1? "":"s", content.size - reader_position, metadata_path.content);
   }
 }
 
@@ -116,7 +116,7 @@ static uint64_t convertEndian64(uint64_t value)
   FileContent.
 */
 static uint8_t read8(FileContent content, size_t *reader_position,
-                     const char *metadata_path)
+                     String metadata_path)
 {
   assertBytesLeft(*reader_position, sizeof(uint8_t),
                   content, metadata_path);
@@ -139,7 +139,7 @@ static void write8(uint8_t value, RepoWriter *writer)
 
 /** The 4 byte version of read8() which takes care of endian conversion. */
 static uint32_t read32(FileContent content, size_t *reader_position,
-                       const char *metadata_path)
+                       String metadata_path)
 {
   assertBytesLeft(*reader_position, sizeof(uint32_t),
                   content, metadata_path);
@@ -159,7 +159,7 @@ static void write32(uint32_t value, RepoWriter *writer)
 
 /** The 8 byte version of read8() which takes care of endian conversion. */
 static uint64_t read64(FileContent content, size_t *reader_position,
-                       const char *metadata_path)
+                       String metadata_path)
 {
   assertBytesLeft(*reader_position, sizeof(uint64_t),
                   content, metadata_path);
@@ -180,13 +180,13 @@ static void write64(uint64_t value, RepoWriter *writer)
 /** A wrapper around read64(), which ensures that the read value fits into
   size_t. */
 static size_t readSize(FileContent content, size_t *reader_position,
-                       const char *metadata_path)
+                       String metadata_path)
 {
   uint64_t size = read64(content, reader_position, metadata_path);
 
   if(size > SIZE_MAX)
   {
-    die("failed to read 64 bit size value from \"%s\"", metadata_path);
+    die("failed to read 64 bit size value from \"%s\"", metadata_path.content);
   }
 
   return (size_t)size;
@@ -195,13 +195,13 @@ static size_t readSize(FileContent content, size_t *reader_position,
 /** A wrapper around read64(), which ensures that the read value fits into
   time_t. */
 static time_t readTime(FileContent content, size_t *reader_position,
-                       const char *metadata_path)
+                       String metadata_path)
 {
   int64_t time = read64(content, reader_position, metadata_path);
 
   if(sizeof(time_t) == 4 && (time < INT32_MIN || time > INT32_MAX))
   {
-    die("unable to read 64-bit timestamp from \"%s\"", metadata_path);
+    die("unable to read 64-bit timestamp from \"%s\"", metadata_path.content);
   }
 
   return (time_t)time;
@@ -220,7 +220,7 @@ static time_t readTime(FileContent content, size_t *reader_position,
   error messages.
 */
 static void readBytes(FileContent content, size_t *reader_position,
-                      char *buffer, size_t size, const char *metadata_path)
+                      char *buffer, size_t size, String metadata_path)
 {
   assertBytesLeft(*reader_position, size, content, metadata_path);
 
@@ -242,7 +242,7 @@ static void readBytes(FileContent content, size_t *reader_position,
 */
 static PathHistory *readPathHistory(FileContent content,
                                     size_t *reader_position,
-                                    const char *metadata_path,
+                                    String metadata_path,
                                     Metadata *metadata)
 {
   PathHistory *point = mpAlloc(sizeof *point);
@@ -250,7 +250,7 @@ static PathHistory *readPathHistory(FileContent content,
   size_t id = readSize(content, reader_position, metadata_path);
   if(id >= metadata->backup_history_length)
   {
-    die("backup id is out of range in \"%s\"", metadata_path);
+    die("backup id is out of range in \"%s\"", metadata_path.content);
   }
 
   point->backup = &metadata->backup_history[id];
@@ -302,7 +302,7 @@ static PathHistory *readPathHistory(FileContent content,
 
     buffer[target_length] = '\0';
 
-    point->state.metadata.sym_target = buffer;
+    strSet(&point->state.metadata.sym_target, strWrap(buffer));
   }
   else if(point->state.type == PST_directory)
   {
@@ -313,7 +313,7 @@ static PathHistory *readPathHistory(FileContent content,
   }
   else if(point->state.type != PST_non_existing)
   {
-    die("invalid PathStateType in \"%s\"", metadata_path);
+    die("invalid PathStateType in \"%s\"", metadata_path.content);
   }
 
   point->next = NULL;
@@ -333,7 +333,7 @@ static PathHistory *readPathHistory(FileContent content,
 */
 static PathHistory *readFullPathHistory(FileContent content,
                                         size_t *reader_position,
-                                        const char *metadata_path,
+                                        String metadata_path,
                                         Metadata *metadata)
 {
   size_t history_length =
@@ -407,10 +407,9 @@ static void writePathHistoryList(PathHistory *starting_point,
     }
     else if(point->state.type == PST_symlink)
     {
-      size_t target_length = strlen(point->state.metadata.sym_target);
-      write64(target_length, writer);
-      repoWriterWrite(point->state.metadata.sym_target,
-                           target_length, writer);
+      String target_path = point->state.metadata.sym_target;
+      write64(target_path.length, writer);
+      repoWriterWrite(target_path.content, target_path.length, writer);
     }
     else if(point->state.type == PST_directory)
     {
@@ -441,7 +440,7 @@ static void writePathHistoryList(PathHistory *starting_point,
 */
 static PathNode *readPathSubnodes(FileContent content,
                                   size_t *reader_position,
-                                  const char *metadata_path,
+                                  String metadata_path,
                                   PathNode *parent_node,
                                   Metadata *metadata)
 {
@@ -460,7 +459,7 @@ static PathNode *readPathSubnodes(FileContent content,
     size_t name_length = readSize(content, reader_position, metadata_path);
     if(name_length == 0)
     {
-      die("contains filename with length zero: \"%s\"", metadata_path);
+      die("contains filename with length zero: \"%s\"", metadata_path.content);
     }
 
     assertBytesLeft(*reader_position, name_length, content, metadata_path);
@@ -475,13 +474,13 @@ static PathNode *readPathSubnodes(FileContent content,
 
     if(memchr(name.content, '\0', name.length) != NULL)
     {
-      die("contains filename with null-bytes: \"%s\"", metadata_path);
+      die("contains filename with null-bytes: \"%s\"", metadata_path.content);
     }
     else if(memchr(name.content, '/', name.length) != NULL ||
             strIsDotElement(name))
     {
       die("contains invalid filename \"%s\": \"%s\"",
-          strCopy(name).content, metadata_path);
+          strCopy(name).content, metadata_path.content);
     }
 
     String full_path = strAppendPath(parent_node == NULL? strWrap(""):
@@ -568,9 +567,9 @@ Metadata *metadataNew(void)
   @return The metadata, allocated inside the internal memory pool, which
   should not be freed by the caller.
 */
-Metadata *metadataLoad(const char *path)
+Metadata *metadataLoad(String path)
 {
-  FileContent content = sGetFilesContent(strWrap(path));
+  FileContent content = sGetFilesContent(path);
 
   /* Allocate and initialize metadata. */
   Metadata *metadata = mpAlloc(sizeof *metadata);
@@ -627,7 +626,7 @@ Metadata *metadataLoad(const char *path)
 
   if(reader_position != content.size)
   {
-    die("unneeded trailing bytes in \"%s\"", path);
+    die("unneeded trailing bytes in \"%s\"", path.content);
   }
 
   return metadata;
@@ -644,12 +643,12 @@ Metadata *metadataLoad(const char *path)
   @param repo_metadata_path The path to the repositories metadata file.
 */
 void metadataWrite(Metadata *metadata,
-                   const char *repo_path,
-                   const char *repo_tmp_file_path,
-                   const char *repo_metadata_path)
+                   String repo_path,
+                   String repo_tmp_file_path,
+                   String repo_metadata_path)
 {
-  RepoWriter *writer = repoWriterOpenRaw(repo_path, repo_tmp_file_path,
-                                         "metadata", repo_metadata_path);
+  RepoWriter *writer = repoWriterOpenRaw(repo_path.content, repo_tmp_file_path.content,
+                                         "metadata", repo_metadata_path.content);
 
   /* Count referenced history points and update IDs. */
   size_t id_counter = metadata->current_backup.ref_count > 0;

@@ -103,7 +103,7 @@ static void change1NoneFiletypeChange(SearchNode *none_filetype_node)
   removePath("tmp/files/e/f/g");
 
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad("tmp/repo/metadata");
+  Metadata *metadata = metadataLoad(strWrap("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 15);
   checkHistPoint(metadata, 0, 0, phase_timestamps(backup_counter() - 1), cwd_depth() + 15);
   initiateBackup(metadata, none_filetype_node);
@@ -167,7 +167,7 @@ static void change2NoneFiletypeChange(SearchNode *none_filetype_node)
   makeSymlink("a", "tmp/files/e");
 
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad("tmp/repo/metadata");
+  Metadata *metadata = metadataLoad(strWrap("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 15);
   checkHistPoint(metadata, 0, 0, phase_timestamps(backup_counter() - 1), cwd_depth() + 6);
   checkHistPoint(metadata, 1, 1, phase_timestamps(backup_counter() - 2), 10);
@@ -224,7 +224,7 @@ static void change2NoneFiletypeChange(SearchNode *none_filetype_node)
 static void postNoneFiletypeChange(SearchNode *none_filetype_node)
 {
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad("tmp/repo/metadata");
+  Metadata *metadata = metadataLoad(strWrap("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 15);
   checkHistPoint(metadata, 0, 0, phase_timestamps(backup_counter() - 1), cwd_depth() + 4);
   checkHistPoint(metadata, 1, 1, phase_timestamps(backup_counter() - 2), 2);
@@ -287,7 +287,7 @@ static void postNoneFiletypeChange(SearchNode *none_filetype_node)
 static void restoreNoneFiletypeChange(SearchNode *none_filetype_node)
 {
   /* Load the metadata. */
-  Metadata *metadata = metadataLoad("tmp/repo/metadata");
+  Metadata *metadata = metadataLoad(strWrap("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 15);
   checkHistPoint(metadata, 0, 0, phase_timestamps(backup_counter() - 1), cwd_depth() + 4);
   checkHistPoint(metadata, 1, 1, phase_timestamps(backup_counter() - 3), 2);
@@ -504,7 +504,7 @@ static void modifyFiletypeChange(SearchNode *filetype_node,
   removePath("tmp/files/7/a");
 
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad("tmp/repo/metadata");
+  Metadata *metadata = metadataLoad(strWrap("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 37);
   checkHistPoint(metadata, 0, 0, phase_timestamps(backup_counter() - 1), cwd_depth() + 37);
   initiateBackup(metadata, filetype_node);
@@ -670,7 +670,7 @@ static void changeFiletypeChange(SearchNode *filetype_node,
                                  BackupPolicy policy)
 {
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad("tmp/repo/metadata");
+  Metadata *metadata = metadataLoad(strWrap("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 37);
   checkHistPoint(metadata, 0, 0, phase_timestamps(backup_counter() - 1), cwd_depth() + 4);
   checkHistPoint(metadata, 1, 1, phase_timestamps(backup_counter() - 2), 35);
@@ -803,7 +803,7 @@ static void postFiletypeChange(SearchNode *filetype_node,
                                BackupPolicy policy)
 {
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad("tmp/repo/metadata");
+  Metadata *metadata = metadataLoad(strWrap("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 21);
   checkHistPoint(metadata, 0, 0, phase_timestamps(backup_counter() - 1), cwd_depth() + 21);
   initiateBackup(metadata, filetype_node);
@@ -869,7 +869,7 @@ static void postFiletypeChange(SearchNode *filetype_node,
 static void trackFiletypeChange(SearchNode *filetype_node)
 {
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad("tmp/repo/metadata");
+  Metadata *metadata = metadataLoad(strWrap("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 37);
   checkHistPoint(metadata, 0, 0, phase_timestamps(backup_counter() - 1), cwd_depth() + 4);
   checkHistPoint(metadata, 1, 1, phase_timestamps(backup_counter() - 2), 35);
@@ -1036,7 +1036,7 @@ static void trackFiletypeChangePost(SearchNode *filetype_node,
                                     size_t completed_runs)
 {
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad("tmp/repo/metadata");
+  Metadata *metadata = metadataLoad(strWrap("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 47);
   size_t off = completed_runs > 0;
 

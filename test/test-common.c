@@ -467,7 +467,7 @@ void mustHaveSymlink(PathNode *node, const Backup *backup, uid_t uid,
     die("backup point %zu in node \"%s\" doesn't have the state PST_symlink",
         backup->id, node->path.content);
   }
-  else if(strcmp(point->state.metadata.sym_target, sym_target) != 0)
+  else if(!strEqual(point->state.metadata.sym_target, strWrap(sym_target)))
   {
     die("backup point %zu in node \"%s\" doesn't contain the symlink target \"%s\"",
         backup->id, node->path.content, sym_target);

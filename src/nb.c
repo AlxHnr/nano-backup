@@ -127,7 +127,7 @@ static void backup(const char *repo_arg)
 
   Metadata *metadata =
     sPathExists(metadata_path)?
-    metadataLoad(metadata_path.content):
+    metadataLoad(metadata_path):
     metadataNew();
 
   initiateBackup(metadata, root_node);
@@ -161,8 +161,8 @@ static void backup(const char *repo_arg)
 
     ensureUserConsent("proceed?");
     finishBackup(metadata, strWrap(repo_arg), tmp_file_path);
-    metadataWrite(metadata, repo_arg, tmp_file_path.content,
-                  metadata_path.content);
+    metadataWrite(metadata, strWrap(repo_arg), tmp_file_path,
+                  metadata_path);
 
     runGC(metadata, repo_arg, true);
   }
@@ -179,7 +179,7 @@ static Metadata *metadataLoadFromRepo(const char *repo_arg)
     die("repository has no metadata: \"%s\"", repo_arg);
   }
 
-  return metadataLoad(metadata_path.content);
+  return metadataLoad(metadata_path);
 }
 
 /** Ensures that the given path is absolute. */

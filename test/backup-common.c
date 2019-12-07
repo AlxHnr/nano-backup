@@ -304,7 +304,7 @@ void restoreWithTimeRecursively(PathNode *node)
         restoreRegularFile(node->path.content, &point->state.metadata.reg);
         break;
       case PST_symlink:
-        makeSymlink(point->state.metadata.sym_target, node->path.content);
+        makeSymlink(point->state.metadata.sym_target.content, node->path.content);
         break;
       case PST_directory:
         makeDir(node->path.content);
@@ -515,7 +515,8 @@ void completeBackup(Metadata *metadata)
   assert_true(metadata->current_backup.timestamp <= after_finishing);
   phase_timestamp_array[phase] = metadata->current_backup.timestamp;
 
-  metadataWrite(metadata, "tmp/repo", "tmp/repo/tmp-file", "tmp/repo/metadata");
+  metadataWrite(metadata, strWrap("tmp/repo"), strWrap("tmp/repo/tmp-file"),
+                strWrap("tmp/repo/metadata"));
 }
 
 /** Returns the timestamp of the backup `index`. */
