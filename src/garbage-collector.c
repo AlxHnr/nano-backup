@@ -123,7 +123,7 @@ static bool recurseIntoDirectory(StringTable *table, size_t length,
 
   @return Statistics about items removed from the repository.
 */
-GCStats collectGarbage(Metadata *metadata, const char *repo_path)
+GCStats collectGarbage(Metadata *metadata, String repo_path)
 {
   StringTable *table = strTableNew();
   strTableMap(table, strWrap("config"),   (void *)0x1);
@@ -136,7 +136,7 @@ GCStats collectGarbage(Metadata *metadata, const char *repo_path)
 
   GCStats gc_stats = { .count = 0, .size = 0 };
 
-  size_t length = pathBuilderSet(&path_buffer, repo_path);
+  size_t length = pathBuilderSet(&path_buffer, repo_path.content);
   recurseIntoDirectory(table, length, length, &gc_stats);
 
   strTableFree(table);

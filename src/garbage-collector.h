@@ -17,6 +17,6 @@ typedef struct
   uint64_t size;
 }GCStats;
 
-extern GCStats collectGarbage(Metadata *metadata, const char *repo_path);
+extern GCStats collectGarbage(Metadata *metadata, String repo_path);
 
 #endif

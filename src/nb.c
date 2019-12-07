@@ -85,7 +85,7 @@ static void printStats(const char *summary, TextColor color,
 static void runGC(Metadata *metadata, const char *repo_path,
                   bool prepend_newline)
 {
-  GCStats gc_stats = collectGarbage(metadata, repo_path);
+  GCStats gc_stats = collectGarbage(metadata, strWrap(repo_path));
 
   if(gc_stats.count > 0)
   {

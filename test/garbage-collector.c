@@ -43,7 +43,7 @@ static void populateRepoWithDummyFiles(void)
 static void testCollectGarbage(Metadata *metadata, const char *repo_path,
                                size_t count, uint64_t size)
 {
-  GCStats stats = collectGarbage(metadata, repo_path);
+  GCStats stats = collectGarbage(metadata, strWrap(repo_path));
 
   assert_true(stats.count == count);
   assert_true(stats.size == size);
@@ -83,7 +83,7 @@ int main(void)
   sRemove(strWrap("tmp/link-to-repo"));
   sSymlink(strWrap("non-existing"), strWrap("tmp/link-to-repo"));
 
-  assert_error(collectGarbage(empty_metadata, "tmp/link-to-repo"),
+  assert_error(collectGarbage(empty_metadata, strWrap("tmp/link-to-repo")),
                "failed to access \"tmp/link-to-repo\": No such file or directory");
 
   assert_true(countItemsInDir("tmp/repo") == 25);
