@@ -2,8 +2,8 @@
   Declares various functions for string manipulation.
 */
 
-#ifndef NANO_BACKUP_STR_H
-#define NANO_BACKUP_STR_H
+#ifndef NANO_BACKUP_SRC_STR_H
+#define NANO_BACKUP_SRC_STR_H
 
 #include <stddef.h>
 #include <stdbool.h>

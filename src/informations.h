@@ -2,8 +2,8 @@
   Declares functions to print informations and statistics to the user.
 */
 
-#ifndef NANO_BACKUP_INFORMATIONS_H
-#define NANO_BACKUP_INFORMATIONS_H
+#ifndef NANO_BACKUP_SRC_INFORMATIONS_H
+#define NANO_BACKUP_SRC_INFORMATIONS_H
 
 #include <stddef.h>
 #include <stdint.h>

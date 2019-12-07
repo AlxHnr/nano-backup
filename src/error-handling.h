@@ -2,8 +2,8 @@
   Declares various functions for error handling.
 */
 
-#ifndef NANO_BACKUP_ERROR_HANDLING_H
-#define NANO_BACKUP_ERROR_HANDLING_H
+#ifndef NANO_BACKUP_SRC_ERROR_HANDLING_H
+#define NANO_BACKUP_SRC_ERROR_HANDLING_H
 
 #ifdef __GNUC__
 #define DIE_FUNCTION_ATTRIBUTES \

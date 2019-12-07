@@ -2,8 +2,8 @@
   Declares a struct that can be used for searching the file system.
 */
 
-#ifndef NANO_BACKUP_SEARCH_TREE_H
-#define NANO_BACKUP_SEARCH_TREE_H
+#ifndef NANO_BACKUP_SRC_SEARCH_TREE_H
+#define NANO_BACKUP_SRC_SEARCH_TREE_H
 
 #include <stdbool.h>
 #include <regex.h>

@@ -2,8 +2,8 @@
   Declares functions to build reusable paths based on Buffer.
 */
 
-#ifndef NANO_BACKUP_PATH_BUILDER_H
-#define NANO_BACKUP_PATH_BUILDER_H
+#ifndef NANO_BACKUP_SRC_PATH_BUILDER_H
+#define NANO_BACKUP_SRC_PATH_BUILDER_H
 
 #include "buffer.h"
 

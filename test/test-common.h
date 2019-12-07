@@ -2,8 +2,8 @@
   Declares various functions to be used for testing data structures.
 */
 
-#ifndef NANO_BACKUP_TEST_COMMON_H
-#define NANO_BACKUP_TEST_COMMON_H
+#ifndef NANO_BACKUP_TEST_TEST_COMMON_H
+#define NANO_BACKUP_TEST_TEST_COMMON_H
 
 #include "metadata.h"
 #include "str.h"

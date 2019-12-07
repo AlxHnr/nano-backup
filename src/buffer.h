@@ -2,8 +2,8 @@
   Declares functions for allocating buffers and frees them at exit.
 */
 
-#ifndef NANO_BACKUP_BUFFER_H
-#define NANO_BACKUP_BUFFER_H
+#ifndef NANO_BACKUP_SRC_BUFFER_H
+#define NANO_BACKUP_SRC_BUFFER_H
 
 #include <stddef.h>
 

@@ -3,8 +3,8 @@
   automatically when the program terminates.
 */
 
-#ifndef NANO_BACKUP_REGEX_POOL_H
-#define NANO_BACKUP_REGEX_POOL_H
+#ifndef NANO_BACKUP_SRC_REGEX_POOL_H
+#define NANO_BACKUP_SRC_REGEX_POOL_H
 
 #include <regex.h>
 

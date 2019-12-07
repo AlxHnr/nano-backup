@@ -3,8 +3,8 @@
   program with an error message.
 */
 
-#ifndef NANO_BACKUP_SAFE_WRAPPERS_H
-#define NANO_BACKUP_SAFE_WRAPPERS_H
+#ifndef NANO_BACKUP_SRC_SAFE_WRAPPERS_H
+#define NANO_BACKUP_SRC_SAFE_WRAPPERS_H
 
 #include <time.h>
 #include <stdio.h>

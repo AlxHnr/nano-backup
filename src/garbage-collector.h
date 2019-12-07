@@ -2,8 +2,8 @@
   Defines functions for removing unreferenced files from the repository.
 */
 
-#ifndef NANO_BACKUP_GARBAGE_COLLECTOR_H
-#define NANO_BACKUP_GARBAGE_COLLECTOR_H
+#ifndef NANO_BACKUP_SRC_GARBAGE_COLLECTOR_H
+#define NANO_BACKUP_SRC_GARBAGE_COLLECTOR_H
 
 #include "metadata.h"
 

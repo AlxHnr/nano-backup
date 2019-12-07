@@ -4,8 +4,8 @@
   program.
 */
 
-#ifndef NANO_BACKUP_MEMORY_POOL_H
-#define NANO_BACKUP_MEMORY_POOL_H
+#ifndef NANO_BACKUP_SRC_MEMORY_POOL_H
+#define NANO_BACKUP_SRC_MEMORY_POOL_H
 
 #include <stddef.h>
 

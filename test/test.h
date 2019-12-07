@@ -3,8 +3,8 @@
   by tests.
 */
 
-#ifndef NANO_BACKUP_TEST_H
-#define NANO_BACKUP_TEST_H
+#ifndef NANO_BACKUP_TEST_TEST_H
+#define NANO_BACKUP_TEST_TEST_H
 
 #include <errno.h>
 #include <string.h>

@@ -2,8 +2,8 @@
   Declares functions for restoring files.
 */
 
-#ifndef NANO_BACKUP_RESTORE_H
-#define NANO_BACKUP_RESTORE_H
+#ifndef NANO_BACKUP_SRC_RESTORE_H
+#define NANO_BACKUP_SRC_RESTORE_H
 
 #include "metadata.h"
 

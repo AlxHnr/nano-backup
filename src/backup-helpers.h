@@ -2,8 +2,8 @@
   Various helper functions for doing backup related things.
 */
 
-#ifndef NANO_BACKUP_BACKUP_HELPERS_H
-#define NANO_BACKUP_BACKUP_HELPERS_H
+#ifndef NANO_BACKUP_SRC_BACKUP_HELPERS_H
+#define NANO_BACKUP_SRC_BACKUP_HELPERS_H
 
 #include <sys/stat.h>
 

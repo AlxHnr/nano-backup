@@ -2,8 +2,8 @@
   Contains hashes of dummy files generated during tests.
 */
 
-#ifndef NANO_BACKUP_BACKUP_DUMMY_HASHES_H
-#define NANO_BACKUP_BACKUP_DUMMY_HASHES_H
+#ifndef NANO_BACKUP_TEST_BACKUP_DUMMY_HASHES_H
+#define NANO_BACKUP_TEST_BACKUP_DUMMY_HASHES_H
 
 #include "stdint.h"
 
