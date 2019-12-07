@@ -11,7 +11,7 @@
 #include "memory-pool.h"
 #include "safe-wrappers.h"
 
-#include "siphash.h"
+#include "SipHash/siphash.h"
 
 /** A string table bucket. */
 typedef struct Bucket Bucket;

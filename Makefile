@@ -1,6 +1,7 @@
 CFLAGS           += -std=c99 -D_XOPEN_SOURCE=600 -D_FILE_OFFSET_BITS=64
 OBJECTS          := $(patsubst src/%.c,build/%.o,$(wildcard src/*.c))
-OBJECTS          += build/third-party/blake2b.o build/third-party/siphash.o
+OBJECTS          += build/third-party/BLAKE2/blake2b.o
+OBJECTS          += build/third-party/SipHash/siphash.o
 TEST_PROGRAMS    := $(shell grep -l '^int main' test/*.c)
 TEST_LIB_OBJECTS := $(filter-out $(TEST_PROGRAMS),$(wildcard test/*.c))
 TEST_PROGRAMS    := $(patsubst %.c,build/%,$(TEST_PROGRAMS))
@@ -23,7 +24,12 @@ build/dependencies.makefile:
 build/nb: $(OBJECTS)
 	$(CC) $^ $(LDFLAGS) -o $@
 
-build/third-party/%.o: third-party/%.c
+build/third-party/BLAKE2/%.o: third-party/BLAKE2/%.c
+	mkdir -p build/third-party/BLAKE2
+	$(CC) $(CFLAGS) -O3 -c $< -o $@
+
+build/third-party/SipHash/%.o: third-party/SipHash/%.c
+	mkdir -p build/third-party/SipHash
 	$(CC) $(CFLAGS) -O3 -c $< -o $@
 
 build/%.o:

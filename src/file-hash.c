@@ -10,7 +10,7 @@
 #include "safe-wrappers.h"
 #include "error-handling.h"
 
-#include "blake2.h"
+#include "BLAKE2/blake2.h"
 
 static Buffer *io_buffer = NULL;
 
