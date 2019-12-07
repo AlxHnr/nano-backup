@@ -29,13 +29,13 @@ static void checkFileContentChanges(PathNode *node, PathState *state,
 
   if(state->metadata.reg.size > FILE_HASH_SIZE)
   {
-    fileHash(node->path.str, stats, hash);
+    fileHash(node->path.content, stats, hash);
   }
   else
   {
     bytes_used = state->metadata.reg.size;
 
-    FileStream *stream = sFopenRead(node->path.str);
+    FileStream *stream = sFopenRead(node->path.content);
     sFread(hash, bytes_used, stream);
     bool stream_not_at_end = sFbytesLeft(stream);
     sFclose(stream);
@@ -43,7 +43,7 @@ static void checkFileContentChanges(PathNode *node, PathState *state,
     if(stream_not_at_end)
     {
       die("file has changed while checking for changes: \"%s\"",
-          node->path.str);
+          node->path.content);
     }
   }
 
@@ -142,11 +142,11 @@ void applyNodeChanges(PathNode *node, PathState *state, struct stat stats)
   }
   else if(state->type == PST_symlink)
   {
-    readSymlink(node->path.str, stats, &io_buffer);
+    readSymlink(node->path.content, stats, &io_buffer);
 
     if(strcmp(state->metadata.sym_target, io_buffer->data) != 0)
     {
-      state->metadata.sym_target = strCopy(str(io_buffer->data)).str;
+      state->metadata.sym_target = strCopy(strWrap(io_buffer->data)).content;
       backupHintSet(node->hint, BH_content_changed);
     }
   }

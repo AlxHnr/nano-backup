@@ -6,7 +6,7 @@
 #define NANO_BACKUP_TEST_COMMON_H
 
 #include "metadata.h"
-#include "string-utils.h"
+#include "str.h"
 
 extern String getCwd(void);
 extern size_t countItemsInDir(const char *path);

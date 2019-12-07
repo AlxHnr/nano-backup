@@ -7,7 +7,7 @@
 
 #include <stddef.h>
 
-#include "string-utils.h"
+#include "str.h"
 
 /** An opaque struct, which allows mapping strings to arbitrary data and
   grows dynamically.

@@ -141,7 +141,7 @@ static void setPathToFile(SearchContext *context, String filename)
 
   /* Construct the path to the file described by the current node. */
   memcpy(&context->buffer.str[context->state.path_length + 1],
-         filename.str, filename.length);
+         filename.content, filename.length);
   context->buffer.str[context->state.path_length] = '/';
   context->buffer.str[new_length] = '\0';
   context->buffer.length = new_length;
@@ -176,7 +176,7 @@ static SearchResult buildSearchResult(SearchContext *context,
     .path =
       (String)
       {
-        .str = context->buffer.str,
+        .content = context->buffer.str,
         .length = context->buffer.length
       },
 
@@ -292,11 +292,11 @@ static bool nodeMatches(SearchNode *node, String string)
 {
   if(node->regex)
   {
-    return regexec(node->regex, string.str, 0, NULL, 0) == 0;
+    return regexec(node->regex, string.content, 0, NULL, 0) == 0;
   }
   else
   {
-    return strCompare(node->name, string);
+    return strEqual(node->name, string);
   }
 }
 
@@ -323,7 +323,7 @@ static SearchResult finishSearchStep(SearchContext *context)
   }
 
   /* Create new path for matching. */
-  String dir_entry_name = str(dir_entry->d_name);
+  String dir_entry_name = strWrap(dir_entry->d_name);
   setPathToFile(context, dir_entry_name);
 
   /* Match subnodes against dir_entry. */
@@ -339,8 +339,8 @@ static SearchResult finishSearchStep(SearchContext *context)
       }
       else
       {
-        warnNodeMatches(node, dir_entry_name.str);
-        warnNodeMatches(matched_node, dir_entry_name.str);
+        warnNodeMatches(node, dir_entry_name.content);
+        warnNodeMatches(matched_node, dir_entry_name.content);
         die("ambiguous rules for path: \"%s\"", context->buffer.str);
       }
     }

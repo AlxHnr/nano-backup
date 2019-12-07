@@ -62,14 +62,14 @@ static PathNode *createPathNode(const char *path_str, BackupPolicy policy,
 
   if(parent_node == NULL)
   {
-    String path = strAppendPath(str(""), str(path_str));
+    String path = strAppendPath(strWrap(""), strWrap(path_str));
     memcpy(&node->path, &path, sizeof(node->path));
 
     node->next = NULL;
   }
   else
   {
-    String path = strAppendPath(parent_node->path, str(path_str));
+    String path = strAppendPath(parent_node->path, strWrap(path_str));
     memcpy(&node->path, &path, sizeof(node->path));
 
     node->next = parent_node->subnodes;
@@ -892,7 +892,7 @@ static void writeBytesToFile(size_t size,
 static void writeWithBrokenChar3(Metadata *metadata, String *path,
                                 char byte, const char *filename)
 {
-  const char old_byte = path->str[path->length - 3];
+  const char old_byte = path->content[path->length - 3];
 
   /* To generate broken metadata at runtime it is required to overwrite
      const data. This data is allocated on the heap and can be overwritten
@@ -901,11 +901,11 @@ static void writeWithBrokenChar3(Metadata *metadata, String *path,
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-qual"
 #endif
-  *((char   *)&path->str[path->length - 3]) = byte;
+  *((char   *)&path->content[path->length - 3]) = byte;
   *((size_t *)&path->length) -= 2;
   metadataWrite(metadata, "tmp", "tmp/tmp-file", filename);
   *((size_t *)&path->length) += 2;
-  *((char   *)&path->str[path->length - 3]) = old_byte;
+  *((char   *)&path->content[path->length - 3]) = old_byte;
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
 #endif
@@ -951,7 +951,7 @@ static void generateBrokenMetadata(void)
 
   Metadata *metadata = metadataLoad("tmp/test-data-1");
   checkMetadata(metadata, 2, true);
-  PathNode *portage = strTableGet(metadata->path_table, str("/etc/portage"));
+  PathNode *portage = strTableGet(metadata->path_table, strWrap("/etc/portage"));
   assert_true(portage != NULL);
 
   /* Truncate metadata file to provoke errors. */
@@ -1003,13 +1003,13 @@ static void generateBrokenMetadata(void)
   test_data[172] = 1;
 
   /* Generate metadata containing zero-length filenames. */
-  PathNode *etc = strTableGet(metadata->path_table, str("/etc"));
+  PathNode *etc = strTableGet(metadata->path_table, strWrap("/etc"));
   assert_true(etc != NULL);
-  PathNode *conf_d = strTableGet(metadata->path_table, str("/etc/conf.d"));
+  PathNode *conf_d = strTableGet(metadata->path_table, strWrap("/etc/conf.d"));
   assert_true(conf_d != NULL);
-  PathNode *foo = strTableGet(metadata->path_table, str("/etc/conf.d/foo"));
+  PathNode *foo = strTableGet(metadata->path_table, strWrap("/etc/conf.d/foo"));
   assert_true(foo != NULL);
-  PathNode *bar = strTableGet(metadata->path_table, str("/etc/conf.d/bar"));
+  PathNode *bar = strTableGet(metadata->path_table, strWrap("/etc/conf.d/bar"));
   assert_true(bar != NULL);
 
   /* To generate broken metadata at runtime it is required to overwrite
@@ -1028,13 +1028,13 @@ static void generateBrokenMetadata(void)
   *((size_t *)&foo->path.length) += 3;
 
   /* Generate metadata containing dot filenames. */
-  *((char   *)&conf_d->path.str[conf_d->path.length - 6]) = '.';
-  *((char   *)&conf_d->path.str[conf_d->path.length - 5]) = '.';
+  *((char   *)&conf_d->path.content[conf_d->path.length - 6]) = '.';
+  *((char   *)&conf_d->path.content[conf_d->path.length - 5]) = '.';
   *((size_t *)&conf_d->path.length) -= 4;
   metadataWrite(metadata, "tmp", "tmp/tmp-file", "tmp/dot-filename-2");
   *((size_t *)&conf_d->path.length) += 4;
-  *((char   *)&conf_d->path.str[conf_d->path.length - 5]) = 'o';
-  *((char   *)&conf_d->path.str[conf_d->path.length - 6]) = 'c';
+  *((char   *)&conf_d->path.content[conf_d->path.length - 5]) = 'o';
+  *((char   *)&conf_d->path.content[conf_d->path.length - 6]) = 'c';
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
 #endif

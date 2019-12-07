@@ -24,7 +24,7 @@ static void testFileExists(const char *file_path,
                            const char *subsubdir_path,
                            const RegularFileInfo *info)
 {
-  String repo_path = str("tmp");
+  String repo_path = strWrap("tmp");
 
   assert_true(sPathExists(subdir_path) == false);
   assert_true(repoRegularFileExists(repo_path, info) == false);
@@ -214,7 +214,7 @@ int main(void)
   };
 
   testGroupStart("repoRegularFileExists()");
-  assert_true(repoRegularFileExists(str("non-existing-path"), &info_1) == false);
+  assert_true(repoRegularFileExists(strWrap("non-existing-path"), &info_1) == false);
   testFileExists(info_1_path, "tmp/0", "tmp/0/70", &info_1);
   testFileExists(info_2_path, "tmp/2", "tmp/2/15", &info_2);
   testFileExists(info_3_path, "tmp/4", "tmp/4/b5", &info_3);

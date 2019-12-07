@@ -14,10 +14,10 @@
 #include "error-handling.h"
 
 /* Helper strings for parsing the config file. */
-static String copy_token   = { .str = "[copy]",   .length = 6 };
-static String mirror_token = { .str = "[mirror]", .length = 8 };
-static String track_token  = { .str = "[track]",  .length = 7 };
-static String ignore_token = { .str = "[ignore]", .length = 8 };
+static String copy_token   = { .content = "[copy]",   .length = 6 };
+static String mirror_token = { .content = "[mirror]", .length = 8 };
+static String track_token  = { .content = "[track]",  .length = 7 };
+static String ignore_token = { .content = "[ignore]", .length = 8 };
 
 /** Returns a string slice, containing the current line in the given config
   files data.
@@ -34,9 +34,9 @@ static String getLine(String config, size_t start)
 {
   /* Find the index of the line ending. */
   size_t end = start;
-  while(end < config.length && config.str[end] != '\n') end++;
+  while(end < config.length && config.content[end] != '\n') end++;
 
-  return (String){ .str = &config.str[start], .length = end - start };
+  return (String){ .content = &config.content[start], .length = end - start };
 }
 
 /** Creates a new node and adds it to its parent node. This function does
@@ -71,17 +71,17 @@ static SearchNode *newNode(StringTable *existing_nodes,
   SearchNode *node = mpAlloc(sizeof *node);
 
   /* Build regular expression. */
-  if(paths.tail.length >= 2 && paths.tail.str[0] == '/')
+  if(paths.tail.length >= 2 && paths.tail.content[0] == '/')
   {
     /* Slice out the part after the first slash. */
     String expression =
       (String)
-      { .str = &paths.tail.str[1], .length = paths.tail.length - 1 };
+      { .content = &paths.tail.content[1], .length = paths.tail.length - 1 };
 
     String copy = strCopy(expression);
     memcpy(&node->name, &copy, sizeof(node->name));
 
-    node->regex = rpCompile(node->name.str, "config", line_nr);
+    node->regex = rpCompile(node->name.content, "config", line_nr);
 
     parent_node->subnodes_contain_regex = true;
   }
@@ -144,7 +144,7 @@ static void inheritPolicyToSubnodes(SearchNode *parent_node)
 */
 SearchNode *searchTreeParse(String config)
 {
-  if(memchr(config.str, '\0', config.length) != NULL)
+  if(memchr(config.content, '\0', config.length) != NULL)
   {
     die("config: contains null-bytes");
   }
@@ -152,7 +152,7 @@ SearchNode *searchTreeParse(String config)
   /* Initialize the root node of this tree. */
   SearchNode *root_node = mpAlloc(sizeof *root_node);
 
-  String copy = str("/");
+  String copy = strWrap("/");
   memcpy(&root_node->name, &copy, sizeof(root_node->name));
 
   root_node->line_nr = 0;
@@ -175,7 +175,7 @@ SearchNode *searchTreeParse(String config)
   StringTable *existing_nodes = strTableNew();
 
   /* Associate an empty string with the root node. */
-  strTableMap(existing_nodes, str(""), root_node);
+  strTableMap(existing_nodes, strWrap(""), root_node);
 
   /* Parse the specified config file. */
   size_t line_nr = 1;
@@ -184,9 +184,9 @@ SearchNode *searchTreeParse(String config)
 
   /* Skip UTF-8 BOM. */
   if(config.length >= 3 &&
-     config.str[0] == (char)0xEF &&
-     config.str[1] == (char)0xBB &&
-     config.str[2] == (char)0xBF)
+     config.content[0] == (char)0xEF &&
+     config.content[1] == (char)0xBB &&
+     config.content[2] == (char)0xBF)
   {
     parser_position = 3;
   }
@@ -195,34 +195,34 @@ SearchNode *searchTreeParse(String config)
   {
     String line = getLine(config, parser_position);
 
-    if(strWhitespaceOnly(line) || line.str[0] == '#')
+    if(strWhitespaceOnly(line) || line.content[0] == '#')
     {
       /* Ignore. */
     }
-    else if(strCompare(line, copy_token))
+    else if(strEqual(line, copy_token))
     {
       current_policy = BPOL_copy;
     }
-    else if(strCompare(line, mirror_token))
+    else if(strEqual(line, mirror_token))
     {
       current_policy = BPOL_mirror;
     }
-    else if(strCompare(line, track_token))
+    else if(strEqual(line, track_token))
     {
       current_policy = BPOL_track;
     }
-    else if(strCompare(line, ignore_token))
+    else if(strEqual(line, ignore_token))
     {
       current_policy = BPOL_ignore;
     }
-    else if(line.str[0] == '[' && line.str[line.length - 1] == ']')
+    else if(line.content[0] == '[' && line.content[line.length - 1] == ']')
     {
       /* Slice out and copy the invalid policy name. */
       String policy =
-        strCopy((String){ .str = &line.str[1], .length = line.length - 2});
+        strCopy((String){ .content = &line.content[1], .length = line.length - 2});
       strTableFree(existing_nodes);
 
-      die("config: line %zu: invalid policy: \"%s\"", line_nr, policy.str);
+      die("config: line %zu: invalid policy: \"%s\"", line_nr, policy.content);
     }
     else if(current_policy == BPOL_none)
     {
@@ -230,7 +230,7 @@ SearchNode *searchTreeParse(String config)
       strTableFree(existing_nodes);
 
       die("config: line %zu: pattern without policy: \"%s\"",
-          line_nr, pattern.str);
+          line_nr, pattern.content);
     }
     else if(current_policy == BPOL_ignore)
     {
@@ -246,7 +246,7 @@ SearchNode *searchTreeParse(String config)
       /* Pass the copy of the current line, to ensure that the string is
          null-terminated. */
       ignore_expression->regex =
-        rpCompile(ignore_expression->expression.str, "config", line_nr);
+        rpCompile(ignore_expression->expression.content, "config", line_nr);
 
       ignore_expression->has_matched = false;
 
@@ -254,14 +254,14 @@ SearchNode *searchTreeParse(String config)
       ignore_expression->next = *root_node->ignore_expressions;
       *root_node->ignore_expressions = ignore_expression;
     }
-    else if(line.str[0] == '/')
+    else if(line.content[0] == '/')
     {
       if(strPathContainsDotElements(line))
       {
         strTableFree(existing_nodes);
 
         die("config: line %zu: path contains \".\" or \"..\": \"%s\"",
-            line_nr, strCopy(line).str);
+            line_nr, strCopy(line).content);
       }
 
       String path = strRemoveTrailingSlashes(line);
@@ -278,7 +278,7 @@ SearchNode *searchTreeParse(String config)
         die("config: line %zu: redefining %sline %zu: \"%s\"",
             line_nr, previous_definition->policy != current_policy ?
             "policy of " : "", previous_definition->policy_line_nr,
-            redefined_path.str);
+            redefined_path.content);
       }
 
       /* Use either the existing node or create a new one. */
@@ -296,7 +296,7 @@ SearchNode *searchTreeParse(String config)
       String path = strCopy(line);
       strTableFree(existing_nodes);
 
-      die("config: line %zu: invalid path: \"%s\"", line_nr, path.str);
+      die("config: line %zu: invalid path: \"%s\"", line_nr, path.content);
     }
 
     parser_position += line.length;
@@ -319,7 +319,7 @@ SearchNode *searchTreeParse(String config)
 SearchNode *searchTreeLoad(const char *path)
 {
   FileContent content = sGetFilesContent(path);
-  String config = { .str = content.content, .length = content.size };
+  String config = { .content = content.content, .length = content.size };
 
   SearchNode *root_node = searchTreeParse(config);
   free(content.content);

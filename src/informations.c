@@ -23,7 +23,7 @@ static void warnConfigLineNr(size_t line_nr)
 static void warnPath(String path)
 {
   fprintf(stderr, "\"");
-  colorPrintf(stderr, TC_red, "%s", path.str);
+  colorPrintf(stderr, TC_red, "%s", path.content);
   fprintf(stderr, "\"");
 }
 
@@ -231,7 +231,7 @@ static void printNodePath(PathNode *node, TextColor color)
   PathState *state = getExistingState(node);
 
   colorPrintf(stdout, color, "%s%s%s", state->type == PST_symlink? "^":"",
-              node->path.str, state->type == PST_directory? "/":"");
+              node->path.content, state->type == PST_directory? "/":"");
 }
 
 /** Prints informations about the given node.

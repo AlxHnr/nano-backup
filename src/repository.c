@@ -113,7 +113,7 @@ static void fillPathBufferWithInfo(String repo_path,
   required_capacity = sSizeAdd(required_capacity, repo_path.length);
   bufferEnsureCapacity(&path_buffer, required_capacity);
 
-  memcpy(path_buffer->data, repo_path.str, repo_path.length);
+  memcpy(path_buffer->data, repo_path.content, repo_path.length);
   path_buffer->data[repo_path.length] = '/';
 
   char *hash_buffer = &path_buffer->data[repo_path.length + 1];
@@ -183,7 +183,7 @@ RepoReader *repoReaderOpenFile(const char *repo_path,
                                const char *source_file_path,
                                const RegularFileInfo *info)
 {
-  fillPathBufferWithInfo(str(repo_path), info);
+  fillPathBufferWithInfo(strWrap(repo_path), info);
   FILE *stream = fopen(path_buffer->data, "rb");
   if(stream == NULL)
   {
@@ -370,7 +370,7 @@ void repoWriterClose(RepoWriter *writer_to_close)
   }
   else
   {
-    String repo_path = str(writer.repo_path);
+    String repo_path = strWrap(writer.repo_path);
     fillPathBufferWithInfo(repo_path, writer.rename_to.info);
 
     /* Ensure that the final paths parent directories exists. */

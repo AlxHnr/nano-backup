@@ -13,7 +13,7 @@
 #include "regex-pool.h"
 #include "search-tree.h"
 #include "informations.h"
-#include "string-utils.h"
+#include "str.h"
 #include "safe-wrappers.h"
 #include "error-handling.h"
 #include "garbage-collector.h"
@@ -114,20 +114,20 @@ static bool containsChanges(MetadataChanges changes)
 */
 static void backup(const char *repo_arg)
 {
-  String repo_path = strRemoveTrailingSlashes(str(repo_arg));
-  String config_path = strAppendPath(repo_path, str("config"));
-  String metadata_path = strAppendPath(repo_path, str("metadata"));
-  String tmp_file_path = strAppendPath(repo_path, str("tmp-file"));
+  String repo_path = strRemoveTrailingSlashes(strWrap(repo_arg));
+  String config_path = strAppendPath(repo_path, strWrap("config"));
+  String metadata_path = strAppendPath(repo_path, strWrap("metadata"));
+  String tmp_file_path = strAppendPath(repo_path, strWrap("tmp-file"));
 
-  if(!sPathExists(config_path.str))
+  if(!sPathExists(config_path.content))
   {
     die("repository has no config file: \"%s\"", repo_arg);
   }
-  SearchNode *root_node = searchTreeLoad(config_path.str);
+  SearchNode *root_node = searchTreeLoad(config_path.content);
 
   Metadata *metadata =
-    sPathExists(metadata_path.str)?
-    metadataLoad(metadata_path.str):
+    sPathExists(metadata_path.content)?
+    metadataLoad(metadata_path.content):
     metadataNew();
 
   initiateBackup(metadata, root_node);
@@ -160,9 +160,9 @@ static void backup(const char *repo_arg)
     }
 
     ensureUserConsent("proceed?");
-    finishBackup(metadata, repo_arg, tmp_file_path.str);
-    metadataWrite(metadata, repo_arg, tmp_file_path.str,
-                  metadata_path.str);
+    finishBackup(metadata, repo_arg, tmp_file_path.content);
+    metadataWrite(metadata, repo_arg, tmp_file_path.content,
+                  metadata_path.content);
 
     runGC(metadata, repo_arg, true);
   }
@@ -171,15 +171,15 @@ static void backup(const char *repo_arg)
 /** Loads the metadata of the specified repository. */
 static Metadata *metadataLoadFromRepo(const char *repo_arg)
 {
-  String repo_path = strRemoveTrailingSlashes(str(repo_arg));
-  String metadata_path = strAppendPath(repo_path, str("metadata"));
+  String repo_path = strRemoveTrailingSlashes(strWrap(repo_arg));
+  String metadata_path = strAppendPath(repo_path, strWrap("metadata"));
 
-  if(!sPathExists(metadata_path.str))
+  if(!sPathExists(metadata_path.content))
   {
     die("repository has no metadata: \"%s\"", repo_arg);
   }
 
-  return metadataLoad(metadata_path.str);
+  return metadataLoad(metadata_path.content);
 }
 
 /** Ensures that the given path is absolute. */
@@ -187,13 +187,13 @@ static String buildFullPath(const char *path)
 {
   if(path[0] == '/')
   {
-    return str(path);
+    return strWrap(path);
   }
   else
   {
     char *cwd = sGetCwd();
     String full_path =
-      strAppendPath(strRemoveTrailingSlashes(str(cwd)), str(path));
+      strAppendPath(strRemoveTrailingSlashes(strWrap(cwd)), strWrap(path));
     free(cwd);
 
     return full_path;
@@ -210,7 +210,7 @@ static void restore(const char *repo_arg, size_t id, const char *path)
 {
   Metadata *metadata = metadataLoadFromRepo(repo_arg);
   String full_path = strRemoveTrailingSlashes(buildFullPath(path));
-  initiateRestore(metadata, id, strCopy(full_path).str);
+  initiateRestore(metadata, id, strCopy(full_path).content);
 
   if(containsChanges(printMetadataChanges(metadata)) && printf("\n") == 1)
   {

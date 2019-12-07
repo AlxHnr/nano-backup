@@ -41,8 +41,8 @@ static void setPathHistoryState(PathState *state, SearchResult result)
   else if(result.type == SRT_symlink)
   {
     state->type = PST_symlink;
-    readSymlink(result.path.str, result.stats, &io_buffer);
-    state->metadata.sym_target = strCopy(str(io_buffer->data)).str;
+    readSymlink(result.path.content, result.stats, &io_buffer);
+    state->metadata.sym_target = strCopy(strWrap(io_buffer->data)).content;
   }
   else if(result.type == SRT_directory)
   {
@@ -101,11 +101,11 @@ static bool searchNodeMatches(SearchNode *node, String path_tail)
 {
   if(node->regex)
   {
-    return regexec(node->regex, path_tail.str, 0, NULL, 0) == 0;
+    return regexec(node->regex, path_tail.content, 0, NULL, 0) == 0;
   }
   else
   {
-    return strCompare(node->name, path_tail);
+    return strEqual(node->name, path_tail);
   }
 }
 
@@ -147,7 +147,7 @@ static bool matchesIgnoreList(String path, RegexList *ignore_list)
 {
   for(RegexList *item = ignore_list; item != NULL; item = item->next)
   {
-    if(regexec(item->regex, path.str, 0, NULL, 0) == 0)
+    if(regexec(item->regex, path.content, 0, NULL, 0) == 0)
     {
       return true;
     }
@@ -609,9 +609,9 @@ static void copyFileIntoRepo(PathNode *node, const char *repo_path,
   size_t blocksize = stats.st_blksize;
   uint64_t bytes_left = reg->size;
 
-  FileStream *reader = sFopenRead(node->path.str);
+  FileStream *reader = sFopenRead(node->path.content);
   RepoWriter *writer = repoWriterOpenFile(repo_path, repo_tmp_file_path,
-                                          node->path.str, reg);
+                                          node->path.content, reg);
 
   bufferEnsureCapacity(&io_buffer, blocksize);
   char *buffer = io_buffer->data;
@@ -631,7 +631,7 @@ static void copyFileIntoRepo(PathNode *node, const char *repo_path,
 
   if(stream_not_at_end)
   {
-    die("file has changed during backup: \"%s\"", node->path.str);
+    die("file has changed during backup: \"%s\"", node->path.content);
   }
 
   repoWriterClose(writer);
@@ -657,13 +657,13 @@ static bool equalsToStoredFile(PathNode *node, const char *repo_path,
   size_t blocksize = stats.st_blksize;
   uint64_t bytes_left = reg->size;
 
-  FileStream *stream = sFopenRead(node->path.str);
+  FileStream *stream = sFopenRead(node->path.content);
 
   bufferEnsureCapacity(&io_buffer, sSizeMul(blocksize, 2));
   char *buffer = io_buffer->data;
 
   RepoReader *repo_stream =
-    repoReaderOpenFile(repo_path, node->path.str, reg);
+    repoReaderOpenFile(repo_path, node->path.content, reg);
   char *repo_buffer = &buffer[blocksize];
 
   bool files_equal = true;
@@ -688,7 +688,7 @@ static bool equalsToStoredFile(PathNode *node, const char *repo_path,
   if(bytes_left == 0 && stream_not_at_end)
   {
     die("file has changed while comparing to backup: \"%s\"",
-        node->path.str);
+        node->path.content);
   }
 
   return files_equal;
@@ -712,7 +712,7 @@ static bool searchFileDuplicates(PathNode *node, const char *repo_path,
                                  struct stat stats)
 {
   RegularFileInfo *reg = &node->history->state.metadata.reg;
-  String repo_path_str = str(repo_path);
+  String repo_path_str = strWrap(repo_path);
   reg->slot = 0;
 
   while(repoRegularFileExists(repo_path_str, reg))
@@ -747,16 +747,16 @@ static void addFileToRepo(PathNode *node, const char *repo_path,
   RegularFileInfo *reg = &node->history->state.metadata.reg;
 
   /* Die if the file has changed since the metadata was initiated. */
-  struct stat stats = sStat(node->path.str);
+  struct stat stats = sStat(node->path.content);
   if(node->history->state.metadata.reg.timestamp != stats.st_mtime)
   {
-    die("file has changed during backup: \"%s\"", node->path.str);
+    die("file has changed during backup: \"%s\"", node->path.content);
   }
   else if(reg->size > FILE_HASH_SIZE)
   {
     if((node->hint & BH_fresh_hash) == false)
     {
-      fileHash(node->path.str, stats, reg->hash);
+      fileHash(node->path.content, stats, reg->hash);
     }
 
     if(searchFileDuplicates(node, repo_path, stats) == false)
@@ -767,14 +767,14 @@ static void addFileToRepo(PathNode *node, const char *repo_path,
   else if((node->hint & BH_fresh_hash) == false)
   {
     /* Store small files directly in its hash buffer. */
-    FileStream *stream = sFopenRead(node->path.str);
+    FileStream *stream = sFopenRead(node->path.content);
     sFread(&reg->hash, reg->size, stream);
     bool stream_not_at_end = sFbytesLeft(stream);
     sFclose(stream);
 
     if(stream_not_at_end)
     {
-      die("file has changed during backup: \"%s\"", node->path.str);
+      die("file has changed during backup: \"%s\"", node->path.content);
     }
   }
 }

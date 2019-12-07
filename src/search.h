@@ -8,7 +8,7 @@
 #include <sys/stat.h>
 
 #include "search-tree.h"
-#include "string-utils.h"
+#include "str.h"
 #include "backup-policies.h"
 #include "search-result-type.h"
 

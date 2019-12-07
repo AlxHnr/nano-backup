@@ -9,7 +9,7 @@
 #include <sys/types.h>
 
 #include "repository.h"
-#include "string-utils.h"
+#include "str.h"
 #include "string-table.h"
 #include "backup-policies.h"
 

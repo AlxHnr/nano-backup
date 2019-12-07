@@ -10,7 +10,7 @@
 
 #include "buffer.h"
 #include "file-hash.h"
-#include "string-utils.h"
+#include "str.h"
 
 /** An opaque struct, which allows safe writing of files into backup
   repositories. */

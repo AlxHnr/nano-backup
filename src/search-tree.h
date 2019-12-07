@@ -8,7 +8,7 @@
 #include <stdbool.h>
 #include <regex.h>
 
-#include "string-utils.h"
+#include "str.h"
 #include "search-result-type.h"
 #include "backup-policies.h"
 

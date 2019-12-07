@@ -8,7 +8,7 @@
 
 #include "test.h"
 #include "path-builder.h"
-#include "string-utils.h"
+#include "str.h"
 #include "safe-wrappers.h"
 #include "error-handling.h"
 
@@ -42,11 +42,11 @@ static size_t countSubnodes(SearchNode *parent_node)
 */
 static SearchNode *findSubnode(SearchNode *parent_node, const char *string)
 {
-  String node_name = str(string);
+  String node_name = strWrap(string);
   for(SearchNode *node = parent_node->subnodes;
       node != NULL; node = node->next)
   {
-    if(strCompare(node->name, node_name))
+    if(strEqual(node->name, node_name))
     {
       return node;
     }
@@ -92,14 +92,14 @@ static size_t countIgnoreExpressions(SearchNode *node)
 static bool checkIgnoreExpression(SearchNode *node, const char *pattern,
                                   size_t line_nr)
 {
-  String expression_string = str(pattern);
+  String expression_string = strWrap(pattern);
   for(RegexList *expression = *node->ignore_expressions;
       expression != NULL; expression = expression->next)
   {
     if(expression->has_matched == false &&
        expression->line_nr == line_nr &&
-       strCompare(expression->expression, expression_string) &&
-       expression->expression.str[expression->expression.length] == '\0')
+       strEqual(expression->expression, expression_string) &&
+       expression->expression.content[expression->expression.length] == '\0')
     {
       return true;
     }
@@ -147,8 +147,8 @@ static void checkBasicNode(SearchNode *node, const char *name,
 {
   assert_true(node != NULL);
 
-  assert_true(strCompare(node->name, str(name)));
-  assert_true(node->name.str[node->name.length] == '\0');
+  assert_true(strEqual(node->name, strWrap(name)));
+  assert_true(node->name.content[node->name.length] == '\0');
   assert_true(node->line_nr == line_nr);
 
   if(has_regex)
@@ -389,7 +389,7 @@ static void testIgnoringComments(void)
 static void assertParseError(const char *path, const char *message)
 {
   FileContent content = sGetFilesContent(path);
-  String config = { .str = content.content, .length = content.size };
+  String config = { .content = content.content, .length = content.size };
 
   assert_error(searchTreeParse(config), message);
 
@@ -544,7 +544,7 @@ static void testInsertNullBytes(const char *path)
     return;
   }
 
-  String config = { .str = content.content, .length = content.size };
+  String config = { .content = content.content, .length = content.size };
 
   for(size_t index = 0; index < content.size; index++)
   {

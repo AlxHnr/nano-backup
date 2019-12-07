@@ -35,7 +35,7 @@ static void populateTableRecursively(StringTable *table, PathNode *node)
     }
 
     repoBuildRegularFilePath(&path_buffer, &point->state.metadata.reg);
-    String path = str(path_buffer->data);
+    String path = strWrap(path_buffer->data);
 
     if(strTableGet(table, path) == NULL)
     {
@@ -94,7 +94,7 @@ static bool recurseIntoDirectory(StringTable *table, size_t length,
     String path_in_repo =
       (String)
       {
-        .str = &path_buffer->data[repo_path_length + 1],
+        .content = &path_buffer->data[repo_path_length + 1],
         .length = length - repo_path_length - 1,
       };
 
@@ -125,8 +125,8 @@ static bool recurseIntoDirectory(StringTable *table, size_t length,
 GCStats collectGarbage(Metadata *metadata, const char *repo_path)
 {
   StringTable *table = strTableNew();
-  strTableMap(table, str("config"),   (void *)0x1);
-  strTableMap(table, str("metadata"), (void *)0x1);
+  strTableMap(table, strWrap("config"),   (void *)0x1);
+  strTableMap(table, strWrap("metadata"), (void *)0x1);
 
   for(PathNode *node = metadata->paths; node != NULL; node = node->next)
   {

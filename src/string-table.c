@@ -189,7 +189,7 @@ void strTableMap(StringTable *table, String key, void *data)
 
   /* Initialize bucket. */
   Bucket *bucket = table->alloc_function(sizeof *bucket);
-  bucket->hash = siphash((const uint8_t *)key.str, key.length,
+  bucket->hash = siphash((const uint8_t *)key.content, key.length,
                          (const uint8_t *)table->secret_key);
   bucket->data = data;
 
@@ -213,14 +213,14 @@ void strTableMap(StringTable *table, String key, void *data)
 */
 void *strTableGet(StringTable *table, String key)
 {
-  const size_t hash = siphash((const uint8_t *)key.str, key.length,
+  const size_t hash = siphash((const uint8_t *)key.content, key.length,
                               (const uint8_t *)table->secret_key);
   const size_t bucket_id = hash % table->capacity;
 
   for(Bucket *bucket = table->buckets[bucket_id];
       bucket != NULL; bucket = bucket->next)
   {
-    if(strCompare(key, bucket->key))
+    if(strEqual(key, bucket->key))
     {
       return bucket->data;
     }

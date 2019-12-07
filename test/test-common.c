@@ -155,19 +155,19 @@ static size_t checkPathTree(PathNode *parent_node, Metadata *metadata,
     {
       continue;
     }
-    else if(node->path.str[node->path.length] != '\0')
+    else if(node->path.content[node->path.length] != '\0')
     {
       die("unterminated path string in metadata: \"%s\"",
-          strCopy(node->path).str);
+          strCopy(node->path).content);
     }
     else if(check_path_table == true &&
             strTableGet(metadata->path_table, node->path) == NULL)
     {
-      die("path was not mapped in metadata: \"%s\"", node->path.str);
+      die("path was not mapped in metadata: \"%s\"", node->path.content);
     }
     else if(node->history == NULL)
     {
-      die("path has no history: \"%s\"", node->path.str);
+      die("path has no history: \"%s\"", node->path.content);
     }
     else for(PathHistory *point = node->history;
              point != NULL; point = point->next)
@@ -175,12 +175,12 @@ static size_t checkPathTree(PathNode *parent_node, Metadata *metadata,
       if(!nextNodeGreater(metadata, point))
       {
         die("path node history has an invalid order: \"%s\"",
-            node->path.str);
+            node->path.content);
       }
       else if(point->state.type > PST_directory)
       {
         die("node history point has an invalid state type: \"%s\"",
-            node->path.str);
+            node->path.content);
       }
     }
 
@@ -227,7 +227,7 @@ static PathHistory *findHistoryPoint(PathNode *node, const Backup *backup)
   if(point == NULL)
   {
     die("node \"%s\" doesn't have a backup with id %zu in its history",
-        node->path.str, backup->id);
+        node->path.content, backup->id);
   }
 
   return point;
@@ -241,12 +241,12 @@ static void checkPathState(PathNode *node, PathHistory *point,
   if(point->state.uid != uid)
   {
     die("backup point %zu in node \"%s\" contains invalid uid",
-        point->backup->id, node->path.str);
+        point->backup->id, node->path.content);
   }
   else if(point->state.gid != gid)
   {
     die("backup point %zu in node \"%s\" contains invalid gid",
-        point->backup->id, node->path.str);
+        point->backup->id, node->path.content);
   }
 }
 
@@ -254,7 +254,7 @@ static void checkPathState(PathNode *node, PathHistory *point,
 String getCwd(void)
 {
   char *cwd = sGetCwd();
-  String cwd_string = strCopy(str(cwd));
+  String cwd_string = strCopy(strWrap(cwd));
   free(cwd);
 
   return cwd_string;
@@ -376,14 +376,14 @@ PathNode *findPathNode(PathNode *start_node, const char *path_str,
                        BackupHint hint, BackupPolicy policy,
                        size_t history_length, size_t subnode_count)
 {
-  String path = str(path_str);
+  String path = strWrap(path_str);
   PathNode *requested_node = NULL;
 
   for(PathNode *node = start_node;
       node != NULL && requested_node == NULL;
       node = node->next)
   {
-    if(strCompare(node->path, path))
+    if(strEqual(node->path, path))
     {
       requested_node = node;
     }
@@ -421,7 +421,7 @@ void mustHaveNonExisting(PathNode *node, const Backup *backup)
   if(point->state.type != PST_non_existing)
   {
     die("backup point %zu in node \"%s\" doesn't have the state PST_non_existing",
-        backup->id, node->path.str);
+        backup->id, node->path.content);
   }
 }
 
@@ -435,22 +435,22 @@ void mustHaveRegular(PathNode *node, const Backup *backup, uid_t uid,
   if(point->state.type != PST_regular)
   {
     die("backup point %zu in node \"%s\" doesn't have the state PST_regular",
-        backup->id, node->path.str);
+        backup->id, node->path.content);
   }
   else if(point->state.metadata.reg.mode != mode)
   {
     die("backup point %zu in node \"%s\" contains invalid permission bits",
-        backup->id, node->path.str);
+        backup->id, node->path.content);
   }
   else if(point->state.metadata.reg.timestamp != timestamp)
   {
     die("backup point %zu in node \"%s\" contains invalid timestamp",
-        backup->id, node->path.str);
+        backup->id, node->path.content);
   }
   else if(checkRegularValues(&point->state, size, hash, slot) == false)
   {
     die("backup point %zu in node \"%s\" contains invalid values",
-        backup->id, node->path.str);
+        backup->id, node->path.content);
   }
 
   checkPathState(node, point, uid, gid);
@@ -465,12 +465,12 @@ void mustHaveSymlink(PathNode *node, const Backup *backup, uid_t uid,
   if(point->state.type != PST_symlink)
   {
     die("backup point %zu in node \"%s\" doesn't have the state PST_symlink",
-        backup->id, node->path.str);
+        backup->id, node->path.content);
   }
   else if(strcmp(point->state.metadata.sym_target, sym_target) != 0)
   {
     die("backup point %zu in node \"%s\" doesn't contain the symlink target \"%s\"",
-        backup->id, node->path.str, sym_target);
+        backup->id, node->path.content, sym_target);
   }
 
   checkPathState(node, point, uid, gid);
@@ -486,17 +486,17 @@ void mustHaveDirectory(PathNode *node, const Backup *backup,
   if(point->state.type != PST_directory)
   {
     die("backup point %zu in node \"%s\" doesn't have the state PST_directory",
-        backup->id, node->path.str);
+        backup->id, node->path.content);
   }
   else if(point->state.metadata.dir.mode != mode)
   {
     die("backup point %zu in node \"%s\" contains invalid permission bits",
-        backup->id, node->path.str);
+        backup->id, node->path.content);
   }
   else if(point->state.metadata.dir.timestamp != timestamp)
   {
     die("backup point %zu in node \"%s\" contains invalid timestamp",
-        backup->id, node->path.str);
+        backup->id, node->path.content);
   }
 
   checkPathState(node, point, uid, gid);

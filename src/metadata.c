@@ -467,23 +467,23 @@ static PathNode *readPathSubnodes(FileContent content,
     String name =
       (String)
       {
-        .str = &content.content[*reader_position],
+        .content = &content.content[*reader_position],
         .length = name_length
       };
     *reader_position += name_length;
 
-    if(memchr(name.str, '\0', name.length) != NULL)
+    if(memchr(name.content, '\0', name.length) != NULL)
     {
       die("contains filename with null-bytes: \"%s\"", metadata_path);
     }
-    else if(memchr(name.str, '/', name.length) != NULL ||
+    else if(memchr(name.content, '/', name.length) != NULL ||
             strIsDotElement(name))
     {
       die("contains invalid filename \"%s\": \"%s\"",
-          strCopy(name).str, metadata_path);
+          strCopy(name).content, metadata_path);
     }
 
-    String full_path = strAppendPath(parent_node == NULL? str(""):
+    String full_path = strAppendPath(parent_node == NULL? strWrap(""):
                                      parent_node->path, name);
 
     memcpy(&node->path, &full_path, sizeof(node->path));
@@ -527,7 +527,7 @@ static void writePathList(PathNode *node_list, RepoWriter *writer)
     {
       String name = strSplitPath(node->path).tail;
       write64(name.length, writer);
-      repoWriterWrite(name.str, name.length, writer);
+      repoWriterWrite(name.content, name.length, writer);
 
       write8(node->policy, writer);
       writePathHistoryList(node->history, writer);

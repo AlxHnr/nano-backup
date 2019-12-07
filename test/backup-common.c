@@ -34,31 +34,31 @@ PathNode *findCwdNode(Metadata *metadata, String cwd, BackupHint hint)
   {
     if((node->hint & ~BH_timestamp_changed) != hint)
     {
-      die("path has wrong backup hint: \"%s\"", node->path.str);
+      die("path has wrong backup hint: \"%s\"", node->path.content);
     }
     else if(node->policy != BPOL_none)
     {
-      die("path shouldn't have a policy: \"%s\"", node->path.str);
+      die("path shouldn't have a policy: \"%s\"", node->path.content);
     }
     else if(node->history->next != NULL)
     {
-      die("path has too many history points: \"%s\"", node->path.str);
+      die("path has too many history points: \"%s\"", node->path.content);
     }
     else if(node->next != NULL)
     {
-      die("item is not the last in list: \"%s\"", node->path.str);
+      die("item is not the last in list: \"%s\"", node->path.content);
     }
     else if(node->history->state.type != PST_directory)
     {
-      die("not a directory: \"%s\"", node->path.str);
+      die("not a directory: \"%s\"", node->path.content);
     }
-    else if(strCompare(node->path, cwd))
+    else if(strEqual(node->path, cwd))
     {
       return node;
     }
   }
 
-  die("path does not exist in metadata: \"%s\"", cwd.str);
+  die("path does not exist in metadata: \"%s\"", cwd.content);
   return NULL;
 }
 
@@ -83,21 +83,21 @@ PathNode *findSubnode(PathNode *node,
                       size_t requested_history_length,
                       size_t requested_subnode_count)
 {
-  String subnode_path = strAppendPath(node->path, str(subnode_name));
-  return findPathNode(node->subnodes, subnode_path.str, hint, policy,
+  String subnode_path = strAppendPath(node->path, strWrap(subnode_name));
+  return findPathNode(node->subnodes, subnode_path.content, hint, policy,
                       requested_history_length, requested_subnode_count);
 }
 
 /** Creates a backup of the given paths parent directories timestamps. */
 time_t getParentTime(const char *path)
 {
-  return sStat(strCopy(strSplitPath(str(path)).head).str).st_mtime;
+  return sStat(strCopy(strSplitPath(strWrap(path)).head).content).st_mtime;
 }
 
 /** Counterpart to getParentTime(). */
 void restoreParentTime(const char *path, time_t time)
 {
-  const char *parent_path = strCopy(strSplitPath(str(path)).head).str;
+  const char *parent_path = strCopy(strSplitPath(strWrap(path)).head).content;
   sUtime(parent_path, time);
 }
 
@@ -229,9 +229,9 @@ void regenerateFile(PathNode *node, const char *content,
 {
   assert_true(node->history->state.type == PST_regular);
 
-  removePath(node->path.str);
-  generateFile(node->path.str, content, repetitions);
-  sUtime(node->path.str, node->history->state.metadata.reg.timestamp);
+  removePath(node->path.content);
+  generateFile(node->path.content, content, repetitions);
+  sUtime(node->path.content, node->history->state.metadata.reg.timestamp);
 }
 
 /** Changes the path to which a symlink points.
@@ -268,7 +268,7 @@ PathHistory *findExistingHistPoint(PathNode *node)
   }
 
   die("failed to find existing path state type for \"%s\"",
-      node->path.str);
+      node->path.content);
   return NULL;
 }
 
@@ -295,27 +295,27 @@ void restoreRegularFile(const char *path, const RegularFileInfo *info)
 */
 void restoreWithTimeRecursively(PathNode *node)
 {
-  if(sPathExists(node->path.str) == false)
+  if(sPathExists(node->path.content) == false)
   {
     PathHistory *point = findExistingHistPoint(node);
     switch(point->state.type)
     {
       case PST_regular:
-        restoreRegularFile(node->path.str, &point->state.metadata.reg);
+        restoreRegularFile(node->path.content, &point->state.metadata.reg);
         break;
       case PST_symlink:
-        makeSymlink(point->state.metadata.sym_target, node->path.str);
+        makeSymlink(point->state.metadata.sym_target, node->path.content);
         break;
       case PST_directory:
-        makeDir(node->path.str);
-        sUtime(node->path.str, point->state.metadata.dir.timestamp);
+        makeDir(node->path.content);
+        sUtime(node->path.content, point->state.metadata.dir.timestamp);
         break;
       default:
-        die("unable to restore \"%s\"", node->path.str);
+        die("unable to restore \"%s\"", node->path.content);
     }
   }
 
-  if(S_ISDIR(sLStat(node->path.str).st_mode))
+  if(S_ISDIR(sLStat(node->path.content).st_mode))
   {
     for(PathNode *subnode = node->subnodes;
         subnode != NULL; subnode = subnode->next)
@@ -372,7 +372,7 @@ struct stat cachedStat(String path, struct stat (*stat_fun)(const char *))
   if(cache == NULL)
   {
     cache = mpAlloc(sizeof *cache);
-    *cache = stat_fun(path.str);
+    *cache = stat_fun(path.content);
     strTableMap(stat_cache, path, cache);
   }
 
@@ -401,7 +401,7 @@ void mustHaveRegularStat(PathNode *node, const Backup *backup,
                          uint64_t size, const uint8_t *hash,
                          uint8_t slot)
 {
-  mustHaveRegularStats(node, backup, sStat(node->path.str),
+  mustHaveRegularStats(node, backup, sStat(node->path.content),
                        size, hash, slot);
 }
 
@@ -425,7 +425,7 @@ void mustHaveSymlinkStats(PathNode *node, const Backup *backup,
 void mustHaveSymlinkLStat(PathNode *node, const Backup *backup,
                           const char *sym_target)
 {
-  mustHaveSymlinkStats(node, backup, sLStat(node->path.str), sym_target);
+  mustHaveSymlinkStats(node, backup, sLStat(node->path.content), sym_target);
 }
 
 /** Cached version of mustHaveSymlinkLStat(). */
@@ -447,7 +447,7 @@ void mustHaveDirectoryStats(PathNode *node, const Backup *backup,
 /** Like mustHaveRegularStat(), but for mustHaveDirectory(). */
 void mustHaveDirectoryStat(PathNode *node, const Backup *backup)
 {
-  mustHaveDirectoryStats(node, backup, sStat(node->path.str));
+  mustHaveDirectoryStats(node, backup, sStat(node->path.content));
 }
 
 /** Cached version of mustHaveDirectoryStat(). */
@@ -557,7 +557,7 @@ void initBackupCommon(size_t stat_cache_count)
   cwd_depth_count = 0;
   for(size_t index = 0; index < cwd_path.length; index++)
   {
-    cwd_depth_count += cwd_path.str[index] == '/';
+    cwd_depth_count += cwd_path.content[index] == '/';
   }
 
   sAtexit(freeBackupCommon);
