@@ -234,10 +234,7 @@ SearchNode *searchTreeParse(String config)
       /* Initialize new ignore expression. */
       RegexList *ignore_expression = mpAlloc(sizeof *ignore_expression);
 
-      String copy = strCopy(line);
-      memcpy(&ignore_expression->expression, &copy,
-             sizeof(ignore_expression->expression));
-
+      strSet(&ignore_expression->expression, strCopy(line));
       ignore_expression->line_nr = line_nr;
 
       /* Pass the copy of the current line, to ensure that the string is
