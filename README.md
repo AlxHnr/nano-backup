@@ -47,9 +47,6 @@ directory:
 make && cp build/nb /usr/bin
 ```
 
-**Note:** Gentoo users can install nano-backup directly from my
-[overlay](https://github.com/AlxHnr/gentoo-overlay).
-
 ## Usage
 
 To create a backup repository just create a new directory:
