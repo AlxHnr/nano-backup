@@ -5,19 +5,14 @@
 #ifndef NANO_BACKUP_SRC_STRING_TABLE_H
 #define NANO_BACKUP_SRC_STRING_TABLE_H
 
-#include <stddef.h>
+#include "CRegion/region.h"
 
 #include "str.h"
 
-/** An opaque struct, which allows mapping strings to arbitrary data and
-  grows dynamically.
-*/
+/** Dynamically growing table for mapping strings to arbitrary data. */
 typedef struct StringTable StringTable;
 
-extern StringTable *strTableNew(void);
-extern StringTable *strTableNewFixed(size_t item_count);
-extern void strTableFree(StringTable *table);
-
+extern StringTable *strTableNew(CR_Region *region);
 extern void strTableMap(StringTable *table, String key, void *data);
 extern void *strTableGet(StringTable *table, String key);
 

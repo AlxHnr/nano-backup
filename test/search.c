@@ -319,7 +319,8 @@ static void testSimpleSearch(String cwd)
   assert_true(context != NULL);
 
   size_t cwd_depth = skipCwd(context, cwd, root);
-  StringTable *paths = strTableNew();
+  CR_Region *paths_region = CR_RegionNew();
+  StringTable *paths = strTableNew(paths_region);
   assert_true(populateDirectoryTable(context, paths, cwd) == 29);
   finishSearch(context, cwd_depth);
 
@@ -385,7 +386,7 @@ static void testSimpleSearch(String cwd)
   checkFoundPath(paths, "test directory/symlink",                    BPOL_mirror, n_symlink);
   checkFoundPath(paths, "test directory/φ.txt",                      BPOL_copy,   NULL);
   checkFoundPath(paths, "test directory/€.txt",                      BPOL_copy,   NULL);
-  strTableFree(paths);
+  CR_RegionRelease(paths_region);
 }
 
 /** Tests a search by using the generated config "ignore-expressions.txt".
@@ -399,7 +400,8 @@ static void testIgnoreExpressions(String cwd)
   assert_true(context != NULL);
 
   size_t cwd_depth = skipCwd(context, cwd, root);
-  StringTable *paths = strTableNew();
+  CR_Region *paths_region = CR_RegionNew();
+  StringTable *paths = strTableNew(paths_region);
   assert_true(populateDirectoryTable(context, paths, cwd) == 19);
   finishSearch(context, cwd_depth);
 
@@ -448,7 +450,7 @@ static void testIgnoreExpressions(String cwd)
   assert_true(strTableGet(paths, strWrap("test directory/symlink")) == NULL);
   checkFoundPath(paths, "test directory/φ.txt",                      BPOL_copy,   NULL);
   assert_true(strTableGet(paths, strWrap("test directory/€.txt")) == NULL);
-  strTableFree(paths);
+  CR_RegionRelease(paths_region);
 
   /* Check ignore expressions. */
   checkIgnoreExpression(root, "test/data/.*(tmp|config-files|metadata)$", true);
@@ -473,7 +475,8 @@ static void testSymlinkFollowing(String cwd)
   assert_true(context != NULL);
 
   size_t cwd_depth = skipCwd(context, cwd, root);
-  StringTable *paths = strTableNew();
+  CR_Region *paths_region = CR_RegionNew();
+  StringTable *paths = strTableNew(paths_region);
   assert_true(populateDirectoryTable(context, paths, cwd) == 20);
   finishSearch(context, cwd_depth);
 
@@ -520,7 +523,7 @@ static void testSymlinkFollowing(String cwd)
   checkFoundPath(paths, "test directory/symlink",                    BPOL_track, NULL);
   checkFoundPath(paths, "test directory/φ.txt",                      BPOL_track, NULL);
   checkFoundPath(paths, "test directory/€.txt",                      BPOL_track, NULL);
-  strTableFree(paths);
+  CR_RegionRelease(paths_region);
 
   /* Check ignore expressions. */
   checkIgnoreExpression(root, "test/data/[^/]+$", true);
@@ -540,7 +543,8 @@ static void testMismatchedPaths(String cwd)
   assert_true(context != NULL);
 
   size_t cwd_depth = skipCwd(context, cwd, root);
-  StringTable *paths = strTableNew();
+  CR_Region *paths_region = CR_RegionNew();
+  StringTable *paths = strTableNew(paths_region);
   assert_true(populateDirectoryTable(context, paths, cwd) == 2);
   finishSearch(context, cwd_depth);
 
@@ -583,7 +587,7 @@ static void testMismatchedPaths(String cwd)
   assert_true(strTableGet(paths, strWrap("test directory/symlink"))         == NULL);
   assert_true(strTableGet(paths, strWrap("test directory/φ.txt"))           == NULL);
   assert_true(strTableGet(paths, strWrap("test directory/€.txt"))           == NULL);
-  strTableFree(paths);
+  CR_RegionRelease(paths_region);
 }
 
 /** Performs a search by using the generated config file
@@ -598,7 +602,8 @@ static void testComplexSearch(String cwd)
   assert_true(context != NULL);
 
   size_t cwd_depth = skipCwd(context, cwd, root);
-  StringTable *paths = strTableNew();
+  CR_Region *paths_region = CR_RegionNew();
+  StringTable *paths = strTableNew(paths_region);
   assert_true(populateDirectoryTable(context, paths, cwd) == 26);
   finishSearch(context, cwd_depth);
 
@@ -655,7 +660,7 @@ static void testComplexSearch(String cwd)
   checkFoundPath(paths, "test directory/symlink",                    BPOL_mirror, NULL);
   checkFoundPath(paths, "test directory/φ.txt",                      BPOL_mirror, NULL);
   checkFoundPath(paths, "test directory/€.txt",                      BPOL_mirror, NULL);
-  strTableFree(paths);
+  CR_RegionRelease(paths_region);
 
   /* Check ignore expressions. */
   checkIgnoreExpression(root, "test/data/.*(tmp|config-files|metadata)$", true);

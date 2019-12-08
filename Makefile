@@ -21,7 +21,7 @@ all: build/nb
 build/dependencies.makefile:
 	mkdir -p build/test/ build/third-party/
 	$(CC) -MM -Ithird-party/ src/*.c | sed -r 's,^(\S+:),build/\1,g' > $@
-	$(CC) -MM -Isrc/ test/*.c | sed -r 's,^(\S+:),build/test/\1,g' >> $@
+	$(CC) -MM -Ithird-party/ -Isrc/ test/*.c | sed -r 's,^(\S+:),build/test/\1,g' >> $@
 
 build/nb: $(OBJECTS)
 	$(CC) $^ $(LDFLAGS) -o $@

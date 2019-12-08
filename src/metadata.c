@@ -9,6 +9,8 @@
 #include <string.h>
 #include <limits.h>
 
+#include "CRegion/global-region.h"
+
 #include "file-hash.h"
 #include "memory-pool.h"
 #include "safe-math.h"
@@ -550,7 +552,7 @@ Metadata *metadataNew(void)
   metadata->config_history = NULL;
 
   metadata->total_path_count = 0;
-  metadata->path_table = strTableNewFixed(1);
+  metadata->path_table = strTableNew(CR_GetGlobalRegion());
   metadata->paths = NULL;
 
   return metadata;
@@ -605,16 +607,7 @@ Metadata *metadataLoad(String path)
     readFullPathHistory(content, &reader_position, path, metadata);
 
   metadata->total_path_count = readSize(content, &reader_position, path);
-
-  /* Create a dummy path table, if the path count is 0. */
-  if(metadata->total_path_count == 0)
-  {
-    metadata->path_table = strTableNewFixed(1);
-  }
-  else
-  {
-    metadata->path_table = strTableNewFixed(metadata->total_path_count);
-  }
+  metadata->path_table = strTableNew(CR_GetGlobalRegion());
 
   metadata->paths = readPathSubnodes(content, &reader_position,
                                      path, NULL, metadata);

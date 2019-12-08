@@ -6,6 +6,8 @@
 
 #include <string.h>
 
+#include "CRegion/region.h"
+
 #include "path-builder.h"
 #include "string-table.h"
 #include "safe-math.h"
@@ -123,7 +125,8 @@ static bool recurseIntoDirectory(StringTable *table, size_t length,
 */
 GCStats collectGarbage(Metadata *metadata, String repo_path)
 {
-  StringTable *table = strTableNew();
+  CR_Region *table_region = CR_RegionNew();
+  StringTable *table = strTableNew(table_region);
   strTableMap(table, strWrap("config"),   (void *)0x1);
   strTableMap(table, strWrap("metadata"), (void *)0x1);
 
@@ -137,7 +140,7 @@ GCStats collectGarbage(Metadata *metadata, String repo_path)
   size_t length = pathBuilderSet(&path_buffer, repo_path.content);
   recurseIntoDirectory(table, length, length, &gc_stats);
 
-  strTableFree(table);
+  CR_RegionRelease(table_region);
 
   return gc_stats;
 }

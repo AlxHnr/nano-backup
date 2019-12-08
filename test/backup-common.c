@@ -326,6 +326,7 @@ void restoreWithTimeRecursively(PathNode *node)
 }
 
 /* Associates a file path with its stats. */
+static CR_Region *stat_cache_region = NULL;
 static StringTable *current_stat_cache = NULL;
 static StringTable **stat_cache_array = NULL;
 static size_t stat_cache_array_length = 0;
@@ -333,9 +334,11 @@ static size_t stat_cache_array_length = 0;
 /** Populates the stat_cache_array with new string tables. */
 static void initStatCache(void)
 {
+  stat_cache_region = CR_RegionNew();
+
   for(size_t index = 0; index < stat_cache_array_length; index++)
   {
-    stat_cache_array[index] = strTableNew();
+    stat_cache_array[index] = strTableNew(stat_cache_region);
   }
 
   current_stat_cache = stat_cache_array[0];
@@ -344,10 +347,9 @@ static void initStatCache(void)
 /** Frees the string tables in stat_cache_array. */
 static void freeStatCache(void)
 {
-  for(size_t index = 0; index < stat_cache_array_length; index++)
-  {
-    strTableFree(stat_cache_array[index]);
-  }
+  CR_RegionRelease(stat_cache_region);
+  stat_cache_region = NULL;
+  current_stat_cache = NULL;
 }
 
 /** Selects the stat cache with the given index. */

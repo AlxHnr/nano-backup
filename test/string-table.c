@@ -41,22 +41,17 @@ static const char *lorem_ipsum_chunks[] =
 };
 static const size_t lorem_count = sizeof(lorem_ipsum_chunks)/sizeof(void*);
 
-/** Tests the given StringTable.
+/** Tests the given table.
 
-  @param table The table which should be tested.
-  @param spam_strtable_free True, if the table should be passed to
-  strTableFree() permanently. This can be used to test that strTableFree()
-  ignores fixed-size string tables.
+  @param table Table which should be tested.
 */
-static void testStringTable(StringTable *table, bool spam_strtable_free)
+static void testStringTable(StringTable *table)
 {
-  if(spam_strtable_free) strTableFree(table);
   assert_true(strTableGet(table, strWrap("")) == NULL);
 
   /* Map the lorem-ipsum chunks to the zlib chunks. */
   for(size_t index = 0; index < zlib_count; index++)
   {
-    if(spam_strtable_free) strTableFree(table);
     String string = strWrap(zlib_license_chunks[index]);
     if(strTableGet(table, string) != NULL)
     {
@@ -65,7 +60,6 @@ static void testStringTable(StringTable *table, bool spam_strtable_free)
     }
 
     strTableMap(table, string, &lorem_ipsum_chunks[index]);
-    if(spam_strtable_free) strTableFree(table);
 
     if(strTableGet(table, string) != &lorem_ipsum_chunks[index])
     {
@@ -79,7 +73,6 @@ static void testStringTable(StringTable *table, bool spam_strtable_free)
   {
     String string = strWrap(zlib_license_chunks[index]);
 
-    if(spam_strtable_free) strTableFree(table);
     if(strTableGet(table, string) != &lorem_ipsum_chunks[index])
     {
       die("\"%s\" was not mapped to \"%s\"", zlib_license_chunks[index],
@@ -87,7 +80,6 @@ static void testStringTable(StringTable *table, bool spam_strtable_free)
     }
   }
 
-  if(spam_strtable_free) strTableFree(table);
   assert_true(strTableGet(table, strWrap("lingula")) == NULL);
   assert_true(strTableGet(table, strWrap("origina")) == NULL);
   assert_true(strTableGet(table, strWrap("originall")) == NULL);
@@ -95,35 +87,23 @@ static void testStringTable(StringTable *table, bool spam_strtable_free)
 
 int main(void)
 {
-  testGroupStart("dynamic string table");
-  assert_true(zlib_count == lorem_count);
+  testGroupStart("growing string table");
+  {
+    assert_true(zlib_count == lorem_count);
 
-  StringTable *table = strTableNew();
-  testStringTable(table, false);
-  strTableFree(table);
+    CR_Region *r = CR_RegionNew();
+    testStringTable(strTableNew(r));
+    CR_RegionRelease(r);
+  }
   testGroupEnd();
 
-  testGroupStart("fixed table with size 0");
-  assert_error(strTableNewFixed(0), "unable to allocate 0 bytes");
-  testGroupEnd();
-
-  testGroupStart("fixed table with size 1");
-  testStringTable(strTableNewFixed(1), true);
-  testStringTable(strTableNewFixed(1), false);
-  testGroupEnd();
-
-  testGroupStart("fixed table with size 8");
-  testStringTable(strTableNewFixed(8), true);
-  testStringTable(strTableNewFixed(8), false);
-  testGroupEnd();
-
-  testGroupStart("fixed table with size 64");
-  testStringTable(strTableNewFixed(64), true);
-  testStringTable(strTableNewFixed(64), false);
-  testGroupEnd();
-
-  testGroupStart("fixed table with size 4096");
-  testStringTable(strTableNewFixed(4096), true);
-  testStringTable(strTableNewFixed(4096), false);
+  testGroupStart("multiple string tables sharing the same region");
+  {
+    CR_Region *r = CR_RegionNew();
+    testStringTable(strTableNew(r));
+    testStringTable(strTableNew(r));
+    testStringTable(strTableNew(r));
+    CR_RegionRelease(r);
+  }
   testGroupEnd();
 }

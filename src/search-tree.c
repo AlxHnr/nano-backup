@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "CRegion/region.h"
+
 #include "regex-pool.h"
 #include "memory-pool.h"
 #include "string-table.h"
@@ -171,7 +173,8 @@ SearchNode *searchTreeParse(String config)
   *root_node->ignore_expressions = NULL;
 
   /* This table maps paths to existing nodes, without a trailing slash. */
-  StringTable *existing_nodes = strTableNew();
+  CR_Region *existing_nodes_region = CR_RegionNew();
+  StringTable *existing_nodes = strTableNew(existing_nodes_region);
 
   /* Associate an empty string with the root node. */
   strTableMap(existing_nodes, strWrap(""), root_node);
@@ -218,15 +221,11 @@ SearchNode *searchTreeParse(String config)
     {
       /* Slice out and copy the invalid policy name. */
       String policy = strCopy(strSlice(&line.content[1], line.length - 2));
-      strTableFree(existing_nodes);
-
       die("config: line %zu: invalid policy: \"%s\"", line_nr, policy.content);
     }
     else if(current_policy == BPOL_none)
     {
       String pattern = strCopy(line);
-      strTableFree(existing_nodes);
-
       die("config: line %zu: pattern without policy: \"%s\"",
           line_nr, pattern.content);
     }
@@ -256,8 +255,6 @@ SearchNode *searchTreeParse(String config)
     {
       if(strPathContainsDotElements(line))
       {
-        strTableFree(existing_nodes);
-
         die("config: line %zu: path contains \".\" or \"..\": \"%s\"",
             line_nr, strCopy(line).content);
       }
@@ -271,8 +268,6 @@ SearchNode *searchTreeParse(String config)
          previous_definition->policy_inherited == false)
       {
         String redefined_path = strCopy(line);
-        strTableFree(existing_nodes);
-
         die("config: line %zu: redefining %sline %zu: \"%s\"",
             line_nr, previous_definition->policy != current_policy ?
             "policy of " : "", previous_definition->policy_line_nr,
@@ -292,8 +287,6 @@ SearchNode *searchTreeParse(String config)
     else
     {
       String path = strCopy(line);
-      strTableFree(existing_nodes);
-
       die("config: line %zu: invalid path: \"%s\"", line_nr, path.content);
     }
 
@@ -302,7 +295,7 @@ SearchNode *searchTreeParse(String config)
     line_nr++;
   }
 
-  strTableFree(existing_nodes);
+  CR_RegionRelease(existing_nodes_region);
 
   return root_node;
 }

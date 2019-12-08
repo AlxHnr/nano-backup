@@ -8,56 +8,45 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "memory-pool.h"
+#include "SipHash/siphash.h"
+
 #include "safe-math.h"
 #include "safe-wrappers.h"
 
-#include "SipHash/siphash.h"
-
-/** A string table bucket. */
+/** Bucket for storing colliding keys. */
 typedef struct Bucket Bucket;
 struct Bucket
 {
-  /** The hash of the key. Required to resize the string table. */
+  /** Hash of the key. Required to resize the string table. */
   uint64_t hash;
 
-  String key; /**< The key that was mapped. */
-  void *data; /**< The data associated with the key. */
+  String key; /**< Mapped key. */
+  void *data; /**< Data associated with the key. */
 
-  Bucket *next; /**< The next bucked in the list, or NULL. */
+  Bucket *next; /**< Next bucked in the list or NULL. */
 };
 
 struct StringTable
 {
+  CR_Region *region; /**< Region used by this table for allocations. */
   Bucket **buckets; /**< An array of buckets. */
   size_t capacity; /**< The amount of buckets in the String table. */
   size_t associations; /**< The amount of associations in the table. */
-  uint32_t secret_key[4]; /**< Secret key for the hash function. */
-
-  /** A pointer to the function used for allocating the table and its
-    buckets. */
-  void *(*alloc_function)(size_t);
+  uint8_t secret_key[16]; /**< Secret key for SipHash. */
 };
 
-/** Doubles the capacity of the given StringTable and moves all buckets to
-  their new destination. If the given table is a fixed size table, this
-  function will do nothing.
+/** Double the capacity of the given table and move all buckets to their
+  new destination.
 
-  @param table The table that should be resized.
+  @param table Table to resize.
 */
 static void doubleTableCapaticy(StringTable *table)
 {
-  if(table->alloc_function != sMalloc)
-  {
-    return;
-  }
-
-  size_t new_capacity = sSizeMul(table->capacity, 2);
-  size_t new_array_size = sSizeMul(new_capacity, sizeof *table->buckets);
+  const size_t new_capacity = sSizeMul(table->capacity, 2);
+  const size_t new_array_size =
+    sSizeMul(new_capacity, sizeof(*table->buckets));
 
   Bucket **new_buckets = sMalloc(new_array_size);
-
-  /* Initialize all new buckets to NULL. */
   memset(new_buckets, 0, new_array_size);
 
   /* Copy all associations into their new location. */
@@ -69,7 +58,7 @@ static void doubleTableCapaticy(StringTable *table)
       Bucket *bucket_to_move = bucket;
       bucket = bucket->next;
 
-      size_t new_bucket_id = bucket_to_move->hash % new_capacity;
+      const size_t new_bucket_id = bucket_to_move->hash % new_capacity;
       bucket_to_move->next = new_buckets[new_bucket_id];
       new_buckets[new_bucket_id] = bucket_to_move;
     }
@@ -80,92 +69,43 @@ static void doubleTableCapaticy(StringTable *table)
   table->capacity = new_capacity;
 }
 
-/** Initializes the secret_key in the given StringTable. */
-static void initSecretKey(StringTable *table)
-{
-  static const size_t secret_key_length =
-    sizeof(table->secret_key)/sizeof(table->secret_key[0]);
+/** Release callback to be attached to a region.
 
-  for(size_t index = 0; index < secret_key_length; index++)
-  {
-    table->secret_key[index] = sRand();
-  }
-}
-
-/** Creates a new, dynamically growing StringTable.
-
-  @return A StringTable which must be freed by the caller using
-  strTableFree().
+  @param data Pointer to the table which should be release.
 */
-StringTable *strTableNew(void)
+static void releaseStringTable(void *data)
 {
-  StringTable *table = sMalloc(sizeof *table);
-  table->alloc_function = sMalloc;
-  table->associations = 0;
-  table->capacity = 32;
-  initSecretKey(table);
-
-  size_t array_size = sSizeMul(table->capacity, sizeof *table->buckets);
-  table->buckets = sMalloc(array_size);
-
-  /* Initialize all buckets to NULL. */
-  memset(table->buckets, 0, array_size);
-
-  return table;
-}
-
-/** Creates a fixed size StringTable allocated inside the internal memory
-  pool.
-
-  @param item_count The amount of associations that the StringTable must be
-  able to hold. Must be greater than 0, or the program will be terminated
-  with an error.
-
-  @return A new StringTable allocated inside the internal memory pool
-  which should not be freed by the caller. Passing it to strTableFree() is
-  safe and will do nothing.
-*/
-StringTable *strTableNewFixed(size_t item_count)
-{
-  StringTable *table = mpAlloc(sizeof *table);
-  table->capacity = sSizeMul(item_count, 2);
-  table->alloc_function = mpAlloc;
-  table->associations = 0;
-  initSecretKey(table);
-
-  size_t array_size = sSizeMul(table->capacity, sizeof *table->buckets);
-  table->buckets = mpAlloc(array_size);
-
-  /* Initialize all buckets to NULL. */
-  memset(table->buckets, 0, array_size);
-
-  return table;
-}
-
-/** Frees all memory associated with the given StringTable.
-
-  @param table The StringTable that should be freed.
-*/
-void strTableFree(StringTable *table)
-{
-  if(table->alloc_function != sMalloc)
-  {
-    return;
-  }
-
-  for(size_t index = 0; index < table->capacity; index++)
-  {
-    Bucket *bucket = table->buckets[index];
-    while(bucket)
-    {
-      Bucket *bucket_to_free = bucket;
-      bucket = bucket->next;
-      free(bucket_to_free);
-    }
-  }
-
+  StringTable *table = data;
   free(table->buckets);
-  free(table);
+}
+
+/** Creates a dynamically growing table for mapping strings to arbitrary
+  data.
+
+  @param region Region to use for allocations.
+
+  @return Table which lifetime will be bound to the given region.
+*/
+StringTable *strTableNew(CR_Region *region)
+{
+  StringTable *table = CR_RegionAlloc(region, sizeof(*table));
+  table->region = region;
+  table->associations = 0;
+  table->capacity = 32; /* A small initial value allows the test suite to
+                           cover table resizing. */
+
+  for(size_t index = 0; index < sizeof(table->secret_key); index++)
+  {
+    table->secret_key[index] = sRand() % UINT8_MAX;
+  }
+
+  const size_t array_size =
+    sSizeMul(table->capacity, sizeof(*table->buckets));
+  table->buckets = sMalloc(array_size);
+  CR_RegionAttach(table->region, releaseStringTable, table);
+  memset(table->buckets, 0, array_size);
+
+  return table;
 }
 
 /** Associates the given key with the specified data. This function does
@@ -175,30 +115,26 @@ void strTableFree(StringTable *table)
   @param table The table in which the association should be stored.
   @param key The key to which the given data should be mapped to. The table
   will keep a reference to this key, so the caller should not modify or
-  free it, unless the given StringTable is not used anymore.
-  @param data The data that should be mapped to the key. The StringTable
-  will only store a reference to the data, so the caller should not move
-  it unless the table is not used anymore.
+  free it, unless the given table is not used anymore.
+  @param data The data that should be mapped to the key. The table will
+  only store a reference to the data, so the caller should not move it
+  unless the table is not used anymore.
 */
 void strTableMap(StringTable *table, String key, void *data)
 {
-  /* Try to resize hash table, if its capacity was reached. */
   if(table->associations == table->capacity)
   {
     doubleTableCapaticy(table);
   }
 
-  /* Initialize bucket. */
-  Bucket *bucket = table->alloc_function(sizeof *bucket);
-  bucket->hash = siphash((const uint8_t *)key.content, key.length,
-                         (const uint8_t *)table->secret_key);
+  Bucket *bucket = CR_RegionAlloc(table->region, sizeof(*bucket));
+  bucket->hash =
+    siphash((const uint8_t *)key.content, key.length, table->secret_key);
+  strSet(&bucket->key, key);
   bucket->data = data;
 
-  /* Copy the given key into a String with const members. */
-  memcpy(&bucket->key, &key, sizeof(key));
-
   /* Prepend the bucket to the bucket slot in the bucket array. */
-  size_t bucket_id = bucket->hash % table->capacity;
+  const size_t bucket_id = bucket->hash % table->capacity;
   bucket->next = table->buckets[bucket_id];
   table->buckets[bucket_id] = bucket;
 
@@ -207,15 +143,15 @@ void strTableMap(StringTable *table, String key, void *data)
 
 /** Returns the value associated with the given key.
 
-  @param table The StringTable that contains the association.
+  @param table Table that contains the association.
   @param key The key for which the value should be returned.
 
-  @return The associated data, or NULL if the key was not found.
+  @return Associated data or NULL if the key was not found.
 */
 void *strTableGet(StringTable *table, String key)
 {
-  const size_t hash = siphash((const uint8_t *)key.content, key.length,
-                              (const uint8_t *)table->secret_key);
+  const size_t hash =
+    siphash((const uint8_t *)key.content, key.length, table->secret_key);
   const size_t bucket_id = hash % table->capacity;
 
   for(Bucket *bucket = table->buckets[bucket_id];
