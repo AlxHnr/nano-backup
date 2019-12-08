@@ -15,6 +15,8 @@
 #include <dirent.h>
 #include <sys/stat.h>
 
+#include "CRegion/region.h"
+
 #include "str.h"
 
 extern void *sMalloc(size_t size);
@@ -70,6 +72,6 @@ typedef struct
   size_t size;
 }FileContent;
 
-extern FileContent sGetFilesContent(String path);
+extern FileContent sGetFilesContent(CR_Region *region, String path);
 
 #endif

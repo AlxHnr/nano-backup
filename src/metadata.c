@@ -567,7 +567,8 @@ Metadata *metadataNew(void)
 */
 Metadata *metadataLoad(String path)
 {
-  FileContent content = sGetFilesContent(path);
+  CR_Region *content_region = CR_RegionNew();
+  FileContent content = sGetFilesContent(content_region, path);
 
   /* Allocate and initialize metadata. */
   Metadata *metadata = mpAlloc(sizeof *metadata);
@@ -611,7 +612,7 @@ Metadata *metadataLoad(String path)
 
   metadata->paths = readPathSubnodes(content, &reader_position,
                                      path, NULL, metadata);
-  free(content.content);
+  CR_RegionRelease(content_region);
 
   if(reader_position != content.size)
   {

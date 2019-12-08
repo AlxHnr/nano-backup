@@ -234,18 +234,21 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("sGetFilesContent()");
-  assert_error(sGetFilesContent(strWrap("non-existing-file.txt")), "failed to "
+  CR_Region *r = CR_RegionNew();
+  assert_error(sGetFilesContent(r, strWrap("non-existing-file.txt")), "failed to "
                "access \"non-existing-file.txt\": No such file or "
                "directory");
 
-  FileContent example_content = sGetFilesContent(strWrap("example.txt"));
+  FileContent example_content = sGetFilesContent(r, strWrap("example.txt"));
   assert_true(example_content.size == 25);
   assert_true(example_content.content != NULL);
   assert_true(strncmp(example_content.content,
                       "This is an example file.\n", 25) == 0);
-  free(example_content.content);
 
-  FileContent empty_content = sGetFilesContent(strWrap("empty.txt"));
+  CR_RegionRelease(r);
+  r = CR_RegionNew();
+
+  FileContent empty_content = sGetFilesContent(r, strWrap("empty.txt"));
   assert_true(empty_content.size == 0);
   assert_true(empty_content.content == NULL);
   testGroupEnd();
@@ -268,10 +271,9 @@ int main(void)
   assert_true(Ftodisk(test_file) == true);
   sFclose(test_file);
 
-  FileContent test_file_1_content = sGetFilesContent(strWrap("tmp/test-file-1"));
+  FileContent test_file_1_content = sGetFilesContent(r, strWrap("tmp/test-file-1"));
   assert_true(test_file_1_content.size == 12);
   assert_true(memcmp(test_file_1_content.content, "hello world!", 12) == 0);
-  free(test_file_1_content.content);
 
   /* Assert that the path gets captured properly. */
   String test_file_path = strWrap("tmp/test-file-2");
@@ -284,7 +286,7 @@ int main(void)
   assert_true(strEqual(Fdestroy(test_file), test_file_path));
   assert_true(errno == 0);
 
-  FileContent test_file_2_content = sGetFilesContent(strWrap("tmp/test-file-2"));
+  FileContent test_file_2_content = sGetFilesContent(r, strWrap("tmp/test-file-2"));
   assert_true(test_file_2_content.size == 0);
   assert_true(test_file_2_content.content == NULL);
 
@@ -294,10 +296,10 @@ int main(void)
   sFwrite("Test 1 2 3", 10, test_file);
   sFclose(test_file);
 
-  FileContent test_file_content = sGetFilesContent(strWrap("tmp/test-file-1"));
+  FileContent test_file_content = sGetFilesContent(r, strWrap("tmp/test-file-1"));
   assert_true(test_file_content.size == 10);
   assert_true(memcmp(test_file_content.content, "Test 1 2 3", 10) == 0);
-  free(test_file_content.content);
+  CR_RegionRelease(r);
 
   /* Provoke errors by writing to a read-only stream. */
   assert_error(sFwrite("hello", 5, sFopenRead(strWrap("example.txt"))),

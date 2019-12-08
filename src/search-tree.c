@@ -309,11 +309,12 @@ SearchNode *searchTreeParse(String config)
 */
 SearchNode *searchTreeLoad(String path)
 {
-  FileContent content = sGetFilesContent(path);
-  String config = { .content = content.content, .length = content.size };
+  CR_Region *r = CR_RegionNew();
+  FileContent content = sGetFilesContent(r, path);
+  String config = strSlice(content.content, content.size);
 
   SearchNode *root_node = searchTreeParse(config);
-  free(content.content);
+  CR_RegionRelease(r);
 
   return root_node;
 }

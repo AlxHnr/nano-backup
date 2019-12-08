@@ -685,13 +685,13 @@ int sRand(void)
 
 /** Reads an entire file into memory.
 
+  @param region Region to use for allocating the required memory.
   @param path The path to the file.
 
-  @return A FileContent struct, which content must be freed by the caller
-  using free(). The content member will be NULL if the file has a size of
-  zero.
+  @return Contents of the requested file which should not be freed by the
+  caller. The content member will be NULL if the file has a size of zero.
 */
-FileContent sGetFilesContent(String path)
+FileContent sGetFilesContent(CR_Region *region, String path)
 {
   struct stat file_stats = sStat(path);
   if(!S_ISREG(file_stats.st_mode))
@@ -709,14 +709,13 @@ FileContent sGetFilesContent(String path)
   if(file_stats.st_size > 0)
   {
     FileStream *stream = sFopenRead(path);
-    content = sMalloc(file_stats.st_size);
+    content = CR_RegionAlloc(region, file_stats.st_size);
     sFread(content, file_stats.st_size, stream);
     bool stream_not_at_end = sFbytesLeft(stream);
     sFclose(stream);
 
     if(stream_not_at_end)
     {
-      free(content);
       die("file changed while reading: \"%s\"", path.content);
     }
   }

@@ -948,7 +948,8 @@ static void copyStringRaw(char *data, const char *string)
 static void generateBrokenMetadata(void)
 {
   metadataWrite(genTestData1(), strWrap("tmp"), strWrap("tmp/tmp-file"), strWrap("tmp/test-data-1"));
-  char *test_data = sGetFilesContent(strWrap("tmp/test-data-1")).content;
+  CR_Region *r = CR_RegionNew();
+  char *test_data = sGetFilesContent(r, strWrap("tmp/test-data-1")).content;
 
   Metadata *metadata = metadataLoad(strWrap("tmp/test-data-1"));
   checkMetadata(metadata, 2, true);
@@ -1111,7 +1112,7 @@ static void generateBrokenMetadata(void)
   writeBytesToFile(700, test_data, "tmp/test-data-1");
   checkTestData1(metadataLoad(strWrap("tmp/test-data-1")));
 
-  free(test_data);
+  CR_RegionRelease(r);
 }
 
 /** Tests detection of corruption in metadata. */

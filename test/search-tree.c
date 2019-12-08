@@ -388,12 +388,13 @@ static void testIgnoringComments(void)
 */
 static void assertParseError(const char *path, const char *message)
 {
-  FileContent content = sGetFilesContent(strWrap(path));
+  CR_Region *r = CR_RegionNew();
+  FileContent content = sGetFilesContent(r, strWrap(path));
   String config = { .content = content.content, .length = content.size };
 
   assert_error(searchTreeParse(config), message);
 
-  free(content.content);
+  CR_RegionRelease(r);
 }
 
 /** Tests loading various invalid config files. */
@@ -538,7 +539,8 @@ static void testBrokenConfigFiles(void)
 */
 static void testInsertNullBytes(const char *path)
 {
-  FileContent content = sGetFilesContent(strWrap(path));
+  CR_Region *r = CR_RegionNew();
+  FileContent content = sGetFilesContent(r, strWrap(path));
   if(content.size == 0)
   {
     return;
@@ -556,7 +558,7 @@ static void testInsertNullBytes(const char *path)
     content.content[index] = old_char;
   }
 
-  free(content.content);
+  CR_RegionRelease(r);
 }
 
 /** Searches for config files in various directories and passes them to

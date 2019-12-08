@@ -58,7 +58,9 @@ static void checkFilesContent(String file_path,
                               const char *expected_content)
 {
   const size_t expected_size = strlen(expected_content);
-  FileContent content = sGetFilesContent(file_path);
+
+  CR_Region *r = CR_RegionNew();
+  FileContent content = sGetFilesContent(r, file_path);
 
   if(content.size != expected_size)
   {
@@ -70,7 +72,7 @@ static void checkFilesContent(String file_path,
     die("file has invalid content: \"%s\"", file_path.content);
   }
 
-  free(content.content);
+  CR_RegionRelease(r);
 }
 
 /** Asserts that the given file contains the string "Hello backup!". */
