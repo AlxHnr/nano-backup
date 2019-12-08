@@ -40,7 +40,7 @@ struct StringTable
 
   @param table Table to resize.
 */
-static void doubleTableCapaticy(StringTable *table)
+static void doubleTableCapacity(StringTable *table)
 {
   const size_t new_capacity = sSizeMul(table->capacity, 2);
   const size_t new_array_size =
@@ -124,7 +124,7 @@ void strTableMap(StringTable *table, String key, void *data)
 {
   if(table->associations == table->capacity)
   {
-    doubleTableCapaticy(table);
+    doubleTableCapacity(table);
   }
 
   Bucket *bucket = CR_RegionAlloc(table->region, sizeof(*bucket));
