@@ -5,7 +5,7 @@
 
 * **Precise** - Displays a good, concise summary about _what_ has changed
   on your system
-* **Consesual** - Never sneaks in changes without the users approval
+* **Consesual** - Never sneaks in changes without approval
 * **Atomic** - If it crashes, the backup will be like it was before
 * **Handles filenames** - In the sad world we live, many programs still
   choke on `white spaces` and `✨𝓤𝓷𝓲𝓬𝓸𝓭𝓮✨`
