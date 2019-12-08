@@ -242,9 +242,9 @@ static void initiateRestoreRecursively(PathNode *node_list,
   @param path The full, absolute path to restore. Should not end with a
   slash. An empty string represents the root directory "/".
 */
-void initiateRestore(Metadata *metadata, size_t id, const char *path)
+void initiateRestore(Metadata *metadata, size_t id, String path)
 {
-  if(path[0] == '\0')
+  if(path.length == 0)
   {
     for(PathNode *node = metadata->paths; node != NULL; node = node->next)
     {
@@ -257,7 +257,7 @@ void initiateRestore(Metadata *metadata, size_t id, const char *path)
   }
   else
   {
-    initiateRestoreRecursively(metadata->paths, id, strWrap(path), true);
+    initiateRestoreRecursively(metadata->paths, id, path, true);
   }
 }
 
@@ -269,15 +269,12 @@ void initiateRestore(Metadata *metadata, size_t id, const char *path)
   @param info Informations about the file.
   @param repo_path The path to the repository containing the file.
 */
-void restoreFile(const char *path,
-                 const RegularFileInfo *info,
-                 const char *repo_path)
+void restoreFile(String path, const RegularFileInfo *info, String repo_path)
 {
   if(info->size > FILE_HASH_SIZE)
   {
-    RepoReader *reader =
-      repoReaderOpenFile(strWrap(repo_path), strWrap(path), info);
-    FileStream *writer = sFopenWrite(strWrap(path));
+    RepoReader *reader = repoReaderOpenFile(repo_path, path, info);
+    FileStream *writer = sFopenWrite(path);
     uint64_t bytes_left = info->size;
     char buffer[4096];
 
@@ -297,7 +294,7 @@ void restoreFile(const char *path,
   }
   else
   {
-    FileStream *writer = sFopenWrite(strWrap(path));
+    FileStream *writer = sFopenWrite(path);
     sFwrite(info->hash, info->size, writer);
     sFclose(writer);
   }
@@ -309,12 +306,11 @@ void restoreFile(const char *path,
   @param state The state to which the path should be restored.
   @param repo_path The path to the repository.
 */
-static void restorePath(PathNode *node, PathState *state,
-                        const char *repo_path)
+static void restorePath(PathNode *node, PathState *state, String repo_path)
 {
   if(state->type == PST_regular)
   {
-    restoreFile(node->path.content, &state->metadata.reg, repo_path);
+    restoreFile(node->path, &state->metadata.reg, repo_path);
     sChown(node->path, state->uid, state->gid);
     sChmod(node->path, state->metadata.reg.mode);
     sUtime(node->path, state->metadata.reg.timestamp);
@@ -341,8 +337,7 @@ static void restorePath(PathNode *node, PathState *state,
 
   @return True if the restoring affected the parent directories timestamp.
 */
-static bool finishRestoreRecursively(PathNode *node, size_t id,
-                                     const char *repo_path)
+static bool finishRestoreRecursively(PathNode *node, size_t id, String repo_path)
 {
   bool affects_parent_timestamp = false;
 
@@ -402,7 +397,7 @@ static bool finishRestoreRecursively(PathNode *node, size_t id,
     {
       if(state->type == PST_regular)
       {
-        restoreFile(node->path.content, &state->metadata.reg, repo_path);
+        restoreFile(node->path, &state->metadata.reg, repo_path);
         sUtime(node->path, state->metadata.reg.timestamp);
       }
       else if(state->type == PST_symlink)
@@ -451,7 +446,7 @@ static bool finishRestoreRecursively(PathNode *node, size_t id,
   @param id The same id which was passed to initiateRestore().
   @param repo_path The path to the backup repository.
 */
-void finishRestore(Metadata *metadata, size_t id, const char *repo_path)
+void finishRestore(Metadata *metadata, size_t id, String repo_path)
 {
   for(PathNode *node = metadata->paths; node != NULL; node = node->next)
   {

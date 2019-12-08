@@ -210,12 +210,12 @@ static void restore(const char *repo_arg, size_t id, const char *path)
 {
   Metadata *metadata = metadataLoadFromRepo(repo_arg);
   String full_path = strRemoveTrailingSlashes(buildFullPath(path));
-  initiateRestore(metadata, id, strCopy(full_path).content);
+  initiateRestore(metadata, id, strCopy(full_path));
 
   if(containsChanges(printMetadataChanges(metadata)) && printf("\n") == 1)
   {
     ensureUserConsent("restore?");
-    finishRestore(metadata, id, repo_arg);
+    finishRestore(metadata, id, strWrap(repo_arg));
   }
 }
 

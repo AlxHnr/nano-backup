@@ -282,7 +282,7 @@ void restoreRegularFile(const char *path, const RegularFileInfo *info)
 {
   time_t parent_time = getParentTime(path);
 
-  restoreFile(path, info, "tmp/repo");
+  restoreFile(strWrap(path), info, strWrap("tmp/repo"));
   sUtime(strWrap(path), info->timestamp);
 
   restoreParentTime(path, parent_time);
