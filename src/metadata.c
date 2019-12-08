@@ -10,6 +10,7 @@
 #include <limits.h>
 
 #include "CRegion/global-region.h"
+#include "CRegion/static-assert.h"
 
 #include "file-hash.h"
 #include "memory-pool.h"
@@ -30,9 +31,6 @@ static const union
 {
   uint32_t value;
   uint8_t array[4];
-
-  /* Assert that the size of time_t is either 4 or 8. */
-  char assert[(sizeof(time_t) == 4) || (sizeof(time_t) == 8)];
 }endian_test = { .value = 1 };
 
 /** Assert that enough unread bytes are remaining in the given file
@@ -201,6 +199,8 @@ static size_t readSize(FileContent content, size_t *reader_position,
 static time_t readTime(FileContent content, size_t *reader_position,
                        String metadata_path)
 {
+  CR_StaticAssert(sizeof(time_t) == 4 || sizeof(time_t) == 8);
+
   int64_t time = read64(content, reader_position, metadata_path);
 
   if(sizeof(time_t) == 4 && (time < INT32_MIN || time > INT32_MAX))
