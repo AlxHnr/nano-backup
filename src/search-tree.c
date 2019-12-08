@@ -36,7 +36,7 @@ static String getLine(String config, size_t start)
   size_t end = start;
   while(end < config.length && config.content[end] != '\n') end++;
 
-  return (String){ .content = &config.content[start], .length = end - start };
+  return strSlice(&config.content[start], end - start);
 }
 
 /** Creates a new node and adds it to its parent node. This function does
@@ -74,9 +74,8 @@ static SearchNode *newNode(StringTable *existing_nodes,
   if(paths.tail.length >= 2 && paths.tail.content[0] == '/')
   {
     /* Slice out the part after the first slash. */
-    String expression =
-      (String)
-      { .content = &paths.tail.content[1], .length = paths.tail.length - 1 };
+    String expression = strSlice(&paths.tail.content[1],
+                                 paths.tail.length - 1);
 
     String copy = strCopy(expression);
     memcpy(&node->name, &copy, sizeof(node->name));
@@ -218,8 +217,7 @@ SearchNode *searchTreeParse(String config)
     else if(line.content[0] == '[' && line.content[line.length - 1] == ']')
     {
       /* Slice out and copy the invalid policy name. */
-      String policy =
-        strCopy((String){ .content = &line.content[1], .length = line.length - 2});
+      String policy = strCopy(strSlice(&line.content[1], line.length - 2));
       strTableFree(existing_nodes);
 
       die("config: line %zu: invalid policy: \"%s\"", line_nr, policy.content);

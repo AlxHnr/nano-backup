@@ -174,12 +174,7 @@ static SearchResult buildSearchResult(SearchContext *context,
       S_ISDIR(stats.st_mode)? SRT_directory:
       SRT_other,
 
-    .path =
-      (String)
-      {
-        .content = context->buffer.str,
-        .length = context->buffer.length
-      },
+    .path = strSlice(context->buffer.str, context->buffer.length),
 
     .node = node,
     .policy = policy,
