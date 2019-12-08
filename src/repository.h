@@ -8,7 +8,6 @@
 #include <stdbool.h>
 #include <sys/types.h>
 
-#include "buffer.h"
 #include "file-hash.h"
 #include "str.h"
 
@@ -41,7 +40,7 @@ typedef struct
 
 extern bool repoRegularFileExists(String repo_path,
                                   const RegularFileInfo *info);
-extern void repoBuildRegularFilePath(Buffer **buffer,
+extern void repoBuildRegularFilePath(char **buffer_ptr,
                                      const RegularFileInfo *info);
 
 extern RepoReader *repoReaderOpenFile(String repo_path,

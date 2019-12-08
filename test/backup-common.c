@@ -166,9 +166,9 @@ void generateCollidingFiles(const uint8_t *hash, size_t size,
   static Buffer *path_buffer = NULL;
   pathBuilderSet(&path_buffer, "tmp/repo");
 
-  static Buffer *path_in_repo = NULL;
+  static char *path_in_repo = NULL;
   repoBuildRegularFilePath(&path_in_repo, &info);
-  pathBuilderAppend(&path_buffer, 8, path_in_repo->data);
+  pathBuilderAppend(&path_buffer, 8, path_in_repo);
 
   path_buffer->data[13] = '\0';
   if(sPathExists(strWrap(path_buffer->data)) == false)
@@ -188,7 +188,7 @@ void generateCollidingFiles(const uint8_t *hash, size_t size,
   {
     info.slot = (uint8_t)slot;
     repoBuildRegularFilePath(&path_in_repo, &info);
-    pathBuilderAppend(&path_buffer, 8, path_in_repo->data);
+    pathBuilderAppend(&path_buffer, 8, path_in_repo);
     FileStream *stream = sFopenWrite(strWrap(path_buffer->data));
 
     const uint8_t bytes_to_write[] = { info.slot, 0 };

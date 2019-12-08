@@ -137,10 +137,10 @@ static void testWithExistingTmpFile(RepoWriter *writer, String final_path)
 */
 static void testRegularFilePathBuilding(String path, RegularFileInfo *info)
 {
-  static Buffer *buffer = NULL;
+  static char *buffer = NULL;
 
   repoBuildRegularFilePath(&buffer, info);
-  assert_true(strcmp(buffer->data, &path.content[4]) == 0);
+  assert_true(strcmp(buffer, &path.content[4]) == 0);
 }
 
 int main(void)

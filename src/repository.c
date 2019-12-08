@@ -13,6 +13,8 @@
 #include <stdbool.h>
 #include <inttypes.h>
 
+#include "CRegion/alloc-growable.h"
+
 #include "safe-math.h"
 #include "safe-wrappers.h"
 #include "error-handling.h"
@@ -97,7 +99,7 @@ static void buildFilePath(char *buffer, const RegularFileInfo *info)
 }
 
 /** A reusable buffer for constructing paths of files inside repos. */
-static Buffer *path_buffer = NULL;
+static char *path_buffer = NULL;
 
 /** Populates the path_buffer with the path required for accessing a file
   inside the repository.
@@ -112,12 +114,12 @@ static void fillPathBufferWithInfo(String repo_path,
   /* The +1 is for the slash after the repo path. */
   size_t required_capacity = getFilePathRequiredCapacity(info) + 1;
   required_capacity = sSizeAdd(required_capacity, repo_path.length);
-  bufferEnsureCapacity(&path_buffer, required_capacity);
+  path_buffer = CR_EnsureCapacity(path_buffer, required_capacity);
 
-  memcpy(path_buffer->data, repo_path.content, repo_path.length);
-  path_buffer->data[repo_path.length] = '/';
+  memcpy(path_buffer, repo_path.content, repo_path.length);
+  path_buffer[repo_path.length] = '/';
 
-  char *hash_buffer = &path_buffer->data[repo_path.length + 1];
+  char *hash_buffer = &path_buffer[repo_path.length + 1];
   buildFilePath(hash_buffer, info);
 }
 
@@ -151,19 +153,22 @@ static RepoWriter *createRepoWriter(String repo_path,
 bool repoRegularFileExists(String repo_path, const RegularFileInfo *info)
 {
   fillPathBufferWithInfo(repo_path, info);
-  return sPathExists(strWrap(path_buffer->data));
+  return sPathExists(strWrap(path_buffer));
 }
 
 /** Builds the unique path of the file represented by the given info.
 
-  @param buffer The buffer to which the string will be written.
+  @param buffer_ptr Buffer for storing the string. This buffer must have
+  been created by CR_RegionAllocGrowable() or must point to NULL otherwise.
+  If it points to NULL, a new buffer will be allocated by
+  CR_EnsureCapacity(), to which the given pointer will be assigned.
   @param info The info from which the filepath will be built.
 */
-void repoBuildRegularFilePath(Buffer **buffer, const RegularFileInfo *info)
+void repoBuildRegularFilePath(char **buffer_ptr, const RegularFileInfo *info)
 {
-  size_t required_capacity = getFilePathRequiredCapacity(info);
-  bufferEnsureCapacity(buffer, required_capacity);
-  buildFilePath((*buffer)->data, info);
+  const size_t required_capacity = getFilePathRequiredCapacity(info);
+  *buffer_ptr = CR_EnsureCapacity(*buffer_ptr, required_capacity);
+  buildFilePath(*buffer_ptr, info);
 }
 
 /** Opens a new RepoReader for reading a file from a repository.
@@ -185,7 +190,7 @@ RepoReader *repoReaderOpenFile(String repo_path,
                                const RegularFileInfo *info)
 {
   fillPathBufferWithInfo(repo_path, info);
-  FILE *stream = fopen(path_buffer->data, "rb");
+  FILE *stream = fopen(path_buffer, "rb");
   if(stream == NULL)
   {
     dieErrno("failed to open \"%s\" in \"%s\"",
@@ -375,28 +380,28 @@ void repoWriterClose(RepoWriter *writer_to_close)
     fillPathBufferWithInfo(repo_path, writer.rename_to.info);
 
     /* Ensure that the final paths parent directories exists. */
-    path_buffer->data[repo_path.length + 5] = '\0';
-    if(sPathExists(strWrap(path_buffer->data)) == false)
+    path_buffer[repo_path.length + 5] = '\0';
+    if(sPathExists(strWrap(path_buffer)) == false)
     {
-      path_buffer->data[repo_path.length + 2] = '\0';
-      if(sPathExists(strWrap(path_buffer->data)) == false)
+      path_buffer[repo_path.length + 2] = '\0';
+      if(sPathExists(strWrap(path_buffer)) == false)
       {
-        sMkdir(strWrap(path_buffer->data));
+        sMkdir(strWrap(path_buffer));
         fdatasyncDirectory(writer.repo_path);
       }
-      path_buffer->data[repo_path.length + 2] = '/';
+      path_buffer[repo_path.length + 2] = '/';
 
-      sMkdir(strWrap(path_buffer->data));
+      sMkdir(strWrap(path_buffer));
 
-      path_buffer->data[repo_path.length + 2] = '\0';
-      fdatasyncDirectory(strWrap(path_buffer->data));
-      path_buffer->data[repo_path.length + 2] = '/';
+      path_buffer[repo_path.length + 2] = '\0';
+      fdatasyncDirectory(strWrap(path_buffer));
+      path_buffer[repo_path.length + 2] = '/';
     }
-    path_buffer->data[repo_path.length + 5] = '/';
+    path_buffer[repo_path.length + 5] = '/';
 
-    sRename(writer.repo_tmp_file_path, strWrap(path_buffer->data));
-    path_buffer->data[repo_path.length + 5] = '\0';
-    fdatasyncDirectory(strWrap(path_buffer->data));
+    sRename(writer.repo_tmp_file_path, strWrap(path_buffer));
+    path_buffer[repo_path.length + 5] = '\0';
+    fdatasyncDirectory(strWrap(path_buffer));
   }
 
   fdatasyncDirectory(writer.repo_path);

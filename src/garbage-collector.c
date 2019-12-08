@@ -6,6 +6,7 @@
 
 #include <string.h>
 
+#include "buffer.h"
 #include "path-builder.h"
 #include "string-table.h"
 #include "safe-math.h"
@@ -35,8 +36,9 @@ static void populateTableRecursively(StringTable *table, PathNode *node)
       continue;
     }
 
-    repoBuildRegularFilePath(&path_buffer, &point->state.metadata.reg);
-    String path = strWrap(path_buffer->data);
+    static char *buffer = NULL;
+    repoBuildRegularFilePath(&buffer, &point->state.metadata.reg);
+    String path = strWrap(buffer);
 
     if(strTableGet(table, path) == NULL)
     {
