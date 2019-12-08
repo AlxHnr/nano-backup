@@ -64,7 +64,7 @@ static struct stat safeStat(String path,
   return buffer;
 }
 
-/** A failsafe wrapper around malloc().
+/** A safe wrapper around malloc().
 
   @param size A value larger than 0. Otherwise the program will be
   terminated.
@@ -88,7 +88,7 @@ void *sMalloc(size_t size)
   return data;
 }
 
-/** A failsafe wrapper around realloc().
+/** A safe wrapper around realloc().
 
   @param ptr The pointer to the data, which should be reallocated. The data
   may be moved, so the caller shouldn't use this pointer anymore once this
@@ -376,7 +376,7 @@ bool sPathExists(String path)
   return exists;
 }
 
-/** A failsafe wrapper around stat().
+/** A safe wrapper around stat().
 
   @param path A filepath.
 
@@ -387,7 +387,7 @@ struct stat sStat(String path)
   return safeStat(path, stat);
 }
 
-/** A failsafe wrapper around lstat().
+/** A safe wrapper around lstat().
 
   @param path A filepath.
 
@@ -398,7 +398,7 @@ struct stat sLStat(String path)
   return safeStat(path, lstat);
 }
 
-/** A failsafe wrapper around mkdir().
+/** A safe wrapper around mkdir().
 
   @param path The path to the directory to create.
 */
@@ -410,7 +410,7 @@ void sMkdir(String path)
   }
 }
 
-/** A failsafe wrapper around symlink().
+/** A safe wrapper around symlink().
 
   @param target The path to which the symlink should point.
   @param path The path to the symlink to create.
