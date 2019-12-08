@@ -316,9 +316,9 @@ SearchNode *searchTreeParse(String config)
   @return The root node of the search tree. All nodes are allocated inside
   the internal memory pool and should not be freed by the caller.
 */
-SearchNode *searchTreeLoad(const char *path)
+SearchNode *searchTreeLoad(String path)
 {
-  FileContent content = sGetFilesContent(strWrap(path));
+  FileContent content = sGetFilesContent(path);
   String config = { .content = content.content, .length = content.size };
 
   SearchNode *root_node = searchTreeParse(config);

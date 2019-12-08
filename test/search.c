@@ -314,7 +314,7 @@ static void checkIgnoreExpression(SearchNode *node, const char *expression,
 */
 static void testSimpleSearch(String cwd)
 {
-  SearchNode *root = searchTreeLoad("generated-config-files/simple-search.txt");
+  SearchNode *root = searchTreeLoad(strWrap("generated-config-files/simple-search.txt"));
   SearchContext *context = searchNew(root);
   assert_true(context != NULL);
 
@@ -394,7 +394,7 @@ static void testSimpleSearch(String cwd)
 */
 static void testIgnoreExpressions(String cwd)
 {
-  SearchNode *root = searchTreeLoad("generated-config-files/ignore-expressions.txt");
+  SearchNode *root = searchTreeLoad(strWrap("generated-config-files/ignore-expressions.txt"));
   SearchContext *context = searchNew(root);
   assert_true(context != NULL);
 
@@ -468,7 +468,7 @@ static void testIgnoreExpressions(String cwd)
 */
 static void testSymlinkFollowing(String cwd)
 {
-  SearchNode *root = searchTreeLoad("generated-config-files/symlink-following.txt");
+  SearchNode *root = searchTreeLoad(strWrap("generated-config-files/symlink-following.txt"));
   SearchContext *context = searchNew(root);
   assert_true(context != NULL);
 
@@ -535,7 +535,7 @@ static void testSymlinkFollowing(String cwd)
 */
 static void testMismatchedPaths(String cwd)
 {
-  SearchNode *root = searchTreeLoad("generated-config-files/mismatched-paths.txt");
+  SearchNode *root = searchTreeLoad(strWrap("generated-config-files/mismatched-paths.txt"));
   SearchContext *context = searchNew(root);
   assert_true(context != NULL);
 
@@ -593,7 +593,7 @@ static void testMismatchedPaths(String cwd)
 */
 static void testComplexSearch(String cwd)
 {
-  SearchNode *root = searchTreeLoad("generated-config-files/complex-search.txt");
+  SearchNode *root = searchTreeLoad(strWrap("generated-config-files/complex-search.txt"));
   SearchContext *context = searchNew(root);
   assert_true(context != NULL);
 

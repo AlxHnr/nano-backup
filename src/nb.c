@@ -123,7 +123,7 @@ static void backup(const char *repo_arg)
   {
     die("repository has no config file: \"%s\"", repo_arg);
   }
-  SearchNode *root_node = searchTreeLoad(config_path.content);
+  SearchNode *root_node = searchTreeLoad(config_path);
 
   Metadata *metadata =
     sPathExists(metadata_path)?

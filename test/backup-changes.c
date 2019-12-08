@@ -1654,7 +1654,7 @@ int main(void)
   initBackupCommon(1);
 
   testGroupStart("detecting changes in nodes with no policy");
-  SearchNode *none_detection_node = searchTreeLoad("generated-config-files/backup-phase-17.txt");
+  SearchNode *none_detection_node = searchTreeLoad(strWrap("generated-config-files/backup-phase-17.txt"));
 
   initNoneChangeTest(none_detection_node);
   modifyNoneChangeTest(none_detection_node);
@@ -1663,7 +1663,7 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("detecting changes in copied nodes");
-  SearchNode *copy_detection_node   = searchTreeLoad("generated-config-files/change-detection-copy.txt");
+  SearchNode *copy_detection_node   = searchTreeLoad(strWrap("generated-config-files/change-detection-copy.txt"));
 
   initChangeDetectionTest(copy_detection_node, BPOL_copy);
   modifyChangeDetectionTest(copy_detection_node, BPOL_copy);
@@ -1672,7 +1672,7 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("detecting changes in mirrored nodes");
-  SearchNode *mirror_detection_node = searchTreeLoad("generated-config-files/change-detection-mirror.txt");
+  SearchNode *mirror_detection_node = searchTreeLoad(strWrap("generated-config-files/change-detection-mirror.txt"));
 
   initChangeDetectionTest(mirror_detection_node, BPOL_mirror);
   modifyChangeDetectionTest(mirror_detection_node, BPOL_mirror);
@@ -1681,7 +1681,7 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("detecting changes in tracked nodes");
-  SearchNode *track_detection_node  = searchTreeLoad("generated-config-files/change-detection-track.txt");
+  SearchNode *track_detection_node  = searchTreeLoad(strWrap("generated-config-files/change-detection-track.txt"));
 
   initChangeDetectionTest(track_detection_node, BPOL_track);
   modifyChangeDetectionTest(track_detection_node, BPOL_track);

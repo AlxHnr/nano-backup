@@ -2236,16 +2236,16 @@ static void phase(const char *test_name,
 int main(void)
 {
   testGroupStart("prepare backup");
-  SearchNode *phase_1_node = searchTreeLoad("generated-config-files/backup-phase-1.txt");
-  SearchNode *phase_3_node = searchTreeLoad("generated-config-files/backup-phase-3.txt");
-  SearchNode *phase_4_node = searchTreeLoad("generated-config-files/backup-phase-4.txt");
-  SearchNode *phase_5_node = searchTreeLoad("generated-config-files/backup-phase-5.txt");
-  SearchNode *phase_6_node = searchTreeLoad("generated-config-files/backup-phase-6.txt");
-  SearchNode *phase_7_node = searchTreeLoad("generated-config-files/backup-phase-7.txt");
-  SearchNode *phase_8_node = searchTreeLoad("generated-config-files/backup-phase-8.txt");
-  SearchNode *phase_9_node = searchTreeLoad("generated-config-files/backup-phase-9.txt");
-  SearchNode *phase_13_node = searchTreeLoad("generated-config-files/backup-phase-13.txt");
-  SearchNode *phase_14_node = searchTreeLoad("generated-config-files/backup-phase-14.txt");
+  SearchNode *phase_1_node = searchTreeLoad(strWrap("generated-config-files/backup-phase-1.txt"));
+  SearchNode *phase_3_node = searchTreeLoad(strWrap("generated-config-files/backup-phase-3.txt"));
+  SearchNode *phase_4_node = searchTreeLoad(strWrap("generated-config-files/backup-phase-4.txt"));
+  SearchNode *phase_5_node = searchTreeLoad(strWrap("generated-config-files/backup-phase-5.txt"));
+  SearchNode *phase_6_node = searchTreeLoad(strWrap("generated-config-files/backup-phase-6.txt"));
+  SearchNode *phase_7_node = searchTreeLoad(strWrap("generated-config-files/backup-phase-7.txt"));
+  SearchNode *phase_8_node = searchTreeLoad(strWrap("generated-config-files/backup-phase-8.txt"));
+  SearchNode *phase_9_node = searchTreeLoad(strWrap("generated-config-files/backup-phase-9.txt"));
+  SearchNode *phase_13_node = searchTreeLoad(strWrap("generated-config-files/backup-phase-13.txt"));
+  SearchNode *phase_14_node = searchTreeLoad(strWrap("generated-config-files/backup-phase-14.txt"));
 
   initBackupCommon(1);
   makeDir("tmp/repo");
@@ -2289,7 +2289,7 @@ int main(void)
   testGroupEnd();
 
   /* Run special backup phases. */
-  SearchNode *phase_collision_node = searchTreeLoad("generated-config-files/backup-phase-collision.txt");
+  SearchNode *phase_collision_node = searchTreeLoad(strWrap("generated-config-files/backup-phase-collision.txt"));
   phase("file hash collision handling",     runPhaseCollision,    phase_collision_node);
   phase("collision slot overflow handling", runPhaseSlotOverflow, phase_collision_node);
 }

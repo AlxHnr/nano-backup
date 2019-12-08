@@ -214,7 +214,7 @@ static void checkNode(SearchNode *node, SearchNode *root_node,
   @param path A null-terminated string, containing a path to a valid config
   file.
 */
-static void testSimpleConfigFile(const char *path)
+static void testSimpleConfigFile(String path)
 {
   SearchNode *root = searchTreeLoad(path);
   checkRootNode(root, BPOL_none, 0, 2, false, 0);
@@ -241,7 +241,7 @@ static void testSimpleConfigFile(const char *path)
 /** Test parsing the config file "inheritance-1.txt". */
 static void testInheritance_1(void)
 {
-  SearchNode *root = searchTreeLoad("valid-config-files/inheritance-1.txt");
+  SearchNode *root = searchTreeLoad(strWrap("valid-config-files/inheritance-1.txt"));
   checkRootNode(root, BPOL_track, 14, 1, false, 0);
 
   SearchNode *usr = findSubnode(root, "usr");
@@ -263,7 +263,7 @@ static void testInheritance_1(void)
 /** Test parsing the config file "inheritance-2.txt". */
 static void testInheritance_2(void)
 {
-  SearchNode *root = searchTreeLoad("valid-config-files/inheritance-2.txt");
+  SearchNode *root = searchTreeLoad(strWrap("valid-config-files/inheritance-2.txt"));
   checkRootNode(root, BPOL_copy, 3, 1, false, 3);
   assert_true(checkIgnoreExpression(root, "foo", 9));
   assert_true(checkIgnoreExpression(root, "^ ",  10));
@@ -288,7 +288,7 @@ static void testInheritance_2(void)
 /** Tests parsing the config file "inheritance-3.txt". */
 static void testInheritance_3(void)
 {
-  SearchNode *root = searchTreeLoad("valid-config-files/inheritance-3.txt");
+  SearchNode *root = searchTreeLoad(strWrap("valid-config-files/inheritance-3.txt"));
   checkRootNode(root, BPOL_none, 0, 2, false, 2);
   assert_true(checkIgnoreExpression(root, ".*\\.png", 14));
   assert_true(checkIgnoreExpression(root, ".*\\.jpg", 16));
@@ -330,7 +330,7 @@ static void testInheritance_3(void)
 /** Tests parsing the config file "root-with-regex-subnodes.txt". */
 static void testRootWithRegexSubnodes(void)
 {
-  SearchNode *root = searchTreeLoad("valid-config-files/root-with-regex-subnodes.txt");
+  SearchNode *root = searchTreeLoad(strWrap("valid-config-files/root-with-regex-subnodes.txt"));
   checkRootNode(root, BPOL_none, 0, 3, true, 0);
 
   checkNode(findSubnode(root, "\\.txt$"),
@@ -344,7 +344,7 @@ static void testRootWithRegexSubnodes(void)
 /** Tests parsing the config file "paths with whitespaces.txt" */
 static void testPathsWithWhitespaces(void)
 {
-  SearchNode *root = searchTreeLoad("valid-config-files/paths with whitespaces.txt");
+  SearchNode *root = searchTreeLoad(strWrap("valid-config-files/paths with whitespaces.txt"));
   checkRootNode(root, BPOL_none, 0, 1, false, 0);
 
   SearchNode *usr = findSubnode(root, "usr");
@@ -364,7 +364,7 @@ static void testPathsWithWhitespaces(void)
 /** Tests parsing "valid-config-files/comment.txt". */
 static void testIgnoringComments(void)
 {
-  SearchNode *root = searchTreeLoad("valid-config-files/comment.txt");
+  SearchNode *root = searchTreeLoad(strWrap("valid-config-files/comment.txt"));
   checkRootNode(root, BPOL_none, 0, 1, false, 2);
 
   SearchNode *etc = findSubnode(root, "#etc");
@@ -399,7 +399,7 @@ static void assertParseError(const char *path, const char *message)
 /** Tests loading various invalid config files. */
 static void testBrokenConfigFiles(void)
 {
-  assert_error(searchTreeLoad("non-existing-file.txt"), "failed to access "
+  assert_error(searchTreeLoad(strWrap("non-existing-file.txt")), "failed to access "
                "\"non-existing-file.txt\": No such file or directory");
 
   assertParseError("broken-config-files/invalid-policy.txt",
@@ -600,16 +600,16 @@ int main(void)
   testRootWithRegexSubnodes();
   testPathsWithWhitespaces();
 
-  checkRootNode(searchTreeLoad("empty.txt"), BPOL_none, 0, 0, false, 0);
-  checkRootNode(searchTreeLoad("valid-config-files/no-paths-and-no-ignores.txt"),
+  checkRootNode(searchTreeLoad(strWrap("empty.txt")), BPOL_none, 0, 0, false, 0);
+  checkRootNode(searchTreeLoad(strWrap("valid-config-files/no-paths-and-no-ignores.txt")),
                 BPOL_none, 0, 0, false, 0);
 
-  SearchNode *ignore_1 = searchTreeLoad("valid-config-files/ignore-patterns-only-1.txt");
+  SearchNode *ignore_1 = searchTreeLoad(strWrap("valid-config-files/ignore-patterns-only-1.txt"));
   checkRootNode(ignore_1, BPOL_none, 0, 0, false, 2);
   assert_true(checkIgnoreExpression(ignore_1, " .*\\.(png|jpg|pdf) ", 2));
   assert_true(checkIgnoreExpression(ignore_1, "foo", 3));
 
-  SearchNode *ignore_2 = searchTreeLoad("valid-config-files/ignore-patterns-only-2.txt");
+  SearchNode *ignore_2 = searchTreeLoad(strWrap("valid-config-files/ignore-patterns-only-2.txt"));
   checkRootNode(ignore_2, BPOL_none, 0, 0, false, 4);
   assert_true(checkIgnoreExpression(ignore_2, "foo",      7));
   assert_true(checkIgnoreExpression(ignore_2, "bar",      9));
@@ -620,10 +620,10 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("BOM and EOL variations");
-  testSimpleConfigFile("valid-config-files/simple.txt");
-  testSimpleConfigFile("valid-config-files/simple-BOM.txt");
-  testSimpleConfigFile("valid-config-files/simple-noeol.txt");
-  testSimpleConfigFile("valid-config-files/simple-BOM-noeol.txt");
+  testSimpleConfigFile(strWrap("valid-config-files/simple.txt"));
+  testSimpleConfigFile(strWrap("valid-config-files/simple-BOM.txt"));
+  testSimpleConfigFile(strWrap("valid-config-files/simple-noeol.txt"));
+  testSimpleConfigFile(strWrap("valid-config-files/simple-BOM-noeol.txt"));
   testGroupEnd();
 
   testGroupStart("broken config files");
