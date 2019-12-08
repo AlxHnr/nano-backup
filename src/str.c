@@ -49,7 +49,7 @@ String strSlice(const char *string, size_t length)
 
   @param string The string to copy.
 
-  @return A new string which lifetime will be bound to the given region.
+  @return A new string which lifetime will be bound to the entire program.
 */
 String strCopy(String string)
 {
@@ -139,7 +139,7 @@ String strRemoveTrailingSlashes(String string)
   @param a The string to which b will be appended.
   @param b The string which will be appended to a.
 
-  @return A new string which lifetime will be bound to the given region.
+  @return A new string which lifetime will be bound to the entire program.
 */
 String strAppendPath(String a, String b)
 {
