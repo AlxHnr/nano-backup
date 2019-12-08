@@ -7,13 +7,10 @@
 
 #include <sys/stat.h>
 
-#include "buffer.h"
 #include "metadata.h"
 #include "str.h"
 
-extern void readSymlink(String path,
-                        struct stat stats,
-                        Buffer **buffer_ptr);
+extern void readSymlink(String path, struct stat stats, char **buffer_ptr);
 extern void applyNodeChanges(PathNode *node, PathState *state,
                              struct stat stats);
 

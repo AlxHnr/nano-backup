@@ -7,7 +7,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "buffer.h"
+#include "CRegion/alloc-growable.h"
+
 #include "search.h"
 #include "file-hash.h"
 #include "safe-math.h"
@@ -17,7 +18,8 @@
 #include "backup-helpers.h"
 #include "error-handling.h"
 
-static Buffer *io_buffer = NULL;
+/** Reusable buffer for file IO. */
+static unsigned char *io_buffer = NULL;
 
 /** Sets all values inside the given state to the properties in the
   specified result. A regular files hash and slot will be left undefined.
@@ -42,8 +44,9 @@ static void setPathHistoryState(PathState *state, SearchResult result)
   else if(result.type == SRT_symlink)
   {
     state->type = PST_symlink;
-    readSymlink(result.path, result.stats, &io_buffer);
-    strSet(&state->metadata.sym_target, strCopy(strWrap(io_buffer->data)));
+    static char *buffer = NULL;
+    readSymlink(result.path, result.stats, &buffer);
+    strSet(&state->metadata.sym_target, strCopy(strWrap(buffer)));
   }
   else if(result.type == SRT_directory)
   {
@@ -615,15 +618,14 @@ static void copyFileIntoRepo(PathNode *node, String repo_path,
                                           repo_tmp_file_path,
                                           node->path, reg);
 
-  bufferEnsureCapacity(&io_buffer, blocksize);
-  char *buffer = io_buffer->data;
+  io_buffer = CR_EnsureCapacity(io_buffer, blocksize);
 
   while(bytes_left > 0)
   {
     size_t bytes_to_read = bytes_left > blocksize ? blocksize : bytes_left;
 
-    sFread(buffer, bytes_to_read, reader);
-    repoWriterWrite(buffer, bytes_to_read, writer);
+    sFread(io_buffer, bytes_to_read, reader);
+    repoWriterWrite(io_buffer, bytes_to_read, writer);
 
     bytes_left -= bytes_to_read;
   }
@@ -661,11 +663,10 @@ static bool equalsToStoredFile(PathNode *node, String repo_path,
 
   FileStream *stream = sFopenRead(node->path);
 
-  bufferEnsureCapacity(&io_buffer, sSizeMul(blocksize, 2));
-  char *buffer = io_buffer->data;
+  io_buffer = CR_EnsureCapacity(io_buffer, sSizeMul(blocksize, 2));
 
   RepoReader *repo_stream = repoReaderOpenFile(repo_path, node->path, reg);
-  char *repo_buffer = &buffer[blocksize];
+  unsigned char *repo_buffer = &io_buffer[blocksize];
 
   bool files_equal = true;
 
@@ -673,10 +674,10 @@ static bool equalsToStoredFile(PathNode *node, String repo_path,
   {
     size_t bytes_to_read = bytes_left > blocksize ? blocksize : bytes_left;
 
-    sFread(buffer, bytes_to_read, stream);
+    sFread(io_buffer, bytes_to_read, stream);
     repoReaderRead(repo_buffer, bytes_to_read, repo_stream);
 
-    files_equal = memcmp(buffer, repo_buffer, bytes_to_read) == 0;
+    files_equal = memcmp(io_buffer, repo_buffer, bytes_to_read) == 0;
 
     bytes_left -= bytes_to_read;
   }

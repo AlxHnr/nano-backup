@@ -8,11 +8,11 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "CRegion/alloc-growable.h"
+
 #include "safe-math.h"
 #include "safe-wrappers.h"
 #include "error-handling.h"
-
-static Buffer *io_buffer = NULL;
 
 /** Checks if the content of a regular file has changed.
 
@@ -61,11 +61,12 @@ static void checkFileContentChanges(PathNode *node, PathState *state,
 
   @param path The path to the symlink.
   @param stats The stats of the symlink.
-  @param buffer_ptr The Buffer in which the string will be stored.
+  @param buffer_ptr Buffer for storing the string. This buffer must have
+  been created by CR_RegionAllocGrowable() or must point to NULL otherwise.
+  If it points to NULL, a new buffer will be allocated by
+  CR_EnsureCapacity(), to which the given pointer will be assigned.
 */
-void readSymlink(String path,
-                 struct stat stats,
-                 Buffer **buffer_ptr)
+void readSymlink(String path, struct stat stats, char **buffer_ptr)
 {
   uint64_t buffer_length = sUint64Add(stats.st_size, 1);
   if(buffer_length > SIZE_MAX)
@@ -79,12 +80,12 @@ void readSymlink(String path,
     die("symlink is too large: \"%s\"", path.content);
   }
 
-  bufferEnsureCapacity(buffer_ptr, buffer_length);
+  *buffer_ptr = CR_EnsureCapacity(*buffer_ptr, buffer_length);
 
   /* Although st_size bytes are enough to store the symlinks target path,
      the full buffer is used. This allows to detect whether the symlink
      has increased in size since its last lstat() or not. */
-  ssize_t read_bytes = readlink(path.content, (*buffer_ptr)->data, buffer_length);
+  ssize_t read_bytes = readlink(path.content, *buffer_ptr, buffer_length);
 
   if(read_bytes == -1)
   {
@@ -95,7 +96,7 @@ void readSymlink(String path,
     die("symlink changed while reading: \"%s\"", path.content);
   }
 
-  (*buffer_ptr)->data[stats.st_size] = '\0';
+  (*buffer_ptr)[stats.st_size] = '\0';
 }
 
 /** Compares the node against the stats in the given results and updates
@@ -143,11 +144,12 @@ void applyNodeChanges(PathNode *node, PathState *state, struct stat stats)
   }
   else if(state->type == PST_symlink)
   {
-    readSymlink(node->path, stats, &io_buffer);
+    static char *buffer = NULL;
+    readSymlink(node->path, stats, &buffer);
 
-    if(!strEqual(state->metadata.sym_target, strWrap(io_buffer->data)))
+    if(!strEqual(state->metadata.sym_target, strWrap(buffer)))
     {
-      strSet(&state->metadata.sym_target, strCopy(strWrap(io_buffer->data)));
+      strSet(&state->metadata.sym_target, strCopy(strWrap(buffer)));
       backupHintSet(node->hint, BH_content_changed);
     }
   }
