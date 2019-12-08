@@ -6,13 +6,11 @@
 
 #include <stdlib.h>
 
-#include "buffer.h"
+#include "BLAKE2/blake2.h"
+#include "CRegion/alloc-growable.h"
+
 #include "safe-wrappers.h"
 #include "error-handling.h"
-
-#include "BLAKE2/blake2.h"
-
-static Buffer *io_buffer = NULL;
 
 /** Calculates the hash of a file.
 
@@ -29,8 +27,8 @@ void fileHash(String path, struct stat stats, uint8_t *hash)
   uint64_t bytes_left = stats.st_size;
   FileStream *stream  = sFopenRead(path);
 
-  bufferEnsureCapacity(&io_buffer, blocksize);
-  char *buffer = io_buffer->data;
+  static unsigned char *buffer = NULL;
+  buffer = CR_EnsureCapacity(buffer, blocksize);
 
   blake2b_state state;
   blake2b_init(&state, FILE_HASH_SIZE);
