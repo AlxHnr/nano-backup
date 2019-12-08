@@ -222,7 +222,7 @@ static time_t readTime(FileContent content, size_t *reader_position,
   error messages.
 */
 static void readBytes(FileContent content, size_t *reader_position,
-                      char *buffer, size_t size, String metadata_path)
+                      uint8_t *buffer, size_t size, String metadata_path)
 {
   assertBytesLeft(*reader_position, size, content, metadata_path);
 
@@ -280,7 +280,7 @@ static PathHistory *readPathHistory(FileContent content,
     if(point->state.metadata.reg.size > FILE_HASH_SIZE)
     {
       readBytes(content, reader_position,
-                (char *)point->state.metadata.reg.hash,
+                point->state.metadata.reg.hash,
                 FILE_HASH_SIZE, metadata_path);
       point->state.metadata.reg.slot =
         read8(content, reader_position, metadata_path);
@@ -288,7 +288,7 @@ static PathHistory *readPathHistory(FileContent content,
     else if(point->state.metadata.reg.size > 0)
     {
       readBytes(content, reader_position,
-                (char *)point->state.metadata.reg.hash,
+                point->state.metadata.reg.hash,
                 point->state.metadata.reg.size, metadata_path);
     }
   }
@@ -299,7 +299,7 @@ static PathHistory *readPathHistory(FileContent content,
 
     char *buffer = mpAlloc(sSizeAdd(target_length, 1));
 
-    readBytes(content, reader_position, buffer, target_length,
+    readBytes(content, reader_position, (uint8_t *)buffer, target_length,
               metadata_path);
 
     buffer[target_length] = '\0';
