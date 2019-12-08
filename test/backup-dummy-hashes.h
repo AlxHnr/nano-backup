@@ -5,7 +5,7 @@
 #ifndef NANO_BACKUP_TEST_BACKUP_DUMMY_HASHES_H
 #define NANO_BACKUP_TEST_BACKUP_DUMMY_HASHES_H
 
-#include "stdint.h"
+#include <stdint.h>
 
 /** Hashes of various files. */
 static const uint8_t three_hash[] =
