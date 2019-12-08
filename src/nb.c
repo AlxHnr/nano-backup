@@ -82,10 +82,10 @@ static void printStats(const char *summary, TextColor color,
   @param repo_path The path to the repository to pass to collectGarbage().
   @param prepend_newline True if a newline should be printed first.
 */
-static void runGC(Metadata *metadata, const char *repo_path,
+static void runGC(Metadata *metadata, String repo_path,
                   bool prepend_newline)
 {
-  GCStats gc_stats = collectGarbage(metadata, strWrap(repo_path));
+  GCStats gc_stats = collectGarbage(metadata, repo_path);
 
   if(gc_stats.count > 0)
   {
@@ -112,16 +112,16 @@ static bool containsChanges(MetadataChanges changes)
 
   @param repo_arg The repository path argument as provided by the user.
 */
-static void backup(const char *repo_arg)
+static void backup(String repo_arg)
 {
-  String repo_path = strRemoveTrailingSlashes(strWrap(repo_arg));
+  String repo_path = strRemoveTrailingSlashes(repo_arg);
   String config_path = strAppendPath(repo_path, strWrap("config"));
   String metadata_path = strAppendPath(repo_path, strWrap("metadata"));
   String tmp_file_path = strAppendPath(repo_path, strWrap("tmp-file"));
 
   if(!sPathExists(config_path))
   {
-    die("repository has no config file: \"%s\"", repo_arg);
+    die("repository has no config file: \"%s\"", repo_arg.content);
   }
   SearchNode *root_node = searchTreeLoad(config_path);
 
@@ -160,40 +160,39 @@ static void backup(const char *repo_arg)
     }
 
     ensureUserConsent("proceed?");
-    finishBackup(metadata, strWrap(repo_arg), tmp_file_path);
-    metadataWrite(metadata, strWrap(repo_arg), tmp_file_path,
-                  metadata_path);
+    finishBackup(metadata, repo_arg, tmp_file_path);
+    metadataWrite(metadata, repo_arg, tmp_file_path, metadata_path);
 
     runGC(metadata, repo_arg, true);
   }
 }
 
 /** Loads the metadata of the specified repository. */
-static Metadata *metadataLoadFromRepo(const char *repo_arg)
+static Metadata *metadataLoadFromRepo(String repo_arg)
 {
-  String repo_path = strRemoveTrailingSlashes(strWrap(repo_arg));
+  String repo_path = strRemoveTrailingSlashes(repo_arg);
   String metadata_path = strAppendPath(repo_path, strWrap("metadata"));
 
   if(!sPathExists(metadata_path))
   {
-    die("repository has no metadata: \"%s\"", repo_arg);
+    die("repository has no metadata: \"%s\"", repo_arg.content);
   }
 
   return metadataLoad(metadata_path);
 }
 
 /** Ensures that the given path is absolute. */
-static String buildFullPath(const char *path)
+static String buildFullPath(String path)
 {
-  if(path[0] == '/')
+  if(path.content[0] == '/')
   {
-    return strWrap(path);
+    return path;
   }
   else
   {
     char *cwd = sGetCwd();
     String full_path =
-      strAppendPath(strRemoveTrailingSlashes(strWrap(cwd)), strWrap(path));
+      strAppendPath(strRemoveTrailingSlashes(strWrap(cwd)), path);
     free(cwd);
 
     return full_path;
@@ -206,7 +205,7 @@ static String buildFullPath(const char *path)
   @param id The id to which the path should be restored.
   @param path The path to restore.
 */
-static void restore(const char *repo_arg, size_t id, const char *path)
+static void restore(String repo_arg, size_t id, String path)
 {
   Metadata *metadata = metadataLoadFromRepo(repo_arg);
   String full_path = strRemoveTrailingSlashes(buildFullPath(path));
@@ -215,7 +214,7 @@ static void restore(const char *repo_arg, size_t id, const char *path)
   if(containsChanges(printMetadataChanges(metadata)) && printf("\n") == 1)
   {
     ensureUserConsent("restore?");
-    finishRestore(metadata, id, strWrap(repo_arg));
+    finishRestore(metadata, id, repo_arg);
   }
 }
 
@@ -225,18 +224,20 @@ int main(const int arg_count, const char **arg_list)
   {
     die("no repository specified");
   }
-  else if(!sPathExists(strWrap(arg_list[1])))
+
+  String path_to_repo = strWrap(arg_list[1]);
+  if(!sPathExists(path_to_repo))
   {
     die("repository doesn't exist: \"%s\"", arg_list[1]);
   }
-  else if(!S_ISDIR(sStat(strWrap(arg_list[1])).st_mode))
+  else if(!S_ISDIR(sStat(path_to_repo).st_mode))
   {
     die("not a directory: \"%s\"", arg_list[1]);
   }
 
   if(arg_count == 2)
   {
-    backup(arg_list[1]);
+    backup(path_to_repo);
   }
   else if(strcmp(arg_list[2], "gc") == 0)
   {
@@ -245,7 +246,7 @@ int main(const int arg_count, const char **arg_list)
       die("too many arguments for gc command");
     }
 
-    runGC(metadataLoadFromRepo(arg_list[1]), arg_list[1], false);
+    runGC(metadataLoadFromRepo(path_to_repo), path_to_repo, false);
   }
   else if(regexec(rpCompile(strWrap("^[0-9]+$"), strWrap(__FILE__),
                             __LINE__), arg_list[2], 0, NULL, 0) == 0)
@@ -255,8 +256,8 @@ int main(const int arg_count, const char **arg_list)
       die("too many paths to restore");
     }
 
-    restore(arg_list[1], sStringToSize(strWrap(arg_list[2])),
-            arg_count == 4? arg_list[3]:"/");
+    restore(path_to_repo, sStringToSize(strWrap(arg_list[2])),
+            arg_count == 4? strWrap(arg_list[3]):strWrap("/"));
   }
   else
   {
