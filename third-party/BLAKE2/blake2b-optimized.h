@@ -15,6 +15,10 @@
 #ifndef BLAKE2_OPTIMIZED_H
 #define BLAKE2_OPTIMIZED_H
 
+#if defined __clang__
+#pragma clang diagnostic ignored "-Wcast-align"
+#endif
+
 #if !defined(HAVE_SSE2)
 #error "This code requires at least SSE2."
 #endif
