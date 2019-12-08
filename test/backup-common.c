@@ -326,7 +326,7 @@ void restoreWithTimeRecursively(PathNode *node)
 }
 
 /* Associates a file path with its stats. */
-static StringTable *stat_cache = NULL;
+static StringTable *current_stat_cache = NULL;
 static StringTable **stat_cache_array = NULL;
 static size_t stat_cache_array_length = 0;
 
@@ -338,7 +338,7 @@ static void initStatCache(void)
     stat_cache_array[index] = strTableNew();
   }
 
-  stat_cache = stat_cache_array[0];
+  current_stat_cache = stat_cache_array[0];
 }
 
 /** Frees the string tables in stat_cache_array. */
@@ -354,7 +354,7 @@ static void freeStatCache(void)
 void setStatCache(size_t index)
 {
   assert_true(index < stat_cache_array_length);
-  stat_cache = stat_cache_array[index];
+  current_stat_cache = stat_cache_array[index];
 }
 
 /** Stats a file and caches the result for subsequent runs.
@@ -368,12 +368,12 @@ void setStatCache(size_t index)
 */
 struct stat cachedStat(String path, struct stat (*stat_fun)(String))
 {
-  struct stat *cache = strTableGet(stat_cache, path);
+  struct stat *cache = strTableGet(current_stat_cache, path);
   if(cache == NULL)
   {
     cache = mpAlloc(sizeof *cache);
     *cache = stat_fun(path);
-    strTableMap(stat_cache, path, cache);
+    strTableMap(current_stat_cache, path, cache);
   }
 
   return *cache;
