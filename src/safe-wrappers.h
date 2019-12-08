@@ -64,8 +64,7 @@ extern int sRand(void);
 /** A simple struct, containing the content of the file and its size. */
 typedef struct
 {
-  /** The content of the file. It will point to NULL if the size of the
-    file equals to zero. */
+  /** Content of the file. */
   char *content;
 
   /** The size of the content in bytes. */

@@ -250,7 +250,7 @@ int main(void)
 
   FileContent empty_content = sGetFilesContent(r, strWrap("empty.txt"));
   assert_true(empty_content.size == 0);
-  assert_true(empty_content.content == NULL);
+  assert_true(empty_content.content != NULL);
   testGroupEnd();
 
   testGroupStart("FileStream writing functions");
@@ -288,7 +288,7 @@ int main(void)
 
   FileContent test_file_2_content = sGetFilesContent(r, strWrap("tmp/test-file-2"));
   assert_true(test_file_2_content.size == 0);
-  assert_true(test_file_2_content.content == NULL);
+  assert_true(test_file_2_content.content != NULL);
 
   /* Test overwriting behaviour. */
   test_file = sFopenWrite(strWrap("tmp/test-file-1"));

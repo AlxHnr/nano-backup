@@ -689,7 +689,7 @@ int sRand(void)
   @param path The path to the file.
 
   @return Contents of the requested file which should not be freed by the
-  caller. The content member will be NULL if the file has a size of zero.
+  caller.
 */
 FileContent sGetFilesContent(CR_Region *region, String path)
 {
@@ -705,11 +705,10 @@ FileContent sGetFilesContent(CR_Region *region, String path)
     die("unable to load file into mem due to its size: \"%s\"", path.content);
   }
 
-  char *content = NULL;
   if(file_stats.st_size > 0)
   {
     FileStream *stream = sFopenRead(path);
-    content = CR_RegionAlloc(region, file_stats.st_size);
+    char *content = CR_RegionAllocUnaligned(region, file_stats.st_size);
     sFread(content, file_stats.st_size, stream);
     bool stream_not_at_end = sFbytesLeft(stream);
     sFclose(stream);
@@ -718,7 +717,14 @@ FileContent sGetFilesContent(CR_Region *region, String path)
     {
       die("file changed while reading: \"%s\"", path.content);
     }
-  }
 
-  return (FileContent){ .content = content, .size = file_stats.st_size };
+    return (FileContent){ .content = content, .size = file_stats.st_size };
+  }
+  else
+  {
+    char *content = CR_RegionAllocUnaligned(region, 1);
+    content[0] = '\0';
+
+    return (FileContent){ .content = content, .size = 0 };
+  }
 }
