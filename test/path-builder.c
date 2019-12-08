@@ -7,20 +7,19 @@
 #include "test.h"
 
 /** Tests pathBuilderSet(). */
-static void testPathBuilderSet(Buffer **buffer, const char *path)
+static void testPathBuilderSet(char **buffer, const char *path)
 {
   size_t length = pathBuilderSet(buffer, path);
 
   assert_true(length == strlen(path));
-  assert_true((*buffer)->data[length] == '\0');
-  assert_true((*buffer)->capacity >= length + 1);
+  assert_true((*buffer)[length] == '\0');
 
-  assert_true(strlen((*buffer)->data) == length);
-  assert_true(strcmp((*buffer)->data, path) == 0);
+  assert_true(strlen(*buffer) == length);
+  assert_true(strcmp(*buffer, path) == 0);
 }
 
 /** Tests pathBuilderAppend(). */
-static void testPathBuilderAppend(Buffer **buffer,
+static void testPathBuilderAppend(char **buffer,
                                   size_t buffer_length,
                                   const char *path,
                                   const char *expected_path)
@@ -29,17 +28,16 @@ static void testPathBuilderAppend(Buffer **buffer,
 
   assert_true(length == buffer_length + 1 + strlen(path));
   assert_true(length == strlen(expected_path));
-  assert_true((*buffer)->data[length] == '\0');
-  assert_true((*buffer)->capacity >= length + 1);
+  assert_true((*buffer)[length] == '\0');
 
-  assert_true(strlen((*buffer)->data) == length);
-  assert_true(strcmp((*buffer)->data, expected_path) == 0);
+  assert_true(strlen(*buffer) == length);
+  assert_true(strcmp(*buffer, expected_path) == 0);
 }
 
 int main(void)
 {
   testGroupStart("pathBuilderSet()");
-  Buffer *buffer = NULL;
+  char *buffer = NULL;
   testPathBuilderSet(&buffer, "");
   testPathBuilderSet(&buffer, "foo");
   testPathBuilderSet(&buffer, "");

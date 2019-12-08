@@ -6,13 +6,12 @@
 
 #include <string.h>
 
-#include "buffer.h"
 #include "path-builder.h"
 #include "string-table.h"
 #include "safe-math.h"
 #include "safe-wrappers.h"
 
-static Buffer *path_buffer = NULL;
+static char *path_buffer = NULL;
 
 /** Populates the given StringTable with referenced unique filepaths
   relative to their repository.
@@ -71,15 +70,15 @@ static bool recurseIntoDirectory(StringTable *table, size_t length,
   bool item_required = length == repo_path_length;
   struct stat stats =
     length == repo_path_length?
-    sStat(strWrap(path_buffer->data)):
-    sLStat(strWrap(path_buffer->data));
+    sStat(strWrap(path_buffer)):
+    sLStat(strWrap(path_buffer));
 
   if(S_ISDIR(stats.st_mode))
   {
-    DIR *dir = sOpenDir(strWrap(path_buffer->data));
+    DIR *dir = sOpenDir(strWrap(path_buffer));
 
-    for(struct dirent *dir_entry = sReadDir(dir, strWrap(path_buffer->data));
-        dir_entry != NULL; dir_entry = sReadDir(dir, strWrap(path_buffer->data)))
+    for(struct dirent *dir_entry = sReadDir(dir, strWrap(path_buffer));
+        dir_entry != NULL; dir_entry = sReadDir(dir, strWrap(path_buffer)))
     {
       size_t sub_path_length =
         pathBuilderAppend(&path_buffer, length, dir_entry->d_name);
@@ -87,15 +86,15 @@ static bool recurseIntoDirectory(StringTable *table, size_t length,
       item_required |= recurseIntoDirectory(table, sub_path_length,
                                             repo_path_length, gc_stats);
 
-      path_buffer->data[length] = '\0';
+      path_buffer[length] = '\0';
     }
 
-    sCloseDir(dir, strWrap(path_buffer->data));
+    sCloseDir(dir, strWrap(path_buffer));
   }
   else if(length != repo_path_length)
   {
     String path_in_repo =
-      strSlice(&path_buffer->data[repo_path_length + 1],
+      strSlice(&path_buffer[repo_path_length + 1],
                length - repo_path_length - 1);
 
     item_required |= (strTableGet(table, path_in_repo) != NULL);
@@ -103,7 +102,7 @@ static bool recurseIntoDirectory(StringTable *table, size_t length,
 
   if(item_required == false)
   {
-    sRemove(strWrap(path_buffer->data));
+    sRemove(strWrap(path_buffer));
     gc_stats->count = sSizeAdd(gc_stats->count, 1);
 
     if(S_ISREG(stats.st_mode))

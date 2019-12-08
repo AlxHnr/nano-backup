@@ -496,38 +496,38 @@ void sRemove(String path)
   @param buffer The buffer containing the null-terminated path to remove.
   @param length The length of the given path.
 */
-static void removeRecursively(Buffer *buffer, size_t length)
+static void removeRecursively(char **buffer, size_t length)
 {
-  struct stat stats = sLStat(strWrap(buffer->data));
+  struct stat stats = sLStat(strWrap(*buffer));
 
   if(S_ISDIR(stats.st_mode))
   {
-    DIR *dir = sOpenDir(strWrap(buffer->data));
+    DIR *dir = sOpenDir(strWrap(*buffer));
 
-    for(struct dirent *dir_entry = sReadDir(dir, strWrap(buffer->data));
-        dir_entry != NULL; dir_entry = sReadDir(dir, strWrap(buffer->data)))
+    for(struct dirent *dir_entry = sReadDir(dir, strWrap(*buffer));
+        dir_entry != NULL; dir_entry = sReadDir(dir, strWrap(*buffer)))
     {
       size_t sub_path_length =
-        pathBuilderAppend(&buffer, length, dir_entry->d_name);
+        pathBuilderAppend(buffer, length, dir_entry->d_name);
 
       removeRecursively(buffer, sub_path_length);
 
-      buffer->data[length] = '\0';
+      (*buffer)[length] = '\0';
     }
 
-    sCloseDir(dir, strWrap(buffer->data));
+    sCloseDir(dir, strWrap(*buffer));
   }
 
-  sRemove(strWrap(buffer->data));
+  sRemove(strWrap(*buffer));
 }
 
 /** Recursive version of sRemove(). */
 void sRemoveRecursively(String path)
 {
-  static Buffer *buffer = NULL;
+  static char *buffer = NULL;
   size_t length = pathBuilderSet(&buffer, path.content);
 
-  removeRecursively(buffer, length);
+  removeRecursively(&buffer, length);
 }
 
 /** Safe and simplified wrapper around getcwd().

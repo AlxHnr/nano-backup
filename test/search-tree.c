@@ -563,7 +563,7 @@ static void testInsertNullBytes(const char *path)
   testInsertNullBytes(). */
 static void testNullBytesConfigFiles(void)
 {
-  static Buffer *buffer = NULL;
+  static char *buffer = NULL;
   const char *config_paths[] =
   {
     "broken-config-files",
@@ -584,7 +584,7 @@ static void testNullBytesConfigFiles(void)
         dir_entry != NULL; dir_entry = sReadDir(dir, dir_path))
     {
       pathBuilderAppend(&buffer, path_length, dir_entry->d_name);
-      testInsertNullBytes(buffer->data);
+      testInsertNullBytes(buffer);
     }
 
     sCloseDir(dir, dir_path);

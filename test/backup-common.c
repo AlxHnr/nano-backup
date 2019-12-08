@@ -163,33 +163,33 @@ void generateCollidingFiles(const uint8_t *hash, size_t size,
   info.size = size;
   info.slot = 0;
 
-  static Buffer *path_buffer = NULL;
+  static char *path_buffer = NULL;
   pathBuilderSet(&path_buffer, "tmp/repo");
 
   static char *path_in_repo = NULL;
   repoBuildRegularFilePath(&path_in_repo, &info);
   pathBuilderAppend(&path_buffer, 8, path_in_repo);
 
-  path_buffer->data[13] = '\0';
-  if(sPathExists(strWrap(path_buffer->data)) == false)
+  path_buffer[13] = '\0';
+  if(sPathExists(strWrap(path_buffer)) == false)
   {
-    path_buffer->data[10] = '\0';
-    if(sPathExists(strWrap(path_buffer->data)) == false)
+    path_buffer[10] = '\0';
+    if(sPathExists(strWrap(path_buffer)) == false)
     {
-      sMkdir(strWrap(path_buffer->data));
+      sMkdir(strWrap(path_buffer));
     }
-    path_buffer->data[10] = '/';
+    path_buffer[10] = '/';
 
-    sMkdir(strWrap(path_buffer->data));
+    sMkdir(strWrap(path_buffer));
   }
-  path_buffer->data[13] = '/';
+  path_buffer[13] = '/';
 
   for(size_t slot = 0; slot < files_to_create; slot++)
   {
     info.slot = (uint8_t)slot;
     repoBuildRegularFilePath(&path_in_repo, &info);
     pathBuilderAppend(&path_buffer, 8, path_in_repo);
-    FileStream *stream = sFopenWrite(strWrap(path_buffer->data));
+    FileStream *stream = sFopenWrite(strWrap(path_buffer));
 
     const uint8_t bytes_to_write[] = { info.slot, 0 };
     size_t bytes_left = size;
