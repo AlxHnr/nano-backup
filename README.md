@@ -8,10 +8,9 @@
 * **Consesual** - Never sneaks in changes without the users approval
 * **Atomic** - If it crashes, the backup will be like it was before
 * **Handles filenames** - In the sad world we live, many programs still
-  choke on `white spaces` and ✨𝓤𝓷𝓲𝓬𝓸𝓭𝓮✨
+  choke on `white spaces` and `✨𝓤𝓷𝓲𝓬𝓸𝓭𝓮✨`
 * **Few dependencies** - Only needs a C Compiler and GNU Make
-* **Portable** - Conforms strictly to C99 and POSIX.1-2001 (with the XSI
-  extension _lchown()_)
+* **Portable** - Conforms strictly to C99 and POSIX.1-2001
 * **Fast and snappy** - Reduces friction and is satisfying to use
 
 ## Why?
