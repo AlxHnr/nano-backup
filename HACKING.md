@@ -1,59 +1,58 @@
-Nano-backups design permits the program to crash at any time without
-corrupting the backup. This allows handling errors by terminating with an
-error message. For this purpose the functions die() and dieErrno() are
-provided.
+Backups are atomic by design. A backup is either completed or stays at its
+current state. Even if the program crashes (e.g. segfault).
 
-**Warning**: never call die(), dieErrno() or any safe function from a
-function registered with atexit().
+## Handling errors
 
-The source code conforms strictly to C99 and POSIX.1-2001 with the XSI
-extension lchown(). When using a library function that can fail or result
-in undefined/implementation dependent behaviour, write a safe wrapper for
-it. See safe-wrappers.h for examples.
-
-## Memory management
-
-Nano-backup uses almost all of its allocated data right until it
-terminates. To take advantage of this property and to simplify memory
-management, a memory pool is provided. This pool gets freed automatically
-when the program terminates, even if this happens via die() or dieErrno().
-See the documentation of mpAlloc() for more informations.
-
-Data with a shorter lifetime than the program has to be managed manually.
-The drawback of this is that such data will leak if the program aborts with
-an error:
+Errors are handled by calling `die()` or `dieErrno()`:
 
 ```c
-void *foo = sMalloc(100);
+#include "error-handling.h"
 
-
-/* This calls die() on failure and leaks "foo". */
-FileStream *reader = sFopenRead("/etc/init.conf");
+if(some_function() == -1)
+{
+  die("failed to call some function");
+}
 ```
-In this case its up to the OS to reclaim the memory.
 
-**Note**: Use sSizeAdd() and sSizeMul() to calculate the amount of data to
-allocate. This prevents unexpected behaviour resulting from overflows.
+## Managing memory
+
+Memory is managed via
+[regions](https://en.wikipedia.org/wiki/Region-based_memory_management),
+which get freed automatically when the program terminates. This memory will
+also be released if the program terminates by calling `die()` or
+`dieErrno()`. See the examples in `third-party/CRegion/README.md` for more
+informations.
 
 ## Handling strings
 
-Besides usual char pointers, immutable string slices are used for various
-operations. A slice is called String and associates a char pointer with a
-length. Thus it doesn't need to be null-terminated.
+Strings are immutable slices which don't own the memory they point to:
 
-The tricky part is passing such strings to C library functions. Before
-doing so, you should make sure that the strings buffer is null-terminated.
-To clarify that a function expects a null-terminated String, denote it in
-its documentation. Or even better: let the function accept a __const char
-*__ instead.
+```c
+#include "str.h"
+
+String path = strWrap("/etc/conf.d/boot.conf");
+
+String dirname = strSplitPath(path).head;
+
+/* Strings are not always null-terminated. Use the function cStr() to get
+   a terminated C string. It will copy and terminate the given String if
+   required. It takes a pointer to growable memory as the second
+   argument. See the examples in `third-party/CRegion/README.md` for more
+   informations. */
+char *reusable_buffer = NULL;
+
+raw_c_function(cStr(dirname, &reusable_buffer));
+```
 
 ## Testing
 
-The source code comes with its own testing framework. Here is the example
-test program `"test/foo.c"`:
+The source code comes with its own testing framework. Here an example test
+program:
 
 ```c
 #include "test.h"
+
+#include "safe-wrappers.h"
 
 int main(void)
 {
@@ -67,8 +66,9 @@ int main(void)
 }
 ```
 
-Now "foo" must be added to `"test/run-tests.sh"`. This has to be done
-manually to ensure that tests run in the correct order.
+This file must be stored in the test directory, e.g. `"test/foo.c"`. Now
+"foo" must be added to `"test/run-tests.sh"`. This has to be done manually
+to ensure that tests run in the correct order.
 
 ### Testing the final executable
 
