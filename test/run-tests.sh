@@ -3,7 +3,7 @@
 export LANG=C
 
 # Names of tests specified in the order to run.
-tests="safe-math safe-wrappers memory-pool buffer path-builder file-hash colors regex-pool str
+tests="safe-math safe-wrappers memory-pool path-builder file-hash colors regex-pool str
 string-table search-tree search repository metadata backup backup-changes backup-filetype-changes
 backup-policy-changes garbage-collector"
 

@@ -14,7 +14,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "buffer.h"
 #include "safe-math.h"
 #include "path-builder.h"
 #include "error-handling.h"
