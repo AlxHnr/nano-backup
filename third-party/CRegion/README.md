@@ -1,15 +1,7 @@
-[![travis](https://travis-ci.org/AlxHnr/CRegion.svg?branch=master)](https://travis-ci.org/AlxHnr/CRegion)
-[![codecov](https://codecov.io/github/AlxHnr/CRegion/coverage.svg?branch=master)](https://codecov.io/github/AlxHnr/CRegion?branch=master)
-[![license](https://licensebuttons.net/p/zero/1.0/88x31.png)](LICENSE)
-
-A free, public-domain
-[region](https://en.wikipedia.org/wiki/Region-based_memory_management)
-implementation without any dependencies. It conforms strictly to C99 and is
-valgrind-clean. Allocation failures and arithmetic overflows are handled by
-calling [exit()](src/error-handling.c).
-
-Copy the files from `src/` into your project and add them to your build
-script.
+This directory contains a copy of [CRegion](https://github.com/AlxHnr/CRegion), which is a free,
+public-domain [region](https://en.wikipedia.org/wiki/Region-based_memory_management) implementation.
+It handles allocation failures and arithmetic overflows by calling `exit()`, which fits well into
+nano-backups error handling.
 
 ## Examples
 
