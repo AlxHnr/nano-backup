@@ -54,9 +54,14 @@
         v2 = ROTL(v2, 32);                                                     \
     } while (0)
 
-#if defined __GNUC__ && !defined __clang__ && __GNUC__ >= 7
+
+#if defined __has_attribute
+#if __has_attribute(fallthrough)
 #define attribute_fallthrough __attribute__((fallthrough));
-#else
+#endif
+#endif
+
+#if !defined attribute_fallthrough
 #define attribute_fallthrough
 #endif
 
