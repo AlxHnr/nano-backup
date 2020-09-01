@@ -22,6 +22,11 @@ build/dependencies.makefile:
 	mkdir -p build/test/ build/third-party/
 	$(CC) -MM -Ithird-party/ src/*.c | sed -r 's,^(\S+:),build/\1,g' > $@
 	$(CC) -MM -Ithird-party/ -Isrc/ test/*.c | sed -r 's,^(\S+:),build/test/\1,g' >> $@
+	{ printf "["; \
+	  find src/ test/ third-party/ -name "*.c" -print0 | xargs -0 -n 1 -I {} \
+	    printf '{"directory":"%s","command":"%s %s -c %s -o %s.o","file":"%s"},\n' \
+	    "$$PWD" "$(CC)" "$(CFLAGS) -Ithird-party/ -Isrc/" {} {} {} | sed '$$ s/,$$/]/'; \
+	} > compile_commands.json
 
 build/nb: $(OBJECTS)
 	$(CC) $^ $(LDFLAGS) -o $@
@@ -55,6 +60,6 @@ test: build/nb $(TEST_PROGRAMS) $(GENERATED_CONFIGS) $(EMPTY_DIR)
 	./test/run-tests.sh && ./test/run-full-program-tests.sh
 
 clean:
-	rm -rf build/ test/data/generated-*/ test/data/tmp/
+	rm -rf build/ compile_commands.json test/data/generated-*/ test/data/tmp/
 	test ! -e $(EMPTY_DIR) || rmdir $(EMPTY_DIR)
 	./test/clean-full-program-tests.sh

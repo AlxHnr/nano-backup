@@ -1,5 +1,6 @@
 /.clangd/
 /build/
+/compile_commands.json
 /test/data/generated-*/
 /test/data/tmp/
 /test/full program tests/*/*/generated/
