@@ -1,5 +1,5 @@
-test/full program tests/*/*/generated/
-test/data/generated-*/
-test/data/tmp/
-.ycm_extra_conf.pyc
-build/
+/.clangd/
+/build/
+/test/data/generated-*/
+/test/data/tmp/
+/test/full program tests/*/*/generated/
