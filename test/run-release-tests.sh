@@ -104,7 +104,6 @@ run_cppcheck()
   ! cppcheck --quiet --std=c99 --enable=all "$@" -Isrc/ -Ithird-party/ \
     -D_XOPEN_SOURCE=600 -D_FILE_OFFSET_BITS=64 -DCHAR_BIT=8 \
     --suppress="missingIncludeSystem:*" \
-    --suppress="knownConditionTrueFalse:test/str.c" \
     --suppress="redundantAssignment:test/*.c" \
     src/ test/ |&
     grep --color=auto .
