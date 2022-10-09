@@ -174,12 +174,3 @@ deduplicating filesystems.
 
 No. It would make the codebase more complicated, may introduce additional
 dependencies and would take quite some time to test properly.
-
-### Why does it rely on timestamps and file sizes to check for changes?
-
-If a files size and timestamp has not changed, it is assumed that its
-content is still the same. While this method is extremely fast, it could
-allow an attacker to tamper with files. But then again, an attacker with
-file access could also tamper with the repository directly, or even replace
-the nb binary. On an uncompromised system with a working clock this
-shouldn't be an issue.
