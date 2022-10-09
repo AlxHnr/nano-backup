@@ -11,6 +11,7 @@ build() { make -j"$(nproc)" all "${test_programs[@]}"; }
 CFLAGS="-Wall -Wextra -Werror -pedantic"
 CLANG_FLAGS="-Weverything -Wno-conversion -Wno-packed -Wno-padded"
 CLANG_FLAGS+=" -Wno-assign-enum -Wno-switch-enum -Wno-extra-semi-stmt"
+CLANG_FLAGS+=" -Wno-declaration-after-statement"
 GCC_FLAGS="--all-warnings --extra-warnings -W -Wabi -Waddress \
 -Waggressive-loop-optimizations -Wall -Warray-bounds -Wattributes \
 -Wbad-function-cast -Wbool-compare -Wbuiltin-macro-redefined -Wcast-align \
@@ -103,8 +104,13 @@ run_cppcheck()
 {
   ! cppcheck --quiet --std=c99 --enable=all "$@" -Isrc/ -Ithird-party/ \
     -D_XOPEN_SOURCE=600 -D_FILE_OFFSET_BITS=64 -DCHAR_BIT=8 \
+    --suppress="constParameter:*" \
+    --suppress="ctunullpointer:*" \
+    --suppress="ctuuninitvar:*" \
     --suppress="missingIncludeSystem:*" \
+    --suppress="nullPointerRedundantCheck:*" \
     --suppress="redundantAssignment:test/*.c" \
+    --suppress="unusedStructMember:src/metadata.c" \
     src/ test/ |&
     grep --color=auto .
 }

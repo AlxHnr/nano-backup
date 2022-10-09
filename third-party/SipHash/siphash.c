@@ -59,6 +59,10 @@
 #if __has_attribute(fallthrough)
 #define attribute_fallthrough __attribute__((fallthrough));
 #endif
+#if __has_attribute(pure)
+uint64_t siphash(const uint8_t *in, const size_t inlen, const uint8_t *k) \
+           __attribute__((pure));
+#endif
 #endif
 
 #if !defined attribute_fallthrough
