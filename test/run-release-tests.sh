@@ -52,21 +52,13 @@ GCC_FLAGS="--all-warnings --extra-warnings -W -Wabi -Waddress \
 -Wvolatile-register-var -Wwrite-strings -Wno-abi"
 
 make clean
-CC=gcc CFLAGS+=" $GCC_FLAGS" build
-CC=gcc CFLAGS+=" $GCC_FLAGS" make test
+flags="-O0 -ggdb -fsanitize=address,undefined -fno-sanitize-recover=all"
+CC=gcc CFLAGS+=" $flags" LDFLAGS="$flags" build
+CC=gcc CFLAGS+=" $flags" LDFLAGS="$flags" make test
 
 make clean
 CC=clang CFLAGS+=" $CLANG_FLAGS" build
 CC=clang CFLAGS+=" $CLANG_FLAGS" make test
-
-for sanitizer in address undefined; do
-(
-  make clean
-  flags="-O0 -ggdb -fsanitize=$sanitizer -fno-sanitize-recover=all"
-  CC=gcc CFLAGS+=" $flags" LDFLAGS="$flags" build
-  CC=gcc CFLAGS+=" $flags" LDFLAGS="$flags" make test
-)
-done
 
 # Run tests with valgrind.
 make clean
