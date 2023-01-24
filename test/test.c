@@ -42,13 +42,8 @@ static void freeTestErrorMessage(void)
   @param format A format string.
   @param arguments An initialised va_list containing all arguments
   specified in the format string.
-  @param length The length of the formatted message without the terminating
-  null byte.
-  @param buffer_length The length of the buffer that should be allocated.
-  Must be at least the size of the given length plus 1.
 */
-static void populateTestErrorMessage(const char *format, va_list arguments,
-                                     int length, size_t buffer_length)
+static void populateTestErrorMessage(const char *format, va_list arguments)
 {
   /* Register cleanup function on the first call of this function. */
   if(test_error_message == NULL &&
@@ -57,14 +52,8 @@ static void populateTestErrorMessage(const char *format, va_list arguments,
     dieTest("failed to register function with atexit");
   }
 
-  /* Free the previous memory stored in test_error_message. */
-  free(test_error_message);
-
-  test_error_message = malloc(buffer_length);
-  if(test_error_message == NULL)
-  {
-    dieTest("failed to allocate space to store the error message");
-  }
+  va_list arguments_copy;
+  va_copy(arguments_copy, arguments);
 
 #ifdef __GNUC__
 #pragma GCC diagnostic push
@@ -73,6 +62,23 @@ static void populateTestErrorMessage(const char *format, va_list arguments,
 #pragma GCC diagnostic ignored "-Wsuggest-attribute=format"
 #endif
 #endif
+  const int length = vsnprintf(NULL, 0, format, arguments_copy);
+  va_end(arguments_copy);
+
+  if(length < 0 || length == INT_MAX)
+  {
+    dieTest("failed to calculate the error message length");
+  }
+
+  /* Free the previous memory stored in test_error_message. */
+  free(test_error_message);
+
+  test_error_message = malloc(length + 1);
+  if(test_error_message == NULL)
+  {
+    dieTest("failed to allocate space to store the error message");
+  }
+
   int bytes_copied = vsprintf(test_error_message, format, arguments);
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
@@ -93,19 +99,8 @@ static void populateTestErrorMessage(const char *format, va_list arguments,
 void die(const char *format, ...)
 {
   va_list arguments;
-
   va_start(arguments, format);
-  int format_length = vsnprintf(NULL, 0, format, arguments);
-  va_end(arguments);
-
-  if(format_length < 0 || format_length == INT_MAX)
-  {
-    dieTest("failed to calculate the error message length");
-  }
-
-  va_start(arguments, format);
-  populateTestErrorMessage(format, arguments, format_length,
-                           format_length + 1);
+  populateTestErrorMessage(format, arguments);
   va_end(arguments);
 
   if(test_catch_die)
@@ -121,29 +116,9 @@ void die(const char *format, ...)
 void dieErrno(const char *format, ...)
 {
   va_list arguments;
-
   va_start(arguments, format);
-  int format_length = vsnprintf(NULL, 0, format, arguments);
+  populateTestErrorMessage(format, arguments);
   va_end(arguments);
-
-  size_t errno_string_length = strlen(strerror(errno));
-
-  /* Ensure that the formatted message, ": ", errnos translated string and
-     the terminating null byte fit into the string. */
-  if(format_length < 0 ||
-     errno_string_length > SIZE_MAX - format_length - 3)
-  {
-    dieTest("failed to calculate the error message length");
-  }
-
-  va_start(arguments, format);
-  populateTestErrorMessage(format, arguments, format_length,
-                           format_length + errno_string_length + 3);
-  va_end(arguments);
-
-  test_error_message[format_length] = ':';
-  test_error_message[format_length + 1] = ' ';
-  strcpy(&test_error_message[format_length + 2], strerror(errno));
 
   if(test_catch_die)
   {

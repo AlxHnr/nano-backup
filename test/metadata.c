@@ -1119,8 +1119,8 @@ static void generateBrokenMetadata(void)
 static void testRejectingCorruptedMetadata(void)
 {
   generateBrokenMetadata();
-  assert_error(metadataLoad(strWrap("non-existing.txt")),
-               "failed to access \"non-existing.txt\": No such file or directory");
+  assert_error_errno(metadataLoad(strWrap("non-existing.txt")),
+                     "failed to access \"non-existing.txt\"", ENOENT);
   assert_error(metadataLoad(strWrap("tmp/missing-byte")),
                "corrupted metadata: expected 1 byte, got 0: \"tmp/missing-byte\"");
   assert_error(metadataLoad(strWrap("tmp/missing-slot")),

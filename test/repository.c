@@ -231,12 +231,13 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("write regular files to repository");
-  assert_error(repoWriterOpenFile(strWrap("non-existing-directory"),
-                                  strWrap("non-existing-directory/tmp-file"), strWrap("foo"), &info_1),
-               "failed to open \"non-existing-directory/tmp-file\" for writing: No such file or directory");
-  assert_error(repoWriterOpenFile(strWrap("example.txt"), strWrap("example.txt/tmp-file"),
-                                  strWrap("foo"), &info_2),
-               "failed to open \"example.txt/tmp-file\" for writing: Not a directory");
+  assert_error_errno(repoWriterOpenFile(strWrap("non-existing-directory"),
+                                        strWrap("non-existing-directory/tmp-file"),
+                                        strWrap("foo"), &info_1),
+                     "failed to open \"non-existing-directory/tmp-file\" for writing", ENOENT);
+  assert_error_errno(repoWriterOpenFile(strWrap("example.txt"), strWrap("example.txt/tmp-file"),
+                                        strWrap("foo"), &info_2),
+                     "failed to open \"example.txt/tmp-file\" for writing", ENOTDIR);
 
   /* Write a new file without existing parent directories. */
   assert_true(sPathExists(strWrap("tmp/0")) == false);
@@ -309,12 +310,13 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("write to repository in raw mode");
-  assert_error(repoWriterOpenRaw(strWrap("non-existing-directory"), strWrap("non-existing-directory/tmp-file"),
-                                 strWrap("foo"), strWrap("tmp/foo")),
-               "failed to open \"non-existing-directory/tmp-file\" for writing: No such file or directory");
-  assert_error(repoWriterOpenRaw(strWrap("example.txt"), strWrap("example.txt/tmp-file"),
-                                 strWrap("bar"), strWrap("tmp/bar")),
-               "failed to open \"example.txt/tmp-file\" for writing: Not a directory");
+  assert_error_errno(repoWriterOpenRaw(strWrap("non-existing-directory"),
+                                       strWrap("non-existing-directory/tmp-file"),
+                                       strWrap("foo"), strWrap("tmp/foo")),
+                     "failed to open \"non-existing-directory/tmp-file\" for writing", ENOENT);
+  assert_error_errno(repoWriterOpenRaw(strWrap("example.txt"), strWrap("example.txt/tmp-file"),
+                                       strWrap("bar"), strWrap("tmp/bar")),
+                     "failed to open \"example.txt/tmp-file\" for writing", ENOTDIR);
 
   assert_true(sPathExists(strWrap("some-file")) == false);
   assert_true(sPathExists(TMP_FILE_PATH) == false);
@@ -394,11 +396,11 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("reading from repository");
-  assert_error(repoReaderOpenFile(strWrap("tmp"), strWrap("info_1"), &info_1),
-               "failed to open \"info_1\" in \"tmp\": No such file or directory");
+  assert_error_errno(repoReaderOpenFile(strWrap("tmp"), strWrap("info_1"), &info_1),
+                     "failed to open \"info_1\" in \"tmp\"", ENOENT);
   assert_true(mkdir(info_1_path.content, 0) == 0);
-  assert_error(repoReaderOpenFile(strWrap("tmp"), strWrap("info_1"), &info_1),
-               "failed to open \"info_1\" in \"tmp\": Permission denied");
+  assert_error_errno(repoReaderOpenFile(strWrap("tmp"), strWrap("info_1"), &info_1),
+                     "failed to open \"info_1\" in \"tmp\"", EACCES);
   assert_true(rmdir(info_1_path.content) == 0);
 
   stream = sFopenWrite(info_1_path);

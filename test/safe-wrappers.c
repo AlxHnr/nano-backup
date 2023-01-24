@@ -127,8 +127,8 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("sPathExists()");
-  assert_error(sPathExists(strWrap("empty.txt/foo")),
-               "failed to check existence of \"empty.txt/foo\": Not a directory");
+  assert_error_errno(sPathExists(strWrap("empty.txt/foo")),
+                     "failed to check existence of \"empty.txt/foo\"", ENOTDIR);
   assert_true(checkPathExists("empty.txt"));
   assert_true(checkPathExists("example.txt"));
   assert_true(checkPathExists("symlink.txt"));
@@ -149,8 +149,8 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("sStat()");
-  assert_error(sStat(strWrap("non-existing-file.txt")), "failed to access "
-               "\"non-existing-file.txt\": No such file or directory");
+  assert_error_errno(sStat(strWrap("non-existing-file.txt")),
+                     "failed to access \"non-existing-file.txt\"", ENOENT);
 
   struct stat example_stat = sStat(strWrap("symlink.txt"));
   assert_true(S_ISREG(example_stat.st_mode));
@@ -158,8 +158,8 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("sLStat()");
-  assert_error(sLStat(strWrap("non-existing-file.txt")), "failed to access "
-               "\"non-existing-file.txt\": No such file or directory");
+  assert_error_errno(sLStat(strWrap("non-existing-file.txt")),
+                     "failed to access \"non-existing-file.txt\"", ENOENT);
 
   example_stat = sLStat(strWrap("symlink.txt"));
   assert_true(!S_ISREG(example_stat.st_mode));
@@ -171,8 +171,8 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("FileStream reading functions");
-  assert_error(sFopenRead(strWrap("non-existing-file.txt")),
-               "failed to open \"non-existing-file.txt\" for reading: No such file or directory");
+  assert_error_errno(sFopenRead(strWrap("non-existing-file.txt")),
+                     "failed to open \"non-existing-file.txt\" for reading", ENOENT);
 
   String example_path = strWrap("example.txt");
   FileStream *example_read = sFopenRead(example_path);
@@ -200,7 +200,7 @@ int main(void)
 
   /* Provoke failure by reading from a write-only stream. */
   assert_error(sFread(buffer, 10, sFopenWrite(strWrap("tmp/example-write"))),
-               "IO error while reading \"tmp/example-write\": Bad file descriptor");
+               "IO error while reading \"tmp/example-write\"");
 
   /* Test sFclose(). */
   example_read = sFopenRead(strWrap("example.txt"));
@@ -208,10 +208,10 @@ int main(void)
   sFclose(example_read);
 
   /* Test sFbytesLeft(). */
-  assert_error(sFbytesLeft(sFopenRead(strWrap("test directory"))),
-               "failed to check for remaining bytes in \"test directory\": Is a directory");
-  assert_error(sFbytesLeft(sFopenWrite(strWrap("tmp/some-test-file.txt"))),
-               "failed to check for remaining bytes in \"tmp/some-test-file.txt\": Bad file descriptor");
+  assert_error_errno(sFbytesLeft(sFopenWrite(strWrap("tmp/some-test-file.txt"))),
+                     "failed to check for remaining bytes in \"tmp/some-test-file.txt\"", EBADF);
+  assert_error_errno(sFbytesLeft(sFopenRead(strWrap("test directory"))),
+                     "failed to check for remaining bytes in \"test directory\"", EISDIR);
 
   example_read = sFopenRead(example_path);
   assert_true(example_read != NULL);
@@ -235,9 +235,8 @@ int main(void)
 
   testGroupStart("sGetFilesContent()");
   CR_Region *r = CR_RegionNew();
-  assert_error(sGetFilesContent(r, strWrap("non-existing-file.txt")), "failed to "
-               "access \"non-existing-file.txt\": No such file or "
-               "directory");
+  assert_error_errno(sGetFilesContent(r, strWrap("non-existing-file.txt")), "failed to "
+                     "access \"non-existing-file.txt\"", ENOENT);
 
   FileContent example_content = sGetFilesContent(r, strWrap("example.txt"));
   assert_true(example_content.size == 25);
@@ -254,8 +253,8 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("FileStream writing functions");
-  assert_error(sFopenWrite(strWrap("non-existing-dir/file.txt")),
-               "failed to open \"non-existing-dir/file.txt\" for writing: No such file or directory");
+  assert_error_errno(sFopenWrite(strWrap("non-existing-dir/file.txt")),
+                     "failed to open \"non-existing-dir/file.txt\" for writing", ENOENT);
 
   assert_true(sPathExists(strWrap("tmp/test-file-1")) == false);
   FileStream *test_file = sFopenWrite(strWrap("tmp/test-file-1"));
@@ -303,7 +302,7 @@ int main(void)
 
   /* Provoke errors by writing to a read-only stream. */
   assert_error(sFwrite("hello", 5, sFopenRead(strWrap("example.txt"))),
-               "failed to write to \"example.txt\": Bad file descriptor");
+               "failed to write to \"example.txt\"");
 
   test_file = sFopenRead(strWrap("example.txt"));
   assert_true(Fwrite("hello", 5, test_file) == false);
@@ -316,10 +315,10 @@ int main(void)
   assert_true(sPathExists(strWrap("tmp/some-directory")));
   assert_true(S_ISDIR(sLStat(strWrap("tmp/some-directory")).st_mode));
 
-  assert_error(sMkdir(strWrap("tmp/some-directory")),
-               "failed to create directory: \"tmp/some-directory\": File exists");
-  assert_error(sMkdir(strWrap("tmp/non-existing/foo")),
-               "failed to create directory: \"tmp/non-existing/foo\": No such file or directory");
+  assert_error_errno(sMkdir(strWrap("tmp/some-directory")),
+                     "failed to create directory: \"tmp/some-directory\"", EEXIST);
+  assert_error_errno(sMkdir(strWrap("tmp/non-existing/foo")),
+                     "failed to create directory: \"tmp/non-existing/foo\"", ENOENT);
   testGroupEnd();
 
   testGroupStart("sSymlink()");
@@ -332,10 +331,10 @@ int main(void)
   assert_true(11 == readlink("tmp/some-symlink", some_symlink_buffer, sizeof(some_symlink_buffer)));
   assert_true(strcmp(some_symlink_buffer, "foo bar 123") == 0);
 
-  assert_error(sSymlink(strWrap("test"), strWrap("tmp/some-symlink")),
-               "failed to create symlink: \"tmp/some-symlink\": File exists");
-  assert_error(sSymlink(strWrap("backup"), strWrap("tmp/non-existing/bar")),
-               "failed to create symlink: \"tmp/non-existing/bar\": No such file or directory");
+  assert_error_errno(sSymlink(strWrap("test"), strWrap("tmp/some-symlink")),
+                     "failed to create symlink: \"tmp/some-symlink\"", EEXIST);
+  assert_error_errno(sSymlink(strWrap("backup"), strWrap("tmp/non-existing/bar")),
+                     "failed to create symlink: \"tmp/non-existing/bar\"", ENOENT);
   testGroupEnd();
 
   testGroupStart("sRename()");
@@ -350,8 +349,8 @@ int main(void)
   assert_true(sPathExists(strWrap("tmp/file-1")) == false);
   assert_true(sPathExists(strWrap("tmp/file-2")));
 
-  assert_error(sRename(strWrap("non-existing-file.txt"), strWrap("tmp/file-2")),
-               "failed to rename \"non-existing-file.txt\" to \"tmp/file-2\": No such file or directory");
+  assert_error_errno(sRename(strWrap("non-existing-file.txt"), strWrap("tmp/file-2")),
+                     "failed to rename \"non-existing-file.txt\" to \"tmp/file-2\"", ENOENT);
 
   assert_true(sPathExists(strWrap("tmp/file-2")));
   assert_true(sStat(strWrap("tmp/file-2")).st_size == 0);
@@ -380,8 +379,8 @@ int main(void)
   sChmod(strWrap("tmp/test-symlink-1"), 0644);
   assert_true((sLStat(strWrap("tmp/test-file-1")).st_mode & ~S_IFMT) == 0644);
 
-  assert_error(sChmod(strWrap("tmp/non-existing"), 0600),
-               "failed to change permissions of \"tmp/non-existing\": No such file or directory");
+  assert_error_errno(sChmod(strWrap("tmp/non-existing"), 0600),
+                     "failed to change permissions of \"tmp/non-existing\"", ENOENT);
   testGroupEnd();
 
   testGroupStart("sChown()");
@@ -389,8 +388,8 @@ int main(void)
   sChown(strWrap("tmp/test-file-1"), test_file_1_stat.st_uid, test_file_1_stat.st_gid);
 
   sSymlink(strWrap("non-existing"), strWrap("tmp/dangling-symlink"));
-  assert_error(sChown(strWrap("tmp/dangling-symlink"), test_file_1_stat.st_uid, test_file_1_stat.st_gid),
-               "failed to change owner of \"tmp/dangling-symlink\": No such file or directory");
+  assert_error_errno(sChown(strWrap("tmp/dangling-symlink"), test_file_1_stat.st_uid, test_file_1_stat.st_gid),
+                     "failed to change owner of \"tmp/dangling-symlink\"", ENOENT);
   testGroupEnd();
 
   testGroupStart("sLChown()");
@@ -398,8 +397,8 @@ int main(void)
 
   sLChown(strWrap("tmp/dangling-symlink"), dangling_symlink_stat.st_uid, dangling_symlink_stat.st_gid);
 
-  assert_error(sLChown(strWrap("tmp/non-existing"), dangling_symlink_stat.st_uid, dangling_symlink_stat.st_gid),
-               "failed to change owner of \"tmp/non-existing\": No such file or directory");
+  assert_error_errno(sLChown(strWrap("tmp/non-existing"), dangling_symlink_stat.st_uid, dangling_symlink_stat.st_gid),
+                     "failed to change owner of \"tmp/non-existing\"", ENOENT);
   testGroupEnd();
 
   testGroupStart("sUtime()");
@@ -416,8 +415,8 @@ int main(void)
   sUtime(strWrap("tmp/test-symlink-1"), 12);
   assert_true(sLStat(strWrap("tmp/test-file-1")).st_mtime == 12);
 
-  assert_error(sUtime(strWrap("tmp/non-existing"), 123),
-               "failed to set timestamp of \"tmp/non-existing\": No such file or directory");
+  assert_error_errno(sUtime(strWrap("tmp/non-existing"), 123),
+                     "failed to set timestamp of \"tmp/non-existing\"", ENOENT);
   testGroupEnd();
 
   testGroupStart("sRemove()");
@@ -439,15 +438,15 @@ int main(void)
   sRemove(strWrap("tmp/dir-to-remove"));
   assert_true(sPathExists(strWrap("tmp/dir-to-remove")) == false);
 
-  assert_error(sRemove(strWrap("tmp/non-existing")),
-               "failed to remove \"tmp/non-existing\": No such file or directory");
-  assert_error(sRemove(strWrap("tmp/non-existing-dir/foo")),
-               "failed to remove \"tmp/non-existing-dir/foo\": No such file or directory");
+  assert_error_errno(sRemove(strWrap("tmp/non-existing")),
+                     "failed to remove \"tmp/non-existing\"", ENOENT);
+  assert_error_errno(sRemove(strWrap("tmp/non-existing-dir/foo")),
+                     "failed to remove \"tmp/non-existing-dir/foo\"", ENOENT);
 
   sMkdir(strWrap("tmp/non-empty-dir"));
   sFclose(sFopenWrite(strWrap("tmp/non-empty-dir/foo")));
-  assert_error(sRemove(strWrap("tmp/non-empty-dir")),
-               "failed to remove \"tmp/non-empty-dir\": Directory not empty");
+  assert_error_errno(sRemove(strWrap("tmp/non-empty-dir")),
+                     "failed to remove \"tmp/non-empty-dir\"", ENOTEMPTY);
 
   sRemove(strWrap("tmp/non-empty-dir/foo"));
   sRemove(strWrap("tmp/non-empty-dir"));
@@ -488,8 +487,7 @@ int main(void)
   sRemoveRecursively(strWrap("tmp/bar"));
   assert_true(sPathExists(strWrap("tmp/bar")) == false);
 
-  assert_error(sRemoveRecursively(strWrap("")),
-               "failed to access \"\": No such file or directory");
+  assert_error_errno(sRemoveRecursively(strWrap("")), "failed to access \"\"", ENOENT);
   testGroupEnd();
 
   testGroupStart("sGetCwd()");
@@ -601,8 +599,8 @@ int main(void)
   DIR *test_foo_1 = sOpenDir(strWrap("./test directory/foo 1/"));
   assert_true(test_foo_1 != NULL);
 
-  assert_error(sOpenDir(strWrap("non-existing-directory")),
-               "failed to open directory \"non-existing-directory\": No such file or directory");
+  assert_error_errno(sOpenDir(strWrap("non-existing-directory")),
+                     "failed to open directory \"non-existing-directory\"", ENOENT);
   testGroupEnd();
 
   testGroupStart("sReadDir()");

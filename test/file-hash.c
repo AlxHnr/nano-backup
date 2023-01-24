@@ -20,12 +20,12 @@ int main(void)
 
   testGroupStart("fileHash()");
   stats = sStat(strWrap("example.txt"));
-  assert_error(fileHash(strWrap("non-existing.txt"), stats, hash),
-               "failed to open \"non-existing.txt\" for reading: No such file or directory");
-  assert_error(fileHash(strWrap("test directory"), stats, hash),
-               "IO error while reading \"test directory\": Is a directory");
-  assert_error(fileHash(strWrap("test directory"), sStat(strWrap("empty.txt")), hash),
-               "failed to check for remaining bytes in \"test directory\": Is a directory");
+  assert_error_errno(fileHash(strWrap("non-existing.txt"), stats, hash),
+                     "failed to open \"non-existing.txt\" for reading", ENOENT);
+  assert_error_errno(fileHash(strWrap("test directory"), stats, hash),
+                     "IO error while reading \"test directory\"", EISDIR);
+  assert_error_errno(fileHash(strWrap("test directory"), sStat(strWrap("empty.txt")), hash),
+                     "failed to check for remaining bytes in \"test directory\"", EISDIR);
 
   const uint8_t empty_hash[FILE_HASH_SIZE] =
   {

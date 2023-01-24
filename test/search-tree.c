@@ -400,8 +400,8 @@ static void assertParseError(const char *path, const char *message)
 /** Tests loading various invalid config files. */
 static void testBrokenConfigFiles(void)
 {
-  assert_error(searchTreeLoad(strWrap("non-existing-file.txt")), "failed to access "
-               "\"non-existing-file.txt\": No such file or directory");
+  assert_error_errno(searchTreeLoad(strWrap("non-existing-file.txt")),
+                     "failed to access \"non-existing-file.txt\"", ENOENT);
 
   assertParseError("broken-config-files/invalid-policy.txt",
                    "config: line 7: invalid policy: \"trak\"");

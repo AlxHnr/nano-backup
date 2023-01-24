@@ -36,6 +36,15 @@
 /** Asserts that the given expression causes a call to die() with the
   specified error message. */
 #define assert_error(expression, message) \
+  assert_error_internal(expression, message, 0, true);
+
+/** Asserts that the given expression causes a call to dieErrno() with the
+  specified error message and specified errno value. */
+#define assert_error_errno(expression, message, expected_errno) \
+  assert_error_internal(expression, message, expected_errno, false);
+
+#define assert_error_internal(expression, message, \
+                              expected_errno, ignore_errno) \
   test_catch_die = true; \
   if(setjmp(test_jump_buffer) == 0) { \
     (void)(expression); \
@@ -45,6 +54,10 @@
     dieTest("%s: line %i: got wrong error message: \"%s\"\n" \
             "\t\texpected: \"%s\"", __FILE__, __LINE__, \
             test_error_message, message); \
+  } else if(ignore_errno == false && errno != expected_errno) { \
+    dieTest("%s: line %i: got wrong errno value: %i" \
+            ", expected: %i", __FILE__, __LINE__, \
+            errno, expected_errno); \
   } errno = 0; test_catch_die = false;
 
 extern jmp_buf test_jump_buffer;

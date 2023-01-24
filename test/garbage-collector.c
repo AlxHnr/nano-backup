@@ -83,8 +83,8 @@ int main(void)
   sRemove(strWrap("tmp/link-to-repo"));
   sSymlink(strWrap("non-existing"), strWrap("tmp/link-to-repo"));
 
-  assert_error(collectGarbage(empty_metadata, strWrap("tmp/link-to-repo")),
-               "failed to access \"tmp/link-to-repo\": No such file or directory");
+  assert_error_errno(collectGarbage(empty_metadata, strWrap("tmp/link-to-repo")),
+                     "failed to access \"tmp/link-to-repo\"", ENOENT);
 
   assert_true(countItemsInDir("tmp/repo") == 25);
   assert_true(sPathExists(strWrap("tmp/link-to-repo")));
