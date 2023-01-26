@@ -318,7 +318,7 @@ bool sFbytesLeft(FileStream *stream)
   errno = 0;
 
   int character = fgetc(stream->file);
-  if(character == EOF && errno != 0)
+  if(character == EOF && errno != 0 && errno != EBADF)
   {
     dieErrno("failed to check for remaining bytes in \"%s\"",
              Fdestroy(stream).content);

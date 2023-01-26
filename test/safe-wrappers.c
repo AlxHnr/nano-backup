@@ -208,8 +208,11 @@ int main(void)
   sFclose(example_read);
 
   /* Test sFbytesLeft(). */
-  assert_error_errno(sFbytesLeft(sFopenWrite(strWrap("tmp/some-test-file.txt"))),
-                     "failed to check for remaining bytes in \"tmp/some-test-file.txt\"", EBADF);
+  example_read = sFopenWrite(strWrap("tmp/some-test-file.txt"));
+  errno = 0;
+  assert_true(!sFbytesLeft(example_read));
+  assert_true(errno == 0);
+  sFclose(example_read);
   assert_error_errno(sFbytesLeft(sFopenRead(strWrap("test directory"))),
                      "failed to check for remaining bytes in \"test directory\"", EISDIR);
 
