@@ -187,3 +187,30 @@ void testGroupEnd(void)
   colorPrintf(stdout, TC_green, "success");
   printf("]\n");
 }
+
+/** Copy the latest error message into the given output buffer. If no error
+  message exist or the message does not fit into the output buffer,
+  terminate with an error.
+
+  @param out Buffer to which the error string will be copied, including the
+  '\0' byte.
+  @param out_size Size of the given buffer.
+*/
+void getLastErrorMessage(char *out, const size_t out_size)
+{
+  if(test_error_message == NULL)
+  {
+    dieTest("getLastErrorMessage(): no current error message");
+  }
+  if(out == NULL || out_size == 0)
+  {
+    dieTest("getLastErrorMessage(): arguments are NULL or zero");
+  }
+
+  const size_t error_message_length = strlen(test_error_message);
+  if(error_message_length > out_size - 1)
+  {
+    dieTest("getLastErrorMessage(): given out buffer is too small");
+  }
+  strcpy(out, test_error_message);
+}
