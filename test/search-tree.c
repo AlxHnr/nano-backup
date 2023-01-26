@@ -421,19 +421,30 @@ static void testBrokenConfigFiles(void)
   assertParseError("broken-config-files/closing-brace-empty.txt",
                    "config: line 3: invalid path: \"]\"");
 
-  assertParseError("broken-config-files/invalid-regex.txt",
-                   "config: line 5: Unmatched ( or \\(: \"(foo|bar\"");
+  {
+    CR_Region *r = CR_RegionNew();
+    char error_buffer[128];
+
+    FileContent content = sGetFilesContent(r, strWrap("broken-config-files/invalid-regex.txt"));
+    assert_error_any(searchTreeParse(strSlice(content.content, content.size)));
+    getLastErrorMessage(error_buffer, sizeof(error_buffer));
+    assert_true(strstr(error_buffer, "config: line 5: ") == error_buffer);
+
+    content = sGetFilesContent(r, strWrap("broken-config-files/invalid-ignore-expression.txt"));
+    assert_error_any(searchTreeParse(strSlice(content.content, content.size)));
+    getLastErrorMessage(error_buffer, sizeof(error_buffer));
+    assert_true(strstr(error_buffer, "config: line 6: ") == error_buffer);
+
+    content = sGetFilesContent(r, strWrap("broken-config-files/multiple-errors.txt"));
+    assert_error_any(searchTreeParse(strSlice(content.content, content.size)));
+    getLastErrorMessage(error_buffer, sizeof(error_buffer));
+    assert_true(strstr(error_buffer, "config: line 9: ") == error_buffer);
+
+    CR_RegionRelease(r);
+  }
 
   assertParseError("broken-config-files/pattern-without-policy.txt",
                    "config: line 8: pattern without policy: \"/home/user/foo/bar.txt\"");
-
-  assertParseError("broken-config-files/invalid-ignore-expression.txt",
-#if defined __GLIBC_MINOR__ && __GLIBC_MINOR__ >= 28
-                   "config: line 6: Unmatched [, [^, [:, [., or [=: \" ([0-9A-Za-z)+///\""
-#else
-                   "config: line 6: Unmatched [ or [^: \" ([0-9A-Za-z)+///\""
-#endif
-                   );
 
   assertParseError("broken-config-files/redefine-1.txt",
                    "config: line 6: redefining line 4: \"/home/user/foo/Gentoo Packages/\"");
@@ -470,9 +481,6 @@ static void testBrokenConfigFiles(void)
 
   assertParseError("broken-config-files/invalid-path-3.txt",
                    "config: line 7: invalid path: \".bash_history\"");
-
-  assertParseError("broken-config-files/multiple-errors.txt",
-                   "config: line 9: Invalid preceding regular expression: \"???*\"");
 
   assertParseError("broken-config-files/BOM-simple-error.txt",
                    "config: line 3: invalid path: \"This file contains a UTF-8 BOM.\"");

@@ -58,9 +58,14 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("error handling");
-  assert_error(rpCompile(strWrap("^(foo|bar"), strWrap("example.txt"), 197),
-               "example.txt: line 197: Unmatched ( or \\(: \"^(foo|bar\"");
-  assert_error(rpCompile(strWrap("*test*"), strWrap("this/is/a/file.c"), 4),
-               "this/is/a/file.c: line 4: Invalid preceding regular expression: \"*test*\"");
+  char error_buffer[128];
+
+  assert_error_any(rpCompile(strWrap("^(foo|bar"), strWrap("example.txt"), 197));
+  getLastErrorMessage(error_buffer, sizeof(error_buffer));
+  assert_true(strstr(error_buffer, "example.txt: line 197: ") == error_buffer);
+
+  assert_error_any(rpCompile(strWrap("*test*"), strWrap("this/is/a/file.c"), 4));
+  getLastErrorMessage(error_buffer, sizeof(error_buffer));
+  assert_true(strstr(error_buffer, "this/is/a/file.c: line 4: ") == error_buffer);
   testGroupEnd();
 }
