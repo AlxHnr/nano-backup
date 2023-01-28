@@ -14,8 +14,11 @@ EMPTY_DIR         := test/data/test\ directory/.empty/
 GENERATED_CONFIGS := $(patsubst test/data/template%,test/data/generated%,\
   $(wildcard test/data/template-config-files/*))
 
-.PHONY: all test clean
-all: build/nb
+build/nb: $(OBJECTS)
+	$(CC) $^ $(LDFLAGS) -o $@
+
+.PHONY: all test run-tests clean
+all: build/nb $(TEST_PROGRAMS) $(GENERATED_CONFIGS) $(EMPTY_DIR)
 
 -include build/dependencies.makefile
 build/dependencies.makefile:
@@ -27,9 +30,6 @@ build/dependencies.makefile:
 	    printf '{"directory":"%s","command":"%s %s -c %s -o %s.o","file":"%s"},\n' \
 	    "$$PWD" "$(CC)" "$(CFLAGS) -Ithird-party/ -Isrc/" {} {} {} | sed '$$ s/,$$/]/'; \
 	} > compile_commands.json
-
-build/nb: $(OBJECTS)
-	$(CC) $^ $(LDFLAGS) -o $@
 
 build/third-party/BLAKE2/%.o: third-party/BLAKE2/%.c
 	mkdir -p build/third-party/BLAKE2
@@ -56,8 +56,10 @@ $(EMPTY_DIR):
 test/data/generated-config-files/%: test/data/template-config-files/%
 	mkdir -p "$(dir $@)" && sed -r "s,^/,$$PWD/test/data/,g" "$<" > "$@"
 
-test: build/nb $(TEST_PROGRAMS) $(GENERATED_CONFIGS) $(EMPTY_DIR)
-	./test/run-tests.sh && ./test/run-full-program-tests.sh
+test: all
+	@$(MAKE) --no-print-directory run-test
+run-test:
+	@./test/run-tests.sh && ./test/run-full-program-tests.sh
 
 clean:
 	rm -rf build/ compile_commands.json test/data/generated-*/ test/data/tmp/
