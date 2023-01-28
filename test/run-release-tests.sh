@@ -3,10 +3,7 @@
 # Runs the test suite multiple times using valgrind, different compiler
 # flags, cppcheck and clang-analyze.
 
-test_programs=$(grep -l '^int main(' test/*.c)
-test_programs=(${test_programs[@]//.c/})
-test_programs=(${test_programs[@]//test\//build/test/})
-build() { make -j"$(nproc)" all "${test_programs[@]}"; }
+build() { make -j"$(nproc)" all; }
 
 CFLAGS="-Wall -Wextra -Werror -pedantic"
 CLANG_FLAGS="-Weverything -Wno-conversion -Wno-packed -Wno-padded"
@@ -89,7 +86,7 @@ for file in build/valgrind/*; do
 done
 
 make clean
-CFLAGS+=" -O0 -ggdb" scan-build make -j"$(nproc)" all "${test_programs[@]}"
+CFLAGS+=" -O0 -ggdb" scan-build make -j"$(nproc)" all
 make clean
 
 run_cppcheck()
