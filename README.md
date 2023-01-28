@@ -1,4 +1,4 @@
-[![travis](https://travis-ci.org/AlxHnr/nano-backup.svg?branch=master)](https://travis-ci.org/AlxHnr/nano-backup)
+[![pipeline](https://github.com/AlxHnr/nano-backup/actions/workflows/ci.yml/badge.svg)](https://github.com/AlxHnr/nano-backup/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/github/AlxHnr/nano-backup/coverage.svg?branch=master)](https://codecov.io/github/AlxHnr/nano-backup?branch=master)
 [![license](https://img.shields.io/badge/license-MIT-brightgreen.svg)](https://github.com/AlxHnr/nano-backup/blob/master/LICENSE)
 ![screenshot](https://cdn.rawgit.com/AlxHnr/nano-backup/1729b21e/screenshot.svg)

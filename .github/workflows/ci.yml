@@ -1,0 +1,77 @@
+name: pipeline
+on: [ push, pull_request ]
+jobs:
+  build:
+    strategy:
+      matrix:
+        compiler:
+          - gcc
+          - musl-gcc
+          - clang
+        include:
+          - compiler: gcc
+            cflags: "-Wall -Wextra -Werror -pedantic -O0 -ggdb -fsanitize=address,undefined -fno-sanitize-recover=all -coverage"
+            ldflags: "-O0 -ggdb -fsanitize=address,undefined -fno-sanitize-recover=all -coverage"
+          - compiler: musl-gcc
+            cflags: "-Wall -Wextra -Werror -pedantic -O2"
+            ldflags: "-O2 -static"
+          - compiler: clang
+            cflags: "-Wall -Wextra -Werror -pedantic -O0 -ggdb -fsanitize=address,undefined -fno-sanitize-recover=all"
+            ldflags: "-O0 -ggdb -fsanitize=address,undefined -fno-sanitize-recover=all"
+    runs-on: ubuntu-latest
+    env:
+      CC: ${{ matrix.compiler }}
+      CFLAGS: ${{ matrix.cflags }}
+      LDFLAGS: ${{ matrix.ldflags }}
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install dependencies
+      if: ${{ matrix.compiler == 'musl-gcc' }}
+      run: sudo apt-get install musl-tools
+    - name: Build
+      run: make -j "$(nproc)" all
+    - name: Pack build output artifacts
+      run: tar cvaf build-output-${{ matrix.compiler }}.tar build/ test/data/generated-*/ test/data/test\ directory/.empty/
+    - uses: actions/upload-artifact@v3
+      with:
+        name: build-output
+        path: build-output-${{ matrix.compiler }}.tar
+  test:
+    needs: build
+    strategy:
+      matrix:
+        compiler:
+          - gcc
+          - musl-gcc
+          - clang
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/download-artifact@v3
+      id: download-artifacts
+      with:
+        name: build-output
+    - name: Unpack build output artifacts
+      run: tar xvaf "${{ steps.download-artifacts.outputs.download-path }}/build-output-${{ matrix.compiler }}.tar"
+    - name: Test
+      run: script -efqc 'make run-test' /dev/null # Force colored output.
+    - uses: actions/upload-artifact@v3
+      if: ${{ matrix.compiler == 'gcc' }}
+      with:
+        name: coverage-data
+        path: build/
+  upload-coverage:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/download-artifact@v3
+      with:
+        name: coverage-data
+        path: build/
+    - name: Upload coverage report to Codecov
+      run: >
+        pip install --user codecov &&
+        gcov -p -b -o build/ src/*.c &&
+        gcov -p -b -o build/test/ test/*.c &&
+        codecov
