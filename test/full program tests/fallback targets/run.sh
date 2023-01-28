@@ -8,7 +8,7 @@ if test -f "$PHASE_PATH/arguments"; then
 else
   echo generated/repo
 fi | xargs sh -c '
-printf "%s" "$NB_INPUT" |
+printf "%s" "$NB_INPUT" 2>/dev/null |
 {
   "$NB" "$@"; echo "$?" > generated/exit-status;
 }' -- 2>&1 | sort > generated/output
