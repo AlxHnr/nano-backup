@@ -26,7 +26,7 @@ build/dependencies.makefile:
 	$(CC) -MM -Ithird-party/ src/*.c | sed -r 's,^(\S+:),build/\1,g' > $@
 	$(CC) -MM -Ithird-party/ -Isrc/ test/*.c | sed -r 's,^(\S+:),build/test/\1,g' >> $@
 	{ printf "["; \
-	  find src/ test/ third-party/ -name "*.c" -print0 | xargs -0 -n 1 -I {} \
+	  find src/ test/ third-party/ -name "*.c" -print0 | xargs -0 -I {} \
 	    printf '{"directory":"%s","command":"%s %s -c %s -o %s.o","file":"%s"},\n' \
 	    "$$PWD" "$(CC)" "$(CFLAGS) -Ithird-party/ -Isrc/" {} {} {} | sed '$$ s/,$$/]/'; \
 	} > compile_commands.json
