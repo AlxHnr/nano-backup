@@ -11,9 +11,30 @@
 #include "path-builder.h"
 #include "safe-wrappers.h"
 
+/** Stores the data of an ongoing integrity check. */
+typedef struct
+{
+  /** Used for allocating broken path nodes. */
+  CR_Region *r;
+
+  /** All broken path nodes found during the check will be stored here. The
+    lifetime of this list is bound to the region `r` in this struct. */
+  ListOfBrokenPathNodes *broken_nodes;
+
+  /** Absolute or relative path to the repository that is being checked. */
+  String repo_path;
+
+  /** Reusable buffer pre-populated with the content of repo_path. */
+  char *path_buffer;
+
+  /** Reusable buffer created with CR_RegionAllocGrowable(). */
+  char *unique_subpath_buffer;
+}IntegrityCheckContext;
+
 /** Check the integrity of a single stored file.
 
-  @param file_info Metadata of the file to check.
+  @param file_info Metadata of the file to check. The files size must be
+  larger than FILE_HASH_SIZE.
   @param path_to_stored_file Absolute or relative path to the unique file
   inside the backup repository.
 
@@ -22,10 +43,6 @@
 static bool storedFileIsHealthy(RegularFileInfo *file_info,
                                 String path_to_stored_file)
 {
-  if(file_info->size <= FILE_HASH_SIZE)
-  {
-    return true;
-  }
   if(!sPathExists(path_to_stored_file))
   {
     return false;
@@ -46,58 +63,63 @@ static bool storedFileIsHealthy(RegularFileInfo *file_info,
   return memcmp(file_info->hash, hash, FILE_HASH_SIZE) == 0;
 }
 
+/** Check the integrity of the stored file associated with the given
+  history point.
+
+  @param context Informations related to the current integrity check.
+  @param point History point to check.
+
+  @return True if the given history point is healthy.
+*/
+static bool historyPointIsHealthy(IntegrityCheckContext *context,
+                                  PathHistory *point)
+{
+  if(point->state.type != PST_regular)
+  {
+    return true;
+  }
+
+  RegularFileInfo *file_info = &point->state.metadata.reg;
+  if(file_info->size <= FILE_HASH_SIZE)
+  {
+    return true;
+  }
+
+  repoBuildRegularFilePath(&context->unique_subpath_buffer, file_info);
+  const size_t file_buffer_length =
+    pathBuilderAppend(&context->path_buffer, context->repo_path.length,
+                      context->unique_subpath_buffer);
+  String unique_path = strSlice(context->path_buffer, file_buffer_length);
+
+  return storedFileIsHealthy(file_info, unique_path);
+}
+
 /** Validate the integrity of all files in the given subtree recursively.
 
-  @param r Used for allocating additional broken nodes.
+  @param context Pre-populated context to be used for this integrity check.
   @param node_list List of path nodes to traverse recursively.
-  @param broken_nodes Will be updated with newly found broken nodes by
-  prepending to this list.
-  @param path_buffer Reusable buffer pre-populated with the full or
-  relative path to the repository.
-  @param unique_subpath_buffer Reusable string buffer for internal use by
-  this function.
-  @param repo_path_length Length of the pre-populated path in
-  `path_buffer`, excluding the trailing slash.
 */
-static void checkIntegrityRecursively(CR_Region *r,
-                                      PathNode *node_list,
-                                      ListOfBrokenPathNodes **broken_nodes,
-                                      char **path_buffer,
-                                      char **unique_subpath_buffer,
-                                      const size_t repo_path_length)
+static void checkIntegrityRecursively(IntegrityCheckContext *context,
+                                      PathNode *node_list)
 {
   for(PathNode *node = node_list; node != NULL; node = node->next)
   {
     for(PathHistory *point = node->history;
         point != NULL; point = point->next)
     {
-      if(point->state.type != PST_regular)
-      {
-        continue;
-      }
-
-      repoBuildRegularFilePath(unique_subpath_buffer,
-                               &point->state.metadata.reg);
-      const size_t file_buffer_length =
-        pathBuilderAppend(path_buffer, repo_path_length,
-                          *unique_subpath_buffer);
-      String unique_path = strSlice(*path_buffer, file_buffer_length);
-
-      if(!storedFileIsHealthy(&point->state.metadata.reg, unique_path))
+      if(!historyPointIsHealthy(context, point))
       {
         ListOfBrokenPathNodes *broken_node =
-          CR_RegionAlloc(r, sizeof(*broken_node));
+          CR_RegionAlloc(context->r, sizeof(*broken_node));
         broken_node->node = node;
-        broken_node->next = *broken_nodes;
-        *broken_nodes = broken_node;
+        broken_node->next = context->broken_nodes;
+        context->broken_nodes = broken_node;
         break;
       }
     }
-    checkIntegrityRecursively(r, node->subnodes, broken_nodes, path_buffer,
-                              unique_subpath_buffer, repo_path_length);
+    checkIntegrityRecursively(context, node->subnodes);
   }
 }
-
 
 /** Check if all the files in the specified repository match up with their
   stored hash.
@@ -113,17 +135,20 @@ static void checkIntegrityRecursively(CR_Region *r,
 ListOfBrokenPathNodes *checkIntegrity(CR_Region *r, Metadata *metadata,
                                       String repo_path)
 {
-  ListOfBrokenPathNodes *result = NULL;
-
   CR_Region *disposable_r = CR_RegionNew();
-  char *unique_subpath_buffer = CR_RegionAllocGrowable(disposable_r, 1);
 
-  char *path_buffer = CR_RegionAllocGrowable(disposable_r, 1);
-  pathBuilderSet(&path_buffer, cStr(repo_path, &unique_subpath_buffer));
+  IntegrityCheckContext context = {
+    .r = r,
+    .broken_nodes = NULL,
+    .repo_path = repo_path,
+    .path_buffer = CR_RegionAllocGrowable(disposable_r, 1),
+    .unique_subpath_buffer = CR_RegionAllocGrowable(disposable_r, 1),
+  };
+  pathBuilderSet(&context.path_buffer,
+                 cStr(repo_path, &context.unique_subpath_buffer));
 
-  checkIntegrityRecursively(r, metadata->paths, &result, &path_buffer,
-                            &unique_subpath_buffer, repo_path.length);
+  checkIntegrityRecursively(&context, metadata->paths);
 
   CR_RegionRelease(disposable_r);
-  return result;
+  return context.broken_nodes;
 }
