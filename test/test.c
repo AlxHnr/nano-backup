@@ -212,5 +212,5 @@ void getLastErrorMessage(char *out, const size_t out_size)
   {
     dieTest("getLastErrorMessage(): given out buffer is too small");
   }
-  strcpy(out, test_error_message);
+  strncpy(out, test_error_message, out_size);
 }

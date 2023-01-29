@@ -610,7 +610,7 @@ char *sReadLine(FILE *stream)
     }
     else
     {
-      buffer[used] = character;
+      buffer[used] = (char)character;
       used++;
     }
   }while(reached_end == false);

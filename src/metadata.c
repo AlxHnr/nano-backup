@@ -201,7 +201,7 @@ static time_t readTime(FileContent content, size_t *reader_position,
 {
   CR_StaticAssert(sizeof(time_t) == 4 || sizeof(time_t) == 8);
 
-  int64_t time = read64(content, reader_position, metadata_path);
+  int64_t time = (int64_t)read64(content, reader_position, metadata_path);
 
   if(sizeof(time_t) == 4 && (time < INT32_MIN || time > INT32_MAX))
   {

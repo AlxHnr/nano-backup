@@ -51,14 +51,7 @@ static bool checkRegularValues(const PathState *state, uint64_t size,
     return (memcmp(state->metadata.reg.hash, hash, FILE_HASH_SIZE) == 0)
       && state->metadata.reg.slot == slot;
   }
-  else if(size > 0)
-  {
-    return memcmp(state->metadata.reg.hash, hash, size) == 0;
-  }
-  else
-  {
-    return true;
-  }
+  return size == 0 || memcmp(state->metadata.reg.hash, hash, size) == 0;
 }
 
 /** Checks if the next node in the given history point is greater. This
@@ -72,12 +65,9 @@ static bool checkRegularValues(const PathState *state, uint64_t size,
 */
 static bool nextNodeGreater(Metadata *metadata, PathHistory *point)
 {
-  if(point->next == NULL)
-  {
-    return true;
-  }
-  else if(point->backup == &metadata->current_backup &&
-          point->next->backup != &metadata->current_backup)
+  if(point->next == NULL ||
+      (point->backup == &metadata->current_backup &&
+       point->next->backup != &metadata->current_backup))
   {
     return true;
   }

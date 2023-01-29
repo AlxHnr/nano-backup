@@ -455,7 +455,7 @@ static MetadataChanges recursePrintOverTree(Metadata *metadata,
 void printHumanReadableSize(uint64_t size)
 {
   static const char units[] = "bKMGT";
-  double converted_value = size;
+  double converted_value = (double)size;
   size_t unit_index = 0;
 
   while(converted_value > 999.9 && unit_index + 2 < sizeof(units))

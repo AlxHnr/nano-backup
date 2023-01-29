@@ -941,6 +941,7 @@ static char *findString(char *data, const char *string, size_t data_length)
 /** Copies the given string into data without the terminating null-byte. */
 static void copyStringRaw(char *data, const char *string)
 {
+  /* NOLINTNEXTLINE(bugprone-not-null-terminated-result) */
   memcpy(data, string, strlen(string));
 }
 
