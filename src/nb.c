@@ -13,6 +13,7 @@
 #include "regex-pool.h"
 #include "search-tree.h"
 #include "informations.h"
+#include "integrity.h"
 #include "str.h"
 #include "safe-wrappers.h"
 #include "error-handling.h"
@@ -94,6 +95,36 @@ static void runGC(Metadata *metadata, String repo_path,
     printf(" (");
     printHumanReadableSize(gc_stats.size);
     printf(")\n");
+  }
+}
+
+/** Run checkIntegrity() and print the result.
+
+  @param metadata Metadata of the tested repository.
+  @param repo_path Path to the tested repository.
+*/
+static void runIntegrityCheck(Metadata *metadata, String repo_path)
+{
+  CR_Region *r = CR_RegionNew();
+  ListOfBrokenPathNodes *broken_nodes =
+    checkIntegrity(r, metadata, repo_path);
+
+  size_t broken_node_count = 0;
+  for(ListOfBrokenPathNodes *path_node = broken_nodes;
+      path_node != NULL; path_node = path_node->next)
+  {
+    colorPrintf(stdout, TC_red_bold, "?? ");
+    colorPrintf(stdout, TC_red, "%s ", path_node->node->path.content);
+    printf("(corrupted)\n");
+    broken_node_count++;
+  }
+  CR_RegionRelease(r);
+
+  if(broken_node_count != 0)
+  {
+    printf("\n");
+    die("found %li item%s with corrupted backup history",
+        broken_node_count, broken_node_count == 1 ? "" : "s");
   }
 }
 
@@ -247,6 +278,15 @@ int main(const int arg_count, const char **arg_list)
     }
 
     runGC(metadataLoadFromRepo(path_to_repo), path_to_repo, false);
+  }
+  else if(strcmp(arg_list[2], "integrity") == 0)
+  {
+    if(arg_count > 3)
+    {
+      die("too many arguments for integrity command");
+    }
+
+    runIntegrityCheck(metadataLoadFromRepo(path_to_repo), path_to_repo);
   }
   else if(regexec(rpCompile(strWrap("^[0-9]+$"), strWrap(__FILE__),
                             __LINE__), arg_list[2], 0, NULL, 0) == 0)
