@@ -10,6 +10,7 @@
 #include "file-hash.h"
 #include "path-builder.h"
 #include "safe-wrappers.h"
+#include "string-table.h"
 
 /** Stores the data of an ongoing integrity check. */
 typedef struct
@@ -29,6 +30,9 @@ typedef struct
 
   /** Reusable buffer created with CR_RegionAllocGrowable(). */
   char *unique_subpath_buffer;
+
+  /** Cache to store the result of checked files. */
+  StringTable *unique_subpath_cache;
 }IntegrityCheckContext;
 
 /** Check the integrity of a single stored file.
@@ -86,12 +90,28 @@ static bool historyPointIsHealthy(IntegrityCheckContext *context,
   }
 
   repoBuildRegularFilePath(&context->unique_subpath_buffer, file_info);
-  const size_t file_buffer_length =
-    pathBuilderAppend(&context->path_buffer, context->repo_path.length,
-                      context->unique_subpath_buffer);
-  String unique_path = strSlice(context->path_buffer, file_buffer_length);
+  String unique_subpath = strWrap(context->unique_subpath_buffer);
 
-  return storedFileIsHealthy(file_info, unique_path);
+  const void *cached_result =
+    strTableGet(context->unique_subpath_cache, unique_subpath);
+  void *subpath_is_healthy = (void *)0x1;
+  void *subpath_is_broken  = (void *)0x2;
+
+  if(cached_result == NULL)
+  {
+    const size_t file_buffer_length =
+      pathBuilderAppend(&context->path_buffer, context->repo_path.length,
+                        unique_subpath.content);
+    String full_unique_path =
+      strSlice(context->path_buffer, file_buffer_length);
+
+    const bool is_healthy =
+      storedFileIsHealthy(file_info, full_unique_path);
+    strTableMap(context->unique_subpath_cache, strCopy(unique_subpath),
+                is_healthy ? subpath_is_healthy : subpath_is_broken);
+    return is_healthy;
+  }
+  return cached_result == subpath_is_healthy;
 }
 
 /** Validate the integrity of all files in the given subtree recursively.
@@ -143,6 +163,7 @@ ListOfBrokenPathNodes *checkIntegrity(CR_Region *r, Metadata *metadata,
     .repo_path = repo_path,
     .path_buffer = CR_RegionAllocGrowable(disposable_r, 1),
     .unique_subpath_buffer = CR_RegionAllocGrowable(disposable_r, 1),
+    .unique_subpath_cache = strTableNew(disposable_r),
   };
   pathBuilderSet(&context.path_buffer,
                  cStr(repo_path, &context.unique_subpath_buffer));
