@@ -65,7 +65,7 @@ jobs:
             test-command: "make run-test"
           - configuration: valgrind
             tarball: "build-output-gcc-debug.tar"
-            test-command: "./test/run-all-tests-with-valgrind.sh"
+            test-command: "./scripts/run-all-tests-with-valgrind.sh"
     runs-on: ubuntu-latest
     steps:
     - name: Install dependencies
