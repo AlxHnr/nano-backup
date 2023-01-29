@@ -60,30 +60,7 @@ CC=clang CFLAGS+=" $CLANG_FLAGS" make test
 # Run tests with valgrind.
 make clean
 CC=gcc CFLAGS+=" -O0 -ggdb" build
-
-find build/ -type f -executable \
-  -exec mv "{}" "{}-bin" ";" \
-  -exec ln -s "$PWD/build/valgrind/run-bin.sh" "{}" ";"
-
-mkdir -p build/valgrind
-cat > build/valgrind/run-bin.sh <<EOF
-#!/bin/sh -e
-
-valgrind --leak-check=full --track-origins=yes --read-var-info=yes \\
-  --log-file="$PWD/build/valgrind/log-%p" \\
-  --quiet "\${0}-bin" "\$@"
-EOF
-chmod +x build/valgrind/run-bin.sh
-
-make test
-
-# Search for valgrind errors.
-find build/valgrind -type f -empty -exec rm "{}" ";"
-for file in build/valgrind/*; do
-  test "$file" != "build/valgrind/run-bin.sh" || continue
-  grep --color=auto . <<< "valgrind found errors" >&2
-  exit 1;
-done
+./test/run-all-tests-with-valgrind.sh
 
 make clean
 CFLAGS+=" -O0 -ggdb" scan-build make -j"$(nproc)" all
