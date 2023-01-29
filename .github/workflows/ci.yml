@@ -45,13 +45,25 @@ jobs:
         name: build-output
         path: build-output-${{ matrix.configuration }}.tar
   static-analysis:
+    strategy:
+      matrix:
+        linter:
+          - clang-tidy
+          - cppcheck
+        include:
+          - linter: clang-tidy
+            command: >
+              ./scripts/generate-compile-commands-json.sh &&
+              ./scripts/run-clang-tidy.sh
+          - linter: cppcheck
+            command: ./scripts/run-cppcheck.sh
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
     - name: Install dependencies
-      run: sudo apt-get install cppcheck
+      run: sudo apt-get install ${{ matrix.linter }}
     - name: Run static analysis
-      run: ./scripts/run-cppcheck.sh
+      run: "${{ matrix.command }}"
   test:
     needs: build
     strategy:

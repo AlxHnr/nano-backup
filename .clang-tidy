@@ -1,0 +1,3 @@
+---
+Checks: 'bugprone-*,-bugprone-easily-swappable-parameters,-bugprone-sizeof-expression,clang-analyzer-*,clang-diagnostic-*,misc-*,-misc-no-recursion,performante-*,portability-*'
+...
