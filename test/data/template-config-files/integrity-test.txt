@@ -1,0 +1,4 @@
+[track]
+/test directory/foo 1
+/tmp/files
+/valid-config-files
