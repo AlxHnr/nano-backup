@@ -57,7 +57,7 @@ static bool storedFileIsHealthy(RegularFileInfo *file_info,
   {
     return false;
   }
-  if(stats.st_size != file_info->size)
+  if((uint64_t)stats.st_size != file_info->size)
   {
     return false;
   }
