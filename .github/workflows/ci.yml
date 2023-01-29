@@ -4,18 +4,26 @@ jobs:
   build:
     strategy:
       matrix:
-        compiler:
-          - gcc
-          - musl-gcc
-          - clang
+        configuration:
+          - gcc-debug
+          - gcc-sanitize-coverage
+          - gcc-musl-static
+          - clang-sanitize
         include:
-          - compiler: gcc
+          - configuration: gcc-debug
+            compiler: gcc
+            cflags: "-Wall -Wextra -Werror -pedantic -O0 -ggdb"
+            ldflags: "-O0 -ggdb"
+          - configuration: gcc-sanitize-coverage
+            compiler: gcc
             cflags: "-Wall -Wextra -Werror -pedantic -O0 -ggdb -fsanitize=address,undefined -fno-sanitize-recover=all -coverage"
             ldflags: "-O0 -ggdb -fsanitize=address,undefined -fno-sanitize-recover=all -coverage"
-          - compiler: musl-gcc
+          - configuration: gcc-musl-static
+            compiler: musl-gcc
             cflags: "-Wall -Wextra -Werror -pedantic -O2"
             ldflags: "-O2 -static"
-          - compiler: clang
+          - configuration: clang-sanitize
+            compiler: clang
             cflags: "-Wall -Wextra -Werror -pedantic -O0 -ggdb -fsanitize=address,undefined -fno-sanitize-recover=all"
             ldflags: "-O0 -ggdb -fsanitize=address,undefined -fno-sanitize-recover=all"
     runs-on: ubuntu-latest
@@ -24,39 +32,56 @@ jobs:
       CFLAGS: ${{ matrix.cflags }}
       LDFLAGS: ${{ matrix.ldflags }}
     steps:
-    - uses: actions/checkout@v3
     - name: Install dependencies
       if: ${{ matrix.compiler == 'musl-gcc' }}
       run: sudo apt-get install musl-tools
+    - uses: actions/checkout@v3
     - name: Build
       run: make -j "$(nproc)" all
     - name: Pack build output artifacts
-      run: tar cvaf build-output-${{ matrix.compiler }}.tar build/ test/data/generated-*/ test/data/test\ directory/.empty/
+      run: tar cvaf build-output-${{ matrix.configuration }}.tar build/ test/data/generated-*/ test/data/test\ directory/.empty/
     - uses: actions/upload-artifact@v3
       with:
         name: build-output
-        path: build-output-${{ matrix.compiler }}.tar
+        path: build-output-${{ matrix.configuration }}.tar
   test:
     needs: build
     strategy:
       matrix:
-        compiler:
-          - gcc
-          - musl-gcc
-          - clang
+        configuration:
+          - gcc-sanitize-coverage
+          - gcc-musl-static
+          - clang-sanitize
+          - valgrind
+        include:
+          - configuration: gcc-sanitize-coverage
+            tarball: "build-output-gcc-sanitize-coverage.tar"
+            test-command: "make run-test"
+          - configuration: gcc-musl-static
+            tarball: "build-output-gcc-musl-static.tar"
+            test-command: "make run-test"
+          - configuration: clang-sanitize
+            tarball: "build-output-clang-sanitize.tar"
+            test-command: "make run-test"
+          - configuration: valgrind
+            tarball: "build-output-gcc-debug.tar"
+            test-command: "./test/run-all-tests-with-valgrind.sh"
     runs-on: ubuntu-latest
     steps:
+    - name: Install dependencies
+      if: ${{ matrix.configuration == 'valgrind' }}
+      run: sudo apt-get install valgrind
     - uses: actions/checkout@v3
     - uses: actions/download-artifact@v3
       id: download-artifacts
       with:
         name: build-output
     - name: Unpack build output artifacts
-      run: tar xvaf "${{ steps.download-artifacts.outputs.download-path }}/build-output-${{ matrix.compiler }}.tar"
+      run: tar xvaf "${{ steps.download-artifacts.outputs.download-path }}/${{ matrix.tarball }}"
     - name: Test
-      run: script -efqc 'make run-test' /dev/null # Force colored output.
+      run: script -efqc "${{ matrix.test-command }}" /dev/null # Force colored output.
     - uses: actions/upload-artifact@v3
-      if: ${{ matrix.compiler == 'gcc' }}
+      if: ${{ matrix.configuration == 'gcc-sanitize-coverage' }}
       with:
         name: coverage-data
         path: build/
