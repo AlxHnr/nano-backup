@@ -44,6 +44,14 @@ jobs:
       with:
         name: build-output
         path: build-output-${{ matrix.configuration }}.tar
+  static-analysis:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install dependencies
+      run: sudo apt-get install cppcheck
+    - name: Run static analysis
+      run: ./scripts/run-cppcheck.sh
   test:
     needs: build
     strategy:
@@ -86,7 +94,7 @@ jobs:
         name: coverage-data
         path: build/
   upload-coverage:
-    needs: test
+    needs: [ test, static-analysis ]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
