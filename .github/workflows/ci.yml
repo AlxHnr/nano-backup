@@ -95,8 +95,6 @@ jobs:
         name: coverage-data
         path: build/
     - name: Upload coverage report to Codecov
-      run: >
-        pip install --user codecov &&
-        gcov -p -b -o build/ src/*.c &&
-        gcov -p -b -o build/test/ test/*.c &&
-        codecov
+      uses: codecov/codecov-action@v3
+      with:
+        gcov: true
