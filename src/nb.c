@@ -30,6 +30,10 @@ static void ensureUserConsent(const char *question)
   while(true)
   {
     printf("%s (y/n) ", question);
+    if(fflush(stdout) != 0)
+    {
+      dieErrno("failed to flush stdout");
+    }
 
     free(line);
     line = sReadLine(stdin);
