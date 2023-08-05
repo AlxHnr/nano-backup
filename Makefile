@@ -23,8 +23,8 @@ all: build/nb $(TEST_PROGRAMS) $(GENERATED_CONFIGS) $(EMPTY_DIR)
 -include build/dependencies.makefile
 build/dependencies.makefile:
 	mkdir -p build/test/ build/third-party/
-	$(CC) -MM -Ithird-party/ src/*.c | sed -r 's,^(\S+:),build/\1,g' > $@
-	$(CC) -MM -Ithird-party/ -Isrc/ test/*.c | sed -r 's,^(\S+:),build/test/\1,g' >> $@
+	$(CC) $(CFLAGS) -MM -Ithird-party/ src/*.c | sed -r 's,^(\S+:),build/\1,g' > $@
+	$(CC) $(CFLAGS) -MM -Ithird-party/ -Isrc/ test/*.c | sed -r 's,^(\S+:),build/test/\1,g' >> $@
 
 build/third-party/BLAKE2/%.o: third-party/BLAKE2/%.c
 	mkdir -p build/third-party/BLAKE2
