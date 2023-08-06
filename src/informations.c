@@ -4,6 +4,7 @@
 
 #include "informations.h"
 
+#include <math.h>
 #include <stdio.h>
 
 #include "colors.h"
@@ -470,7 +471,9 @@ void printHumanReadableSize(uint64_t size)
   }
   else
   {
-    printf("%.1lf %ciB", converted_value, units[unit_index]);
+    double decimal = 0.0;
+    double fraction = floor(modf(converted_value, &decimal) * 10.0);
+    printf("%.0lf.%.0lf %ciB", decimal, fraction, units[unit_index]);
   }
 }
 
