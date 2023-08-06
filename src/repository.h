@@ -61,4 +61,6 @@ extern void repoWriterWrite(const void *data, size_t size,
                             RepoWriter *writer);
 extern void repoWriterClose(RepoWriter *writer);
 
+extern void repoLockUntilExit(String repo_path);
+
 #endif

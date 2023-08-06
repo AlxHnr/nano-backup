@@ -439,4 +439,13 @@ int main(void)
   assert_error(repoReaderRead(buffer, 1, reader),
                "reading \"info_1\" from \"tmp\": reached end of file unexpectedly");
   testGroupEnd();
+
+  testGroupStart("Locking repository");
+  assert_error_errno(repoLockUntilExit(strWrap("tmp/non/existing/path")),
+                     "failed to create lockfile: \"tmp/non/existing/path/lockfile\"",
+                     ENOENT);
+
+  repoLockUntilExit(strWrap("tmp"));
+  assert_true(sPathExists(strWrap("tmp/lockfile")));
+  testGroupEnd();
 }

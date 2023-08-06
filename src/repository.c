@@ -13,6 +13,7 @@
 #include <stdbool.h>
 #include <inttypes.h>
 
+#include "CRegion/region.h"
 #include "CRegion/alloc-growable.h"
 
 #include "safe-math.h"
@@ -405,4 +406,83 @@ void repoWriterClose(RepoWriter *writer_to_close)
   }
 
   fdatasyncDirectory(writer.repo_path);
+}
+
+/** Contains data related to a repositories lockfile. */
+typedef struct
+{
+  /** True if the lockfile is locked by the current process. */
+  bool is_locked;
+
+  /** Lockfile descriptor. */
+  int file_descriptor;
+
+  /** Either a relative or absolute path to the lockfile. */
+  const char *file_path;
+}LockfileInfo;
+
+/** Called when the progam terminates to cleanup a locked repository.
+
+  @param lockfile_info_ptr Context of the repositories lockfile.
+*/
+static void cleanupLockfile(void *lockfile_info_ptr)
+{
+  LockfileInfo *info = lockfile_info_ptr;
+
+  const int old_errno = errno;
+
+  if(info->is_locked)
+  {
+    (void)lockf(info->file_descriptor, F_ULOCK, 0);
+    (void)close(info->file_descriptor);
+    (void)remove(info->file_path);
+  }
+  else
+  {
+    (void)close(info->file_descriptor);
+  }
+
+  errno = old_errno;
+}
+
+/** Lock the specified repository or terminate with an error message. The
+  repository will stay locked until the program exits. Calling this
+  function twice from the same process on the same repository will not
+  fail.
+
+  @param repo_path Either a relative or absolute path to the repository to
+  lock.
+*/
+void repoLockUntilExit(String repo_path)
+{
+  /* Must be allocated before the region to outlive it. */
+  String lockfile_path = strAppendPath(repo_path, strWrap("lockfile"));
+
+  CR_Region *r = CR_RegionNew();
+  LockfileInfo *lockfile_info = CR_RegionAlloc(r, sizeof *lockfile_info);
+  lockfile_info->is_locked = false;
+  lockfile_info->file_path = lockfile_path.content;
+  lockfile_info->file_descriptor =
+    open(lockfile_info->file_path, O_CREAT | O_WRONLY, S_IWUSR | S_IWGRP);
+
+  if(lockfile_info->file_descriptor == -1)
+  {
+    dieErrno("failed to create lockfile: \"%s\"",
+             lockfile_info->file_path);
+  }
+  CR_RegionAttach(r, cleanupLockfile, lockfile_info);
+
+  if(lockf(lockfile_info->file_descriptor, F_TLOCK, 0) == 0)
+  {
+    lockfile_info->is_locked = true;
+  }
+  else if(errno == EACCES || errno == EAGAIN)
+  {
+    die("repository is already being used by another process");
+  }
+  else
+  {
+    dieErrno("failed to lock repository: \"%s\"",
+             lockfile_info->file_path);
+  }
 }
