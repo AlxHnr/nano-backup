@@ -96,8 +96,10 @@ int main(void)
   sMkdir(strWrap("tmp/repo"));
   sFclose(sFopenWrite(strWrap("tmp/repo/config")));
   sFclose(sFopenWrite(strWrap("tmp/repo/metadata")));
+  sFclose(sFopenWrite(strWrap("tmp/repo/lockfile")));
   testCollectGarbage(empty_metadata, "tmp/repo", 0, 0);
   assert_true(sPathExists(strWrap("tmp/repo/config")));
   assert_true(sPathExists(strWrap("tmp/repo/metadata")));
+  assert_true(sPathExists(strWrap("tmp/repo/lockfile")));
   testGroupEnd();
 }

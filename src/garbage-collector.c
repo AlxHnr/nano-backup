@@ -129,6 +129,7 @@ GCStats collectGarbage(Metadata *metadata, String repo_path)
   StringTable *table = strTableNew(table_region);
   strTableMap(table, strWrap("config"),   (void *)0x1);
   strTableMap(table, strWrap("metadata"), (void *)0x1);
+  strTableMap(table, strWrap("lockfile"), (void *)0x1);
 
   for(PathNode *node = metadata->paths; node != NULL; node = node->next)
   {

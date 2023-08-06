@@ -158,6 +158,7 @@ static void backup(String repo_arg)
   {
     die("repository has no config file: \"%s\"", repo_arg.content);
   }
+  repoLockUntilExit(repo_path);
   SearchNode *root_node = searchTreeLoad(config_path);
 
   Metadata *metadata =
@@ -213,6 +214,7 @@ static Metadata *metadataLoadFromRepo(String repo_arg)
     die("repository has no metadata: \"%s\"", repo_arg.content);
   }
 
+  repoLockUntilExit(repo_path);
   return metadataLoad(metadata_path);
 }
 
