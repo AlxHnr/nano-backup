@@ -89,5 +89,15 @@ int main(void)
   assert_true(countItemsInDir("tmp/repo") == 25);
   assert_true(sPathExists(strWrap("tmp/link-to-repo")));
   assert_true(sPathExists(strWrap("tmp/file.txt")));
+  sRemoveRecursively(strWrap("tmp/repo"));
+  testGroupEnd();
+
+  testGroupStart("excluding internal files from deletion");
+  sMkdir(strWrap("tmp/repo"));
+  sFclose(sFopenWrite(strWrap("tmp/repo/config")));
+  sFclose(sFopenWrite(strWrap("tmp/repo/metadata")));
+  testCollectGarbage(empty_metadata, "tmp/repo", 0, 0);
+  assert_true(sPathExists(strWrap("tmp/repo/config")));
+  assert_true(sPathExists(strWrap("tmp/repo/metadata")));
   testGroupEnd();
 }
