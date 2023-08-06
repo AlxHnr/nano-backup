@@ -41,7 +41,7 @@ Clone this repository and run the following command inside the project
 directory:
 
 ```sh
-make && cp build/nb /usr/bin
+make && cp build/nb /usr/local/bin
 ```
 
 ## Usage
