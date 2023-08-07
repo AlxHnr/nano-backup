@@ -1,0 +1,14 @@
+[track]
+/etc/
+
+[summarize]
+\.cache$
+
+[mirror]
+/var/lib/
+
+[summarize]
+\.git$
+
+[ignore]
+^.*$

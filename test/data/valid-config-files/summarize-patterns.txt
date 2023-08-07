@@ -1,0 +1,14 @@
+[summarize]
+
+\.git$
+
+
+
+
+
+
+
+
+
+^/home/user/\.cache$
+^/home/user/\.mozilla$

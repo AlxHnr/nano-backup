@@ -79,6 +79,11 @@ struct SearchNode
     ignore expression list can point to NULL if its empty. */
   RegexList **ignore_expressions;
 
+  /** Points to the search trees shared summarize expression list. It
+    matches directories which should not be printed recursively during a
+    backup. Can point to NULL if its empty. */
+  RegexList **summarize_expressions;
+
   /** The next search node, or NULL. */
   SearchNode *next;
 };

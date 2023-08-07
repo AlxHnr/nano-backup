@@ -16,10 +16,11 @@
 #include "error-handling.h"
 
 /* Helper strings for parsing the config file. */
-static String copy_token   = { .content = "[copy]",   .length = 6, .is_terminated = true };
-static String mirror_token = { .content = "[mirror]", .length = 8, .is_terminated = true };
-static String track_token  = { .content = "[track]",  .length = 7, .is_terminated = true };
-static String ignore_token = { .content = "[ignore]", .length = 8, .is_terminated = true };
+static String copy_token      = { .content = "[copy]",      .length = 6,  .is_terminated = true };
+static String mirror_token    = { .content = "[mirror]",    .length = 8,  .is_terminated = true };
+static String track_token     = { .content = "[track]",     .length = 7,  .is_terminated = true };
+static String ignore_token    = { .content = "[ignore]",    .length = 8,  .is_terminated = true };
+static String summarize_token = { .content = "[summarize]", .length = 11, .is_terminated = true };
 
 /** Returns a string slice, containing the current line in the given config
   files data.
@@ -166,11 +167,14 @@ SearchNode *searchTreeParse(String config)
   root_node->subnodes_contain_regex = false;
   root_node->next = NULL;
 
-  /* Initialize ignore expression list, which is shared across all nodes of
-     the tree. */
+  /* Initialize expression lists, which are shared across all nodes of the
+     tree. */
   root_node->ignore_expressions =
     mpAlloc(sizeof *root_node->ignore_expressions);
   *root_node->ignore_expressions = NULL;
+  root_node->summarize_expressions =
+    mpAlloc(sizeof *root_node->summarize_expressions);
+  *root_node->summarize_expressions = NULL;
 
   /* This table maps paths to existing nodes, without a trailing slash. */
   CR_Region *existing_nodes_region = CR_RegionNew();
@@ -217,6 +221,10 @@ SearchNode *searchTreeParse(String config)
     {
       current_policy = BPOL_ignore;
     }
+    else if(strEqual(line, summarize_token))
+    {
+      current_policy = BPOL_summarize;
+    }
     else if(line.content[0] == '[' && line.content[line.length - 1] == ']')
     {
       /* Slice out and copy the invalid policy name. */
@@ -229,24 +237,25 @@ SearchNode *searchTreeParse(String config)
       die("config: line %zu: pattern without policy: \"%s\"",
           line_nr, pattern.content);
     }
-    else if(current_policy == BPOL_ignore)
+    else if(current_policy == BPOL_ignore ||
+            current_policy == BPOL_summarize)
     {
-      /* Initialize new ignore expression. */
-      RegexList *ignore_expression = mpAlloc(sizeof *ignore_expression);
+      RegexList *expression = mpAlloc(sizeof *expression);
 
-      strSet(&ignore_expression->expression, strCopy(line));
-      ignore_expression->line_nr = line_nr;
+      strSet(&expression->expression, strCopy(line));
+      expression->line_nr = line_nr;
+      expression->regex =
+        rpCompile(expression->expression, strWrap("config"), line_nr);
+      expression->has_matched = false;
 
-      /* Pass the copy of the current line, to ensure that the string is
-         null-terminated. */
-      ignore_expression->regex =
-        rpCompile(ignore_expression->expression, strWrap("config"), line_nr);
+      RegexList **shared_expression_list =
+        current_policy == BPOL_summarize
+        ? root_node->summarize_expressions
+        : root_node->ignore_expressions;
 
-      ignore_expression->has_matched = false;
-
-      /* Prepend new expression to the shared ignore expression list. */
-      ignore_expression->next = *root_node->ignore_expressions;
-      *root_node->ignore_expressions = ignore_expression;
+      /* Prepend new expression to the shared expression list. */
+      expression->next = *shared_expression_list;
+      *shared_expression_list = expression;
     }
     else if(line.content[0] == '/')
     {

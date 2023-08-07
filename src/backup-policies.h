@@ -28,6 +28,10 @@ typedef enum
   /** Ignore the file. This is only a helper policy for parsing config
     files. */
   BPOL_ignore,
+
+  /** Directories which should not be printed recursively during a backup.
+    This is only a helper policy for parsing config files. */
+  BPOL_summarize,
 }BackupPolicy;
 
 #endif
