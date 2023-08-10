@@ -91,5 +91,5 @@ This release contains **breaking changes**. Migration guide:
 
 * Backup
 * Restore
-* `gc` command
+* GC command
 * Config file: warn about search patterns which don't match any files
