@@ -6,7 +6,7 @@
 # $2 The path which should be prepended to every found file in the output.
 gen_expected_output()
 {
-  path_elements=$(echo "$2" | grep -o '\/' | wc -l)
+  path_elements=$(echo "$2" | grep -o '/' | wc -l)
   expected_files=$(grep -E '^New: [0-9]+ ' "$1" | \
     sed -r 's,^New: ([0-9]+) .*$,\1,g')
   total_files="0"
