@@ -132,17 +132,6 @@ static void runIntegrityCheck(Metadata *metadata, String repo_path)
   }
 }
 
-/** Returns true if the given struct contains any changes. */
-static bool containsChanges(MetadataChanges changes)
-{
-  return
-    changes.new_items.count > 0 ||
-    changes.removed_items.count > 0 ||
-    changes.lost_items.count > 0 ||
-    changes.changed_items.count > 0 ||
-    changes.other == true;
-}
-
 /** The default action when only the repository is given.
 
   @param repo_arg The repository path argument as provided by the user.

@@ -190,6 +190,16 @@ static void addNode(PathNode *node, MetadataChanges *changes)
   }
 }
 
+/** Returns true if the given struct contains any non-metadata related
+  changes. */
+static bool containsContentChanges(MetadataChanges changes)
+{
+  return
+    changes.new_items.count > 0 ||
+    changes.removed_items.count > 0 ||
+    changes.lost_items.count > 0 ||
+    changes.changed_items.count > 0;
+}
 /** Prints the informations in the given change stats.
 
   @param stats The struct containing the informations.
@@ -508,6 +518,13 @@ void printSearchTreeInfos(SearchNode *root_node)
 MetadataChanges printMetadataChanges(Metadata *metadata)
 {
   return recursePrintOverTree(metadata, metadata->paths, true);
+}
+
+/** Returns true if the given struct contains any changes. */
+bool containsChanges(MetadataChanges changes)
+{
+  return containsContentChanges(changes) ||
+    changes.other == true;
 }
 
 /** Prints a warning on how the specified node matches the given string. */
