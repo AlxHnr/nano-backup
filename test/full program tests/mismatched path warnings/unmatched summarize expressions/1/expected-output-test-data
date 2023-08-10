@@ -1,0 +1,7 @@
+++ /test directory/ (+31 items)
+config: line 5: regex never matched a directory: "^will-never-match-anything$"
+config: line 8: regex never matched a directory: "./test directory/foo 1/bar$"
+
+New: 32 (0 b)
+
+proceed? (y/n) 

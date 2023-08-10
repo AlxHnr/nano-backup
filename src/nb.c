@@ -156,7 +156,8 @@ static void backup(String repo_arg)
     metadataNew();
 
   initiateBackup(metadata, root_node);
-  MetadataChanges changes = printMetadataChanges(metadata);
+  MetadataChanges changes =
+    printMetadataChanges(metadata, *root_node->summarize_expressions);
   printSearchTreeInfos(root_node);
 
   if(containsChanges(changes))
@@ -237,7 +238,8 @@ static void restore(String repo_arg, size_t id, String path)
   String full_path = strRemoveTrailingSlashes(buildFullPath(path));
   initiateRestore(metadata, id, strCopy(full_path));
 
-  if(containsChanges(printMetadataChanges(metadata)) && printf("\n") == 1)
+  MetadataChanges changes = printMetadataChanges(metadata, NULL);
+  if(containsChanges(changes) && printf("\n") == 1)
   {
     ensureUserConsent("restore?");
     finishRestore(metadata, id, repo_arg);

@@ -37,6 +37,23 @@ static void warnPathNewline(String path)
   fputc('\n', stderr);
 }
 
+/** Prints every expression in the given list which has never matched a
+  string. */
+static void warnUnmatchedExpressions(RegexList *expression_list,
+                                     const char *target_name)
+{
+  for(RegexList *expression = expression_list;
+      expression != NULL; expression = expression->next)
+  {
+    if(expression->has_matched == false)
+    {
+      warnConfigLineNr(expression->line_nr);
+      fprintf(stderr, "regex never matched a %s: ", target_name);
+      warnPathNewline(expression->expression);
+    }
+  }
+}
+
 /** Returns either "regex" or "string" depending on the given node. */
 static const char *typeOf(SearchNode *node)
 {
@@ -200,6 +217,7 @@ static bool containsContentChanges(MetadataChanges changes)
     changes.lost_items.count > 0 ||
     changes.changed_items.count > 0;
 }
+
 /** Prints the informations in the given change stats.
 
   @param stats The struct containing the informations.
@@ -401,10 +419,37 @@ static void printNode(PathNode *node, MetadataChanges subnode_changes)
   printf("\n");
 }
 
+/** Check whether the given path node is being matched by an item in the
+  specified regex list
+
+  @param node Path to match.
+  @param expression_list List of regular expressions. Can be NULL. The
+  first expression to match will get its `has_matched` field updated.
+
+  @return True if the given path node got matched by one of the specified
+  regex patterns.
+*/
+static bool matchesRegexList(PathNode *node, RegexList *expression_list)
+{
+  for(RegexList *expression = expression_list;
+      expression != NULL; expression = expression->next)
+  {
+    if (regexec(expression->regex, node->path.content, 0, NULL, 0) == 0)
+    {
+      expression->has_matched = true;
+      return true;
+    }
+  }
+  return false;
+}
+
 /** Prints informations about a tree recursively.
 
   @param metadata The metadata belonging to given node list.
   @param path_list A list of nodes to print informations about.
+  @param summarize_expressions Optional list of regex patterns for deciding
+  whether this node should be printed recursively or not. Can be NULL. May
+  update the `has_matched` field in the list.
   @param print True, if informations should be printed.
 
   @return Statistics about all the nodes locatable trough the given path
@@ -412,6 +457,7 @@ static void printNode(PathNode *node, MetadataChanges subnode_changes)
 */
 static MetadataChanges recursePrintOverTree(Metadata *metadata,
                                             PathNode *path_list,
+                                            RegexList *summarize_expressions,
                                             bool print)
 {
   MetadataChanges changes =
@@ -428,6 +474,15 @@ static MetadataChanges recursePrintOverTree(Metadata *metadata,
   {
     MetadataChanges subnode_changes;
 
+    const bool summarize =
+      node->policy != BPOL_none &&
+      getExistingState(node)->type == PST_directory &&
+      matchesRegexList(node, summarize_expressions);
+    /* Once a summarize expression matched, its subnodes should not be
+       tested anymore. */
+    RegexList *expressions_to_pass_down =
+      summarize ? NULL : summarize_expressions;
+
     if(print == true && node->hint > BH_unchanged &&
        !(node->policy == BPOL_none &&
          (node->hint == BH_added ||
@@ -438,7 +493,8 @@ static MetadataChanges recursePrintOverTree(Metadata *metadata,
         backupHintNoPol(node->hint) > BH_other_to_directory;
 
       subnode_changes =
-        recursePrintOverTree(metadata, node->subnodes, print_subnodes);
+        recursePrintOverTree(metadata, node->subnodes,
+                             expressions_to_pass_down, print_subnodes);
 
       if(!(node->hint == BH_timestamp_changed &&
            subnode_changes.affects_parent_timestamp))
@@ -449,7 +505,8 @@ static MetadataChanges recursePrintOverTree(Metadata *metadata,
     else
     {
       subnode_changes =
-        recursePrintOverTree(metadata, node->subnodes, print);
+        recursePrintOverTree(metadata, node->subnodes,
+                             expressions_to_pass_down, print);
     }
 
     addNode(node, &changes);
@@ -495,29 +552,25 @@ void printHumanReadableSize(uint64_t size)
 void printSearchTreeInfos(SearchNode *root_node)
 {
   printSearchNodeInfos(root_node);
-
-  for(RegexList *expression = *root_node->ignore_expressions;
-      expression != NULL; expression = expression->next)
-  {
-    if(expression->has_matched == false)
-    {
-      warnConfigLineNr(expression->line_nr);
-      fprintf(stderr, "regex never matched a path: ");
-      warnPathNewline(expression->expression);
-    }
-  }
+  warnUnmatchedExpressions(*root_node->ignore_expressions, "path");
+  warnUnmatchedExpressions(*root_node->summarize_expressions, "directory");
 }
 
 /** Prints the changes in the given metadata tree.
 
   @param metadata A metadata tree, which must have been initiated with
   initiateBackup().
+  @param summarize_expressions Optional list of regex patters which
+  describe directories that should not be printed recursively. Can be NULL.
+  May update the `has_matched` field in the list.
 
   @return A shallow summary of the printed changes for further processing.
 */
-MetadataChanges printMetadataChanges(Metadata *metadata)
+MetadataChanges printMetadataChanges(Metadata *metadata,
+                                     RegexList *summarize_expressions)
 {
-  return recursePrintOverTree(metadata, metadata->paths, true);
+  return recursePrintOverTree(metadata, metadata->paths,
+                              summarize_expressions, true);
 }
 
 /** Returns true if the given struct contains any changes. */

@@ -38,7 +38,8 @@ typedef struct
 
 extern void printHumanReadableSize(uint64_t size);
 extern void printSearchTreeInfos(SearchNode *root_node);
-extern MetadataChanges printMetadataChanges(Metadata *metadata);
+extern MetadataChanges printMetadataChanges(Metadata *metadata,
+                                            RegexList *summarize_expressions);
 extern bool containsChanges(MetadataChanges changes);
 extern void warnNodeMatches(SearchNode *node, String string);
 

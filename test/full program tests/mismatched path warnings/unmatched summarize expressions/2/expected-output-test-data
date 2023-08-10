@@ -1,0 +1,6 @@
+++ /test directory/foo 1/bar/ (+3 items)
+config: line 6: regex never matched a directory: "./test directory$"
+
+New: 6 (0 b)
+
+proceed? (y/n) 

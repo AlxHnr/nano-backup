@@ -1,0 +1,6 @@
+[copy]
+/test directory/foo 1/bar/
+
+[summarize]
+# The next line is superseded by the copy rule in line 2 one and won't match.
+./test directory$

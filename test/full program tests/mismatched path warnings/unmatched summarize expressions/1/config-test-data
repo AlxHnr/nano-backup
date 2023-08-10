@@ -1,0 +1,8 @@
+[copy]
+/test directory/
+
+[summarize]
+^will-never-match-anything$
+./test directory/foo 1$
+# The next line is superseded by the previous one and won't match.
+./test directory/foo 1/bar$
