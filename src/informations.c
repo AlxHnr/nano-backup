@@ -4,8 +4,8 @@
 
 #include "informations.h"
 
-#include <math.h>
 #include <stdio.h>
+#include <inttypes.h>
 
 #include "colors.h"
 #include "safe-math.h"
@@ -636,9 +636,9 @@ void printHumanReadableSize(uint64_t size)
   }
   else
   {
-    double decimal = 0.0;
-    double fraction = floor(modf(converted_value, &decimal) * 10.0);
-    printf("%.0lf.%.0lf %ciB", decimal, fraction, units[unit_index]);
+    uint64_t fraction = (uint64_t)(converted_value * 10.0) % 10;
+    printf("%"PRIu64".%"PRIu64" %ciB", (uint64_t)converted_value,
+           fraction, units[unit_index]);
   }
 }
 
