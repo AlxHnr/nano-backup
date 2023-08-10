@@ -134,6 +134,8 @@ static void metadataChangesAdd(MetadataChanges *a, MetadataChanges b)
                  b.changed_items.count,
                  b.changed_items.size);
 
+  a->changed_attributes =
+    sSizeAdd(a->changed_attributes, b.changed_attributes);
   a->other |= b.other;
 }
 
@@ -158,8 +160,11 @@ static PathState *getExistingState(PathNode *node)
 
   @param node The node to consider.
   @param changes The change struct which should be updated.
+  @param timestamp_changed_by_subnodes True if this nodes timestamp change
+  was caused by a subnode.
 */
-static void addNode(PathNode *node, MetadataChanges *changes)
+static void addNode(PathNode *node, MetadataChanges *changes,
+                    bool timestamp_changed_by_subnodes)
 {
   BackupHint hint = backupHintNoPol(node->hint);
   PathState *state = getExistingState(node);
@@ -204,6 +209,13 @@ static void addNode(PathNode *node, MetadataChanges *changes)
     changes->affects_parent_timestamp |=
       (hint >= BH_regular_to_symlink &&
        hint <= BH_other_to_directory);
+
+    if(node->hint != BH_timestamp_changed ||
+       timestamp_changed_by_subnodes == false)
+    {
+      changes->changed_attributes =
+        sSizeAdd(changes->changed_attributes, 1);
+    }
   }
 }
 
@@ -254,6 +266,42 @@ static void printPrefix(bool *printed_prefix)
   }
 }
 
+/** Print a summary of all changes in subnodes.
+
+  @param subnode_changes Contains the changes to print.
+  @param printed_prefix See printPrefix().
+*/
+static void printSummarizedStats(MetadataChanges subnode_changes,
+                                 bool *printed_prefix)
+{
+  if(subnode_changes.new_items.count > 0)
+  {
+    printPrefix(printed_prefix);
+    printChangeStats(subnode_changes.new_items, "+");
+  }
+
+  ChangeStats deleted_items = subnode_changes.removed_items;
+  changeStatsAdd(&deleted_items,
+                 subnode_changes.lost_items.count,
+                 subnode_changes.lost_items.size);
+  if(deleted_items.count > 0)
+  {
+    printPrefix(printed_prefix);
+    printChangeStats(deleted_items, "-");
+  }
+  if(subnode_changes.changed_items.count > 0)
+  {
+    printPrefix(printed_prefix);
+    printf("%zu changed", subnode_changes.changed_items.count);
+  }
+  if(subnode_changes.changed_attributes > 0)
+  {
+    printPrefix(printed_prefix);
+    printf("%zu metadata change%s", subnode_changes.changed_attributes,
+           subnode_changes.changed_attributes == 1 ? "" : "s");
+  }
+}
+
 /** Prints the given nodes path in the specified color. It will append a
   "/" if the node represents a directory. */
 static void printNodePath(PathNode *node, TextColor color)
@@ -269,8 +317,11 @@ static void printNodePath(PathNode *node, TextColor color)
   @param node The node to consider.
   @param subnode_changes Statistics gathered from all the current nodes
   subnodes.
+  @param summarize_subnode_changes True if the subnode changes should be
+  printed in a concise way.
 */
-static void printNode(PathNode *node, MetadataChanges subnode_changes)
+static void printNode(PathNode *node, MetadataChanges subnode_changes,
+                      bool summarize_subnode_changes)
 {
   BackupHint hint = backupHintNoPol(node->hint);
 
@@ -308,10 +359,23 @@ static void printNode(PathNode *node, MetadataChanges subnode_changes)
     colorPrintf(stdout, TC_yellow_bold, "!! ");
     printNodePath(node, TC_yellow);
   }
+  else if(summarize_subnode_changes == true &&
+          containsContentChanges(subnode_changes))
+  {
+    colorPrintf(stdout, TC_yellow_bold, "!! ");
+    printNodePath(node, TC_yellow);
+    printf("...");
+  }
   else if(hint != BH_none)
   {
     colorPrintf(stdout, TC_magenta_bold, "@@ ");
     printNodePath(node, TC_magenta);
+
+    if (summarize_subnode_changes == true &&
+        subnode_changes.changed_attributes > 0)
+    {
+      printf("...");
+    }
   }
   else
   {
@@ -354,7 +418,8 @@ static void printNode(PathNode *node, MetadataChanges subnode_changes)
 
   if(node->history->state.type != PST_symlink &&
      !(node->hint & BH_timestamp_changed) !=
-     !(node->hint & BH_content_changed))
+     !(node->hint & BH_content_changed) &&
+     subnode_changes.affects_parent_timestamp == false)
   {
     printPrefix(&printed_details);
     printf("%stimestamp", (node->hint & BH_timestamp_changed)? "":"same ");
@@ -390,6 +455,10 @@ static void printNode(PathNode *node, MetadataChanges subnode_changes)
     {
       printPrefix(&printed_details);
       printChangeStats(subnode_changes.lost_items, "-");
+    }
+    else if(summarize_subnode_changes == true)
+    {
+      printSummarizedStats(subnode_changes, &printed_details);
     }
   }
   else if(hint == BH_directory_to_regular ||
@@ -467,13 +536,13 @@ static MetadataChanges recursePrintOverTree(Metadata *metadata,
     .lost_items    = { .count = 0, .size = 0 },
     .changed_items = { .count = 0, .size = 0 },
     .affects_parent_timestamp = false,
+    .changed_attributes = 0,
     .other = false,
   };
 
   for(PathNode *node = path_list; node != NULL; node = node->next)
   {
     MetadataChanges subnode_changes;
-
     const bool summarize =
       node->policy != BPOL_none &&
       getExistingState(node)->type == PST_directory &&
@@ -483,11 +552,21 @@ static MetadataChanges recursePrintOverTree(Metadata *metadata,
     RegexList *expressions_to_pass_down =
       summarize ? NULL : summarize_expressions;
 
-    if(print == true && node->hint > BH_unchanged &&
-       !(node->policy == BPOL_none &&
-         (node->hint == BH_added ||
-          (node->hint >= BH_owner_changed &&
-           node->hint <= BH_timestamp_changed))))
+    if(print == true && summarize == true)
+    {
+      subnode_changes =
+        recursePrintOverTree(metadata, node->subnodes,
+                             expressions_to_pass_down, false);
+      if(node->hint > BH_unchanged || containsChanges(subnode_changes))
+      {
+        printNode(node, subnode_changes, summarize);
+      }
+    }
+    else if(print == true && node->hint > BH_unchanged &&
+            !(node->policy == BPOL_none &&
+              (node->hint == BH_added ||
+               (node->hint >= BH_owner_changed &&
+                node->hint <= BH_timestamp_changed))))
     {
       bool print_subnodes =
         backupHintNoPol(node->hint) > BH_other_to_directory;
@@ -499,7 +578,7 @@ static MetadataChanges recursePrintOverTree(Metadata *metadata,
       if(!(node->hint == BH_timestamp_changed &&
            subnode_changes.affects_parent_timestamp))
       {
-        printNode(node, subnode_changes);
+        printNode(node, subnode_changes, summarize);
       }
     }
     else
@@ -509,7 +588,7 @@ static MetadataChanges recursePrintOverTree(Metadata *metadata,
                              expressions_to_pass_down, print);
     }
 
-    addNode(node, &changes);
+    addNode(node, &changes, subnode_changes.affects_parent_timestamp);
     metadataChangesAdd(&changes, subnode_changes);
   }
 
@@ -577,6 +656,7 @@ MetadataChanges printMetadataChanges(Metadata *metadata,
 bool containsChanges(MetadataChanges changes)
 {
   return containsContentChanges(changes) ||
+    changes.changed_attributes > 0 ||
     changes.other == true;
 }
 

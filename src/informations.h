@@ -29,6 +29,9 @@ typedef struct
   ChangeStats removed_items; /**< Statistics about removed items. */
   ChangeStats lost_items;    /**< Statistics about lost items. */
   ChangeStats changed_items; /**< Statistics about changed items. */
+  size_t changed_attributes; /**< Amount of timestamp attribute changes
+                                  which where not caused by subnode
+                                  changes. */
   bool other;                /**< Other changes exist. */
 
   /** At least one node in the current list affects the modification

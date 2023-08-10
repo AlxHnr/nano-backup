@@ -1,0 +1,13 @@
+# Tests that `b` does not get listed additionaly to the newly added `a`.
+[track]
+/generated/files/a/
+[summarize]
+./generated/files/a/b$
+
+# Needed for next phase.
+[track]
+/generated/files/1/
+/generated/files/10/
+/generated/files/unchanged/
+[mirror]
+/generated/files/1/2/3/

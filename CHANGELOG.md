@@ -1,5 +1,9 @@
 ## Next
 
+### Added
+
+* Summarize policy for preventing directories from being listed recursively during a backup
+
 ### Changed
 
 * Lock repository during backup

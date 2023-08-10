@@ -95,6 +95,22 @@ has a lower priority than the others:
 "foo.txt" will still be backed up, because it was explicitly matched by a
 copy rule.
 
+.TP
+summarize
+Allows specifying regular expressions for directories which should not be
+listed recursively during a backup. These expressions will be matched
+against full, absolute paths.
+
+.nf
+  [summarize]
+  /\.git$
+
+  # Summaries do not apply to implicit parent nodes with no direct policy:
+  [track]
+  /home/user/projects/.git/config
+  #  ^---- implicit ----^
+.fi
+
 .SH AUTHOR
 
 Copyright (c) 2023 Alexander Heinrich

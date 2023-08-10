@@ -122,6 +122,7 @@ copy        | Backup only the latest version of a file.
 mirror      | Like copy, but if a file gets removed from the system, it will also be removed from the backup.
 track       | Keep a full history of every change.
 ignore      | Allows specifying regular expressions for excluding paths.
+summarize   | Allows specifying regular expressions for directories which should not be listed recursively during backups.
 
 ## Frequently asked questions
 
