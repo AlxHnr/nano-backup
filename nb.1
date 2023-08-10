@@ -17,6 +17,7 @@ Various arguments can be passed to nb in addition to the repository path:
 .TP
 gc
 Run the garbage collector on the given repository to delete unneeded files.
+Garbage collection is done automatically after every backup.
 
 .TP
 integrity
@@ -46,16 +47,21 @@ Paths must be absolute. A double slash in a path denotes a POSIX extended
 regular expression. This expression will not match recursively and can be
 terminated by a slash.
 
+Policies only apply to the last element of a path:
+
+.nf
+  [mirror]
+  /home/user/last-element/
+.fi
+
 Symlinks are not followed, unless they correspond to a parent directory in
-the configuration:
+a configured path. In the following example "home" and "user" will be
+followed, while "dir" and everything inside it will not:
 
 .nf
   [copy]
   /home/user/dir/
 .fi
-
-In this example "home" and "user" will be followed, while "dir" and
-everything inside it will not.
 
 .SH POLICIES
 
