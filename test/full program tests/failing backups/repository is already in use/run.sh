@@ -19,7 +19,7 @@ assertNBFails()
 sleep 10 & # Must be high enough to not time out with Valgrind.
 timeout_pid=$!
 killTimeout()( kill -s "$1" "$timeout_pid" >/dev/null 2>&1 )
-trap 'killTimeout SIGTERM' EXIT
+trap 'killTimeout 15' EXIT
 
 while killTimeout 0; do true; done | "$NB" generated/repo >/dev/null &
 while killTimeout 0 && test ! -e generated/repo/lockfile; do true; done
