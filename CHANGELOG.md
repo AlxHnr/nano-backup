@@ -1,38 +1,34 @@
-## Next
+## Master
 
 ### Added
 
-* Summarize policy for preventing directories from being listed recursively during a backup
+* New policy: `summarize`: prevents directories from being listed
+  recursively during a backup
 
 ### Changed
 
 * Lock repository during backup
 
-## 0.5.1
-
-2023-07-30
+## 0.5.1 - 2023-07-30
 
 ### Fixed
 
 * Display user prompt properly on some musl systems
 
-## 0.5.0
-
-2023-01-29
+## 0.5.0 - 2023-01-29
 
 ### Added
 
 * Integrity check command
 * Musl support
 
-## 0.4.0
-
-2020-08-30
+## 0.4.0 - 2020-08-30
 
 ### Changed
 
-* Major codebase overhaul. This includes a memory management rewrite, with parts factored out into
-  its own library. See [third-party/CRegion](third-party/CRegion/README.md)
+* Major codebase overhaul. This includes a memory management rewrite, with
+  parts factored out into its own library. See
+  [third-party/CRegion](third-party/CRegion/README.md)
 * Reworked documentation
 
 ### Fixed
@@ -42,9 +38,7 @@
 * Compilation with newer, stricter compilers
 * Unaligned memory access (only relevant on some platforms)
 
-## 0.3.0
-
-2017-07-11
+## 0.3.0 - 2017-07-11
 
 This release contains **breaking changes**. Migration guide:
 
@@ -62,9 +56,7 @@ This release contains **breaking changes**. Migration guide:
 * Dependency on OpenSSL
 * Dependency on pkg-config
 
-## 0.2.0
-
-2017-06-18
+## 0.2.0 - 2017-06-18
 
 ### Added
 
@@ -74,22 +66,18 @@ This release contains **breaking changes**. Migration guide:
 ### Changed
 
 * Switched to MIT license
-* Stricter checks for config files. Ambiguous search patterns now cause an error when they match the
-  same file
+* Stricter checks for config files. Ambiguous search patterns now cause an
+  error when they match the same file
 * Improved detection for corrupted metadata
 * Improved change summary
 
-## 0.1.1
-
-2017-04-18
+## 0.1.1 - 2017-04-18
 
 ### Fixed
 
 * Deduplication: prevent specific files from being stored multiple times
 
-## 0.1.0
-
-2016-10-27
+## 0.1.0 - 2016-10-27
 
 ### Added
 
