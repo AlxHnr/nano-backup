@@ -1,0 +1,11 @@
+[track]
+/generated/files/a/
+/generated/files/1/
+/generated/files/10/
+/generated/files/unchanged/
+[mirror]
+/generated/files/1/2/3/
+
+[summarize]
+./generated/files/1$
+./generated/files/10$

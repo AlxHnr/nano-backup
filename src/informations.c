@@ -155,6 +155,23 @@ static PathState *getExistingState(PathNode *node)
   }
 }
 
+/** Increment the attribute counter in the given change struct based on the
+  specified hint. */
+static void incrementExtraChangedAttributes(MetadataChanges *changes,
+                                            BackupHint hint)
+{
+  if(hint & BH_owner_changed)
+  {
+    changes->changed_attributes =
+      sSizeAdd(changes->changed_attributes, 1);
+  }
+  if(hint & BH_permissions_changed)
+  {
+    changes->changed_attributes =
+      sSizeAdd(changes->changed_attributes, 1);
+  }
+}
+
 /** Adds statistics about the given nodes current change type to the
   specified change structure.
 
@@ -199,6 +216,7 @@ static void addNode(PathNode *node, MetadataChanges *changes,
   {
     changeStatsAdd(&changes->changed_items, 1, size);
     changes->affects_parent_timestamp = true;
+    incrementExtraChangedAttributes(changes, hint);
   }
   else if(node->hint > BH_unchanged &&
           (node->policy != BPOL_none ||
@@ -210,7 +228,8 @@ static void addNode(PathNode *node, MetadataChanges *changes,
       (hint >= BH_regular_to_symlink &&
        hint <= BH_other_to_directory);
 
-    if(node->hint != BH_timestamp_changed ||
+    incrementExtraChangedAttributes(changes, node->hint);
+    if(node->hint == BH_timestamp_changed &&
        timestamp_changed_by_subnodes == false)
     {
       changes->changed_attributes =
