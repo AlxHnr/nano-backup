@@ -4,4 +4,5 @@ config: line 2: string never matched a file: "copied_remove"
 Lost: 4 (61 b)
 
 proceed? (y/n) 
+
 Discarded unreferenced items: 3 (49 b)
