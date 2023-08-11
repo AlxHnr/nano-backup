@@ -57,6 +57,7 @@ extern void sRemoveRecursively(String path);
 
 extern char *sGetCwd(void);
 extern char *sReadLine(FILE *stream);
+extern bool sIsTTY(FILE *stream);
 extern size_t sStringToSize(String string);
 extern time_t sTime(void);
 extern int sRand(void);

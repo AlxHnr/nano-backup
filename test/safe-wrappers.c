@@ -527,6 +527,17 @@ int main(void)
   assert_true(fclose(in_stream) == 0);
   testGroupEnd();
 
+  testGroupStart("sIsTTY()");
+  FILE *out_stream = fopen("tmp/file-1", "wb");
+  assert_true(out_stream != NULL);
+
+  errno = 0;
+  assert_true(sIsTTY(out_stream) == false);
+  assert_true(errno == 0);
+
+  assert_true(fclose(out_stream) == 0);
+  testGroupEnd();
+
   testGroupStart("sStringToSize()");
   errno = 7;
 

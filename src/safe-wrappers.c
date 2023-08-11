@@ -620,6 +620,27 @@ char *sReadLine(FILE *stream)
   return buffer;
 }
 
+/** Check if the given file stream belongs to a terminal.
+
+  @param stream Stream to be checked.
+
+  @return True if the given file stream belongs to a terminal.
+*/
+bool sIsTTY(FILE *stream)
+{
+  int descriptor = fileno(stream);
+  if(descriptor == -1)
+  {
+    dieErrno("failed to get file descriptor from stream");
+  }
+
+  int old_errno = errno;
+  int is_tty = isatty(descriptor);
+  errno = old_errno;
+
+  return is_tty == 1;
+}
+
 /** Converts the given string to a size_t value and terminates the program
   on conversion errors.
 
