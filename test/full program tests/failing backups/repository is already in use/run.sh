@@ -16,7 +16,7 @@ assertNBFails()
     die "lockfile owned by another process was deleted: \"generated/repo/lockfile\""
 )
 
-sleep 10 & # Must be high enough to not time out with Valgrind.
+sleep 20 & # Must be high enough to not time out with Valgrind.
 timeout_pid=$!
 killTimeout()( kill -s "$1" "$timeout_pid" >/dev/null 2>&1 )
 trap 'killTimeout 15' EXIT
