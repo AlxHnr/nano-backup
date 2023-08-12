@@ -64,7 +64,7 @@ int main(void)
 
   String cwd = getCwd();
   CR_Region *r = CR_RegionNew();
-  Metadata *metadata = metadataLoad(metadata_path);
+  const Metadata *metadata = metadataLoad(metadata_path);
   testGroupEnd();
 
   testGroupStart("checkIntegrity() on healthy repository");
@@ -89,7 +89,7 @@ int main(void)
 
   size_t broken_path_node_count = 0;
   StringTable *broken_path_nodes = strTableNew(r);
-  for(ListOfBrokenPathNodes *path_node = checkIntegrity(r, metadata, repo_path); path_node != NULL;
+  for(const ListOfBrokenPathNodes *path_node = checkIntegrity(r, metadata, repo_path); path_node != NULL;
       path_node = path_node->next)
   {
     assert_true(path_node->node->path.is_terminated);

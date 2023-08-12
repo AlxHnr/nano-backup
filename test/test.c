@@ -77,7 +77,7 @@ static void populateTestErrorMessage(const char *format, va_list arguments)
     dieTest("failed to allocate space to store the error message");
   }
 
-  int bytes_copied = vsprintf(test_error_message, format, arguments);
+  const int bytes_copied = vsprintf(test_error_message, format, arguments);
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
 #endif

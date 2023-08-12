@@ -19,7 +19,7 @@
   @param stats The stats of the file represented by the given node.
 */
 static void checkFileContentChanges(PathNode *node, PathState *state,
-                                    struct stat stats)
+                                    const struct stat stats)
 {
   uint8_t hash[FILE_HASH_SIZE];
   size_t bytes_used = FILE_HASH_SIZE;
@@ -62,9 +62,9 @@ static void checkFileContentChanges(PathNode *node, PathState *state,
   If it points to NULL, a new buffer will be allocated by
   CR_EnsureCapacity(), to which the given pointer will be assigned.
 */
-void readSymlink(String path, struct stat stats, char **buffer_ptr)
+void readSymlink(String path, const struct stat stats, char **buffer_ptr)
 {
-  uint64_t buffer_length = sUint64Add(stats.st_size, 1);
+  const uint64_t buffer_length = sUint64Add(stats.st_size, 1);
   if(buffer_length > SIZE_MAX)
   {
     die("symlink does not fit in memory: \"%s\"", path.content);
@@ -81,7 +81,8 @@ void readSymlink(String path, struct stat stats, char **buffer_ptr)
   /* Although st_size bytes are enough to store the symlinks target path,
      the full buffer is used. This allows to detect whether the symlink
      has increased in size since its last lstat() or not. */
-  ssize_t read_bytes = readlink(path.content, *buffer_ptr, buffer_length);
+  const ssize_t read_bytes =
+    readlink(path.content, *buffer_ptr, buffer_length);
 
   if(read_bytes == -1)
   {
@@ -102,7 +103,8 @@ void readSymlink(String path, struct stat stats, char **buffer_ptr)
   @param state The state to update.
   @param stats The stats of the file represented by the given node.
 */
-void applyNodeChanges(PathNode *node, PathState *state, struct stat stats)
+void applyNodeChanges(PathNode *node, PathState *state,
+                      const struct stat stats)
 {
   if(state->uid != stats.st_uid || state->gid != stats.st_gid)
   {

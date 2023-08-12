@@ -342,7 +342,7 @@ static void restoreNoneFiletypeChange(SearchNode *none_filetype_node)
 }
 
 /** Prepares the testing of filetype changes. */
-static void initFiletypeChange(SearchNode *filetype_node, BackupPolicy policy)
+static void initFiletypeChange(SearchNode *filetype_node, const BackupPolicy policy)
 {
   /* Prepare the test files. */
   resetStatCache();
@@ -491,7 +491,7 @@ static void initFiletypeChange(SearchNode *filetype_node, BackupPolicy policy)
 
 /** Modifies the test files and metadata in such a way that subsequent
   backups will detect filetype changes. */
-static void modifyFiletypeChange(SearchNode *filetype_node, BackupPolicy policy)
+static void modifyFiletypeChange(SearchNode *filetype_node, const BackupPolicy policy)
 {
   /* Remove some files. */
   removePath("tmp/files/7/a/1");
@@ -660,7 +660,7 @@ static void modifyFiletypeChange(SearchNode *filetype_node, BackupPolicy policy)
 }
 
 /** Checks the changes injected by modifyFiletypeChange(). */
-static void changeFiletypeChange(SearchNode *filetype_node, BackupPolicy policy)
+static void changeFiletypeChange(SearchNode *filetype_node, const BackupPolicy policy)
 {
   /* Initiate the backup. */
   Metadata *metadata = metadataLoad(strWrap("tmp/repo/metadata"));
@@ -792,7 +792,7 @@ static void changeFiletypeChange(SearchNode *filetype_node, BackupPolicy policy)
 }
 
 /** Tests the metadata written by changeFiletypeChange() and cleans up. */
-static void postFiletypeChange(SearchNode *filetype_node, BackupPolicy policy)
+static void postFiletypeChange(SearchNode *filetype_node, const BackupPolicy policy)
 {
   /* Initiate the backup. */
   Metadata *metadata = metadataLoad(strWrap("tmp/repo/metadata"));
@@ -1024,7 +1024,7 @@ static void trackFiletypeChange(SearchNode *filetype_node)
   @param completed_runs The count of subsequent runs this function has
   completed.
 */
-static void trackFiletypeChangePost(SearchNode *filetype_node, size_t completed_runs)
+static void trackFiletypeChangePost(SearchNode *filetype_node, const size_t completed_runs)
 {
   /* Initiate the backup. */
   Metadata *metadata = metadataLoad(strWrap("tmp/repo/metadata"));

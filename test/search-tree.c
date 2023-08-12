@@ -8,11 +8,11 @@
 #include "str.h"
 #include "test.h"
 
-static size_t countSubnodes(SearchNode *parent_node)
+static size_t countSubnodes(const SearchNode *parent_node)
 {
   size_t counter = 0;
 
-  for(SearchNode *node = parent_node->subnodes; node != NULL; node = node->next)
+  for(const SearchNode *node = parent_node->subnodes; node != NULL; node = node->next)
   {
     counter++;
   }
@@ -22,10 +22,10 @@ static size_t countSubnodes(SearchNode *parent_node)
 
 /** Returns the subnode with the given string as its name. It will
   terminate the test suite with failure if the node does not exist. */
-static SearchNode *findSubnode(SearchNode *parent_node, const char *string)
+static const SearchNode *findSubnode(const SearchNode *parent_node, const char *string)
 {
   String node_name = strWrap(string);
-  for(SearchNode *node = parent_node->subnodes; node != NULL; node = node->next)
+  for(const SearchNode *node = parent_node->subnodes; node != NULL; node = node->next)
   {
     if(strEqual(node->name, node_name))
     {
@@ -40,11 +40,11 @@ static SearchNode *findSubnode(SearchNode *parent_node, const char *string)
 }
 
 /** Counts all ignore expressions that the given SearchNode contains. */
-static size_t countExpressions(RegexList *expression_list)
+static size_t countExpressions(const RegexList *expression_list)
 {
   size_t counter = 0;
 
-  for(RegexList *expression = expression_list; expression != NULL; expression = expression->next)
+  for(const RegexList *expression = expression_list; expression != NULL; expression = expression->next)
   {
     counter++;
   }
@@ -63,10 +63,10 @@ static size_t countExpressions(RegexList *expression_list)
   @return True, if a pattern with the specified properties exists in the
   given expression list.
 */
-static bool checkExpressionList(RegexList *expression_list, const char *pattern, size_t line_nr)
+static bool checkExpressionList(const RegexList *expression_list, const char *pattern, const size_t line_nr)
 {
   String expression_string = strWrap(pattern);
-  for(RegexList *expression = expression_list; expression != NULL; expression = expression->next)
+  for(const RegexList *expression = expression_list; expression != NULL; expression = expression->next)
   {
     if(expression->has_matched == false && expression->line_nr == line_nr &&
        strEqual(expression->expression, expression_string) &&
@@ -79,21 +79,21 @@ static bool checkExpressionList(RegexList *expression_list, const char *pattern,
   return false;
 }
 
-static bool checkIgnoreExpression(SearchNode *node, const char *pattern, size_t line_nr)
+static bool checkIgnoreExpression(const SearchNode *node, const char *pattern, const size_t line_nr)
 {
   return checkExpressionList(*node->ignore_expressions, pattern, line_nr);
 }
 
-static bool checkSummarizeExpression(SearchNode *node, const char *pattern, size_t line_nr)
+static bool checkSummarizeExpression(const SearchNode *node, const char *pattern, const size_t line_nr)
 {
   return checkExpressionList(*node->summarize_expressions, pattern, line_nr);
 }
 
 /** Returns true, if the given node contains at least one subnode with a
   regex. */
-static bool subnodesContainRegex(SearchNode *parent_node)
+static bool subnodesContainRegex(const SearchNode *parent_node)
 {
-  for(SearchNode *node = parent_node->subnodes; node != NULL; node = node->next)
+  for(const SearchNode *node = parent_node->subnodes; node != NULL; node = node->next)
   {
     if(node->regex != NULL)
     {
@@ -119,9 +119,9 @@ static bool subnodesContainRegex(SearchNode *parent_node)
   @param subnodes_contain_regex True, if at least one subnode contains a
   regex.
 */
-static void checkBasicNode(SearchNode *node, const char *name, size_t line_nr, bool has_regex, BackupPolicy policy,
-                           bool policy_inherited, size_t policy_line_nr, size_t subnode_count,
-                           bool subnodes_contain_regex)
+static void checkBasicNode(const SearchNode *node, const char *name, const size_t line_nr, const bool has_regex,
+                           const BackupPolicy policy, const bool policy_inherited, const size_t policy_line_nr,
+                           const size_t subnode_count, const bool subnodes_contain_regex)
 {
   assert_true(node != NULL);
 
@@ -157,9 +157,9 @@ static void checkBasicNode(SearchNode *node, const char *name, size_t line_nr, b
 
 /** Extends checkBasicNode() with root node specific checks by wrapping it.
  */
-static void checkRootNode(SearchNode *node, BackupPolicy policy, size_t policy_line_nr, size_t subnode_count,
-                          bool subnodes_contain_regex, size_t ignore_expression_count,
-                          size_t summarize_expression_count)
+static void checkRootNode(const SearchNode *node, const BackupPolicy policy, const size_t policy_line_nr,
+                          const size_t subnode_count, const bool subnodes_contain_regex,
+                          const size_t ignore_expression_count, const size_t summarize_expression_count)
 {
   checkBasicNode(node, "/", 0, false, policy, false, policy_line_nr, subnode_count, subnodes_contain_regex);
 
@@ -174,9 +174,9 @@ static void checkRootNode(SearchNode *node, BackupPolicy policy, size_t policy_l
   @param root_node The root node of the tree, to which the given node
   belongs.
 */
-static void checkNode(SearchNode *node, SearchNode *root_node, const char *name, size_t line_nr, bool has_regex,
-                      BackupPolicy policy, bool policy_inherited, size_t policy_line_nr, size_t subnode_count,
-                      bool subnodes_contain_regex)
+static void checkNode(const SearchNode *node, const SearchNode *root_node, const char *name, const size_t line_nr,
+                      const bool has_regex, const BackupPolicy policy, const bool policy_inherited,
+                      const size_t policy_line_nr, const size_t subnode_count, const bool subnodes_contain_regex)
 {
   checkBasicNode(node, name, line_nr, has_regex, policy, policy_inherited, policy_line_nr, subnode_count,
                  subnodes_contain_regex);
@@ -191,15 +191,15 @@ static void checkNode(SearchNode *node, SearchNode *root_node, const char *name,
 */
 static void testSimpleConfigFile(String path)
 {
-  SearchNode *root = searchTreeLoad(path);
+  const SearchNode *root = searchTreeLoad(path);
   checkRootNode(root, BPOL_none, 0, 2, false, 0, 0);
 
-  SearchNode *home = findSubnode(root, "home");
+  const SearchNode *home = findSubnode(root, "home");
   checkNode(home, root, "home", 2, false, BPOL_none, false, 2, 2, false);
 
   checkNode(findSubnode(home, "foo"), root, "foo", 5, false, BPOL_mirror, false, 5, 0, false);
 
-  SearchNode *user = findSubnode(home, "user");
+  const SearchNode *user = findSubnode(home, "user");
   checkNode(user, root, "user", 2, false, BPOL_none, false, 2, 2, false);
 
   checkNode(findSubnode(user, "Pictures"), root, "Pictures", 2, false, BPOL_copy, false, 2, 0, false);
@@ -212,19 +212,19 @@ static void testSimpleConfigFile(String path)
 /** Test parsing the config file "inheritance-1.txt". */
 static void testInheritance_1(void)
 {
-  SearchNode *root = searchTreeLoad(strWrap("valid-config-files/inheritance-1.txt"));
+  const SearchNode *root = searchTreeLoad(strWrap("valid-config-files/inheritance-1.txt"));
   checkRootNode(root, BPOL_track, 14, 1, false, 0, 0);
 
-  SearchNode *usr = findSubnode(root, "usr");
+  const SearchNode *usr = findSubnode(root, "usr");
   checkNode(usr, root, "usr", 2, false, BPOL_mirror, false, 11, 1, false);
 
-  SearchNode *portage = findSubnode(usr, "portage");
+  const SearchNode *portage = findSubnode(usr, "portage");
   checkNode(portage, root, "portage", 2, false, BPOL_copy, false, 8, 1, false);
 
-  SearchNode *app_crypt = findSubnode(portage, "app-crypt");
+  const SearchNode *app_crypt = findSubnode(portage, "app-crypt");
   checkNode(app_crypt, root, "app-crypt", 2, false, BPOL_copy, true, 8, 1, false);
 
-  SearchNode *seahorse = findSubnode(app_crypt, "seahorse");
+  const SearchNode *seahorse = findSubnode(app_crypt, "seahorse");
   checkNode(seahorse, root, "seahorse", 2, false, BPOL_mirror, false, 5, 1, true);
 
   checkNode(findSubnode(seahorse, ".*\\.ebuild"), root, ".*\\.ebuild", 2, true, BPOL_copy, false, 2, 0, false);
@@ -233,62 +233,62 @@ static void testInheritance_1(void)
 /** Test parsing the config file "inheritance-2.txt". */
 static void testInheritance_2(void)
 {
-  SearchNode *root = searchTreeLoad(strWrap("valid-config-files/inheritance-2.txt"));
+  const SearchNode *root = searchTreeLoad(strWrap("valid-config-files/inheritance-2.txt"));
   checkRootNode(root, BPOL_copy, 3, 1, false, 3, 0);
   assert_true(checkIgnoreExpression(root, "foo", 9));
   assert_true(checkIgnoreExpression(root, "^ ", 10));
   assert_true(checkIgnoreExpression(root, "bar", 11));
 
-  SearchNode *usr = findSubnode(root, "usr");
+  const SearchNode *usr = findSubnode(root, "usr");
   checkNode(usr, root, "usr", 15, false, BPOL_copy, true, 15, 1, false);
 
-  SearchNode *portage = findSubnode(usr, "portage");
+  const SearchNode *portage = findSubnode(usr, "portage");
   checkNode(portage, root, "portage", 15, false, BPOL_track, false, 15, 1, false);
 
-  SearchNode *app_crypt = findSubnode(portage, "app-crypt");
+  const SearchNode *app_crypt = findSubnode(portage, "app-crypt");
   checkNode(app_crypt, root, "app-crypt", 18, false, BPOL_track, true, 18, 1, false);
 
-  SearchNode *seahorse = findSubnode(app_crypt, "seahorse");
+  const SearchNode *seahorse = findSubnode(app_crypt, "seahorse");
   checkNode(seahorse, root, "seahorse", 18, false, BPOL_copy, false, 18, 1, true);
 
-  SearchNode *ebuild = findSubnode(seahorse, ".*\\.ebuild");
+  const SearchNode *ebuild = findSubnode(seahorse, ".*\\.ebuild");
   checkNode(ebuild, root, ".*\\.ebuild", 21, true, BPOL_mirror, false, 21, 0, false);
 }
 
 /** Tests parsing the config file "inheritance-3.txt". */
 static void testInheritance_3(void)
 {
-  SearchNode *root = searchTreeLoad(strWrap("valid-config-files/inheritance-3.txt"));
+  const SearchNode *root = searchTreeLoad(strWrap("valid-config-files/inheritance-3.txt"));
   checkRootNode(root, BPOL_none, 0, 2, false, 2, 0);
   assert_true(checkIgnoreExpression(root, ".*\\.png", 14));
   assert_true(checkIgnoreExpression(root, ".*\\.jpg", 16));
 
-  SearchNode *home_1 = findSubnode(root, "home");
+  const SearchNode *home_1 = findSubnode(root, "home");
   checkNode(home_1, root, "home", 22, false, BPOL_mirror, false, 28, 1, false);
 
-  SearchNode *user_1 = findSubnode(home_1, "user");
+  const SearchNode *user_1 = findSubnode(home_1, "user");
   checkNode(user_1, root, "user", 22, false, BPOL_mirror, true, 28, 1, false);
 
-  SearchNode *config_1 = findSubnode(user_1, ".config");
+  const SearchNode *config_1 = findSubnode(user_1, ".config");
   checkNode(config_1, root, ".config", 22, false, BPOL_mirror, true, 28, 3, true);
 
-  SearchNode *dlaunch_1 = findSubnode(config_1, "dlaunch");
+  const SearchNode *dlaunch_1 = findSubnode(config_1, "dlaunch");
   checkNode(dlaunch_1, root, "dlaunch", 22, false, BPOL_mirror, true, 28, 1, false);
 
   checkNode(findSubnode(dlaunch_1, "ignore-files.txt"), root, "ignore-files.txt", 22, false, BPOL_track, false, 22,
             0, false);
 
-  SearchNode *htop_1 = findSubnode(config_1, "htop");
+  const SearchNode *htop_1 = findSubnode(config_1, "htop");
   checkNode(htop_1, root, "htop", 23, false, BPOL_mirror, true, 28, 1, false);
 
   checkNode(findSubnode(htop_1, "htoprc"), root, "htoprc", 23, false, BPOL_track, false, 23, 0, false);
 
   checkNode(findSubnode(config_1, ".*\\.conf"), root, ".*\\.conf", 24, true, BPOL_track, false, 24, 0, false);
 
-  SearchNode *usr_1 = findSubnode(root, "usr");
+  const SearchNode *usr_1 = findSubnode(root, "usr");
   checkNode(usr_1, root, "usr", 27, false, BPOL_none, false, 27, 1, false);
 
-  SearchNode *portage_1 = findSubnode(usr_1, "portage");
+  const SearchNode *portage_1 = findSubnode(usr_1, "portage");
   checkNode(portage_1, root, "portage", 27, false, BPOL_none, false, 27, 1, true);
 
   checkNode(findSubnode(portage_1, "(distfiles|packages)"), root, "(distfiles|packages)", 27, true, BPOL_mirror,
@@ -298,7 +298,7 @@ static void testInheritance_3(void)
 /** Tests parsing the config file "root-with-regex-subnodes.txt". */
 static void testRootWithRegexSubnodes(void)
 {
-  SearchNode *root = searchTreeLoad(strWrap("valid-config-files/root-with-regex-subnodes.txt"));
+  const SearchNode *root = searchTreeLoad(strWrap("valid-config-files/root-with-regex-subnodes.txt"));
   checkRootNode(root, BPOL_none, 0, 3, true, 0, 0);
 
   checkNode(findSubnode(root, "\\.txt$"), root, "\\.txt$", 2, true, BPOL_copy, false, 2, 0, false);
@@ -309,17 +309,17 @@ static void testRootWithRegexSubnodes(void)
 /** Tests parsing the config file "paths with whitespaces.txt" */
 static void testPathsWithWhitespaces(void)
 {
-  SearchNode *root = searchTreeLoad(strWrap("valid-config-files/paths with whitespaces.txt"));
+  const SearchNode *root = searchTreeLoad(strWrap("valid-config-files/paths with whitespaces.txt"));
   checkRootNode(root, BPOL_none, 0, 1, false, 0, 0);
 
-  SearchNode *usr = findSubnode(root, "usr");
+  const SearchNode *usr = findSubnode(root, "usr");
   checkNode(usr, root, "usr", 2, false, BPOL_none, false, 2, 2, true);
   checkNode(findSubnode(usr, " ^foobar "), root, " ^foobar ", 3, true, BPOL_copy, false, 3, 0, false);
 
-  SearchNode *foo = findSubnode(usr, "foo ");
+  const SearchNode *foo = findSubnode(usr, "foo ");
   checkNode(foo, root, "foo ", 2, false, BPOL_copy, false, 2, 1, false);
 
-  SearchNode *bar = findSubnode(foo, " bar ");
+  const SearchNode *bar = findSubnode(foo, " bar ");
   checkNode(bar, root, " bar ", 6, false, BPOL_copy, true, 6, 1, false);
   checkNode(findSubnode(bar, "foo bar "), root, "foo bar ", 6, false, BPOL_mirror, false, 6, 0, false);
 }
@@ -327,13 +327,13 @@ static void testPathsWithWhitespaces(void)
 /** Tests parsing "valid-config-files/comment.txt". */
 static void testIgnoringComments(void)
 {
-  SearchNode *root = searchTreeLoad(strWrap("valid-config-files/comment.txt"));
+  const SearchNode *root = searchTreeLoad(strWrap("valid-config-files/comment.txt"));
   checkRootNode(root, BPOL_none, 0, 1, false, 2, 0);
 
-  SearchNode *etc = findSubnode(root, "#etc");
+  const SearchNode *etc = findSubnode(root, "#etc");
   checkNode(etc, root, "#etc", 10, false, BPOL_none, false, 10, 1, false);
 
-  SearchNode *portage = findSubnode(etc, "portage");
+  const SearchNode *portage = findSubnode(etc, "portage");
   checkNode(portage, root, "portage", 10, false, BPOL_copy, false, 10, 1, true);
 
   checkNode(findSubnode(portage, "^make.conf$"), root, "^make.conf$", 24, true, BPOL_track, false, 24, 0, false);
@@ -351,7 +351,7 @@ static void testIgnoringComments(void)
 static void assertParseError(const char *path, const char *message)
 {
   CR_Region *r = CR_RegionNew();
-  FileContent content = sGetFilesContent(r, strWrap(path));
+  const FileContent content = sGetFilesContent(r, strWrap(path));
   String config = { .content = content.content, .length = content.size };
 
   assert_error(searchTreeParse(config), message);
@@ -501,7 +501,7 @@ static void testBrokenConfigFiles(void)
 static void testInsertNullBytes(const char *path)
 {
   CR_Region *r = CR_RegionNew();
-  FileContent content = sGetFilesContent(r, strWrap(path));
+  const FileContent content = sGetFilesContent(r, strWrap(path));
   if(content.size == 0)
   {
     return;
@@ -540,7 +540,8 @@ static void testNullBytesConfigFiles(void)
     const size_t path_length = pathBuilderSet(&buffer, dir_path.content);
     DIR *dir = sOpenDir(dir_path);
 
-    for(struct dirent *dir_entry = sReadDir(dir, dir_path); dir_entry != NULL; dir_entry = sReadDir(dir, dir_path))
+    for(const struct dirent *dir_entry = sReadDir(dir, dir_path); dir_entry != NULL;
+        dir_entry = sReadDir(dir, dir_path))
     {
       pathBuilderAppend(&buffer, path_length, dir_entry->d_name);
       testInsertNullBytes(buffer);
@@ -563,25 +564,25 @@ int main(void)
   checkRootNode(searchTreeLoad(strWrap("valid-config-files/no-paths-and-no-ignores.txt")), BPOL_none, 0, 0, false,
                 0, 0);
 
-  SearchNode *ignore_1 = searchTreeLoad(strWrap("valid-config-files/ignore-patterns-only-1.txt"));
+  const SearchNode *ignore_1 = searchTreeLoad(strWrap("valid-config-files/ignore-patterns-only-1.txt"));
   checkRootNode(ignore_1, BPOL_none, 0, 0, false, 2, 0);
   assert_true(checkIgnoreExpression(ignore_1, " .*\\.(png|jpg|pdf) ", 2));
   assert_true(checkIgnoreExpression(ignore_1, "foo", 3));
 
-  SearchNode *ignore_2 = searchTreeLoad(strWrap("valid-config-files/ignore-patterns-only-2.txt"));
+  const SearchNode *ignore_2 = searchTreeLoad(strWrap("valid-config-files/ignore-patterns-only-2.txt"));
   checkRootNode(ignore_2, BPOL_none, 0, 0, false, 4, 0);
   assert_true(checkIgnoreExpression(ignore_2, "foo", 7));
   assert_true(checkIgnoreExpression(ignore_2, "bar", 9));
   assert_true(checkIgnoreExpression(ignore_2, "foo-bar", 12));
   assert_true(checkIgnoreExpression(ignore_2, ".*\\.png", 17));
 
-  SearchNode *summarize_1 = searchTreeLoad(strWrap("valid-config-files/summarize-patterns.txt"));
+  const SearchNode *summarize_1 = searchTreeLoad(strWrap("valid-config-files/summarize-patterns.txt"));
   checkRootNode(summarize_1, BPOL_none, 0, 0, false, 0, 3);
   assert_true(checkSummarizeExpression(summarize_1, "\\.git$", 3));
   assert_true(checkSummarizeExpression(summarize_1, "^/home/user/\\.cache$", 13));
   assert_true(checkSummarizeExpression(summarize_1, "^/home/user/\\.mozilla$", 14));
 
-  SearchNode *summarize_2 = searchTreeLoad(strWrap("valid-config-files/summarize-patterns-mixed.txt"));
+  const SearchNode *summarize_2 = searchTreeLoad(strWrap("valid-config-files/summarize-patterns-mixed.txt"));
   checkRootNode(summarize_2, BPOL_none, 0, 2, false, 1, 2);
   assert_true(checkSummarizeExpression(summarize_2, "\\.cache$", 5));
   assert_true(checkSummarizeExpression(summarize_2, "\\.git$", 11));

@@ -117,9 +117,9 @@ static void pushCurrentState(SearchContext *context)
 static void setPathToFile(SearchContext *context, String filename)
 {
   /* Add 2 extra bytes for the slash and '\0'. */
-  size_t required_capacity =
+  const size_t required_capacity =
     sSizeAdd(2, sSizeAdd(context->state.path_length, filename.length));
-  size_t new_length = required_capacity - 1;
+  const size_t new_length = required_capacity - 1;
 
   /* Ensure that the new path fits into the buffer. */
   if(required_capacity > context->buffer.capacity)
@@ -145,11 +145,11 @@ static void setPathToFile(SearchContext *context, String filename)
 
   @return A SearchResult.
 */
-static SearchResult buildSearchResult(SearchContext *context,
-                                      SearchNode *node,
-                                      BackupPolicy policy)
+static SearchResult buildSearchResult(const SearchContext *context,
+                                      const SearchNode *node,
+                                      const BackupPolicy policy)
 {
-  struct stat stats = node != NULL && node->subnodes != NULL
+  const struct stat stats = node != NULL && node->subnodes != NULL
     ? sStat(strWrap(context->buffer.str))
     : sLStat(strWrap(context->buffer.str));
 
@@ -176,7 +176,7 @@ static SearchResult buildSearchResult(SearchContext *context,
   @param policy The directories policy.
 */
 static void recursionStepRaw(SearchContext *context, SearchNode *node,
-                             BackupPolicy policy)
+                             const BackupPolicy policy)
 {
   /* Store the directories path length before recursing into it. */
   context->state.path_length = context->buffer.length;
@@ -198,7 +198,7 @@ static void recursionStepRaw(SearchContext *context, SearchNode *node,
 }
 
 static void recursionStep(SearchContext *context, SearchNode *node,
-                          BackupPolicy policy)
+                          const BackupPolicy policy)
 {
   pushCurrentState(context);
   recursionStepRaw(context, node, policy);
@@ -218,7 +218,8 @@ static void recursionStep(SearchContext *context, SearchNode *node,
   @return A SearchResult.
 */
 static SearchResult finishNodeStep(SearchContext *context,
-                                   SearchNode *node, BackupPolicy policy)
+                                   SearchNode *node,
+                                   const BackupPolicy policy)
 {
   SearchResult found_file = buildSearchResult(context, node, policy);
 
@@ -265,7 +266,7 @@ static SearchResult finishDirectory(SearchContext *context)
   }
 }
 
-static bool nodeMatches(SearchNode *node, String string)
+static bool nodeMatches(const SearchNode *node, String string)
 {
   if(node->regex)
   {
@@ -290,8 +291,8 @@ static bool nodeMatches(SearchNode *node, String string)
 */
 static SearchResult finishSearchStep(SearchContext *context)
 {
-  struct dirent *dir_entry = sReadDir(context->state.access.search.dir,
-                                      strWrap(context->buffer.str));
+  const struct dirent *dir_entry = sReadDir(
+    context->state.access.search.dir, strWrap(context->buffer.str));
 
   if(dir_entry == NULL)
   {

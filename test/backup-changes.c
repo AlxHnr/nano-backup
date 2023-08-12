@@ -8,7 +8,8 @@
 
 /** Asserts that the given node contains a "dummy" subnode with the
   specified properties. The hash can be NULL. */
-static void mustHaveDummy(PathNode *node, BackupHint hint, BackupPolicy policy, Backup *backup, const char *hash)
+static void mustHaveDummy(PathNode *node, const BackupHint hint, const BackupPolicy policy, const Backup *backup,
+                          const char *hash)
 {
   PathNode *dummy = findSubnode(node, "dummy", hint, policy, 1, 0);
   mustHaveRegularStat(dummy, backup, 5, (const uint8_t *)hash, 0);
@@ -262,7 +263,7 @@ static void postNoneChangeTest(SearchNode *change_detection_node)
   test.
   @param policy The policy to test.
 */
-static void initChangeDetectionTest(SearchNode *change_detection_node, BackupPolicy policy)
+static void initChangeDetectionTest(SearchNode *change_detection_node, const BackupPolicy policy)
 {
   /* Prepare test and create various files. */
   assertTmpIsCleared();
@@ -459,7 +460,7 @@ static void initChangeDetectionTest(SearchNode *change_detection_node, BackupPol
 
 /** Modifies the current metadata in such a way, that a subsequent
   initiation will find changes in nodes. */
-static void modifyChangeDetectionTest(SearchNode *change_detection_node, BackupPolicy policy)
+static void modifyChangeDetectionTest(SearchNode *change_detection_node, const BackupPolicy policy)
 {
   /* Initiate the backup. */
   Metadata *metadata = metadataLoad(strWrap("tmp/repo/metadata"));
@@ -679,7 +680,7 @@ static void modifyChangeDetectionTest(SearchNode *change_detection_node, BackupP
 }
 
 /** Tests the changes injected by modifyChangeDetectionTest(). */
-static void changeDetectionTest(SearchNode *change_detection_node, BackupPolicy policy)
+static void changeDetectionTest(SearchNode *change_detection_node, const BackupPolicy policy)
 {
   /* Initiate the backup. */
   Metadata *metadata = metadataLoad(strWrap("tmp/repo/metadata"));
@@ -844,7 +845,7 @@ static void changeDetectionTest(SearchNode *change_detection_node, BackupPolicy 
 
 /** Tests the metadata written by changeDetectionTest() and cleans up the
   test directory. */
-static void postDetectionTest(SearchNode *change_detection_node, BackupPolicy policy)
+static void postDetectionTest(SearchNode *change_detection_node, const BackupPolicy policy)
 {
   /* Initiate the backup. */
   Metadata *metadata = metadataLoad(strWrap("tmp/repo/metadata"));

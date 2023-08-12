@@ -137,13 +137,13 @@ void strTableMap(StringTable *table, String key, void *data)
 
   @return Associated data or NULL if the key was not found.
 */
-void *strTableGet(StringTable *table, String key)
+void *strTableGet(const StringTable *table, String key)
 {
   const size_t hash =
     siphash((const uint8_t *)key.content, key.length, table->secret_key);
   const size_t bucket_id = hash % table->capacity;
 
-  for(Bucket *bucket = table->buckets[bucket_id]; bucket != NULL;
+  for(const Bucket *bucket = table->buckets[bucket_id]; bucket != NULL;
       bucket = bucket->next)
   {
     if(strEqual(key, bucket->key))

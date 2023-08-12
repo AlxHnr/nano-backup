@@ -66,7 +66,7 @@ static struct stat safeStat(String path,
   @return A pointer to the allocated memory. Must be freed by the caller
   using free().
 */
-void *sMalloc(size_t size)
+void *sMalloc(const size_t size)
 {
   if(size == 0)
   {
@@ -93,7 +93,7 @@ void *sMalloc(size_t size)
   @return A pointer to the reallocated memory. Must be freed by the caller
   using free().
 */
-void *sRealloc(void *ptr, size_t size)
+void *sRealloc(void *ptr, const size_t size)
 {
   if(size == 0)
   {
@@ -159,7 +159,7 @@ FileStream *sFopenWrite(String path)
   @param size The amount of bytes to read.
   @param stream A FileStream.
 */
-void sFread(void *ptr, size_t size, FileStream *stream)
+void sFread(void *ptr, const size_t size, FileStream *stream)
 {
   if(fread(ptr, 1, size, stream->file) != size)
   {
@@ -176,7 +176,7 @@ void sFread(void *ptr, size_t size, FileStream *stream)
 }
 
 /** Safe wrapper around fwrite(). Counterpart to sFread(). */
-void sFwrite(const void *ptr, size_t size, FileStream *stream)
+void sFwrite(const void *ptr, const size_t size, FileStream *stream)
 {
   if(fwrite(ptr, 1, size, stream->file) != size)
   {
@@ -188,7 +188,7 @@ void sFwrite(const void *ptr, size_t size, FileStream *stream)
 
   @return True on success, otherwise false.
 */
-bool Fwrite(const void *ptr, size_t size, FileStream *stream)
+bool Fwrite(const void *ptr, const size_t size, FileStream *stream)
 {
   return fwrite(ptr, 1, size, stream->file) == size;
 }
@@ -204,7 +204,7 @@ bool Fwrite(const void *ptr, size_t size, FileStream *stream)
 */
 bool Ftodisk(FileStream *stream)
 {
-  int descriptor = fileno(stream->file);
+  const int descriptor = fileno(stream->file);
 
   return descriptor != -1 && fflush(stream->file) == 0 &&
     fdatasync(descriptor) == 0;
@@ -238,7 +238,7 @@ String Fdestroy(FileStream *stream)
 {
   String path = stream->path;
 
-  int old_errno = errno;
+  const int old_errno = errno;
   fclose(stream->file);
   errno = old_errno;
 
@@ -277,7 +277,7 @@ DIR *sOpenDir(String path)
 struct dirent *sReadDir(DIR *dir, String path)
 {
   struct dirent *dir_entry;
-  int old_errno = errno;
+  const int old_errno = errno;
   errno = 0;
 
   do
@@ -305,10 +305,10 @@ struct dirent *sReadDir(DIR *dir, String path)
 */
 bool sFbytesLeft(FileStream *stream)
 {
-  int old_errno = errno;
+  const int old_errno = errno;
   errno = 0;
 
-  int character = fgetc(stream->file);
+  const int character = fgetc(stream->file);
   if(character == EOF && errno != 0 && errno != EBADF)
   {
     dieErrno("failed to check for remaining bytes in \"%s\"",
@@ -348,7 +348,7 @@ void sCloseDir(DIR *dir, String path)
 */
 bool sPathExists(String path)
 {
-  int old_errno = errno;
+  const int old_errno = errno;
   bool exists = true;
   struct stat stats;
   errno = 0;
@@ -412,7 +412,7 @@ void sRename(String oldpath, String newpath)
 }
 
 /** Safe wrapper around chmod(). */
-void sChmod(String path, mode_t mode)
+void sChmod(String path, const mode_t mode)
 {
   if(chmod(path.content, mode) != 0)
   {
@@ -421,7 +421,7 @@ void sChmod(String path, mode_t mode)
 }
 
 /** Safe wrapper around chown(). */
-void sChown(String path, uid_t user, gid_t group)
+void sChown(String path, const uid_t user, const gid_t group)
 {
   if(chown(path.content, user, group) != 0)
   {
@@ -430,7 +430,7 @@ void sChown(String path, uid_t user, gid_t group)
 }
 
 /** Safe wrapper around lchown(). */
-void sLChown(String path, uid_t user, gid_t group)
+void sLChown(String path, const uid_t user, const gid_t group)
 {
   if(lchown(path.content, user, group) != 0)
   {
@@ -439,9 +439,9 @@ void sLChown(String path, uid_t user, gid_t group)
 }
 
 /** Simplified safe wrapper around utime(). */
-void sUtime(String path, time_t time)
+void sUtime(String path, const time_t time)
 {
-  struct utimbuf time_buffer = {
+  const struct utimbuf time_buffer = {
     .actime = time,
     .modtime = time,
   };
@@ -466,18 +466,18 @@ void sRemove(String path)
   @param buffer The buffer containing the null-terminated path to remove.
   @param length The length of the given path.
 */
-static void removeRecursively(char **buffer, size_t length)
+static void removeRecursively(char **buffer, const size_t length)
 {
-  struct stat stats = sLStat(strWrap(*buffer));
+  const struct stat stats = sLStat(strWrap(*buffer));
 
   if(S_ISDIR(stats.st_mode))
   {
     DIR *dir = sOpenDir(strWrap(*buffer));
 
-    for(struct dirent *dir_entry = sReadDir(dir, strWrap(*buffer));
+    for(const struct dirent *dir_entry = sReadDir(dir, strWrap(*buffer));
         dir_entry != NULL; dir_entry = sReadDir(dir, strWrap(*buffer)))
     {
-      size_t sub_path_length =
+      const size_t sub_path_length =
         pathBuilderAppend(buffer, length, dir_entry->d_name);
 
       removeRecursively(buffer, sub_path_length);
@@ -495,7 +495,7 @@ static void removeRecursively(char **buffer, size_t length)
 void sRemoveRecursively(String path)
 {
   static char *buffer = NULL;
-  size_t length = pathBuilderSet(&buffer, path.content);
+  const size_t length = pathBuilderSet(&buffer, path.content);
 
   removeRecursively(&buffer, length);
 }
@@ -509,7 +509,7 @@ char *sGetCwd(void)
 {
   size_t capacity = 4;
   char *buffer = sMalloc(capacity);
-  int old_errno = errno;
+  const int old_errno = errno;
 
   char *result = NULL;
   do
@@ -547,7 +547,7 @@ char *sReadLine(FILE *stream)
   size_t used = 0;
   char *buffer = sMalloc(capacity);
 
-  int old_errno = errno;
+  const int old_errno = errno;
   errno = 0;
 
   bool reached_end = false;
@@ -559,7 +559,7 @@ char *sReadLine(FILE *stream)
       buffer = sRealloc(buffer, capacity);
     }
 
-    int character = fgetc(stream);
+    const int character = fgetc(stream);
     if(character == '\n' || character == '\r' || character == '\0')
     {
       reached_end = true;
@@ -594,14 +594,14 @@ char *sReadLine(FILE *stream)
 /** Check if the given file stream belongs to a terminal. */
 bool sIsTTY(FILE *stream)
 {
-  int descriptor = fileno(stream);
+  const int descriptor = fileno(stream);
   if(descriptor == -1)
   {
     dieErrno("failed to get file descriptor from stream");
   }
 
-  int old_errno = errno;
-  int is_tty = isatty(descriptor);
+  const int old_errno = errno;
+  const int is_tty = isatty(descriptor);
   errno = old_errno;
 
   return is_tty == 1;
@@ -611,11 +611,11 @@ bool sIsTTY(FILE *stream)
   on conversion errors. */
 size_t sStringToSize(String string)
 {
-  int old_errno = errno;
+  const int old_errno = errno;
   errno = 0;
 
   char *endptr;
-  long long int value = strtoll(string.content, &endptr, 10);
+  const long long int value = strtoll(string.content, &endptr, 10);
 
   if(endptr == string.content)
   {
@@ -642,7 +642,7 @@ size_t sStringToSize(String string)
 */
 time_t sTime(void)
 {
-  time_t current_time = time(NULL);
+  const time_t current_time = time(NULL);
 
   if(current_time == (time_t)-1)
   {
@@ -676,7 +676,7 @@ int sRand(void)
 */
 FileContent sGetFilesContent(CR_Region *region, String path)
 {
-  struct stat file_stats = sStat(path);
+  const struct stat file_stats = sStat(path);
   if(!S_ISREG(file_stats.st_mode))
   {
     die("\"%s\" is not a regular file", path.content);
@@ -694,7 +694,7 @@ FileContent sGetFilesContent(CR_Region *region, String path)
     FileStream *stream = sFopenRead(path);
     char *content = CR_RegionAllocUnaligned(region, file_stats.st_size);
     sFread(content, file_stats.st_size, stream);
-    bool stream_not_at_end = sFbytesLeft(stream);
+    const bool stream_not_at_end = sFbytesLeft(stream);
     sFclose(stream);
 
     if(stream_not_at_end)

@@ -17,9 +17,9 @@
   @param hash The location to which the hash will be written. Its size must
   be at least FILE_HASH_SIZE.
 */
-void fileHash(String path, struct stat stats, uint8_t *hash)
+void fileHash(String path, const struct stat stats, uint8_t *hash)
 {
-  size_t blocksize = stats.st_blksize;
+  const size_t blocksize = stats.st_blksize;
   uint64_t bytes_left = stats.st_size;
   FileStream *stream = sFopenRead(path);
 
@@ -31,14 +31,15 @@ void fileHash(String path, struct stat stats, uint8_t *hash)
 
   while(bytes_left > 0)
   {
-    size_t bytes_to_read = bytes_left > blocksize ? blocksize : bytes_left;
+    const size_t bytes_to_read =
+      bytes_left > blocksize ? blocksize : bytes_left;
 
     sFread(buffer, bytes_to_read, stream);
     blake2b_update(&state, buffer, bytes_to_read);
     bytes_left -= bytes_to_read;
   }
 
-  bool stream_not_at_end = sFbytesLeft(stream);
+  const bool stream_not_at_end = sFbytesLeft(stream);
   sFclose(stream);
 
   if(stream_not_at_end)

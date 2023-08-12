@@ -20,7 +20,7 @@ typedef struct
   /** The SearchNode which has matched the found path. Will be NULL if the
     path wasn't matched by any node. This node belongs to the search tree
     passed to searchNew(). */
-  SearchNode *node;
+  const SearchNode *node;
 
   /** The policy of the file. */
   BackupPolicy policy;

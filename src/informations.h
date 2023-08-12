@@ -35,10 +35,11 @@ typedef struct
 } MetadataChanges;
 
 extern void printHumanReadableSize(uint64_t size);
-extern void printSearchTreeInfos(SearchNode *root_node);
+extern void printSearchTreeInfos(const SearchNode *root_node);
 extern MetadataChanges
-printMetadataChanges(Metadata *metadata, RegexList *summarize_expressions);
-extern bool containsChanges(MetadataChanges changes);
-extern void warnNodeMatches(SearchNode *node, String string);
+printMetadataChanges(const Metadata *metadata,
+                     RegexList *summarize_expressions);
+extern bool containsChanges(const MetadataChanges changes);
+extern void warnNodeMatches(const SearchNode *node, String string);
 
 #endif

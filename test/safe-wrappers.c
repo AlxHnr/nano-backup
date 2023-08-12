@@ -226,7 +226,7 @@ int main(void)
                      "access \"non-existing-file.txt\"",
                      ENOENT);
 
-  FileContent example_content = sGetFilesContent(r, strWrap("example.txt"));
+  const FileContent example_content = sGetFilesContent(r, strWrap("example.txt"));
   assert_true(example_content.size == 25);
   assert_true(example_content.content != NULL);
   assert_true(strncmp(example_content.content, "This is an example file.\n", 25) == 0);
@@ -234,7 +234,7 @@ int main(void)
   CR_RegionRelease(r);
   r = CR_RegionNew();
 
-  FileContent empty_content = sGetFilesContent(r, strWrap("empty.txt"));
+  const FileContent empty_content = sGetFilesContent(r, strWrap("empty.txt"));
   assert_true(empty_content.size == 0);
   assert_true(empty_content.content != NULL);
   testGroupEnd();
@@ -257,7 +257,7 @@ int main(void)
   assert_true(Ftodisk(test_file) == true);
   sFclose(test_file);
 
-  FileContent test_file_1_content = sGetFilesContent(r, strWrap("tmp/test-file-1"));
+  const FileContent test_file_1_content = sGetFilesContent(r, strWrap("tmp/test-file-1"));
   assert_true(test_file_1_content.size == 12);
   assert_true(memcmp(test_file_1_content.content, "hello world!", 12) == 0);
 
@@ -272,7 +272,7 @@ int main(void)
   assert_true(strEqual(Fdestroy(test_file), test_file_path));
   assert_true(errno == 0);
 
-  FileContent test_file_2_content = sGetFilesContent(r, strWrap("tmp/test-file-2"));
+  const FileContent test_file_2_content = sGetFilesContent(r, strWrap("tmp/test-file-2"));
   assert_true(test_file_2_content.size == 0);
   assert_true(test_file_2_content.content != NULL);
 
@@ -282,7 +282,7 @@ int main(void)
   sFwrite("Test 1 2 3", 10, test_file);
   sFclose(test_file);
 
-  FileContent test_file_content = sGetFilesContent(r, strWrap("tmp/test-file-1"));
+  const FileContent test_file_content = sGetFilesContent(r, strWrap("tmp/test-file-1"));
   assert_true(test_file_content.size == 10);
   assert_true(memcmp(test_file_content.content, "Test 1 2 3", 10) == 0);
   CR_RegionRelease(r);
@@ -370,7 +370,7 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("sChown()");
-  struct stat test_file_1_stat = sLStat(strWrap("tmp/test-file-1"));
+  const struct stat test_file_1_stat = sLStat(strWrap("tmp/test-file-1"));
   sChown(strWrap("tmp/test-file-1"), test_file_1_stat.st_uid, test_file_1_stat.st_gid);
 
   sSymlink(strWrap("non-existing"), strWrap("tmp/dangling-symlink"));
@@ -379,7 +379,7 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("sLChown()");
-  struct stat dangling_symlink_stat = sLStat(strWrap("tmp/dangling-symlink"));
+  const struct stat dangling_symlink_stat = sLStat(strWrap("tmp/dangling-symlink"));
 
   sLChown(strWrap("tmp/dangling-symlink"), dangling_symlink_stat.st_uid, dangling_symlink_stat.st_gid);
 

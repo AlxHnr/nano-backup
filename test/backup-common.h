@@ -29,20 +29,21 @@ extern void setStatCache(size_t index);
 extern struct stat cachedStat(String path, struct stat (*stat_fun)(String));
 extern void resetStatCache(void);
 
-extern void mustHaveRegularStats(PathNode *node, const Backup *backup, struct stat stats, uint64_t size,
+extern void mustHaveRegularStats(const PathNode *node, const Backup *backup, struct stat stats, uint64_t size,
                                  const uint8_t *hash, uint8_t slot);
-extern void mustHaveRegularStat(PathNode *node, const Backup *backup, uint64_t size, const uint8_t *hash,
+extern void mustHaveRegularStat(const PathNode *node, const Backup *backup, uint64_t size, const uint8_t *hash,
                                 uint8_t slot);
-extern void mustHaveRegularCached(PathNode *node, const Backup *backup, uint64_t size, const uint8_t *hash,
+extern void mustHaveRegularCached(const PathNode *node, const Backup *backup, uint64_t size, const uint8_t *hash,
                                   uint8_t slot);
 
-extern void mustHaveSymlinkStats(PathNode *node, const Backup *backup, struct stat stats, const char *sym_target);
-extern void mustHaveSymlinkLStat(PathNode *node, const Backup *backup, const char *sym_target);
-extern void mustHaveSymlinkLCached(PathNode *node, const Backup *backup, const char *sym_target);
+extern void mustHaveSymlinkStats(const PathNode *node, const Backup *backup, struct stat stats,
+                                 const char *sym_target);
+extern void mustHaveSymlinkLStat(const PathNode *node, const Backup *backup, const char *sym_target);
+extern void mustHaveSymlinkLCached(const PathNode *node, const Backup *backup, const char *sym_target);
 
-extern void mustHaveDirectoryStats(PathNode *node, const Backup *backup, struct stat stats);
-extern void mustHaveDirectoryStat(PathNode *node, const Backup *backup);
-extern void mustHaveDirectoryCached(PathNode *node, const Backup *backup);
+extern void mustHaveDirectoryStats(const PathNode *node, const Backup *backup, struct stat stats);
+extern void mustHaveDirectoryStat(const PathNode *node, const Backup *backup);
+extern void mustHaveDirectoryCached(const PathNode *node, const Backup *backup);
 
 extern PathNode *findFilesNode(Metadata *metadata, BackupHint hint, size_t subnode_count);
 extern size_t cwd_depth(void);

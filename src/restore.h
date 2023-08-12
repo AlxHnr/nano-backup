@@ -7,6 +7,7 @@
 extern void initiateRestore(Metadata *metadata, size_t id, String path);
 extern void restoreFile(String path, const RegularFileInfo *info,
                         String repo_path);
-extern void finishRestore(Metadata *metadata, size_t id, String repo_path);
+extern void finishRestore(const Metadata *metadata, size_t id,
+                          String repo_path);
 
 #endif

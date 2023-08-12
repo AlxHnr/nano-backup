@@ -17,14 +17,15 @@ static char *path_buffer = NULL;
   @param table The table to populate.
   @param node The node to recurse into.
 */
-static void populateTableRecursively(StringTable *table, PathNode *node)
+static void populateTableRecursively(StringTable *table,
+                                     const PathNode *node)
 {
   if(backupHintNoPol(node->hint) == BH_not_part_of_repository)
   {
     return;
   }
 
-  for(PathHistory *point = node->history; point != NULL;
+  for(const PathHistory *point = node->history; point != NULL;
       point = point->next)
   {
     if(point->state.type != PST_regular ||
@@ -43,7 +44,7 @@ static void populateTableRecursively(StringTable *table, PathNode *node)
     }
   }
 
-  for(PathNode *subnode = node->subnodes; subnode != NULL;
+  for(const PathNode *subnode = node->subnodes; subnode != NULL;
       subnode = subnode->next)
   {
     populateTableRecursively(table, subnode);
@@ -61,12 +62,13 @@ static void populateTableRecursively(StringTable *table, PathNode *node)
   @return True if the directory specified in path_buffer contains
   referenced files.
 */
-static bool recurseIntoDirectory(StringTable *table, size_t length,
-                                 size_t repo_path_length,
+static bool recurseIntoDirectory(const StringTable *table,
+                                 const size_t length,
+                                 const size_t repo_path_length,
                                  GCStats *gc_stats)
 {
   bool item_required = length == repo_path_length;
-  struct stat stats = length == repo_path_length
+  const struct stat stats = length == repo_path_length
     ? sStat(strWrap(path_buffer))
     : sLStat(strWrap(path_buffer));
 
@@ -77,7 +79,7 @@ static bool recurseIntoDirectory(StringTable *table, size_t length,
     for(struct dirent *dir_entry = sReadDir(dir, strWrap(path_buffer));
         dir_entry != NULL; dir_entry = sReadDir(dir, strWrap(path_buffer)))
     {
-      size_t sub_path_length =
+      const size_t sub_path_length =
         pathBuilderAppend(&path_buffer, length, dir_entry->d_name);
 
       item_required |= recurseIntoDirectory(table, sub_path_length,
@@ -117,7 +119,7 @@ static bool recurseIntoDirectory(StringTable *table, size_t length,
 
   @return Statistics about items removed from the repository.
 */
-GCStats collectGarbage(Metadata *metadata, String repo_path)
+GCStats collectGarbage(const Metadata *metadata, String repo_path)
 {
   CR_Region *table_region = CR_RegionNew();
   StringTable *table = strTableNew(table_region);
@@ -125,14 +127,15 @@ GCStats collectGarbage(Metadata *metadata, String repo_path)
   strTableMap(table, strWrap("metadata"), (void *)0x1);
   strTableMap(table, strWrap("lockfile"), (void *)0x1);
 
-  for(PathNode *node = metadata->paths; node != NULL; node = node->next)
+  for(const PathNode *node = metadata->paths; node != NULL;
+      node = node->next)
   {
     populateTableRecursively(table, node);
   }
 
   GCStats gc_stats = { .count = 0, .size = 0 };
 
-  size_t length = pathBuilderSet(&path_buffer, repo_path.content);
+  const size_t length = pathBuilderSet(&path_buffer, repo_path.content);
   recurseIntoDirectory(table, length, length, &gc_stats);
 
   CR_RegionRelease(table_region);

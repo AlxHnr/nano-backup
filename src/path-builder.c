@@ -19,7 +19,7 @@
 */
 size_t pathBuilderSet(char **buffer_ptr, const char *path)
 {
-  size_t length = strlen(path);
+  const size_t length = strlen(path);
 
   *buffer_ptr = CR_EnsureCapacity(*buffer_ptr, sSizeAdd(length, 1));
   memcpy(*buffer_ptr, path, length);
@@ -41,11 +41,12 @@ size_t pathBuilderSet(char **buffer_ptr, const char *path)
 
   @return The size of the new path in buffer.
 */
-size_t pathBuilderAppend(char **buffer_ptr, size_t length,
+size_t pathBuilderAppend(char **buffer_ptr, const size_t length,
                          const char *path)
 {
-  size_t path_length = strlen(path);
-  size_t required_capacity = sSizeAdd(sSizeAdd(length, 2), path_length);
+  const size_t path_length = strlen(path);
+  const size_t required_capacity =
+    sSizeAdd(sSizeAdd(length, 2), path_length);
 
   *buffer_ptr = CR_EnsureCapacity(*buffer_ptr, required_capacity);
 

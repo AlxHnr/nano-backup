@@ -34,9 +34,10 @@ static void populateRepoWithDummyFiles(void)
   sSymlink(strWrap("non-existing"), strWrap("tmp/repo/a/2/broken"));
 }
 
-static void testCollectGarbage(Metadata *metadata, const char *repo_path, size_t count, uint64_t size)
+static void testCollectGarbage(const Metadata *metadata, const char *repo_path, const size_t count,
+                               const uint64_t size)
 {
-  GCStats stats = collectGarbage(metadata, strWrap(repo_path));
+  const GCStats stats = collectGarbage(metadata, strWrap(repo_path));
 
   assert_true(stats.count == count);
   assert_true(stats.size == size);
@@ -47,7 +48,7 @@ int main(void)
   testGroupStart("symlink handling");
   sMkdir(strWrap("tmp/repo"));
   sFclose(sFopenWrite(strWrap("tmp/file.txt")));
-  Metadata *empty_metadata = metadataNew();
+  const Metadata *empty_metadata = metadataNew();
 
   /* Repository is simple directory. */
   populateRepoWithDummyFiles();

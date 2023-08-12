@@ -27,7 +27,7 @@ static String checkedStrWrap(const char *cstring)
   return string;
 }
 
-static String checkedStrWrapLength(const char *string, size_t length)
+static String checkedStrWrapLength(const char *string, const size_t length)
 {
   String slice = check(strWrapLength(string, length));
   assert_true(slice.content == string);

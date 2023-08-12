@@ -30,7 +30,7 @@ void colorPrintf(FILE *stream, TextColor color, const char *format, ...)
 {
   va_list arguments;
   va_start(arguments, format);
-  bool colorize = sIsTTY(stream);
+  const bool colorize = sIsTTY(stream);
 
   if(colorize) fprintf(stream, "\033[%sm", color_codes[color]);
   vfprintf(stream, format, arguments);

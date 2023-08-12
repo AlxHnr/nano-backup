@@ -44,7 +44,7 @@ static void initHistPoint(Metadata *metadata, size_t index, size_t id, time_t ti
 
   @return A new node which should not be freed by the caller.
 */
-static PathNode *createPathNode(const char *path_str, BackupPolicy policy, PathNode *parent_node,
+static PathNode *createPathNode(const char *path_str, const BackupPolicy policy, PathNode *parent_node,
                                 Metadata *metadata)
 {
   PathNode *node = mpAlloc(sizeof *node);
@@ -78,8 +78,8 @@ static PathNode *createPathNode(const char *path_str, BackupPolicy policy, PathN
 
 /** Wrapper around findPathNode(). It is almost identical, but doesn't take
   a PathNodeHint. */
-static PathNode *findNode(PathNode *start_node, const char *path_str, BackupPolicy policy, size_t history_length,
-                          size_t subnode_count)
+static PathNode *findNode(PathNode *start_node, const char *path_str, const BackupPolicy policy,
+                          const size_t history_length, const size_t subnode_count)
 {
   return findPathNode(start_node, path_str, BH_none, policy, history_length, subnode_count);
 }
@@ -90,7 +90,7 @@ static PathNode *findNode(PathNode *start_node, const char *path_str, BackupPoli
   @param backup The backup, to which the history point belongs to.
   @param state The state of the backup.
 */
-static void appendHist(PathNode *node, Backup *backup, PathState state)
+static void appendHist(PathNode *node, Backup *backup, const PathState state)
 {
   PathHistory *history_point = mpAlloc(sizeof *history_point);
 
@@ -128,8 +128,8 @@ static void appendHist(PathNode *node, Backup *backup, PathState state)
   @param slot The slot number of the file in the repository. Will be
   ignored if the files size is not greater than FILE_HASH_SIZE.
 */
-static void assignRegularValues(PathState *state, mode_t mode, time_t timestamp, uint64_t size, uint8_t *hash,
-                                uint8_t slot)
+static void assignRegularValues(PathState *state, const mode_t mode, const time_t timestamp, const uint64_t size,
+                                const uint8_t *hash, const uint8_t slot)
 {
   state->metadata.reg.mode = mode;
   state->metadata.reg.timestamp = timestamp;
@@ -167,8 +167,9 @@ static void appendHistNonExisting(PathNode *node, Backup *backup)
   @param slot The slot number of the corresponding file in the repository.
   Will be ignored if the file size is not bigger than FILE_HASH_SIZE.
 */
-static void appendHistRegular(PathNode *node, Backup *backup, uid_t uid, gid_t gid, time_t timestamp, mode_t mode,
-                              uint64_t size, uint8_t *hash, uint8_t slot)
+static void appendHistRegular(PathNode *node, Backup *backup, const uid_t uid, const gid_t gid,
+                              const time_t timestamp, const mode_t mode, const uint64_t size, const uint8_t *hash,
+                              const uint8_t slot)
 {
   PathState state = {
     .type = PST_regular,
@@ -188,9 +189,10 @@ static void appendHistRegular(PathNode *node, Backup *backup, uid_t uid, gid_t g
   point will keep a reference to this string, so make sure not to mutate it
   as long as the history point is in use.
 */
-static void appendHistSymlink(PathNode *node, Backup *backup, uid_t uid, gid_t gid, const char *sym_target)
+static void appendHistSymlink(PathNode *node, Backup *backup, const uid_t uid, const gid_t gid,
+                              const char *sym_target)
 {
-  PathState state = {
+  const PathState state = {
     .type = PST_symlink,
     .uid = uid,
     .gid = gid,
@@ -201,8 +203,8 @@ static void appendHistSymlink(PathNode *node, Backup *backup, uid_t uid, gid_t g
 }
 
 /** Like appendHistRegular(), but for a directory. */
-static void appendHistDirectory(PathNode *node, Backup *backup, uid_t uid, gid_t gid, time_t timestamp,
-                                mode_t mode)
+static void appendHistDirectory(PathNode *node, Backup *backup, const uid_t uid, const gid_t gid,
+                                const time_t timestamp, const mode_t mode)
 {
   PathState state = {
     .type = PST_directory,
@@ -227,7 +229,8 @@ static void appendHistDirectory(PathNode *node, Backup *backup, uid_t uid, gid_t
   @param slot The slot number of the corresponding file in the repository.
   Will be ignored if the file size is not greater than FILE_HASH_SIZE.
 */
-static void appendConfHist(Metadata *metadata, Backup *backup, uint64_t size, uint8_t *hash, uint8_t slot)
+static void appendConfHist(Metadata *metadata, Backup *backup, const uint64_t size, const uint8_t *hash,
+                           const uint8_t slot)
 {
   PathHistory *history_point = mpAlloc(sizeof *history_point);
 
@@ -265,7 +268,7 @@ static void appendConfHist(Metadata *metadata, Backup *backup, uint64_t size, ui
 
   @return A new metadata tree which should not be freed by the caller.
 */
-static Metadata *createEmptyMetadata(size_t backup_history_length)
+static Metadata *createEmptyMetadata(const size_t backup_history_length)
 {
   Metadata *metadata = mpAlloc(sizeof *metadata);
 
@@ -824,7 +827,7 @@ static void checkWipedNodes(Metadata *metadata)
                   &metadata->backup_history[0], 32, 28, "../packages.txt");
 }
 
-static void writeBytesToFile(size_t size, const char *data, const char *path)
+static void writeBytesToFile(const size_t size, const char *data, const char *path)
 {
   FileStream *writer = sFopenWrite(strWrap(path));
   sFwrite(data, size, writer);
@@ -839,7 +842,7 @@ static void writeBytesToFile(size_t size, const char *data, const char *path)
   @param byte The character which should replace the old one.
   @param filename The name of the final metadata file.
 */
-static void writeWithBrokenChar3(Metadata *metadata, String *path, char byte, const char *filename)
+static void writeWithBrokenChar3(Metadata *metadata, String *path, const char byte, const char *filename)
 {
   const char old_byte = path->content[path->length - 3];
 
@@ -868,7 +871,7 @@ static void writeWithBrokenChar3(Metadata *metadata, String *path, char byte, co
 
   @return The address of the first byte of `string`.
 */
-static char *findString(char *data, const char *string, size_t data_length)
+static char *findString(char *data, const char *string, const size_t data_length)
 {
   const size_t string_length = strlen(string);
   assert_true(string_length > 0);

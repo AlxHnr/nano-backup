@@ -23,7 +23,7 @@ static void releaseRegex(void *data)
   @return A regex_t which should not be freed by the caller.
 */
 const regex_t *rpCompile(String expression, String file_name,
-                         size_t line_nr)
+                         const size_t line_nr)
 {
   regex_t *regex = CR_RegionAlloc(CR_GetGlobalRegion(), sizeof(*regex));
   const int error =

@@ -7,7 +7,7 @@
 #include "safe-math.h"
 #include "safe-wrappers.h"
 
-static void warnConfigLineNr(size_t line_nr)
+static void warnConfigLineNr(const size_t line_nr)
 {
   colorPrintf(stderr, TC_yellow, "config");
   fprintf(stderr, ": ");
@@ -29,10 +29,10 @@ static void warnPathNewline(String path)
   fputc('\n', stderr);
 }
 
-static void warnUnmatchedExpressions(RegexList *expression_list,
+static void warnUnmatchedExpressions(const RegexList *expression_list,
                                      const char *target_name)
 {
-  for(RegexList *expression = expression_list; expression != NULL;
+  for(const RegexList *expression = expression_list; expression != NULL;
       expression = expression->next)
   {
     if(expression->has_matched == false)
@@ -44,7 +44,7 @@ static void warnUnmatchedExpressions(RegexList *expression_list,
   }
 }
 
-static const char *typeOf(SearchNode *node)
+static const char *typeOf(const SearchNode *node)
 {
   if(node->regex != NULL)
   {
@@ -62,9 +62,9 @@ static const char *typeOf(SearchNode *node)
   @param root_node The root node of the search tree, for which the
   informations should be printed.
 */
-static void printSearchNodeInfos(SearchNode *root_node)
+static void printSearchNodeInfos(const SearchNode *root_node)
 {
-  for(SearchNode *node = root_node->subnodes; node != NULL;
+  for(const SearchNode *node = root_node->subnodes; node != NULL;
       node = node->next)
   {
     if(node->search_match == SRT_none)
@@ -97,13 +97,14 @@ static void printSearchNodeInfos(SearchNode *root_node)
   }
 }
 
-static void changeStatsAdd(ChangeStats *stats, size_t count, uint64_t size)
+static void changeStatsAdd(ChangeStats *stats, const size_t count,
+                           const uint64_t size)
 {
   stats->count = sSizeAdd(stats->count, count);
   stats->size = sUint64Add(stats->size, size);
 }
 
-static void metadataChangesAdd(MetadataChanges *a, MetadataChanges b)
+static void metadataChangesAdd(MetadataChanges *a, const MetadataChanges b)
 {
   changeStatsAdd(&a->new_items, b.new_items.count, b.new_items.size);
   changeStatsAdd(&a->removed_items, b.removed_items.count,
@@ -119,7 +120,7 @@ static void metadataChangesAdd(MetadataChanges *a, MetadataChanges b)
 /** Returns the first path state in the given nodes history. If this path
   state represents a non-existing file and its predecessor exists, it will
   return the predecessor. */
-static PathState *getExistingState(PathNode *node)
+static const PathState *getExistingState(const PathNode *node)
 {
   if(node->history->state.type == PST_non_existing &&
      node->history->next != NULL)
@@ -135,7 +136,7 @@ static PathState *getExistingState(PathNode *node)
 /** Increment the attribute counter in the given change struct based on the
   specified hint. */
 static void incrementExtraChangedAttributes(MetadataChanges *changes,
-                                            BackupHint hint)
+                                            const BackupHint hint)
 {
   if(hint & BH_owner_changed)
   {
@@ -155,11 +156,11 @@ static void incrementExtraChangedAttributes(MetadataChanges *changes,
   @param timestamp_changed_by_subnodes True if this nodes timestamp change
   was caused by a subnode.
 */
-static void addNode(PathNode *node, MetadataChanges *changes,
-                    bool timestamp_changed_by_subnodes)
+static void addNode(const PathNode *node, MetadataChanges *changes,
+                    const bool timestamp_changed_by_subnodes)
 {
-  BackupHint hint = backupHintNoPol(node->hint);
-  PathState *state = getExistingState(node);
+  const BackupHint hint = backupHintNoPol(node->hint);
+  const PathState *state = getExistingState(node);
   uint64_t size = 0;
 
   if(state->type == PST_regular)
@@ -214,7 +215,7 @@ static void addNode(PathNode *node, MetadataChanges *changes,
 
 /** Returns true if the given struct contains any non-metadata related
   changes. */
-static bool containsContentChanges(MetadataChanges changes)
+static bool containsContentChanges(const MetadataChanges changes)
 {
   return changes.new_items.count > 0 || changes.removed_items.count > 0 ||
     changes.lost_items.count > 0 || changes.changed_items.count > 0;
@@ -225,7 +226,7 @@ static bool containsContentChanges(MetadataChanges changes)
   @param stats The struct containing the informations.
   @param prefix The string to print before each number larger than 0.
 */
-static void printChangeStats(ChangeStats stats, const char *prefix)
+static void printChangeStats(const ChangeStats stats, const char *prefix)
 {
   printf("%s%zu item%s", stats.count > 0 ? prefix : "", stats.count,
          stats.count == 1 ? "" : "s");
@@ -261,7 +262,7 @@ static void printPrefix(bool *printed_prefix)
   @param subnode_changes Contains the changes to print.
   @param printed_prefix See printPrefix().
 */
-static void printSummarizedStats(MetadataChanges subnode_changes,
+static void printSummarizedStats(const MetadataChanges subnode_changes,
                                  bool *printed_prefix)
 {
   if(subnode_changes.new_items.count > 0)
@@ -291,9 +292,9 @@ static void printSummarizedStats(MetadataChanges subnode_changes,
   }
 }
 
-static void printNodePath(PathNode *node, TextColor color)
+static void printNodePath(const PathNode *node, const TextColor color)
 {
-  PathState *state = getExistingState(node);
+  const PathState *state = getExistingState(node);
 
   colorPrintf(stdout, color, "%s%s%s",
               state->type == PST_symlink ? "^" : "", node->path.content,
@@ -308,10 +309,11 @@ static void printNodePath(PathNode *node, TextColor color)
   @param summarize_subnode_changes True if the subnode changes should be
   printed in a concise way.
 */
-static void printNode(PathNode *node, MetadataChanges subnode_changes,
-                      bool summarize_subnode_changes)
+static void printNode(const PathNode *node,
+                      const MetadataChanges subnode_changes,
+                      const bool summarize_subnode_changes)
 {
-  BackupHint hint = backupHintNoPol(node->hint);
+  const BackupHint hint = backupHintNoPol(node->hint);
 
   if(hint == BH_added)
   {
@@ -423,7 +425,7 @@ static void printNode(PathNode *node, MetadataChanges subnode_changes,
     printf("looses history");
   }
 
-  PathState *existing_state = getExistingState(node);
+  const PathState *existing_state = getExistingState(node);
   if(existing_state->type == PST_directory)
   {
     if(hint == BH_added || hint == BH_regular_to_directory ||
@@ -484,7 +486,8 @@ static void printNode(PathNode *node, MetadataChanges subnode_changes,
   @return True if the given path node got matched by one of the specified
   regex patterns.
 */
-static bool matchesRegexList(PathNode *node, RegexList *expression_list)
+static bool matchesRegexList(const PathNode *node,
+                             RegexList *expression_list)
 {
   for(RegexList *expression = expression_list; expression != NULL;
       expression = expression->next)
@@ -511,8 +514,8 @@ static bool matchesRegexList(PathNode *node, RegexList *expression_list)
   list.
 */
 static MetadataChanges
-recursePrintOverTree(Metadata *metadata, PathNode *path_list,
-                     RegexList *summarize_expressions, bool print)
+recursePrintOverTree(const Metadata *metadata, const PathNode *path_list,
+                     RegexList *summarize_expressions, const bool print)
 {
   MetadataChanges changes = {
     .new_items = { .count = 0, .size = 0 },
@@ -524,7 +527,7 @@ recursePrintOverTree(Metadata *metadata, PathNode *path_list,
     .other = false,
   };
 
-  for(PathNode *node = path_list; node != NULL; node = node->next)
+  for(const PathNode *node = path_list; node != NULL; node = node->next)
   {
     MetadataChanges subnode_changes;
     const bool summarize = node->policy != BPOL_none &&
@@ -550,7 +553,7 @@ recursePrintOverTree(Metadata *metadata, PathNode *path_list,
                (node->hint >= BH_owner_changed &&
                 node->hint <= BH_timestamp_changed))))
     {
-      bool print_subnodes =
+      const bool print_subnodes =
         backupHintNoPol(node->hint) > BH_other_to_directory;
 
       subnode_changes =
@@ -580,7 +583,7 @@ recursePrintOverTree(Metadata *metadata, PathNode *path_list,
 
   @param size The size which should be printed.
 */
-void printHumanReadableSize(uint64_t size)
+void printHumanReadableSize(const uint64_t size)
 {
   static const char units[] = "bKMGT";
   double converted_value = (double)size;
@@ -598,7 +601,7 @@ void printHumanReadableSize(uint64_t size)
   }
   else
   {
-    uint64_t fraction = (uint64_t)(converted_value * 10.0) % 10;
+    const uint64_t fraction = (uint64_t)(converted_value * 10.0) % 10;
     printf("%" PRIu64 ".%" PRIu64 " %ciB", (uint64_t)converted_value,
            fraction, units[unit_index]);
   }
@@ -609,7 +612,7 @@ void printHumanReadableSize(uint64_t size)
   @param root_node The root node of the tree for which informations should
   be printed.
 */
-void printSearchTreeInfos(SearchNode *root_node)
+void printSearchTreeInfos(const SearchNode *root_node)
 {
   printSearchNodeInfos(root_node);
   warnUnmatchedExpressions(*root_node->ignore_expressions, "path");
@@ -626,21 +629,21 @@ void printSearchTreeInfos(SearchNode *root_node)
 
   @return A shallow summary of the printed changes for further processing.
 */
-MetadataChanges printMetadataChanges(Metadata *metadata,
+MetadataChanges printMetadataChanges(const Metadata *metadata,
                                      RegexList *summarize_expressions)
 {
   return recursePrintOverTree(metadata, metadata->paths,
                               summarize_expressions, true);
 }
 
-bool containsChanges(MetadataChanges changes)
+bool containsChanges(const MetadataChanges changes)
 {
   return containsContentChanges(changes) ||
     changes.changed_attributes > 0 || changes.other == true;
 }
 
 /** Prints a warning on how the specified node matches the given string. */
-void warnNodeMatches(SearchNode *node, String string)
+void warnNodeMatches(const SearchNode *node, String string)
 {
   warnConfigLineNr(node->line_nr);
   fprintf(stderr, "%s ", typeOf(node));

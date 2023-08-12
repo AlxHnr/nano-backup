@@ -48,7 +48,7 @@ static String summarize_token = {
   Don't modify or free the content of the config file, unless the returned
   string is no longer used.
 */
-static String getLine(String config, size_t start)
+static String getLine(String config, const size_t start)
 {
   /* Find the index of the line ending. */
   size_t end = start;
@@ -75,7 +75,7 @@ static String getLine(String config, size_t start)
   node.
 */
 static SearchNode *newNode(StringTable *existing_nodes, String path,
-                           size_t line_nr)
+                           const size_t line_nr)
 {
   PathSplit paths = strSplitPath(path);
 
@@ -331,7 +331,7 @@ SearchNode *searchTreeParse(String config)
 SearchNode *searchTreeLoad(String path)
 {
   CR_Region *r = CR_RegionNew();
-  FileContent content = sGetFilesContent(r, path);
+  const FileContent content = sGetFilesContent(r, path);
   String config = strWrapLength(content.content, content.size);
 
   SearchNode *root_node = searchTreeParse(config);

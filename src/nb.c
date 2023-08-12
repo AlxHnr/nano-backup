@@ -55,8 +55,8 @@ static void ensureUserConsent(const char *question)
   @param printed_stats Stores whether this function was already called or
   not. Will be updated by this function.
 */
-static void printStats(const char *summary, TextColor color,
-                       ChangeStats stats, bool *printed_stats)
+static void printStats(const char *summary, const TextColor color,
+                       const ChangeStats stats, bool *printed_stats)
 {
   if(*printed_stats)
   {
@@ -74,10 +74,10 @@ static void printStats(const char *summary, TextColor color,
   printf(")");
 }
 
-static void runGC(Metadata *metadata, String repo_path,
-                  bool prepend_newline)
+static void runGC(const Metadata *metadata, String repo_path,
+                  const bool prepend_newline)
 {
-  GCStats gc_stats = collectGarbage(metadata, repo_path);
+  const GCStats gc_stats = collectGarbage(metadata, repo_path);
 
   if(gc_stats.count > 0)
   {
@@ -90,15 +90,15 @@ static void runGC(Metadata *metadata, String repo_path,
   }
 }
 
-static void runIntegrityCheck(Metadata *metadata, String repo_path)
+static void runIntegrityCheck(const Metadata *metadata, String repo_path)
 {
   CR_Region *r = CR_RegionNew();
-  ListOfBrokenPathNodes *broken_nodes =
+  const ListOfBrokenPathNodes *broken_nodes =
     checkIntegrity(r, metadata, repo_path);
 
   size_t broken_node_count = 0;
-  for(ListOfBrokenPathNodes *path_node = broken_nodes; path_node != NULL;
-      path_node = path_node->next)
+  for(const ListOfBrokenPathNodes *path_node = broken_nodes;
+      path_node != NULL; path_node = path_node->next)
   {
     colorPrintf(stdout, TC_red_bold, "?? ");
     colorPrintf(stdout, TC_red, "%s ", path_node->node->path.content);
@@ -206,13 +206,13 @@ static String buildFullPath(String path)
   @param id The id to which the path should be restored.
   @param path The path to restore.
 */
-static void restore(String repo_arg, size_t id, String path)
+static void restore(String repo_arg, const size_t id, String path)
 {
   Metadata *metadata = metadataLoadFromRepo(repo_arg);
   String full_path = strRemoveTrailingSlashes(buildFullPath(path));
   initiateRestore(metadata, id, strCopy(full_path));
 
-  MetadataChanges changes = printMetadataChanges(metadata, NULL);
+  const MetadataChanges changes = printMetadataChanges(metadata, NULL);
   if(containsChanges(changes) && printf("\n") == 1)
   {
     ensureUserConsent("restore?");

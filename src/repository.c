@@ -118,7 +118,8 @@ static void fillPathBufferWithInfo(String repo_path,
 
 static RepoWriter *createRepoWriter(String repo_path,
                                     String repo_tmp_file_path,
-                                    String source_file_path, bool raw_mode)
+                                    String source_file_path,
+                                    const bool raw_mode)
 {
   FileStream *stream = sFopenWrite(repo_tmp_file_path);
   RepoWriter *writer = sMalloc(sizeof *writer);
@@ -201,15 +202,15 @@ RepoReader *repoReaderOpenFile(String repo_path, String source_file_path,
   @param size The number of bytes to read.
   @param reader The reader which should be used.
 */
-void repoReaderRead(void *data, size_t size, RepoReader *reader)
+void repoReaderRead(void *data, const size_t size, RepoReader *reader)
 {
   if(fread(data, 1, size, reader->stream) != size)
   {
     String repo_path = reader->repo_path;
     String source_file_path = reader->source_file_path;
-    bool reached_end_of_file = feof(reader->stream);
+    const bool reached_end_of_file = feof(reader->stream);
 
-    int old_errno = errno;
+    const int old_errno = errno;
     fclose(reader->stream);
     errno = old_errno;
 
@@ -306,7 +307,8 @@ RepoWriter *repoWriterOpenRaw(String repo_path, String repo_tmp_file_path,
   @param size The size of the data in bytes.
   @param writer The writer which should be used.
 */
-void repoWriterWrite(const void *data, size_t size, RepoWriter *writer)
+void repoWriterWrite(const void *data, const size_t size,
+                     RepoWriter *writer)
 {
   if(Fwrite(data, size, writer->stream) == false)
   {
@@ -327,7 +329,7 @@ void repoWriterWrite(const void *data, size_t size, RepoWriter *writer)
 */
 static void fdatasyncDirectory(String path)
 {
-  int dir_descriptor = open(path.content, O_RDONLY, 0);
+  const int dir_descriptor = open(path.content, O_RDONLY, 0);
   if(dir_descriptor == -1 || fdatasync(dir_descriptor) != 0 ||
      close(dir_descriptor) != 0)
   {
@@ -403,10 +405,9 @@ typedef struct
 
 static void cleanupLockfile(void *lockfile_info_ptr)
 {
-  LockfileInfo *info = lockfile_info_ptr;
+  const LockfileInfo *info = lockfile_info_ptr;
 
   const int old_errno = errno;
-
   if(info->is_locked)
   {
     (void)lockf(info->file_descriptor, F_ULOCK, 0);
@@ -417,7 +418,6 @@ static void cleanupLockfile(void *lockfile_info_ptr)
   {
     (void)close(info->file_descriptor);
   }
-
   errno = old_errno;
 }
 

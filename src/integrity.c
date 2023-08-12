@@ -38,8 +38,8 @@ typedef struct
 
   @return True if the given file is healthy.
 */
-static bool storedFileIsHealthy(RegularFileInfo *file_info,
-                                String path_to_stored_file)
+static bool storedFileIsHealthy(const RegularFileInfo *file_info,
+                                const String path_to_stored_file)
 {
   if(!sPathExists(path_to_stored_file))
   {
@@ -70,14 +70,14 @@ static bool storedFileIsHealthy(RegularFileInfo *file_info,
   @return True if the given history point is healthy.
 */
 static bool historyPointIsHealthy(IntegrityCheckContext *context,
-                                  PathHistory *point)
+                                  const PathHistory *point)
 {
   if(point->state.type != PST_regular)
   {
     return true;
   }
 
-  RegularFileInfo *file_info = &point->state.metadata.reg;
+  const RegularFileInfo *file_info = &point->state.metadata.reg;
   if(file_info->size <= FILE_HASH_SIZE)
   {
     return true;
@@ -114,11 +114,11 @@ static bool historyPointIsHealthy(IntegrityCheckContext *context,
   @param node_list List of path nodes to traverse recursively.
 */
 static void checkIntegrityRecursively(IntegrityCheckContext *context,
-                                      PathNode *node_list)
+                                      const PathNode *node_list)
 {
-  for(PathNode *node = node_list; node != NULL; node = node->next)
+  for(const PathNode *node = node_list; node != NULL; node = node->next)
   {
-    for(PathHistory *point = node->history; point != NULL;
+    for(const PathHistory *point = node->history; point != NULL;
         point = point->next)
     {
       if(!historyPointIsHealthy(context, point))
@@ -146,8 +146,8 @@ static void checkIntegrityRecursively(IntegrityCheckContext *context,
   nodes associated with corrupted files. The lifetime of the returned list
   will be bound to the given region.
 */
-ListOfBrokenPathNodes *checkIntegrity(CR_Region *r, Metadata *metadata,
-                                      String repo_path)
+ListOfBrokenPathNodes *
+checkIntegrity(CR_Region *r, const Metadata *metadata, String repo_path)
 {
   CR_Region *disposable_r = CR_RegionNew();
 

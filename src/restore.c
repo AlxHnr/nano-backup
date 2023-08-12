@@ -10,7 +10,8 @@
 /** Searches the path state which the given node had during the given
   backup id. If not found, it returns NULL. If the nodes policy doesn't
   support a history, it will return its first path state. */
-static PathState *searchPathState(PathNode *node, size_t id)
+static const PathState *searchPathState(const PathNode *node,
+                                        const size_t id)
 {
   if(node->policy != BPOL_track)
   {
@@ -31,9 +32,10 @@ static PathState *searchPathState(PathNode *node, size_t id)
 
 /** Wrapper around searchPathState(), which also returns NULL if the state
   was PST_non_existing at the given backup id. */
-static PathState *searchExistingPathState(PathNode *node, size_t id)
+static const PathState *searchExistingPathState(const PathNode *node,
+                                                const size_t id)
 {
-  PathState *state = searchPathState(node, id);
+  const PathState *state = searchPathState(node, id);
 
   if(state != NULL && state->type == PST_non_existing)
   {
@@ -45,9 +47,10 @@ static PathState *searchExistingPathState(PathNode *node, size_t id)
 
 /** Wrapper around searchExistingPathState(), which terminates the program
   if the state doesn't exist. */
-static PathState *findExistingPathState(PathNode *node, size_t id)
+static const PathState *findExistingPathState(const PathNode *node,
+                                              const size_t id)
 {
-  PathState *state = searchExistingPathState(node, id);
+  const PathState *state = searchExistingPathState(node, id);
 
   if(state == NULL)
   {
@@ -64,8 +67,8 @@ static PathState *findExistingPathState(PathNode *node, size_t id)
   @param state The state to compare against.
   @param stats The stats of the path on the users system.
 */
-static void handleFiletypeChanges(PathNode *node, PathState *state,
-                                  struct stat stats)
+static void handleFiletypeChanges(PathNode *node, const PathState *state,
+                                  const struct stat stats)
 {
   if(state->type == PST_regular)
   {
@@ -122,12 +125,12 @@ static void handleFiletypeChanges(PathNode *node, PathState *state,
   @param could_exist True if the path in the given node should be checked
   for existence. Otherwise it will be marked as BH_added.
 */
-static void checkAndHandleChanges(PathNode *node, PathState *state,
-                                  bool could_exist)
+static void checkAndHandleChanges(PathNode *node, const PathState *state,
+                                  const bool could_exist)
 {
   if(could_exist && sPathExists(node->path))
   {
-    struct stat stats =
+    const struct stat stats =
       state->type == PST_symlink ? sLStat(node->path) : sStat(node->path);
 
     handleFiletypeChanges(node, state, stats);
@@ -149,7 +152,8 @@ static void checkAndHandleChanges(PathNode *node, PathState *state,
   @param id The id of the backup against which should be compared.
 */
 static void checkAndHandleChangesRecursively(PathNode *node,
-                                             PathState *state, size_t id,
+                                             const PathState *state,
+                                             const size_t id,
                                              bool could_exist)
 {
   checkAndHandleChanges(node, state, could_exist);
@@ -166,7 +170,7 @@ static void checkAndHandleChangesRecursively(PathNode *node,
   for(PathNode *subnode = node->subnodes; subnode != NULL;
       subnode = subnode->next)
   {
-    PathState *subnode_state = searchExistingPathState(subnode, id);
+    const PathState *subnode_state = searchExistingPathState(subnode, id);
     if(subnode_state != NULL)
     {
       checkAndHandleChangesRecursively(subnode, subnode_state, id,
@@ -183,8 +187,9 @@ static void checkAndHandleChangesRecursively(PathNode *node,
   @param could_exist True if the path to restore could exist. See
   checkAndHandleChanges() for more informations.
 */
-static void initiateRestoreRecursively(PathNode *node_list, size_t id,
-                                       String path, bool could_exist)
+static void initiateRestoreRecursively(PathNode *node_list,
+                                       const size_t id, String path,
+                                       const bool could_exist)
 {
   bool found_node = false;
 
@@ -194,14 +199,14 @@ static void initiateRestoreRecursively(PathNode *node_list, size_t id,
     if(strEqual(node->path, path))
     {
       found_node = true;
-      PathState *state = findExistingPathState(node, id);
+      const PathState *state = findExistingPathState(node, id);
       checkAndHandleChangesRecursively(node, state, id, could_exist);
     }
     else if(strIsParentPath(node->path, path))
     {
       found_node = true;
 
-      PathState *state = findExistingPathState(node, id);
+      const PathState *state = findExistingPathState(node, id);
       if(state->type != PST_directory)
       {
         die("path was not a directory at the specified time: \"%s\"",
@@ -210,7 +215,7 @@ static void initiateRestoreRecursively(PathNode *node_list, size_t id,
 
       checkAndHandleChanges(node, state, could_exist);
 
-      bool subnode_could_exist = could_exist &&
+      const bool subnode_could_exist = could_exist &&
         !(backupHintNoPol(node->hint) >= BH_added &&
           backupHintNoPol(node->hint) <= BH_other_to_directory);
 
@@ -233,13 +238,13 @@ static void initiateRestoreRecursively(PathNode *node_list, size_t id,
   @param path The full, absolute path to restore. Should not end with a
   slash. An empty string represents the root directory "/".
 */
-void initiateRestore(Metadata *metadata, size_t id, String path)
+void initiateRestore(Metadata *metadata, const size_t id, String path)
 {
   if(path.length == 0)
   {
     for(PathNode *node = metadata->paths; node != NULL; node = node->next)
     {
-      PathState *state = searchExistingPathState(node, id);
+      const PathState *state = searchExistingPathState(node, id);
       if(state != NULL)
       {
         checkAndHandleChangesRecursively(node, state, id, true);
@@ -272,7 +277,7 @@ void restoreFile(String path, const RegularFileInfo *info,
 
     while(bytes_left > 0)
     {
-      size_t bytes_to_read =
+      const size_t bytes_to_read =
         bytes_left > sizeof(buffer) ? sizeof(buffer) : bytes_left;
 
       repoReaderRead(buffer, bytes_to_read, reader);
@@ -298,7 +303,8 @@ void restoreFile(String path, const RegularFileInfo *info,
   @param state The state to which the path should be restored.
   @param repo_path The path to the repository.
 */
-static void restorePath(PathNode *node, PathState *state, String repo_path)
+static void restorePath(const PathNode *node, const PathState *state,
+                        String repo_path)
 {
   if(state->type == PST_regular)
   {
@@ -329,12 +335,12 @@ static void restorePath(PathNode *node, PathState *state, String repo_path)
 
   @return True if the restoring affected the parent directories timestamp.
 */
-static bool finishRestoreRecursively(PathNode *node, size_t id,
+static bool finishRestoreRecursively(const PathNode *node, const size_t id,
                                      String repo_path)
 {
   bool affects_parent_timestamp = false;
 
-  PathState *state = searchExistingPathState(node, id);
+  const PathState *state = searchExistingPathState(node, id);
   if(state == NULL)
   {
     return affects_parent_timestamp;
@@ -417,7 +423,7 @@ static bool finishRestoreRecursively(PathNode *node, size_t id,
   {
     bool subnode_changes_timestamp = false;
 
-    for(PathNode *subnode = node->subnodes; subnode != NULL;
+    for(const PathNode *subnode = node->subnodes; subnode != NULL;
         subnode = subnode->next)
     {
       subnode_changes_timestamp |=
@@ -439,9 +445,11 @@ static bool finishRestoreRecursively(PathNode *node, size_t id,
   @param id The same id which was passed to initiateRestore().
   @param repo_path The path to the backup repository.
 */
-void finishRestore(Metadata *metadata, size_t id, String repo_path)
+void finishRestore(const Metadata *metadata, const size_t id,
+                   String repo_path)
 {
-  for(PathNode *node = metadata->paths; node != NULL; node = node->next)
+  for(const PathNode *node = metadata->paths; node != NULL;
+      node = node->next)
   {
     finishRestoreRecursively(node, id, repo_path);
   }

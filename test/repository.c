@@ -51,7 +51,7 @@ static void checkFilesContent(String file_path, const char *expected_content)
   const size_t expected_size = strlen(expected_content);
 
   CR_Region *r = CR_RegionNew();
-  FileContent content = sGetFilesContent(r, file_path);
+  const FileContent content = sGetFilesContent(r, file_path);
 
   if(content.size != expected_size)
   {
@@ -126,7 +126,7 @@ static void testWithExistingTmpFile(RepoWriter *writer, String final_path)
   @param path The path of the final file relative to the current directory.
   @param info The file info to pass to repoBuildRegularFilePath().
 */
-static void testRegularFilePathBuilding(String path, RegularFileInfo *info)
+static void testRegularFilePathBuilding(String path, const RegularFileInfo *info)
 {
   static char *buffer = NULL;
 
@@ -137,7 +137,7 @@ static void testRegularFilePathBuilding(String path, RegularFileInfo *info)
 int main(void)
 {
   String info_1_path = strWrap("tmp/0/70/a0d101316191c1f2225282b2e3134373a3d40x8bx18");
-  RegularFileInfo info_1 =
+  const RegularFileInfo info_1 =
   {
     .size = 139, .slot = 24,
     .hash =
@@ -148,7 +148,7 @@ int main(void)
   };
 
   String info_2_path = strWrap("tmp/2/15/14d1d49151941393d2d251109552931350d45x21e98xff");
-  RegularFileInfo info_2 =
+  const RegularFileInfo info_2 =
   {
     .size = 138904, .slot = 255,
     .hash =
@@ -159,7 +159,7 @@ int main(void)
   };
 
   String info_3_path = strWrap("tmp/4/b5/f2b134f473b1f2757333f17531b23372f435bxffffffffffffffffx0");
-  RegularFileInfo info_3 =
+  const RegularFileInfo info_3 =
   {
     .size = 18446744073709551615UL, .slot = 0,
     .hash =
@@ -170,7 +170,7 @@ int main(void)
   };
 
   String info_4_path = strWrap("tmp/0/00/000000000112233445566778899aabbccddeex0x27");
-  RegularFileInfo info_4 =
+  const RegularFileInfo info_4 =
   {
     .size = 0, .slot = 39,
     .hash =
@@ -181,7 +181,7 @@ int main(void)
   };
 
   String info_5_path = strWrap("tmp/0/fb/a0d101316191c1f2225282b2e3134373a3d40x46x0");
-  RegularFileInfo info_5 =
+  const RegularFileInfo info_5 =
   {
     .size = 70, .slot = 0,
     .hash =
@@ -192,7 +192,7 @@ int main(void)
   };
 
   String info_6_path = strWrap("tmp/0/fb/d28fb2948efac8b2c25282b2e3134373a3d40x9fc4x11");
-  RegularFileInfo info_6 =
+  const RegularFileInfo info_6 =
   {
     .size = 40900, .slot = 17,
     .hash =

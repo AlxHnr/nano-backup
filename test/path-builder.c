@@ -13,9 +13,10 @@ static void testPathBuilderSet(char **buffer, const char *path)
   assert_true(strcmp(*buffer, path) == 0);
 }
 
-static void testPathBuilderAppend(char **buffer, size_t buffer_length, const char *path, const char *expected_path)
+static void testPathBuilderAppend(char **buffer, const size_t buffer_length, const char *path,
+                                  const char *expected_path)
 {
-  size_t length = pathBuilderAppend(buffer, buffer_length, path);
+  const size_t length = pathBuilderAppend(buffer, buffer_length, path);
 
   assert_true(length == buffer_length + 1 + strlen(path));
   assert_true(length == strlen(expected_path));

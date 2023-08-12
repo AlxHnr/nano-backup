@@ -7,7 +7,6 @@ cd "$(dirname "$0")/.."
 cppcheck --quiet --std=c99 --enable=all --error-exitcode=1 \
   --platform=unix64 -Isrc/ -Ithird-party/ -D_XOPEN_SOURCE=600 \
   -D_FILE_OFFSET_BITS=64 -DCHAR_BIT=8 \
-  --suppress="constParameter:*" \
   --suppress="ctunullpointer:*" \
   --suppress="ctuuninitvar:*" \
   --suppress="missingIncludeSystem:*" \

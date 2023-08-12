@@ -25,7 +25,8 @@ static unsigned char *io_buffer = NULL;
   the type SRT_regular, SRT_symlink or SRT_directory. Otherwise it will
   result in undefined behaviour.
 */
-static void setPathHistoryState(PathState *state, SearchResult result)
+static void setPathHistoryState(PathState *state,
+                                const SearchResult result)
 {
   state->uid = result.stats.st_uid;
   state->gid = result.stats.st_gid;
@@ -62,7 +63,7 @@ static void setPathHistoryState(PathState *state, SearchResult result)
   @return A new PathHistory point that should not be freed by the caller.
 */
 static PathHistory *buildPathHistoryPoint(Metadata *metadata,
-                                          SearchResult result)
+                                          const SearchResult result)
 {
   PathHistory *point = mpAlloc(sizeof *point);
 
@@ -118,7 +119,8 @@ static bool searchNodeMatches(SearchNode *node, String path_tail)
 
   @return The results subnode that has matched the given string, or NULL.
 */
-static SearchNode *matchesSearchSubnodes(String path, SearchNode *result)
+static SearchNode *matchesSearchSubnodes(String path,
+                                         const SearchNode *result)
 {
   if(result != NULL)
   {
@@ -143,9 +145,9 @@ static SearchNode *matchesSearchSubnodes(String path, SearchNode *result)
 
   @return True, if one ignore expression matched the specified path.
 */
-static bool matchesIgnoreList(String path, RegexList *ignore_list)
+static bool matchesIgnoreList(String path, const RegexList *ignore_list)
 {
-  for(RegexList *item = ignore_list; item != NULL; item = item->next)
+  for(const RegexList *item = ignore_list; item != NULL; item = item->next)
   {
     if(regexec(item->regex, path.content, 0, NULL, 0) == 0)
     {
@@ -248,7 +250,7 @@ static void markAsRemovedRecursively(Metadata *metadata, PathNode *node,
   be found.
 */
 static void handlePolicyChanges(Metadata *metadata, PathNode *node,
-                                BackupPolicy policy)
+                                const BackupPolicy policy)
 {
   if(node->policy == policy)
   {
@@ -292,7 +294,7 @@ static void handlePolicyChanges(Metadata *metadata, PathNode *node,
   @param policy The policy which the removed path is supposed to have.
 */
 static void handleRemovedPath(Metadata *metadata, PathNode *node,
-                              BackupPolicy policy)
+                              const BackupPolicy policy)
 {
   handlePolicyChanges(metadata, node, policy);
 
@@ -318,7 +320,8 @@ static void handleRemovedPath(Metadata *metadata, PathNode *node,
   @param node The node describing the path to check.
   @param result The search result which has matched the path.
 */
-static void handleFiletypeChanges(PathNode *node, SearchResult result)
+static void handleFiletypeChanges(PathNode *node,
+                                  const SearchResult result)
 {
   if(node->history->state.type == PST_regular)
   {
@@ -362,7 +365,7 @@ static void handleFiletypeChanges(PathNode *node, SearchResult result)
   @param result The search result which matched the given node.
 */
 static void handleNodeChanges(PathNode *node, PathState *state,
-                              SearchResult result)
+                              const SearchResult result)
 {
   handleFiletypeChanges(node, result);
 
@@ -383,7 +386,7 @@ static void handleNodeChanges(PathNode *node, PathState *state,
   @param result The search result which has matched the given node.
 */
 static void handleFoundNode(Metadata *metadata, PathNode *node,
-                            SearchResult result)
+                            const SearchResult result)
 {
   handlePolicyChanges(metadata, node, result.policy);
 
@@ -436,10 +439,10 @@ static void handleFoundNode(Metadata *metadata, PathNode *node,
   search tree. Can be NULL.
 */
 static void handleNotFoundSubnodes(Metadata *metadata,
-                                   SearchNode *node_match,
-                                   BackupPolicy node_policy,
+                                   const SearchNode *node_match,
+                                   const BackupPolicy node_policy,
                                    PathNode *subnode_list,
-                                   RegexList *ignore_list)
+                                   const RegexList *ignore_list)
 {
   for(PathNode *subnode = subnode_list; subnode != NULL;
       subnode = subnode->next)
@@ -481,12 +484,12 @@ static void handleNotFoundSubnodes(Metadata *metadata,
 
   @return The type of the processed result.
 */
-static SearchResultType initiateMetadataRecursively(Metadata *metadata,
-                                                    PathNode **node_list,
-                                                    SearchContext *context,
-                                                    RegexList *ignore_list)
+static SearchResultType
+initiateMetadataRecursively(Metadata *metadata, PathNode **node_list,
+                            SearchContext *context,
+                            const RegexList *ignore_list)
 {
-  SearchResult result = searchGetNext(context);
+  const SearchResult result = searchGetNext(context);
   if(result.type == SRT_end_of_directory ||
      result.type == SRT_end_of_search || result.type == SRT_other)
   {
@@ -599,10 +602,11 @@ static SearchResultType initiateMetadataRecursively(Metadata *metadata,
   determine the ideal block size.
 */
 static void copyFileIntoRepo(PathNode *node, String repo_path,
-                             String repo_tmp_file_path, struct stat stats)
+                             String repo_tmp_file_path,
+                             const struct stat stats)
 {
-  RegularFileInfo *reg = &node->history->state.metadata.reg;
-  size_t blocksize = stats.st_blksize;
+  const RegularFileInfo *reg = &node->history->state.metadata.reg;
+  const size_t blocksize = stats.st_blksize;
   uint64_t bytes_left = reg->size;
 
   FileStream *reader = sFopenRead(node->path);
@@ -613,7 +617,8 @@ static void copyFileIntoRepo(PathNode *node, String repo_path,
 
   while(bytes_left > 0)
   {
-    size_t bytes_to_read = bytes_left > blocksize ? blocksize : bytes_left;
+    const size_t bytes_to_read =
+      bytes_left > blocksize ? blocksize : bytes_left;
 
     sFread(io_buffer, bytes_to_read, reader);
     repoWriterWrite(io_buffer, bytes_to_read, writer);
@@ -621,7 +626,7 @@ static void copyFileIntoRepo(PathNode *node, String repo_path,
     bytes_left -= bytes_to_read;
   }
 
-  bool stream_not_at_end = sFbytesLeft(reader);
+  const bool stream_not_at_end = sFbytesLeft(reader);
   sFclose(reader);
 
   if(stream_not_at_end)
@@ -645,12 +650,11 @@ static void copyFileIntoRepo(PathNode *node, String repo_path,
   @return True if the file represented by the node is equal to its stored
   counterpart.
 */
-static bool equalsToStoredFile(PathNode *node, String repo_path,
-                               struct stat stats)
+static bool equalsToStoredFile(const PathNode *node, String repo_path,
+                               const struct stat stats)
 {
-  RegularFileInfo *reg = &node->history->state.metadata.reg;
-  size_t blocksize = stats.st_blksize;
-  uint64_t bytes_left = reg->size;
+  const RegularFileInfo *reg = &node->history->state.metadata.reg;
+  const size_t blocksize = stats.st_blksize;
 
   FileStream *stream = sFopenRead(node->path);
 
@@ -659,11 +663,12 @@ static bool equalsToStoredFile(PathNode *node, String repo_path,
   RepoReader *repo_stream = repoReaderOpenFile(repo_path, node->path, reg);
   unsigned char *repo_buffer = &io_buffer[blocksize];
 
+  uint64_t bytes_left = reg->size;
   bool files_equal = true;
-
   while(bytes_left > 0 && files_equal)
   {
-    size_t bytes_to_read = bytes_left > blocksize ? blocksize : bytes_left;
+    const size_t bytes_to_read =
+      bytes_left > blocksize ? blocksize : bytes_left;
 
     sFread(io_buffer, bytes_to_read, stream);
     repoReaderRead(repo_buffer, bytes_to_read, repo_stream);
@@ -675,7 +680,7 @@ static bool equalsToStoredFile(PathNode *node, String repo_path,
 
   repoReaderClose(repo_stream);
 
-  bool stream_not_at_end = sFbytesLeft(stream);
+  const bool stream_not_at_end = sFbytesLeft(stream);
   sFclose(stream);
 
   if(bytes_left == 0 && stream_not_at_end)
@@ -702,7 +707,7 @@ static bool equalsToStoredFile(PathNode *node, String repo_path,
   returned, the nodes slot number will contain the next free slot number.
 */
 static bool searchFileDuplicates(PathNode *node, String repo_path,
-                                 struct stat stats)
+                                 const struct stat stats)
 {
   RegularFileInfo *reg = &node->history->state.metadata.reg;
   reg->slot = 0;
@@ -739,7 +744,7 @@ static void addFileToRepo(PathNode *node, String repo_path,
   RegularFileInfo *reg = &node->history->state.metadata.reg;
 
   /* Die if the file has changed since the metadata was initiated. */
-  struct stat stats = sStat(node->path);
+  const struct stat stats = sStat(node->path);
   if(node->history->state.metadata.reg.timestamp != stats.st_mtime)
   {
     die("file has changed during backup: \"%s\"", node->path.content);
@@ -761,7 +766,7 @@ static void addFileToRepo(PathNode *node, String repo_path,
     /* Store small files directly in its hash buffer. */
     FileStream *stream = sFopenRead(node->path);
     sFread(&reg->hash, reg->size, stream);
-    bool stream_not_at_end = sFbytesLeft(stream);
+    const bool stream_not_at_end = sFbytesLeft(stream);
     sFclose(stream);
 
     if(stream_not_at_end)

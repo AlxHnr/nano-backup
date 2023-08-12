@@ -19,7 +19,7 @@ String strWrap(const char *string)
 }
 
 /** Return a slice containing the given string. */
-String strWrapLength(const char *string, size_t length)
+String strWrapLength(const char *string, const size_t length)
 {
   return (String){
     .content = string,

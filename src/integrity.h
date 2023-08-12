@@ -7,11 +7,11 @@
 typedef struct ListOfBrokenPathNodes ListOfBrokenPathNodes;
 struct ListOfBrokenPathNodes
 {
-  PathNode *node;
+  const PathNode *node;
   ListOfBrokenPathNodes *next;
 };
 
 extern ListOfBrokenPathNodes *
-checkIntegrity(CR_Region *r, Metadata *metadata, String repo_path);
+checkIntegrity(CR_Region *r, const Metadata *metadata, String repo_path);
 
 #endif

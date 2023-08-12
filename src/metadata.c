@@ -28,8 +28,9 @@ static const union
   uint8_t array[4];
 } endian_test = { .value = 1 };
 
-static void assertBytesLeft(size_t reader_position, size_t bytes,
-                            FileContent content, String metadata_path)
+static void assertBytesLeft(const size_t reader_position,
+                            const size_t bytes, const FileContent content,
+                            String metadata_path)
 {
   if(sSizeAdd(reader_position, bytes) > content.size)
   {
@@ -84,24 +85,24 @@ static uint64_t convertEndian64(uint64_t value)
   }
 }
 
-static uint8_t read8(FileContent content, size_t *reader_position,
+static uint8_t read8(const FileContent content, size_t *reader_position,
                      String metadata_path)
 {
   assertBytesLeft(*reader_position, sizeof(uint8_t), content,
                   metadata_path);
 
-  uint8_t byte = content.content[*reader_position];
+  const uint8_t byte = content.content[*reader_position];
   *reader_position += sizeof(byte);
 
   return byte;
 }
 
-static void write8(uint8_t value, RepoWriter *writer)
+static void write8(const uint8_t value, RepoWriter *writer)
 {
   repoWriterWrite(&value, sizeof(value), writer);
 }
 
-static uint32_t read32(FileContent content, size_t *reader_position,
+static uint32_t read32(const FileContent content, size_t *reader_position,
                        String metadata_path)
 {
   assertBytesLeft(*reader_position, sizeof(uint32_t), content,
@@ -114,13 +115,13 @@ static uint32_t read32(FileContent content, size_t *reader_position,
   return convertEndian32(value);
 }
 
-static void write32(uint32_t value, RepoWriter *writer)
+static void write32(const uint32_t value, RepoWriter *writer)
 {
-  uint32_t converted_value = convertEndian32(value);
+  const uint32_t converted_value = convertEndian32(value);
   repoWriterWrite(&converted_value, sizeof(converted_value), writer);
 }
 
-static uint64_t read64(FileContent content, size_t *reader_position,
+static uint64_t read64(const FileContent content, size_t *reader_position,
                        String metadata_path)
 {
   assertBytesLeft(*reader_position, sizeof(uint64_t), content,
@@ -133,16 +134,16 @@ static uint64_t read64(FileContent content, size_t *reader_position,
   return convertEndian64(value);
 }
 
-static void write64(uint64_t value, RepoWriter *writer)
+static void write64(const uint64_t value, RepoWriter *writer)
 {
-  uint64_t converted_value = convertEndian64(value);
+  const uint64_t converted_value = convertEndian64(value);
   repoWriterWrite(&converted_value, sizeof(converted_value), writer);
 }
 
-static size_t readSize(FileContent content, size_t *reader_position,
+static size_t readSize(const FileContent content, size_t *reader_position,
                        String metadata_path)
 {
-  uint64_t size = read64(content, reader_position, metadata_path);
+  const uint64_t size = read64(content, reader_position, metadata_path);
 
   if(size > SIZE_MAX)
   {
@@ -153,12 +154,13 @@ static size_t readSize(FileContent content, size_t *reader_position,
   return (size_t)size;
 }
 
-static time_t readTime(FileContent content, size_t *reader_position,
+static time_t readTime(const FileContent content, size_t *reader_position,
                        String metadata_path)
 {
   CR_StaticAssert(sizeof(time_t) == 4 || sizeof(time_t) == 8);
 
-  int64_t time = (int64_t)read64(content, reader_position, metadata_path);
+  const int64_t time =
+    (int64_t)read64(content, reader_position, metadata_path);
 
   if(sizeof(time_t) == 4 && (time < INT32_MIN || time > INT32_MAX))
   {
@@ -181,8 +183,9 @@ static time_t readTime(FileContent content, size_t *reader_position,
   @param metadata_path The path to the metadata file, for printing useful
   error messages.
 */
-static void readBytes(FileContent content, size_t *reader_position,
-                      uint8_t *buffer, size_t size, String metadata_path)
+static void readBytes(const FileContent content, size_t *reader_position,
+                      uint8_t *buffer, const size_t size,
+                      String metadata_path)
 {
   assertBytesLeft(*reader_position, size, content, metadata_path);
 
@@ -202,14 +205,14 @@ static void readBytes(FileContent content, size_t *reader_position,
   @return A new path history allocated inside the internal memory pool,
   which should not be freed by the caller.
 */
-static PathHistory *readPathHistory(FileContent content,
+static PathHistory *readPathHistory(const FileContent content,
                                     size_t *reader_position,
                                     String metadata_path,
                                     Metadata *metadata)
 {
   PathHistory *point = mpAlloc(sizeof *point);
 
-  size_t id = readSize(content, reader_position, metadata_path);
+  const size_t id = readSize(content, reader_position, metadata_path);
   if(id >= metadata->backup_history_length)
   {
     die("backup id is out of range in \"%s\"", metadata_path.content);
@@ -252,7 +255,7 @@ static PathHistory *readPathHistory(FileContent content,
   }
   else if(point->state.type == PST_symlink)
   {
-    size_t target_length =
+    const size_t target_length =
       readSize(content, reader_position, metadata_path);
 
     char *buffer = mpAlloc(sSizeAdd(target_length, 1));
@@ -291,12 +294,12 @@ static PathHistory *readPathHistory(FileContent content,
   @return A complete path history allocated inside the internal memory
   pool. It should not be freed by the caller.
 */
-static PathHistory *readFullPathHistory(FileContent content,
+static PathHistory *readFullPathHistory(const FileContent content,
                                         size_t *reader_position,
                                         String metadata_path,
                                         Metadata *metadata)
 {
-  size_t history_length =
+  const size_t history_length =
     readSize(content, reader_position, metadata_path);
 
   if(history_length == 0)
@@ -324,18 +327,18 @@ static PathHistory *readFullPathHistory(FileContent content,
   @param starting_point The first element in the list.
   @param writer The writer which should be used for writing.
 */
-static void writePathHistoryList(PathHistory *starting_point,
+static void writePathHistoryList(const PathHistory *starting_point,
                                  RepoWriter *writer)
 {
   size_t history_length = 0;
-  for(PathHistory *point = starting_point; point != NULL;
+  for(const PathHistory *point = starting_point; point != NULL;
       point = point->next)
   {
     history_length = sSizeAdd(history_length, 1);
   }
 
   write64(history_length, writer);
-  for(PathHistory *point = starting_point; point != NULL;
+  for(const PathHistory *point = starting_point; point != NULL;
       point = point->next)
   {
     write64(point->backup->id, writer);
@@ -398,13 +401,14 @@ static void writePathHistoryList(PathHistory *starting_point,
   should not be freed by the caller. It can be NULL, if the given parent
   node has no subnodes.
 */
-static PathNode *readPathSubnodes(FileContent content,
+static PathNode *readPathSubnodes(const FileContent content,
                                   size_t *reader_position,
                                   String metadata_path,
                                   PathNode *parent_node,
                                   Metadata *metadata)
 {
-  size_t node_count = readSize(content, reader_position, metadata_path);
+  const size_t node_count =
+    readSize(content, reader_position, metadata_path);
   PathNode *node_tree = NULL;
 
   for(size_t counter = 0; counter < node_count; counter++)
@@ -416,7 +420,8 @@ static PathNode *readPathSubnodes(FileContent content,
     node_tree = node;
 
     /* Read the name and append it to the parent nodes path. */
-    size_t name_length = readSize(content, reader_position, metadata_path);
+    const size_t name_length =
+      readSize(content, reader_position, metadata_path);
     if(name_length == 0)
     {
       die("contains filename with length zero: \"%s\"",
@@ -462,10 +467,10 @@ static PathNode *readPathSubnodes(FileContent content,
 }
 
 /** Writes the given list of path nodes recursively. */
-static void writePathList(PathNode *node_list, RepoWriter *writer)
+static void writePathList(const PathNode *node_list, RepoWriter *writer)
 {
   size_t list_length = 0;
-  for(PathNode *node = node_list; node != NULL; node = node->next)
+  for(const PathNode *node = node_list; node != NULL; node = node->next)
   {
     if(backupHintNoPol(node->hint) != BH_not_part_of_repository)
     {
@@ -475,7 +480,7 @@ static void writePathList(PathNode *node_list, RepoWriter *writer)
 
   write64(list_length, writer);
 
-  for(PathNode *node = node_list; node != NULL; node = node->next)
+  for(const PathNode *node = node_list; node != NULL; node = node->next)
   {
     if(backupHintNoPol(node->hint) != BH_not_part_of_repository)
     {
@@ -524,7 +529,7 @@ Metadata *metadataNew(void)
 Metadata *metadataLoad(String path)
 {
   CR_Region *content_region = CR_RegionNew();
-  FileContent content = sGetFilesContent(content_region, path);
+  const FileContent content = sGetFilesContent(content_region, path);
 
   /* Allocate and initialize metadata. */
   Metadata *metadata = mpAlloc(sizeof *metadata);
