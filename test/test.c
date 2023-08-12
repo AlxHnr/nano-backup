@@ -145,7 +145,7 @@ void dieTest(const char *format, ...)
   colorPrintf(stdout, TC_red_bold, "FAILURE");
   printf("]\n    ");
 
-  if(test_catch_die == false)
+  if(!test_catch_die)
   {
     colorPrintf(stdout, TC_red, "unexpected error");
     printf(": ");

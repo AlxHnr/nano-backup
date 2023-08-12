@@ -35,7 +35,7 @@ static void warnUnmatchedExpressions(const RegexList *expression_list,
   for(const RegexList *expression = expression_list; expression != NULL;
       expression = expression->next)
   {
-    if(expression->has_matched == false)
+    if(!expression->has_matched)
     {
       warnConfigLineNr(expression->line_nr);
       fprintf(stderr, "regex never matched a %s: ", target_name);
@@ -186,8 +186,7 @@ static void addNode(const PathNode *node, ChangeSummary *changes,
   {
     changeStatsAdd(&changes->lost_items, 1, size);
 
-    if(node->policy == BPOL_mirror &&
-       (node->hint & BH_policy_changed) == false)
+    if(node->policy == BPOL_mirror && !(node->hint & BH_policy_changed))
     {
       changes->affects_parent_timestamp = true;
     }
@@ -209,7 +208,7 @@ static void addNode(const PathNode *node, ChangeSummary *changes,
 
     incrementExtraChangedAttributes(changes, node->hint);
     if(node->hint == BH_timestamp_changed &&
-       timestamp_changed_by_subnodes == false)
+       !timestamp_changed_by_subnodes)
     {
       changes->changed_attributes =
         sSizeAdd(changes->changed_attributes, 1);
@@ -416,7 +415,7 @@ static void printNode(const PathNode *node,
   if(node->history->state.type != PST_symlink &&
      !(node->hint & BH_timestamp_changed) !=
        !(node->hint & BH_content_changed) &&
-     subnode_changes->affects_parent_timestamp == false)
+     !subnode_changes->affects_parent_timestamp)
   {
     printPrefix(&printed_details);
     printf("%stimestamp",

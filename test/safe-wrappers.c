@@ -18,7 +18,7 @@ static void testAtExit1(void)
 
 static void testAtExit2(void)
 {
-  if(test_atexit_1_called == false)
+  if(!test_atexit_1_called)
   {
     fprintf(stderr, "fatal: behaviour of atexit() violates C99\n");
     abort();
@@ -120,15 +120,15 @@ int main(void)
   assert_true(checkPathExists("./valid-config-files/"));
   assert_true(checkPathExists("broken-config-files"));
   assert_true(checkPathExists("broken-config-files/"));
-  assert_true(checkPathExists("non-existing-file.txt") == false);
-  assert_true(checkPathExists("non-existing-directory/") == false);
-  assert_true(checkPathExists("non/existing/directory/") == false);
-  assert_true(checkPathExists("valid-config-files/non/existing/file") == false);
+  assert_true(!checkPathExists("non-existing-file.txt"));
+  assert_true(!checkPathExists("non-existing-directory/"));
+  assert_true(!checkPathExists("non/existing/directory/"));
+  assert_true(!checkPathExists("valid-config-files/non/existing/file"));
 
-  assert_true(sPathExists(strWrap("tmp/dummy-symlink")) == false);
+  assert_true(!sPathExists(strWrap("tmp/dummy-symlink")));
   assert_true(symlink("non-existing-file.txt", "tmp/dummy-symlink") == 0);
   assert_true(sPathExists(strWrap("tmp/dummy-symlink")));
-  assert_true(sPathExists(strWrap("tmp/dummy-symlink/bar")) == false);
+  assert_true(!sPathExists(strWrap("tmp/dummy-symlink/bar")));
   testGroupEnd();
 
   testGroupStart("sStat()");
@@ -167,8 +167,8 @@ int main(void)
   char buffer[50] = { 0 };
   sFread(buffer, 25, example_read);
 
-  assert_true(checkBytesLeft(example_read) == false);
-  assert_true(checkBytesLeft(example_read) == false);
+  assert_true(!checkBytesLeft(example_read));
+  assert_true(!checkBytesLeft(example_read));
 
   assert_true(strcmp(buffer, "This is an example file.\n") == 0);
 
@@ -214,8 +214,8 @@ int main(void)
   sFread(buffer, 1, example_read);
   assert_true(strcmp(buffer, "\n") == 0);
 
-  assert_true(checkBytesLeft(example_read) == false);
-  assert_true(checkBytesLeft(example_read) == false);
+  assert_true(!checkBytesLeft(example_read));
+  assert_true(!checkBytesLeft(example_read));
   sFclose(example_read);
   testGroupEnd();
 
@@ -243,7 +243,7 @@ int main(void)
   assert_error_errno(sFopenWrite(strWrap("non-existing-dir/file.txt")),
                      "failed to open \"non-existing-dir/file.txt\" for writing", ENOENT);
 
-  assert_true(sPathExists(strWrap("tmp/test-file-1")) == false);
+  assert_true(!sPathExists(strWrap("tmp/test-file-1")));
   FileStream *test_file = sFopenWrite(strWrap("tmp/test-file-1"));
   assert_true(sPathExists(strWrap("tmp/test-file-1")));
   assert_true(test_file != NULL);
@@ -264,7 +264,7 @@ int main(void)
   /* Assert that the path gets captured properly. */
   String test_file_path = strWrap("tmp/test-file-2");
 
-  assert_true(sPathExists(test_file_path) == false);
+  assert_true(!sPathExists(test_file_path));
   test_file = sFopenWrite(test_file_path);
   assert_true(sPathExists(test_file_path));
   assert_true(test_file != NULL);
@@ -291,12 +291,12 @@ int main(void)
   assert_error(sFwrite("hello", 5, sFopenRead(strWrap("example.txt"))), "failed to write to \"example.txt\"");
 
   test_file = sFopenRead(strWrap("example.txt"));
-  assert_true(Fwrite("hello", 5, test_file) == false);
+  assert_true(!Fwrite("hello", 5, test_file));
   sFclose(test_file);
   testGroupEnd();
 
   testGroupStart("sMkdir()");
-  assert_true(sPathExists(strWrap("tmp/some-directory")) == false);
+  assert_true(!sPathExists(strWrap("tmp/some-directory")));
   sMkdir(strWrap("tmp/some-directory"));
   assert_true(sPathExists(strWrap("tmp/some-directory")));
   assert_true(S_ISDIR(sLStat(strWrap("tmp/some-directory")).st_mode));
@@ -308,7 +308,7 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("sSymlink()");
-  assert_true(sPathExists(strWrap("tmp/some-symlink")) == false);
+  assert_true(!sPathExists(strWrap("tmp/some-symlink")));
   sSymlink(strWrap("foo bar 123"), strWrap("tmp/some-symlink"));
   assert_true(sPathExists(strWrap("tmp/some-symlink")));
   assert_true(S_ISLNK(sLStat(strWrap("tmp/some-symlink")).st_mode));
@@ -324,15 +324,15 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("sRename()");
-  assert_true(sPathExists(strWrap("tmp/file-1")) == false);
+  assert_true(!sPathExists(strWrap("tmp/file-1")));
   sFclose(sFopenWrite(strWrap("tmp/file-1")));
 
   assert_true(sPathExists(strWrap("tmp/file-1")));
-  assert_true(sPathExists(strWrap("tmp/file-2")) == false);
+  assert_true(!sPathExists(strWrap("tmp/file-2")));
 
   sRename(strWrap("tmp/file-1"), strWrap("tmp/file-2"));
 
-  assert_true(sPathExists(strWrap("tmp/file-1")) == false);
+  assert_true(!sPathExists(strWrap("tmp/file-1")));
   assert_true(sPathExists(strWrap("tmp/file-2")));
 
   assert_error_errno(sRename(strWrap("non-existing-file.txt"), strWrap("tmp/file-2")),
@@ -416,14 +416,14 @@ int main(void)
   sRemove(strWrap("tmp/link-to-remove2"));
   assert_true(sPathExists(strWrap("tmp/file-to-remove")));
   assert_true(sPathExists(strWrap("tmp/dir-to-remove")));
-  assert_true(sPathExists(strWrap("tmp/link-to-remove1")) == false);
-  assert_true(sPathExists(strWrap("tmp/link-to-remove2")) == false);
+  assert_true(!sPathExists(strWrap("tmp/link-to-remove1")));
+  assert_true(!sPathExists(strWrap("tmp/link-to-remove2")));
 
   sRemove(strWrap("tmp/file-to-remove"));
-  assert_true(sPathExists(strWrap("tmp/file-to-remove")) == false);
+  assert_true(!sPathExists(strWrap("tmp/file-to-remove")));
 
   sRemove(strWrap("tmp/dir-to-remove"));
-  assert_true(sPathExists(strWrap("tmp/dir-to-remove")) == false);
+  assert_true(!sPathExists(strWrap("tmp/dir-to-remove")));
 
   assert_error_errno(sRemove(strWrap("tmp/non-existing")), "failed to remove \"tmp/non-existing\"", ENOENT);
   assert_error_errno(sRemove(strWrap("tmp/non-existing-dir/foo")), "failed to remove \"tmp/non-existing-dir/foo\"",
@@ -435,7 +435,7 @@ int main(void)
 
   sRemove(strWrap("tmp/non-empty-dir/foo"));
   sRemove(strWrap("tmp/non-empty-dir"));
-  assert_true(sPathExists(strWrap("tmp/non-empty-dir")) == false);
+  assert_true(!sPathExists(strWrap("tmp/non-empty-dir")));
   testGroupEnd();
 
   testGroupStart("sRemoveRecursively()");
@@ -443,10 +443,10 @@ int main(void)
   assert_true(sPathExists(strWrap("tmp/test-symlink-1")));
   sRemoveRecursively(strWrap("tmp/test-symlink-1"));
   assert_true(sPathExists(strWrap("tmp/test-file-1")));
-  assert_true(sPathExists(strWrap("tmp/test-symlink-1")) == false);
+  assert_true(!sPathExists(strWrap("tmp/test-symlink-1")));
 
   sRemoveRecursively(strWrap("tmp/test-file-1"));
-  assert_true(sPathExists(strWrap("tmp/test-file-1")) == false);
+  assert_true(!sPathExists(strWrap("tmp/test-file-1")));
 
   sMkdir(strWrap("tmp/foo"));
   sFclose(sFopenWrite(strWrap("tmp/foo/bar")));
@@ -466,11 +466,11 @@ int main(void)
   assert_true(sPathExists(strWrap("tmp/foo")));
   assert_true(sPathExists(strWrap("tmp/bar")));
   sRemoveRecursively(strWrap("tmp/foo"));
-  assert_true(sPathExists(strWrap("tmp/foo")) == false);
+  assert_true(!sPathExists(strWrap("tmp/foo")));
   assert_true(sPathExists(strWrap("tmp/bar")));
 
   sRemoveRecursively(strWrap("tmp/bar"));
-  assert_true(sPathExists(strWrap("tmp/bar")) == false);
+  assert_true(!sPathExists(strWrap("tmp/bar")));
 
   assert_error_errno(sRemoveRecursively(strWrap("")), "failed to access \"\"", ENOENT);
   testGroupEnd();
@@ -514,7 +514,7 @@ int main(void)
   assert_true(out_stream != NULL);
 
   errno = 0;
-  assert_true(sIsTTY(out_stream) == false);
+  assert_true(!sIsTTY(out_stream));
   assert_true(errno == 0);
 
   assert_true(fclose(out_stream) == 0);

@@ -286,7 +286,7 @@ SearchNode *searchTreeParse(String config)
       /* Terminate with an error if the path was already defined. */
       if(previous_definition != NULL &&
          previous_definition->policy != BPOL_none &&
-         previous_definition->policy_inherited == false)
+         !previous_definition->policy_inherited)
       {
         String redefined_path = strCopy(line);
         die("config: line %zu: redefining %sline %zu: \"%s\"", line_nr,

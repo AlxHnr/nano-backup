@@ -578,7 +578,7 @@ initiateMetadataRecursively(Metadata *metadata, PathNode **node_list,
       }
     }
 
-    if(has_needed_subnode == false)
+    if(!has_needed_subnode)
     {
       prepareNodeForWiping(metadata, node);
     }
@@ -751,17 +751,17 @@ static void addFileToRepo(PathNode *node, String repo_path,
   }
   else if(reg->size > FILE_HASH_SIZE)
   {
-    if((node->hint & BH_fresh_hash) == false)
+    if(!(node->hint & BH_fresh_hash))
     {
       fileHash(node->path, stats, reg->hash);
     }
 
-    if(searchFileDuplicates(node, repo_path, stats) == false)
+    if(!searchFileDuplicates(node, repo_path, stats))
     {
       copyFileIntoRepo(node, repo_path, repo_tmp_file_path, stats);
     }
   }
-  else if((node->hint & BH_fresh_hash) == false)
+  else if(!(node->hint & BH_fresh_hash))
   {
     /* Store small files directly in its hash buffer. */
     FileStream *stream = sFopenRead(node->path);

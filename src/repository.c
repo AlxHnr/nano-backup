@@ -310,7 +310,7 @@ RepoWriter *repoWriterOpenRaw(String repo_path, String repo_tmp_file_path,
 void repoWriterWrite(const void *data, const size_t size,
                      RepoWriter *writer)
 {
-  if(Fwrite(data, size, writer->stream) == false)
+  if(!Fwrite(data, size, writer->stream))
   {
     String repo_path = writer->repo_path;
     String source_file_path = writer->source_file_path;
@@ -349,7 +349,7 @@ void repoWriterClose(RepoWriter *writer_to_close)
   RepoWriter writer = *writer_to_close;
   free(writer_to_close);
 
-  if(Ftodisk(writer.stream) == false)
+  if(!Ftodisk(writer.stream))
   {
     Fdestroy(writer.stream);
     dieErrno("failed to flush/sync \"%s\" to \"%s\"",
@@ -369,10 +369,10 @@ void repoWriterClose(RepoWriter *writer_to_close)
 
     /* Ensure that the final paths parent directories exists. */
     path_buffer[repo_path.length + 5] = '\0';
-    if(sPathExists(strWrap(path_buffer)) == false)
+    if(!sPathExists(strWrap(path_buffer)))
     {
       path_buffer[repo_path.length + 2] = '\0';
-      if(sPathExists(strWrap(path_buffer)) == false)
+      if(!sPathExists(strWrap(path_buffer)))
       {
         sMkdir(strWrap(path_buffer));
         fdatasyncDirectory(writer.repo_path);

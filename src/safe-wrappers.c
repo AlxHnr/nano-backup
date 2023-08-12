@@ -584,7 +584,7 @@ char *sReadLine(FILE *stream)
       buffer[used] = (char)character;
       used++;
     }
-  } while(reached_end == false);
+  } while(!reached_end);
   errno = old_errno;
 
   if(buffer) buffer[used] = '\0';
@@ -657,7 +657,7 @@ int sRand(void)
 {
   static bool already_seeded = false;
 
-  if(already_seeded == false)
+  if(!already_seeded)
   {
     srand((sTime() << 9) + getpid());
     already_seeded = true;

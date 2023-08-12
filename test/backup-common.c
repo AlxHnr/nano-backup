@@ -158,10 +158,10 @@ void generateCollidingFiles(const uint8_t *hash, const size_t size, const size_t
   pathBuilderAppend(&path_buffer, 8, path_in_repo);
 
   path_buffer[13] = '\0';
-  if(sPathExists(strWrap(path_buffer)) == false)
+  if(!sPathExists(strWrap(path_buffer)))
   {
     path_buffer[10] = '\0';
-    if(sPathExists(strWrap(path_buffer)) == false)
+    if(!sPathExists(strWrap(path_buffer)))
     {
       sMkdir(strWrap(path_buffer));
     }
@@ -277,7 +277,7 @@ void restoreRegularFile(const char *path, const RegularFileInfo *info)
 */
 void restoreWithTimeRecursively(PathNode *node)
 {
-  if(sPathExists(node->path) == false)
+  if(!sPathExists(node->path))
   {
     PathHistory *point = findExistingHistPoint(node);
     switch(point->state.type)

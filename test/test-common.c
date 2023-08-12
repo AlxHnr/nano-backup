@@ -302,7 +302,7 @@ void mustHaveConf(const Metadata *metadata, const Backup *backup, const uint64_t
   {
     die("config history has no backup with id %zu", backup->id);
   }
-  else if(checkRegularValues(&point->state, size, hash, slot) == false)
+  else if(!checkRegularValues(&point->state, size, hash, slot))
   {
     die("config history has invalid values at id %zu", backup->id);
   }
@@ -388,7 +388,7 @@ void mustHaveRegular(const PathNode *node, const Backup *backup, const uid_t uid
   {
     die("backup point %zu in node \"%s\" contains invalid timestamp", backup->id, node->path.content);
   }
-  else if(checkRegularValues(&point->state, size, hash, slot) == false)
+  else if(!checkRegularValues(&point->state, size, hash, slot))
   {
     die("backup point %zu in node \"%s\" contains invalid values", backup->id, node->path.content);
   }

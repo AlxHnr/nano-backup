@@ -182,7 +182,7 @@ static void recursionStepRaw(SearchContext *context, SearchNode *node,
   context->state.path_length = context->buffer.length;
 
   if(node != NULL && node->policy == BPOL_none &&
-     node->subnodes_contain_regex == false)
+     !node->subnodes_contain_regex)
   {
     context->state.is_dir_search = false;
     context->state.access.current_node = node->subnodes;

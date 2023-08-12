@@ -98,7 +98,7 @@ static bool recurseIntoDirectory(const StringTable *table,
     item_required |= (strTableGet(table, path_in_repo) != NULL);
   }
 
-  if(item_required == false)
+  if(!item_required)
   {
     sRemove(strWrap(path_buffer));
     gc_stats->count = sSizeAdd(gc_stats->count, 1);

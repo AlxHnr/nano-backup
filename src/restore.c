@@ -80,7 +80,7 @@ static void handleFiletypeChanges(PathNode *node, const PathState *state,
     {
       backupHintSet(node->hint, BH_directory_to_regular);
     }
-    else if(S_ISREG(stats.st_mode) == false)
+    else if(!S_ISREG(stats.st_mode))
     {
       backupHintSet(node->hint, BH_other_to_regular);
     }
@@ -95,7 +95,7 @@ static void handleFiletypeChanges(PathNode *node, const PathState *state,
     {
       backupHintSet(node->hint, BH_directory_to_symlink);
     }
-    else if(S_ISLNK(stats.st_mode) == false)
+    else if(!S_ISLNK(stats.st_mode))
     {
       backupHintSet(node->hint, BH_other_to_symlink);
     }
@@ -110,7 +110,7 @@ static void handleFiletypeChanges(PathNode *node, const PathState *state,
     {
       backupHintSet(node->hint, BH_symlink_to_directory);
     }
-    else if(S_ISDIR(stats.st_mode) == false)
+    else if(!S_ISDIR(stats.st_mode))
     {
       backupHintSet(node->hint, BH_other_to_directory);
     }
@@ -224,7 +224,7 @@ static void initiateRestoreRecursively(PathNode *node_list,
     }
   }
 
-  if(found_node == false)
+  if(!found_node)
   {
     die("path doesn't exist in repository: \"%s\"", path.content);
   }

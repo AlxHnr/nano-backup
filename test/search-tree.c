@@ -147,7 +147,7 @@ static void checkBasicNode(const SearchNode *node, const char *name, const size_
   if(node->subnodes == NULL)
   {
     assert_true(subnode_count == 0);
-    assert_true(subnodes_contain_regex == false);
+    assert_true(!subnodes_contain_regex);
   }
 
   assert_true(node->subnodes_contain_regex == subnodes_contain_regex);
