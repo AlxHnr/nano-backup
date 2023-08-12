@@ -29,7 +29,6 @@ char *test_error_message = NULL;
   directly. */
 bool test_catch_die = false;
 
-/** Frees the memory in test_error_message. */
 static void freeTestErrorMessage(void)
 {
   free(test_error_message);

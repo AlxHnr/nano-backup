@@ -1,7 +1,3 @@
-/** @file
-  Declares functions for restoring files.
-*/
-
 #ifndef NANO_BACKUP_SRC_RESTORE_H
 #define NANO_BACKUP_SRC_RESTORE_H
 

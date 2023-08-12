@@ -1,7 +1,3 @@
-/** @file
-  Implements functions for printing colored text.
-*/
-
 #include "colors.h"
 
 #include <stdarg.h>

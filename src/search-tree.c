@@ -1,7 +1,3 @@
-/** @file
-  Implements a struct that can be used for searching the file system.
-*/
-
 #include "search-tree.h"
 
 #include <stdlib.h>
@@ -15,7 +11,6 @@
 #include "safe-wrappers.h"
 #include "string-table.h"
 
-/* Helper strings for parsing the config file. */
 static String copy_token = {
   .content = "[copy]",
   .length = 6,

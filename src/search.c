@@ -1,7 +1,3 @@
-/** @file
-  Implements filesystem searching via search trees.
-*/
-
 #include "search.h"
 
 #include <stdlib.h>
@@ -12,23 +8,16 @@
 #include "safe-math.h"
 #include "safe-wrappers.h"
 
-/** A simple string buffer. */
 typedef struct
 {
   /** A null-terminated buffer, containing the string. */
   char *str;
-
-  /** The amount of bytes used in the string. */
   size_t length;
-
-  /** The total capacity of the allocated buffer. */
   size_t capacity;
 } StringBuffer;
 
-/** Represents a directory search state. */
 typedef struct
 {
-  /** The stream of the current directory. */
   DIR *dir;
 
   /** The subnodes of the current directories node. Can be NULL. */
@@ -40,7 +29,6 @@ typedef struct
   BackupPolicy fallback_policy;
 } DirSearch;
 
-/** Represents a generic search state. */
 typedef struct
 {
   /** If this value is true, this state represents a DirSearch. Otherwise
@@ -209,9 +197,6 @@ static void recursionStepRaw(SearchContext *context, SearchNode *node,
   }
 }
 
-/** A wrapper around recursionStepRaw() that backups the contexts search
-  state.
-*/
 static void recursionStep(SearchContext *context, SearchNode *node,
                           BackupPolicy policy)
 {
@@ -280,7 +265,6 @@ static SearchResult finishDirectory(SearchContext *context)
   }
 }
 
-/** Returns true if the specified node matches the given string. */
 static bool nodeMatches(SearchNode *node, String string)
 {
   if(node->regex)

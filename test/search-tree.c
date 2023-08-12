@@ -1,7 +1,3 @@
-/** @file
-  Tests loading search trees from config files.
-*/
-
 #include "search-tree.h"
 
 #include <stdlib.h>
@@ -12,12 +8,6 @@
 #include "str.h"
 #include "test.h"
 
-/** Counts the subnodes of the given node.
-
-  @param parent_node The node containing the subnodes.
-
-  @return The amount of subnodes in the given node.
-*/
 static size_t countSubnodes(SearchNode *parent_node)
 {
   size_t counter = 0;
@@ -31,14 +21,7 @@ static size_t countSubnodes(SearchNode *parent_node)
 }
 
 /** Returns the subnode with the given string as its name. It will
-  terminate the test suite with failure if the node does not exist.
-
-  @param parent_node The node containing the subnodes which should be
-  searched.
-  @param string The name of the node to search for.
-
-  @return A valid search node.
-*/
+  terminate the test suite with failure if the node does not exist. */
 static SearchNode *findSubnode(SearchNode *parent_node, const char *string)
 {
   String node_name = strWrap(string);
@@ -56,13 +39,7 @@ static SearchNode *findSubnode(SearchNode *parent_node, const char *string)
   return NULL;
 }
 
-/** Counts all ignore expressions that the given SearchNode contains.
-
-  @param node The SearchNode containing the ignore expression list.
-
-  @return The amount of ignore expressions in the given nodes ignore
-  expression list.
-*/
+/** Counts all ignore expressions that the given SearchNode contains. */
 static size_t countExpressions(RegexList *expression_list)
 {
   size_t counter = 0;

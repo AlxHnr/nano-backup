@@ -1,9 +1,3 @@
-/** @file
-  Implements functions for allocating memory from an internal memory pool.
-  This pool should only be used for data that lives as long as the entire
-  program.
-*/
-
 #include "memory-pool.h"
 
 #include "CRegion/global-region.h"

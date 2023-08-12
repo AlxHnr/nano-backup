@@ -1,7 +1,3 @@
-/** @file
-  Tests handling of filetype changes.
-*/
-
 #include "backup.h"
 
 #include "backup-common.h"

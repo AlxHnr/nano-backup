@@ -1,7 +1,3 @@
-/** @file
-  Defines a tree structure which represents the metadata of a repository.
-*/
-
 #ifndef NANO_BACKUP_SRC_METADATA_H
 #define NANO_BACKUP_SRC_METADATA_H
 
@@ -16,13 +12,12 @@
 /** The different states a filepath can represent at a specific backup. */
 typedef enum
 {
-  PST_non_existing, /**< The path does not exist in the filesystem. */
-  PST_regular,      /**< The path represents a regular file. */
-  PST_symlink,      /**< The path represents a symbolic link. */
-  PST_directory,    /**< The path represent a directory. */
+  PST_non_existing,
+  PST_regular,
+  PST_symlink,
+  PST_directory,
 } PathStateType;
 
-/** Stores the metadata of a directory. */
 typedef struct
 {
   mode_t mode;      /**< The directories permission bits. */
@@ -42,9 +37,9 @@ typedef struct
   /** Optional metadata, depending on the PathStateType. */
   union
   {
-    RegularFileInfo reg; /**< The metadata of a regular file. */
-    String sym_target;   /**< The target path of a symlink. */
-    DirectoryInfo dir;   /**< The permission bits of a directory. */
+    RegularFileInfo reg;
+    String sym_target;
+    DirectoryInfo dir;
   } metadata;
 } PathState;
 
@@ -65,17 +60,12 @@ struct Backup
   size_t ref_count;
 };
 
-/** The history of a filepath. */
 typedef struct PathHistory PathHistory;
 struct PathHistory
 {
   /** Points at the backup point to which this state in history belongs. */
   Backup *backup;
-
-  /** The state of the path during this backup. */
   PathState state;
-
-  /** The next node in the paths history, or NULL. */
   PathHistory *next;
 };
 
@@ -155,7 +145,6 @@ typedef enum
 /** Returns the value without policy bits. */
 #define backupHintNoPol(val) ((val)&0x1FF)
 
-/** A node representing a path in the filetree. */
 typedef struct PathNode PathNode;
 struct PathNode
 {
@@ -180,7 +169,6 @@ struct PathNode
     the pathtype. Can be NULL if the path never was a directory. */
   PathNode *subnodes;
 
-  /** The next path in the list, or NULL. */
   PathNode *next;
 };
 

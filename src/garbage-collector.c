@@ -1,7 +1,3 @@
-/** @file
-  Implements removing of unreferenced files from the repository.
-*/
-
 #include "garbage-collector.h"
 
 #include <string.h>

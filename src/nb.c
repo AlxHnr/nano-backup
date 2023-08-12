@@ -1,7 +1,3 @@
-/** @file
-  Implements the nb program.
-*/
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,11 +15,6 @@
 #include "search-tree.h"
 #include "str.h"
 
-/** Ensures that the user responds with "y" or "yes" to the given question
-  or terminates the program with failure.
-
-  @param question The message which will be shown to the user.
-*/
 static void ensureUserConsent(const char *question)
 {
   char *line = NULL;
@@ -83,12 +74,6 @@ static void printStats(const char *summary, TextColor color,
   printf(")");
 }
 
-/** Runs collectGarbage() and prints the returned statistics.
-
-  @param metadata The metadata to pass to collectGarbage().
-  @param repo_path The path to the repository to pass to collectGarbage().
-  @param prepend_newline True if a newline should be printed first.
-*/
 static void runGC(Metadata *metadata, String repo_path,
                   bool prepend_newline)
 {
@@ -105,11 +90,6 @@ static void runGC(Metadata *metadata, String repo_path,
   }
 }
 
-/** Run checkIntegrity() and print the result.
-
-  @param metadata Metadata of the tested repository.
-  @param repo_path Path to the tested repository.
-*/
 static void runIntegrityCheck(Metadata *metadata, String repo_path)
 {
   CR_Region *r = CR_RegionNew();
@@ -135,10 +115,6 @@ static void runIntegrityCheck(Metadata *metadata, String repo_path)
   }
 }
 
-/** The default action when only the repository is given.
-
-  @param repo_arg The repository path argument as provided by the user.
-*/
 static void backup(String repo_arg)
 {
   String repo_path = strRemoveTrailingSlashes(repo_arg);
@@ -193,7 +169,6 @@ static void backup(String repo_arg)
   }
 }
 
-/** Loads the metadata of the specified repository. */
 static Metadata *metadataLoadFromRepo(String repo_arg)
 {
   String repo_path = strRemoveTrailingSlashes(repo_arg);
@@ -208,7 +183,6 @@ static Metadata *metadataLoadFromRepo(String repo_arg)
   return metadataLoad(metadata_path);
 }
 
-/** Ensures that the given path is absolute. */
 static String buildFullPath(String path)
 {
   if(path.content[0] == '/')

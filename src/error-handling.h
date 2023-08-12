@@ -1,7 +1,3 @@
-/** @file
-  Declares various functions for error handling.
-*/
-
 #ifndef NANO_BACKUP_SRC_ERROR_HANDLING_H
 #define NANO_BACKUP_SRC_ERROR_HANDLING_H
 

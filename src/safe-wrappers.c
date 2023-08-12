@@ -1,8 +1,3 @@
-/** @file
-  Implements various wrapper functions, which handle errors by terminating
-  with an error message.
-*/
-
 #include "safe-wrappers.h"
 
 #include <errno.h>
@@ -20,7 +15,6 @@
 
 struct FileStream
 {
-  /** The actual FILE pointer wrapped by this struct. */
   FILE *file;
 
   /** The full or relative path representing the open stream. Needed for
@@ -373,32 +367,19 @@ bool sPathExists(String path)
   return exists;
 }
 
-/** A safe wrapper around stat().
-
-  @param path A filepath.
-
-  @return Informations about the given file.
-*/
+/** Safe wrapper around stat(). */
 struct stat sStat(String path)
 {
   return safeStat(path, stat);
 }
 
-/** A safe wrapper around lstat().
-
-  @param path A filepath.
-
-  @return Informations about the given file.
-*/
+/** Safe wrapper around lstat(). */
 struct stat sLStat(String path)
 {
   return safeStat(path, lstat);
 }
 
-/** A safe wrapper around mkdir().
-
-  @param path The path to the directory to create.
-*/
+/** Safe wrapper around mkdir(). */
 void sMkdir(String path)
 {
   if(mkdir(path.content, 0755) != 0)
@@ -420,11 +401,7 @@ void sSymlink(String target, String path)
   }
 }
 
-/** Safe wrapper around rename().
-
-  @param oldpath Path to the file which should be renamed.
-  @param newpath The new filepath.
-*/
+/** Safe wrapper around rename(). */
 void sRename(String oldpath, String newpath)
 {
   if(rename(oldpath.content, newpath.content) != 0)
@@ -475,10 +452,7 @@ void sUtime(String path, time_t time)
   }
 }
 
-/** Safe wrapper around remove().
-
-  @param path The path to remove.
-*/
+/** Safe wrapper around remove(). */
 void sRemove(String path)
 {
   if(remove(path.content) != 0)
@@ -617,12 +591,7 @@ char *sReadLine(FILE *stream)
   return buffer;
 }
 
-/** Check if the given file stream belongs to a terminal.
-
-  @param stream Stream to be checked.
-
-  @return True if the given file stream belongs to a terminal.
-*/
+/** Check if the given file stream belongs to a terminal. */
 bool sIsTTY(FILE *stream)
 {
   int descriptor = fileno(stream);
@@ -639,12 +608,7 @@ bool sIsTTY(FILE *stream)
 }
 
 /** Converts the given string to a size_t value and terminates the program
-  on conversion errors.
-
-  @param string The string to convert.
-
-  @return The value represented by the given string.
-*/
+  on conversion errors. */
 size_t sStringToSize(String string)
 {
   int old_errno = errno;

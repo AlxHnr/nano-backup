@@ -1,7 +1,3 @@
-/** @file
-  Tests the filesystem search implementation.
-*/
-
 #include "search.h"
 
 #include "error-handling.h"
@@ -11,10 +7,8 @@
 #include "test-common.h"
 #include "test.h"
 
-/** Stores informations about a found path. */
 typedef struct
 {
-  /** The policy of the path. */
   BackupPolicy policy;
 
   /** The node which matched the path, or NULL. */
@@ -270,9 +264,6 @@ static SearchNode *findSubnode(SearchNode *parent_node, const char *name_str, Se
   return NULL;
 }
 
-/** Asserts that the given ignore expression exists in the given node with
-  the specified match status.
-*/
 static void checkIgnoreExpression(SearchNode *node, const char *expression, bool has_matched)
 {
   String name = strWrap(expression);

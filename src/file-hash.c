@@ -1,7 +1,3 @@
-/** @file
-  Implements functions for calculating the hash of a file.
-*/
-
 #include "file-hash.h"
 
 #include <stdlib.h>

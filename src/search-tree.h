@@ -1,7 +1,3 @@
-/** @file
-  Declares a struct that can be used for searching the file system.
-*/
-
 #ifndef NANO_BACKUP_SRC_SEARCH_TREE_H
 #define NANO_BACKUP_SRC_SEARCH_TREE_H
 
@@ -12,7 +8,6 @@
 #include "search-result-type.h"
 #include "str.h"
 
-/** A list of compiled regular expressions. */
 typedef struct RegexList RegexList;
 struct RegexList
 {
@@ -30,11 +25,9 @@ struct RegexList
   /** True, if this expression matched anything in its lifetime. */
   bool has_matched;
 
-  /** The next element, or NULL. */
   RegexList *next;
 };
 
-/** Represents a node in the search tree. */
 typedef struct SearchNode SearchNode;
 struct SearchNode
 {
@@ -84,7 +77,6 @@ struct SearchNode
     backup. Can point to NULL if its empty. */
   RegexList **summarize_expressions;
 
-  /** The next search node, or NULL. */
   SearchNode *next;
 };
 

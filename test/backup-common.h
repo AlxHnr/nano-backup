@@ -1,7 +1,3 @@
-/** @file
-  Various functions shared across backup tests.
-*/
-
 #ifndef NANO_BACKUP_TEST_BACKUP_COMMON_H
 #define NANO_BACKUP_TEST_BACKUP_COMMON_H
 

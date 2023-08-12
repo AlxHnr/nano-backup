@@ -1,7 +1,3 @@
-/** @file
-  Tests functions for removing unreferenced files from the repository.
-*/
-
 #include "garbage-collector.h"
 
 #include "path-builder.h"
@@ -9,7 +5,6 @@
 #include "test-common.h"
 #include "test.h"
 
-/** Generates various dummy files in "tmp/repo". */
 static void populateRepoWithDummyFiles(void)
 {
   sMkdir(strWrap("tmp/repo/a"));
@@ -39,7 +34,6 @@ static void populateRepoWithDummyFiles(void)
   sSymlink(strWrap("non-existing"), strWrap("tmp/repo/a/2/broken"));
 }
 
-/** Wrapper around collectGarbage() which checks the returned stats. */
 static void testCollectGarbage(Metadata *metadata, const char *repo_path, size_t count, uint64_t size)
 {
   GCStats stats = collectGarbage(metadata, strWrap(repo_path));

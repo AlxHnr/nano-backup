@@ -1,7 +1,3 @@
-/** @file
-  Tests various helper functions for handling repository.
-*/
-
 #include "repository.h"
 
 #include <stdio.h>
@@ -42,7 +38,6 @@ static void testFileExists(String file_path, String subdir_path, String subsubdi
   assert_true(sPathExists(subdir_path) == false);
 }
 
-/** Writes "Hello backup!". */
 static void writeTestFile(RepoWriter *writer)
 {
   repoWriterWrite("Hello", 5, writer);
@@ -51,7 +46,6 @@ static void writeTestFile(RepoWriter *writer)
   repoWriterWrite("!", 1, writer);
 }
 
-/** Asserts that the given file contains the specified content. */
 static void checkFilesContent(String file_path, const char *expected_content)
 {
   const size_t expected_size = strlen(expected_content);
@@ -71,7 +65,6 @@ static void checkFilesContent(String file_path, const char *expected_content)
   CR_RegionRelease(r);
 }
 
-/** Asserts that the given file contains the string "Hello backup!". */
 static void checkTestFile(String file_path)
 {
   checkFilesContent(file_path, "Hello backup!");

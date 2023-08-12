@@ -1,7 +1,3 @@
-/** @file
-  Implements restoring of files.
-*/
-
 #include "restore.h"
 
 #include <stdlib.h>

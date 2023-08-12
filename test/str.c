@@ -1,14 +1,9 @@
-/** @file
-  Tests functions for string manipulation.
-*/
-
 #include "str.h"
 
 #include <string.h>
 
 #include "test.h"
 
-/** Performs some basic checks on the given string and returns it. */
 static String check(String string)
 {
   assert_true(string.content != NULL);
@@ -21,7 +16,6 @@ static String check(String string)
   return string;
 }
 
-/** Checked wrapper around strWrap(). */
 static String checkedStrWrap(const char *cstring)
 {
   String string = check(strWrap(cstring));
@@ -33,7 +27,6 @@ static String checkedStrWrap(const char *cstring)
   return string;
 }
 
-/** Checked wrapper around strSlice(). */
 static String checkedStrSlice(const char *string, size_t length)
 {
   String slice = check(strSlice(string, length));
@@ -44,7 +37,6 @@ static String checkedStrSlice(const char *string, size_t length)
   return slice;
 }
 
-/** Checked wrapper around strCopy(). */
 static String checkedStrCopy(String string)
 {
   String copy = check(strCopy(string));
@@ -58,7 +50,6 @@ static String checkedStrCopy(String string)
   return copy;
 }
 
-/** Checked wrapper around strAppendPath(). */
 static String checkedStrAppendPath(String a, String b)
 {
   String string = check(strAppendPath(a, b));
@@ -92,7 +83,6 @@ static void testStrAppendPath(const char *ca, const char *cb, const char *cexpec
   assert_true(strEqual(result, expected_result));
 }
 
-/** Checked wrapper around strSet(). */
 static void checkedStrSet(String *string, String value)
 {
   strSet(string, value);
@@ -102,7 +92,6 @@ static void checkedStrSet(String *string, String value)
   assert_true(string->is_terminated == value.is_terminated);
 }
 
-/** Checked wrapper around cStr(). */
 static const char *checkedCStr(String string, char **buffer)
 {
   if(string.is_terminated)
@@ -129,7 +118,6 @@ static const char *checkedCStr(String string, char **buffer)
   }
 }
 
-/** Checked wrapper around strRemoveTrailingSlashes(). */
 static String checkedStrRemoveTrailingSlashes(String string)
 {
   String trimmed = check(strRemoveTrailingSlashes(string));
@@ -140,11 +128,6 @@ static String checkedStrRemoveTrailingSlashes(String string)
   return trimmed;
 }
 
-/** Tests strRemoveTrailingSlashes().
-
-  @param original The string to trim.
-  @param expected The expected result.
-*/
 static void testStrRemoveTrailingSlashes(String original, String expected)
 {
   String trimmed = checkedStrRemoveTrailingSlashes(original);
@@ -152,13 +135,11 @@ static void testStrRemoveTrailingSlashes(String original, String expected)
   assert_true(strEqual(trimmed, expected));
 }
 
-/** Simplified wrapper around strIsParentPath(). */
 static bool isParentPath(const char *parent, const char *path)
 {
   return strIsParentPath(checkedStrWrap(parent), checkedStrWrap(path));
 }
 
-/** Simplified wrapper around strSplitPath(). */
 static StringSplit checkedStrSplitPath(String path)
 {
   StringSplit split = strSplitPath(path);
@@ -177,12 +158,6 @@ static StringSplit checkedStrSplitPath(String path)
   return split;
 }
 
-/** Tests strSplitPath().
-
-  @param cpath The path to split.
-  @param cexpected_head The expected head.
-  @param cexpected_tail The expected tail.
-*/
 static void testStrSplitPath(const char *cpath, const char *cexpected_head, const char *cexpected_tail)
 {
   String path = checkedStrWrap(cpath);

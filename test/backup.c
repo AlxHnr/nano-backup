@@ -1,7 +1,3 @@
-/** @file
-  Tests the core backup logic.
-*/
-
 #include "backup.h"
 
 #include <stdlib.h>
@@ -15,7 +11,6 @@
 #include "test-common.h"
 #include "test.h"
 
-/** Performs an initial backup. */
 static void runPhase1(SearchNode *phase_1_node)
 {
   /* Generate dummy files. */

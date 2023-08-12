@@ -1,11 +1,6 @@
-/** @file
-  Defines various policies for tracking files.
-*/
-
 #ifndef NANO_BACKUP_SRC_BACKUP_POLICIES_H
 #define NANO_BACKUP_SRC_BACKUP_POLICIES_H
 
-/** Defines different backup policies. */
 typedef enum
 {
   /** This policy applies only to unspecified parent directories of a

@@ -1,12 +1,7 @@
-/** @file
-  Tests functions for building reusable paths based on Buffer.
-*/
-
 #include "path-builder.h"
 
 #include "test.h"
 
-/** Tests pathBuilderSet(). */
 static void testPathBuilderSet(char **buffer, const char *path)
 {
   size_t length = pathBuilderSet(buffer, path);
@@ -18,7 +13,6 @@ static void testPathBuilderSet(char **buffer, const char *path)
   assert_true(strcmp(*buffer, path) == 0);
 }
 
-/** Tests pathBuilderAppend(). */
 static void testPathBuilderAppend(char **buffer, size_t buffer_length, const char *path, const char *expected_path)
 {
   size_t length = pathBuilderAppend(buffer, buffer_length, path);

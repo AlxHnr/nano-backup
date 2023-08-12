@@ -1,7 +1,3 @@
-/** @file
-  Declares functions to perform fundamental backup operations.
-*/
-
 #ifndef NANO_BACKUP_SRC_BACKUP_H
 #define NANO_BACKUP_SRC_BACKUP_H
 

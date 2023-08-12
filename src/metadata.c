@@ -1,7 +1,3 @@
-/** @file
-  Implements functions to handle the metadata of a repository.
-*/
-
 #include "metadata.h"
 
 #include <limits.h>
@@ -26,22 +22,12 @@
 #error system can address more than 64 bits
 #endif
 
-/** An union used for determining the current systems endianness. */
 static const union
 {
   uint32_t value;
   uint8_t array[4];
 } endian_test = { .value = 1 };
 
-/** Assert that enough unread bytes are remaining in the given file
-  content.
-
-  @param reader_position The position of the reader.
-  @param bytes The amount of bytes which should be unread.
-  @param content The content of a file.
-  @param metadata_path The path to the metadata file, for printing error
-  messages.
-*/
 static void assertBytesLeft(size_t reader_position, size_t bytes,
                             FileContent content, String metadata_path)
 {
@@ -53,14 +39,7 @@ static void assertBytesLeft(size_t reader_position, size_t bytes,
   }
 }
 
-/** Converts the endianness of the given value. If the current system is
-  little endian, no conversion will happen. Otherwise the bytes will be
-  swapped.
-
-  @param value The value that should be converted.
-
-  @return The converted value.
-*/
+/** Flips the endianness of the given value on big-endian systems. */
 static uint32_t convertEndian32(uint32_t value)
 {
   if(endian_test.array[0] == 1)
@@ -81,7 +60,7 @@ static uint32_t convertEndian32(uint32_t value)
   }
 }
 
-/** The 64 bit version of convertEndian32(). */
+/** Flips the endianness of the given value on big-endian systems. */
 static uint64_t convertEndian64(uint64_t value)
 {
   if(endian_test.array[0] == 1)
@@ -105,17 +84,6 @@ static uint64_t convertEndian64(uint64_t value)
   }
 }
 
-/** Reads a byte from the given FileContent.
-
-  @param content The content of the file from which should be read.
-  @param reader_position The position of the reader, which will be moved to
-  the next unread byte.
-  @param metadata_path The path to the metadata file, for printing error
-  messages.
-
-  @return The current byte at the given reader position in the given
-  FileContent.
-*/
 static uint8_t read8(FileContent content, size_t *reader_position,
                      String metadata_path)
 {
@@ -128,17 +96,11 @@ static uint8_t read8(FileContent content, size_t *reader_position,
   return byte;
 }
 
-/** Counterpart to read8().
-
-  @param value The value which should be written.
-  @param writer The RepoWriter to be used for writing.
-*/
 static void write8(uint8_t value, RepoWriter *writer)
 {
   repoWriterWrite(&value, sizeof(value), writer);
 }
 
-/** The 4 byte version of read8() which takes care of endian conversion. */
 static uint32_t read32(FileContent content, size_t *reader_position,
                        String metadata_path)
 {
@@ -152,15 +114,12 @@ static uint32_t read32(FileContent content, size_t *reader_position,
   return convertEndian32(value);
 }
 
-/** The 4 byte version of write8() which takes care of endian conversion.
- */
 static void write32(uint32_t value, RepoWriter *writer)
 {
   uint32_t converted_value = convertEndian32(value);
   repoWriterWrite(&converted_value, sizeof(converted_value), writer);
 }
 
-/** The 8 byte version of read8() which takes care of endian conversion. */
 static uint64_t read64(FileContent content, size_t *reader_position,
                        String metadata_path)
 {
@@ -174,16 +133,12 @@ static uint64_t read64(FileContent content, size_t *reader_position,
   return convertEndian64(value);
 }
 
-/** The 8 byte version of write8() which takes care of endian conversion.
- */
 static void write64(uint64_t value, RepoWriter *writer)
 {
   uint64_t converted_value = convertEndian64(value);
   repoWriterWrite(&converted_value, sizeof(converted_value), writer);
 }
 
-/** A wrapper around read64(), which ensures that the read value fits into
-  size_t. */
 static size_t readSize(FileContent content, size_t *reader_position,
                        String metadata_path)
 {
@@ -198,8 +153,6 @@ static size_t readSize(FileContent content, size_t *reader_position,
   return (size_t)size;
 }
 
-/** A wrapper around read64(), which ensures that the read value fits into
-  time_t. */
 static time_t readTime(FileContent content, size_t *reader_position,
                        String metadata_path)
 {
@@ -508,11 +461,7 @@ static PathNode *readPathSubnodes(FileContent content,
   return node_tree;
 }
 
-/** Writes the given list of path nodes recursively.
-
-  @param node_list The list, which should be written.
-  @param writer The writer, which should be used for writing.
-*/
+/** Writes the given list of path nodes recursively. */
 static void writePathList(PathNode *node_list, RepoWriter *writer)
 {
   size_t list_length = 0;

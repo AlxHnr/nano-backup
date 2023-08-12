@@ -1,7 +1,3 @@
-/** @file
-  Validates file integrity inside a repository.
-*/
-
 #ifndef NANO_BACKUP_SRC_INTEGRITY_H
 #define NANO_BACKUP_SRC_INTEGRITY_H
 

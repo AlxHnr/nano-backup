@@ -1,7 +1,3 @@
-/** @file
-  Declares functions for calculating the hash of a file.
-*/
-
 #ifndef NANO_BACKUP_SRC_FILE_HASH_H
 #define NANO_BACKUP_SRC_FILE_HASH_H
 

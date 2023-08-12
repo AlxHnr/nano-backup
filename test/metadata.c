@@ -1,7 +1,3 @@
-/** @file
-  Tests repository metadata handling.
-*/
-
 #include "metadata.h"
 
 #include <stdlib.h>
@@ -16,10 +12,6 @@
 #include "test-common.h"
 #include "test.h"
 
-/** Writes the given metadata to the temporary test directory.
-
-  @param metadata The metadata which should be written.
-*/
 static void writeMetadataToTmpDir(Metadata *metadata)
 {
   metadataWrite(metadata, strWrap("tmp"), strWrap("tmp/tmp-file"), strWrap("tmp/metadata"));
@@ -832,7 +824,6 @@ static void checkWipedNodes(Metadata *metadata)
                   &metadata->backup_history[0], 32, 28, "../packages.txt");
 }
 
-/** Combines sFopenWrite(), sFwrite() and sFclose. */
 static void writeBytesToFile(size_t size, const char *data, const char *path)
 {
   FileStream *writer = sFopenWrite(strWrap(path));

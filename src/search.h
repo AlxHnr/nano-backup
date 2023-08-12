@@ -1,7 +1,3 @@
-/** @file
-  Declares functions for searching the filesystem.
-*/
-
 #ifndef NANO_BACKUP_SRC_SEARCH_H
 #define NANO_BACKUP_SRC_SEARCH_H
 
@@ -12,10 +8,8 @@
 #include "search-tree.h"
 #include "str.h"
 
-/**Contains the result of a search query. */
 typedef struct
 {
-  /** The type of the result. */
   SearchResultType type;
 
   /** The full path to the found file, containing a null-terminated buffer.

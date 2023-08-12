@@ -1,7 +1,3 @@
-/** @file
-  Implements a struct for mapping strings to arbitrary data.
-*/
-
 #include "string-table.h"
 
 #include <stdint.h>
@@ -20,26 +16,23 @@ struct Bucket
   /** Hash of the key. Required to resize the string table. */
   uint64_t hash;
 
-  String key; /**< Mapped key. */
-  void *data; /**< Data associated with the key. */
+  String key;
+  void *data;
 
-  Bucket *next; /**< Next bucked in the list or NULL. */
+  Bucket *next;
 };
 
 struct StringTable
 {
-  CR_Region *region;   /**< Region used by this table for allocations. */
-  Bucket **buckets;    /**< An array of buckets. */
+  CR_Region *region;
+  Bucket **buckets;
   size_t capacity;     /**< The amount of buckets in the String table. */
   size_t associations; /**< The amount of associations in the table. */
   uint8_t secret_key[16]; /**< Secret key for SipHash. */
 };
 
 /** Double the capacity of the given table and move all buckets to their
-  new destination.
-
-  @param table Table to resize.
-*/
+  new destination. */
 static void doubleTableCapacity(StringTable *table)
 {
   const size_t new_capacity = sSizeMul(table->capacity, 2);
@@ -69,10 +62,6 @@ static void doubleTableCapacity(StringTable *table)
   table->capacity = new_capacity;
 }
 
-/** Release callback to be attached to a region.
-
-  @param data Pointer to the table which should be release.
-*/
 static void releaseStringTable(void *data)
 {
   StringTable *table = data;

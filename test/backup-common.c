@@ -1,7 +1,3 @@
-/** @file
-  Implements various functions shared across backup tests.
-*/
-
 #include "backup-common.h"
 
 #include <stdlib.h>
@@ -85,20 +81,17 @@ PathNode *findSubnode(PathNode *node, const char *subnode_name, BackupHint hint,
                       requested_subnode_count);
 }
 
-/** Creates a backup of the given paths parent directories timestamps. */
 time_t getParentTime(const char *path)
 {
   return sStat(strCopy(strSplitPath(strWrap(path)).head)).st_mtime;
 }
 
-/** Counterpart to getParentTime(). */
 void restoreParentTime(const char *path, time_t time)
 {
   String parent_path = strCopy(strSplitPath(strWrap(path)).head);
   sUtime(parent_path, time);
 }
 
-/** Safe wrapper around mkdir(). */
 void makeDir(const char *path)
 {
   time_t parent_time = getParentTime(path);
@@ -106,7 +99,6 @@ void makeDir(const char *path)
   restoreParentTime(path, parent_time);
 }
 
-/** Safe wrapper around symlink(). */
 void makeSymlink(const char *target, const char *linkpath)
 {
   time_t parent_time = getParentTime(linkpath);
@@ -202,7 +194,6 @@ void generateCollidingFiles(const uint8_t *hash, size_t size, size_t files_to_cr
   }
 }
 
-/** Safe wrapper around remove(). */
 void removePath(const char *path)
 {
   time_t parent_time = getParentTime(path);
@@ -239,7 +230,6 @@ void remakeSymlink(const char *new_target, const char *linkpath)
   makeSymlink(new_target, linkpath);
 }
 
-/** Asserts that "tmp" contains only "repo" and "files". */
 void assertTmpIsCleared(void)
 {
   sRemoveRecursively(strWrap("tmp"));
@@ -330,7 +320,6 @@ static void initStatCache(void)
   current_stat_cache = stat_cache_array[0];
 }
 
-/** Frees the string tables in stat_cache_array. */
 static void freeStatCache(void)
 {
   CR_RegionRelease(stat_cache_region);
@@ -367,7 +356,6 @@ struct stat cachedStat(String path, struct stat (*stat_fun)(String))
   return *cache;
 }
 
-/** Resets the stat cache. */
 void resetStatCache(void)
 {
   freeStatCache();
@@ -456,7 +444,6 @@ PathNode *findFilesNode(Metadata *metadata, BackupHint hint, size_t subnode_coun
   return files;
 }
 
-/** Returns "cwd_depth_count". */
 size_t cwd_depth(void)
 {
   return cwd_depth_count;
@@ -496,7 +483,6 @@ time_t phase_timestamps(size_t index)
   return phase_timestamp_array[index];
 }
 
-/** Returns the current value of "phases_completed". */
 size_t backup_counter(void)
 {
   return phases_completed;

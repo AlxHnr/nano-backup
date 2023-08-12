@@ -1,9 +1,3 @@
-/** @file
-  Declares functions for allocating memory from an internal memory pool.
-  This pool should only be used for data that lives as long as the entire
-  program.
-*/
-
 #ifndef NANO_BACKUP_SRC_MEMORY_POOL_H
 #define NANO_BACKUP_SRC_MEMORY_POOL_H
 

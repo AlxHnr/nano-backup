@@ -1,13 +1,8 @@
-/** @file
-  Tests functions for calculating the hash of a file.
-*/
-
 #include "file-hash.h"
 
 #include "safe-wrappers.h"
 #include "test.h"
 
-/** Simplified wrapper around fileHash(). */
 static void fileHashWrapper(const char *path, uint8_t *hash)
 {
   fileHash(strWrap(path), sStat(strWrap(path)), hash);

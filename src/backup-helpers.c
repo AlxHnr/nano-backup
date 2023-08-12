@@ -1,7 +1,3 @@
-/** @file
-  Implements various helper functions for doing backup related things.
-*/
-
 #include "backup-helpers.h"
 
 #include <limits.h>

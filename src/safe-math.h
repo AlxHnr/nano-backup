@@ -1,8 +1,3 @@
-/** @file
-  Declares checked math functions which handle errors by terminating the
-  program with an error message.
-*/
-
 #ifndef NANO_BACKUP_SRC_SAFE_MATH_H
 #define NANO_BACKUP_SRC_SAFE_MATH_H
 

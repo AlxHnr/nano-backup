@@ -1,7 +1,3 @@
-/** @file
-  Tests the regex pool.
-*/
-
 #include "regex-pool.h"
 
 #include "test.h"

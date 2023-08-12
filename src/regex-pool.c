@@ -1,8 +1,3 @@
-/** @file
-  Implements a regex pool which gets freed automatically when the program
-  terminates.
-*/
-
 #include "regex-pool.h"
 
 #include <stdlib.h>
@@ -12,7 +7,6 @@
 
 #include "error-handling.h"
 
-/** @param data Pointer to a regex_t object to be released. */
 static void releaseRegex(void *data)
 {
   regfree(data);

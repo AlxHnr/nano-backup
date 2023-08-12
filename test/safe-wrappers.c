@@ -1,7 +1,3 @@
-/** @file
-  Tests safe wrapper functions.
-*/
-
 #include "safe-wrappers.h"
 
 #include <errno.h>
@@ -15,13 +11,11 @@
 
 static bool test_atexit_1_called = false;
 
-/** Dummy function for testing sAtexit(). */
 static void testAtExit1(void)
 {
   test_atexit_1_called = true;
 }
 
-/** Dummy function for testing sAtexit(). */
 static void testAtExit2(void)
 {
   if(test_atexit_1_called == false)
@@ -45,9 +39,6 @@ static void checkReadDir(DIR *dir, const char *dir_path)
   assert_true(strcmp(dir_entry->d_name, "..") != 0);
 }
 
-/** A wrapper around sPathExists() which asserts that errno doesn't get
-  trashed. Errno must be 0 when this function gets called.
-*/
 static bool checkPathExists(const char *path)
 {
   assert_true(errno == 0);
@@ -69,11 +60,6 @@ static bool checkBytesLeft(FileStream *stream)
   return bytes_left;
 }
 
-/** Tests sReadLine().
-
-  @param stream The stream which should be passed to sReadLine().
-  @param expected_line The expected string.
-*/
 static void checkReadLine(FILE *stream, const char *expected_line)
 {
   char *line = sReadLine(stream);
@@ -82,10 +68,7 @@ static void checkReadLine(FILE *stream, const char *expected_line)
 }
 
 /** Tests sReadLine() by reading lines from "valid-config-files/simple.txt"
-  using the given file stream.
-
-  @param stream A valid stream.
-*/
+  using the given file stream. */
 static void checkReadSimpleTxt(FILE *stream)
 {
   assert_true(stream != NULL);

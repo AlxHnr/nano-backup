@@ -1,7 +1,3 @@
-/** @file
-  Implements integrity checks for repositories.
-*/
-
 #include "integrity.h"
 
 #include <string.h>
@@ -12,7 +8,6 @@
 #include "safe-wrappers.h"
 #include "string-table.h"
 
-/** Stores the data of an ongoing integrity check. */
 typedef struct
 {
   /** Used for allocating broken path nodes. */
@@ -22,7 +17,6 @@ typedef struct
     lifetime of this list is bound to the region `r` in this struct. */
   ListOfBrokenPathNodes *broken_nodes;
 
-  /** Absolute or relative path to the repository that is being checked. */
   String repo_path;
 
   /** Reusable buffer pre-populated with the content of repo_path. */

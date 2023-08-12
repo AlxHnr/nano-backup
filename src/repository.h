@@ -1,7 +1,3 @@
-/** @file
-  Declares various helpers for working with repositories.
-*/
-
 #ifndef NANO_BACKUP_SRC_REPOSITORY_H
 #define NANO_BACKUP_SRC_REPOSITORY_H
 
@@ -18,7 +14,6 @@ typedef struct RepoWriter RepoWriter;
 /** An opaque struct, which allows reading files from repositories. */
 typedef struct RepoReader RepoReader;
 
-/** Stores the metadata of a regular file. */
 typedef struct
 {
   mode_t mode;      /**< The permission bits of the file. */

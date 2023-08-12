@@ -1,7 +1,3 @@
-/** @file
-  Tests the internal memory pool.
-*/
-
 #include "memory-pool.h"
 
 #include "test.h"

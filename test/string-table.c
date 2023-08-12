@@ -1,7 +1,3 @@
-/** @file
-  Tests the string table implementation.
-*/
-
 #include "string-table.h"
 
 #include "error-handling.h"
@@ -43,10 +39,6 @@ static const char *lorem_ipsum_chunks[] =
 static const size_t lorem_count = sizeof(lorem_ipsum_chunks)/sizeof(void*);
 /* clang-format on */
 
-/** Tests the given table.
-
-  @param table Table which should be tested.
-*/
 static void testStringTable(StringTable *table)
 {
   assert_true(strTableGet(table, strWrap("")) == NULL);

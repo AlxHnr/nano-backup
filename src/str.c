@@ -1,7 +1,3 @@
-/** @file
-  Implements functions for string manipulation.
-*/
-
 #include "str.h"
 
 #include <string.h>
@@ -12,12 +8,7 @@
 
 #include "safe-math.h"
 
-/** Wraps the given C string into a String.
-
-  @param string The C string to wrap.
-
-  @return A String which will point to the given C string.
-*/
+/** Wrap the given C string. */
 String strWrap(const char *string)
 {
   return (String){
@@ -27,13 +18,7 @@ String strWrap(const char *string)
   };
 }
 
-/** Returns a slice of the given string.
-
-  @param string The string to wrap into a String slice.
-  @param length The length of the wrapped string.
-
-  @return A String which will point to the given C string.
-*/
+/** Return a slice containing the given string. */
 String strSlice(const char *string, size_t length)
 {
   return (String){
@@ -63,17 +48,12 @@ String strCopy(String string)
   };
 }
 
-/** Sets the content of the given string to the specified value.
-
-  @param string The string to update.
-  @param value The value the string should be set to.
-*/
+/** Set the content of the given string to the specified value. */
 void strSet(String *string, String value)
 {
   memcpy(string, &value, sizeof(String));
 }
 
-/** Returns true if the given strings have the same length and content. */
 bool strEqual(String a, String b)
 {
   return a.length == b.length &&

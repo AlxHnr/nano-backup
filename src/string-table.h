@@ -1,7 +1,3 @@
-/** @file
-  Declares functions for mapping strings to arbitrary data.
-*/
-
 #ifndef NANO_BACKUP_SRC_STRING_TABLE_H
 #define NANO_BACKUP_SRC_STRING_TABLE_H
 

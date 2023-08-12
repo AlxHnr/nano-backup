@@ -1,7 +1,3 @@
-/** @file
-  Implements fundamental backup operations.
-*/
-
 #include "backup.h"
 
 #include <stdlib.h>
@@ -191,7 +187,6 @@ static void prepareNodeForWiping(Metadata *metadata, PathNode *node)
   decrementRefCounts(node->history);
 }
 
-/** Recursive version of prepareNodeForWiping(). */
 static void prepareNodeForWipingRecursively(Metadata *metadata,
                                             PathNode *node)
 {

@@ -1,7 +1,3 @@
-/** @file
-  Implements various testing functions shared across tests.
-*/
-
 #include "test-common.h"
 
 #include <errno.h>
@@ -13,12 +9,6 @@
 #include "safe-wrappers.h"
 #include "test.h"
 
-/** Counts the subnodes of the given node.
-
-  @param parent_node The node containing the subnodes.
-
-  @return The subnode count.
-*/
 static size_t countSubnodes(PathNode *parent_node)
 {
   size_t subnode_count = 0;
@@ -100,12 +90,6 @@ static size_t checkConfHist(Metadata *metadata)
   return history_length;
 }
 
-/** Determines the length of the given nodes history.
-
-  @param node The node containing the history.
-
-  @return The length of the nodes history.
-*/
 static size_t getHistoryLength(PathNode *node)
 {
   size_t history_length = 0;
@@ -224,7 +208,6 @@ static void checkPathState(PathNode *node, PathHistory *point, uid_t uid, gid_t 
   }
 }
 
-/** Determines the current working directory. */
 String getCwd(void)
 {
   char *cwd = sGetCwd();
@@ -250,12 +233,7 @@ static int countItems(const char *path, const struct stat *stats, int type, stru
   return 0;
 }
 
-/** Counts the items in the specified directory recursively.
-
-  @param path The path to a valid directory.
-
-  @return The amount of files in the specified directory.
-*/
+/** Counts the items in the specified directory recursively. */
 size_t countItemsInDir(const char *path)
 {
   directory_item_counter = 0;

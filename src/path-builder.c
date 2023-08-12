@@ -1,7 +1,3 @@
-/** @file
-  Implements functions to build reusable paths based on Buffer.
-*/
-
 #include "path-builder.h"
 
 #include <string.h>

@@ -1,7 +1,3 @@
-/** @file
-  Declares functions to build reusable paths based on Buffer.
-*/
-
 #ifndef NANO_BACKUP_SRC_PATH_BUILDER_H
 #define NANO_BACKUP_SRC_PATH_BUILDER_H
 

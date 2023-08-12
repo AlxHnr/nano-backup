@@ -1,7 +1,3 @@
-/** @file
-  Implements printing of various backup informations.
-*/
-
 #include "informations.h"
 
 #include <inttypes.h>
@@ -11,7 +7,6 @@
 #include "safe-math.h"
 #include "safe-wrappers.h"
 
-/** Prints the given config line number in colors to stderr. */
 static void warnConfigLineNr(size_t line_nr)
 {
   colorPrintf(stderr, TC_yellow, "config");
@@ -21,7 +16,6 @@ static void warnConfigLineNr(size_t line_nr)
   fprintf(stderr, ": ");
 }
 
-/** Prints the given path in quotes to stderr, colorized. */
 static void warnPath(String path)
 {
   fprintf(stderr, "\"");
@@ -29,16 +23,12 @@ static void warnPath(String path)
   fprintf(stderr, "\"");
 }
 
-/** Prints the given path in quotes to stderr, colorized and followed by a
-  newline. */
 static void warnPathNewline(String path)
 {
   warnPath(path);
   fputc('\n', stderr);
 }
 
-/** Prints every expression in the given list which has never matched a
-  string. */
 static void warnUnmatchedExpressions(RegexList *expression_list,
                                      const char *target_name)
 {
@@ -54,7 +44,6 @@ static void warnUnmatchedExpressions(RegexList *expression_list,
   }
 }
 
-/** Returns either "regex" or "string" depending on the given node. */
 static const char *typeOf(SearchNode *node)
 {
   if(node->regex != NULL)
@@ -108,26 +97,20 @@ static void printSearchNodeInfos(SearchNode *root_node)
   }
 }
 
-/** Safely adds count and size to the given stats struct. */
 static void changeStatsAdd(ChangeStats *stats, size_t count, uint64_t size)
 {
   stats->count = sSizeAdd(stats->count, count);
   stats->size = sUint64Add(stats->size, size);
 }
 
-/** Adds the statistics from b to a. */
 static void metadataChangesAdd(MetadataChanges *a, MetadataChanges b)
 {
   changeStatsAdd(&a->new_items, b.new_items.count, b.new_items.size);
-
   changeStatsAdd(&a->removed_items, b.removed_items.count,
                  b.removed_items.size);
-
   changeStatsAdd(&a->lost_items, b.lost_items.count, b.lost_items.size);
-
   changeStatsAdd(&a->changed_items, b.changed_items.count,
                  b.changed_items.size);
-
   a->changed_attributes =
     sSizeAdd(a->changed_attributes, b.changed_attributes);
   a->other |= b.other;
@@ -308,8 +291,6 @@ static void printSummarizedStats(MetadataChanges subnode_changes,
   }
 }
 
-/** Prints the given nodes path in the specified color. It will append a
-  "/" if the node represents a directory. */
 static void printNodePath(PathNode *node, TextColor color)
 {
   PathState *state = getExistingState(node);
@@ -652,7 +633,6 @@ MetadataChanges printMetadataChanges(Metadata *metadata,
                               summarize_expressions, true);
 }
 
-/** Returns true if the given struct contains any changes. */
 bool containsChanges(MetadataChanges changes)
 {
   return containsContentChanges(changes) ||

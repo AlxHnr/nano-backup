@@ -1,7 +1,3 @@
-/** @file
-  Tests functions for performing safe arithmetic.
-*/
-
 #include "safe-math.h"
 
 #include "test.h"

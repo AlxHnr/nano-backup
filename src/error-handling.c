@@ -1,7 +1,3 @@
-/** @file
-  Implements various functions for error handling.
-*/
-
 #include "error-handling.h"
 
 #include <errno.h>

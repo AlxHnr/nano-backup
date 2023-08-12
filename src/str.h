@@ -1,34 +1,23 @@
-/** @file
-  Declares various functions for string manipulation.
-*/
-
 #ifndef NANO_BACKUP_SRC_STR_H
 #define NANO_BACKUP_SRC_STR_H
 
 #include <stdbool.h>
 #include <stddef.h>
 
-/** A string type which doesn't own the memory it points to. It can be used
-  for cheap string slicing.
-*/
+/** A string slice type which doesn't own the memory it points to. */
 typedef struct
 {
   /** A pointer to the beginning of the string. It may not be null
     terminated. Use cStr() for passing Strings to C functions. */
   const char *const content;
-
-  /** The length of the string. */
   const size_t length;
-
-  /** True if the content is null terminated. */
   const bool is_terminated;
 } String;
 
-/** A struct representing a string splitting. */
 typedef struct
 {
-  String head; /**< The part before the split. */
-  String tail; /**< The part after the split. */
+  String head;
+  String tail;
 } StringSplit;
 
 extern String strWrap(const char *string);

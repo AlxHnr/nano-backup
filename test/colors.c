@@ -1,7 +1,3 @@
-/** @file
-  Tests functions for printing colorized text.
-*/
-
 #include "colors.h"
 
 #include <errno.h>

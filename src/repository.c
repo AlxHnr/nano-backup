@@ -1,7 +1,3 @@
-/** @file
-  Implements various helper functions to handle repositories.
-*/
-
 #include "repository.h"
 
 #include <errno.h>
@@ -23,7 +19,6 @@
 /** A struct for safely writing files into backup repositories. */
 struct RepoWriter
 {
-  /** The path to the repository. */
   String repo_path;
 
   /** The path to the repositories temporary dummy file. */
@@ -57,7 +52,6 @@ struct RepoWriter
 /** A struct for reading files from backup repositories. */
 struct RepoReader
 {
-  /** The path to the repository. */
   String repo_path;
 
   /** The original filepath representing the file read trough this reader.
@@ -98,7 +92,6 @@ static void buildFilePath(char *buffer, const RegularFileInfo *info)
   sprintf(suffix_buffer, "x%" PRIx64 "x%x", info->size, info->slot);
 }
 
-/** A reusable buffer for constructing paths of files inside repos. */
 static char *path_buffer = NULL;
 
 /** Populates the path_buffer with the path required for accessing a file
@@ -123,8 +116,6 @@ static void fillPathBufferWithInfo(String repo_path,
   buildFilePath(hash_buffer, info);
 }
 
-/** Creates a new RepoWriter from its arguments. Contains the core logic
-  behind repoWriterOpenFile() and repoWriterOpenRaw(). */
 static RepoWriter *createRepoWriter(String repo_path,
                                     String repo_tmp_file_path,
                                     String source_file_path, bool raw_mode)
@@ -402,23 +393,14 @@ void repoWriterClose(RepoWriter *writer_to_close)
   fdatasyncDirectory(writer.repo_path);
 }
 
-/** Contains data related to a repositories lockfile. */
 typedef struct
 {
   /** True if the lockfile is locked by the current process. */
   bool is_locked;
-
-  /** Lockfile descriptor. */
   int file_descriptor;
-
-  /** Either a relative or absolute path to the lockfile. */
   const char *file_path;
 } LockfileInfo;
 
-/** Called when the progam terminates to cleanup a locked repository.
-
-  @param lockfile_info_ptr Context of the repositories lockfile.
-*/
 static void cleanupLockfile(void *lockfile_info_ptr)
 {
   LockfileInfo *info = lockfile_info_ptr;

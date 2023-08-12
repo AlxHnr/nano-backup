@@ -1,7 +1,3 @@
-/** @file
-  Tests repo integrity validation.
-*/
-
 #include "integrity.h"
 
 #include "CRegion/region.h"

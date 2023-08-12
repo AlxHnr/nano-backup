@@ -1,8 +1,3 @@
-/** @file
-  Declares safe wrapper functions, which handle errors by terminating the
-  program with an error message.
-*/
-
 #ifndef NANO_BACKUP_SRC_SAFE_WRAPPERS_H
 #define NANO_BACKUP_SRC_SAFE_WRAPPERS_H
 
@@ -62,13 +57,9 @@ extern size_t sStringToSize(String string);
 extern time_t sTime(void);
 extern int sRand(void);
 
-/** A simple struct, containing the content of the file and its size. */
 typedef struct
 {
-  /** Content of the file. */
   char *content;
-
-  /** The size of the content in bytes. */
   size_t size;
 } FileContent;
 

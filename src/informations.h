@@ -1,7 +1,3 @@
-/** @file
-  Declares functions to print informations and statistics to the user.
-*/
-
 #ifndef NANO_BACKUP_SRC_INFORMATIONS_H
 #define NANO_BACKUP_SRC_INFORMATIONS_H
 
@@ -12,7 +8,6 @@
 #include "metadata.h"
 #include "search-tree.h"
 
-/** Contains statistics about a specific change type. */
 typedef struct
 {
   /** The amount of items affected by this change. */
@@ -25,14 +20,14 @@ typedef struct
 /** Stores a shallow summary of the changes in a metadata tree. */
 typedef struct
 {
-  ChangeStats new_items;     /**< Statistics about new items. */
-  ChangeStats removed_items; /**< Statistics about removed items. */
-  ChangeStats lost_items;    /**< Statistics about lost items. */
-  ChangeStats changed_items; /**< Statistics about changed items. */
-  size_t changed_attributes; /**< Amount of timestamp attribute changes
-                                  which where not caused by subnode
-                                  changes. */
-  bool other;                /**< Other changes exist. */
+  ChangeStats new_items;
+  ChangeStats removed_items;
+  ChangeStats lost_items;
+  ChangeStats changed_items;
+  /** Amount of timestamp attribute changes which where not caused by
+    subnode changes. */
+  size_t changed_attributes;
+  bool other; /**< Other changes exist. */
 
   /** At least one node in the current list affects the modification
     timestamp of the parent directory. */
