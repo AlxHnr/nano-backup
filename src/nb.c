@@ -68,9 +68,9 @@ static void printStats(const char *summary, const TextColor color,
   }
 
   printf("%s: ", summary);
-  colorPrintf(stdout, color, "%zu", stats.count);
+  colorPrintf(stdout, color, "%zu", stats.affected_items_count);
   printf(" (");
-  printHumanReadableSize(stats.size);
+  printHumanReadableSize(stats.affected_items_size_total);
   printf(")");
 }
 
@@ -134,7 +134,7 @@ static void backup(String repo_arg)
     : metadataNew();
 
   initiateBackup(metadata, root_node);
-  MetadataChanges changes =
+  ChangeSummary changes =
     printMetadataChanges(metadata, *root_node->summarize_expressions);
   printSearchTreeInfos(root_node);
 
@@ -143,16 +143,16 @@ static void backup(String repo_arg)
     printf("\n");
 
     bool printed_stats = false;
-    if(changes.new_items.count > 0)
+    if(changes.new_items.affected_items_count > 0)
     {
       printStats("New", TC_green_bold, changes.new_items, &printed_stats);
     }
-    if(changes.removed_items.count > 0)
+    if(changes.removed_items.affected_items_count > 0)
     {
       printStats("Removed", TC_red_bold, changes.removed_items,
                  &printed_stats);
     }
-    if(changes.lost_items.count > 0)
+    if(changes.lost_items.affected_items_count > 0)
     {
       printStats("Lost", TC_blue_bold, changes.lost_items, &printed_stats);
     }
@@ -212,7 +212,7 @@ static void restore(String repo_arg, const size_t id, String path)
   String full_path = strRemoveTrailingSlashes(buildFullPath(path));
   initiateRestore(metadata, id, strCopy(full_path));
 
-  const MetadataChanges changes = printMetadataChanges(metadata, NULL);
+  const ChangeSummary changes = printMetadataChanges(metadata, NULL);
   if(containsChanges(&changes) && printf("\n") == 1)
   {
     ensureUserConsent("restore?");
