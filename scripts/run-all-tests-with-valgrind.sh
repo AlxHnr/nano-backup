@@ -22,7 +22,7 @@ valgrind --leak-check=full --track-origins=yes --read-var-info=yes \\
 EOF
 chmod +x build/valgrind/run-bin.sh
 
-find build/valgrind/ -type f -iname 'log-*' -exec rm {} \;
+find build/valgrind/ -type f -name 'log-*' -exec rm {} \;
 make run-test
 
 # Search for valgrind errors.
