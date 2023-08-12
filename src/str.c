@@ -218,7 +218,7 @@ bool strPathContainsDotElements(String path)
 }
 
 /** Returns true if the given path starts with the specified parent. E.g.
-  strIsParentPath("/etc", "/etc/portage") == true.
+  strIsParentPath("/etc", "/etc/portage") .
 
   @param parent The parent path which should not end with a slash.
   @param path The full path which could start with the parent.

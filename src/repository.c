@@ -358,7 +358,7 @@ void repoWriterClose(RepoWriter *writer_to_close)
 
   sFclose(writer.stream);
 
-  if(writer.raw_mode == true)
+  if(writer.raw_mode)
   {
     sRename(writer.repo_tmp_file_path, writer.rename_to.path);
   }

@@ -249,12 +249,12 @@ int main(void)
   assert_true(test_file != NULL);
 
   sFwrite("hello", 5, test_file);
-  assert_true(Fwrite(" ", 1, test_file) == true);
-  assert_true(Ftodisk(test_file) == true);
-  assert_true(Fwrite("world", 5, test_file) == true);
+  assert_true(Fwrite(" ", 1, test_file));
+  assert_true(Ftodisk(test_file));
+  assert_true(Fwrite("world", 5, test_file));
   sFwrite("!", 1, test_file);
-  assert_true(Ftodisk(test_file) == true);
-  assert_true(Ftodisk(test_file) == true);
+  assert_true(Ftodisk(test_file));
+  assert_true(Ftodisk(test_file));
   sFclose(test_file);
 
   const FileContent test_file_1_content = sGetFilesContent(r, strWrap("tmp/test-file-1"));

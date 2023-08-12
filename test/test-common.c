@@ -126,7 +126,7 @@ static size_t checkPathTree(const PathNode *parent_node, const Metadata *metadat
     {
       die("unterminated path string in metadata: \"%s\"", strCopy(node->path).content);
     }
-    else if(check_path_table == true && strTableGet(metadata->path_table, node->path) == NULL)
+    else if(check_path_table && strTableGet(metadata->path_table, node->path) == NULL)
     {
       die("path was not mapped in metadata: \"%s\"", node->path.content);
     }

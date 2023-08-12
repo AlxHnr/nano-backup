@@ -357,7 +357,7 @@ static void printNode(const PathNode *node,
     colorPrintf(stdout, TC_yellow_bold, "!! ");
     printNodePath(node, TC_yellow);
   }
-  else if(summarize_subnode_changes == true &&
+  else if(summarize_subnode_changes &&
           containsContentChanges(subnode_changes))
   {
     colorPrintf(stdout, TC_yellow_bold, "!! ");
@@ -369,7 +369,7 @@ static void printNode(const PathNode *node,
     colorPrintf(stdout, TC_magenta_bold, "@@ ");
     printNodePath(node, TC_magenta);
 
-    if(summarize_subnode_changes == true &&
+    if(summarize_subnode_changes &&
        subnode_changes->changed_attributes > 0)
     {
       printf("...");
@@ -453,7 +453,7 @@ static void printNode(const PathNode *node,
       printPrefix(&printed_details);
       printChangeStats(subnode_changes->lost_items, "-");
     }
-    else if(summarize_subnode_changes == true)
+    else if(summarize_subnode_changes)
     {
       printSummarizedStats(subnode_changes, &printed_details);
     }
@@ -473,7 +473,7 @@ static void printNode(const PathNode *node,
     printChangeStats(lost_files, "-");
   }
 
-  if(printed_details == true)
+  if(printed_details)
   {
     printf(")");
   }
@@ -555,7 +555,7 @@ static ChangeSummary recursePrintOverTree(const Metadata *metadata,
     RegexList *expressions_to_pass_down =
       summarize ? NULL : summarize_expressions;
 
-    if(print == true && summarize == true)
+    if(print && summarize)
     {
       subnode_changes = recursePrintOverTree(
         metadata, node->subnodes, expressions_to_pass_down, false);
@@ -564,7 +564,7 @@ static ChangeSummary recursePrintOverTree(const Metadata *metadata,
         printNode(node, &subnode_changes, summarize);
       }
     }
-    else if(print == true && node->hint > BH_unchanged &&
+    else if(print && node->hint > BH_unchanged &&
             !(node->policy == BPOL_none &&
               (node->hint == BH_added ||
                (node->hint >= BH_owner_changed &&
@@ -656,8 +656,7 @@ ChangeSummary printMetadataChanges(const Metadata *metadata,
 bool containsChanges(const ChangeSummary *changes)
 {
   return containsContentChanges(changes) ||
-    changes->changed_attributes > 0 ||
-    changes->other_changes_exist == true;
+    changes->changed_attributes > 0 || changes->other_changes_exist;
 }
 
 /** Prints a warning on how the specified node matches the given string. */

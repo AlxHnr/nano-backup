@@ -143,7 +143,7 @@ static void inheritPolicyToSubnodes(SearchNode *parent_node)
   for(SearchNode *node = parent_node->subnodes; node != NULL;
       node = node->next)
   {
-    if(node->policy == BPOL_none || node->policy_inherited == true)
+    if(node->policy == BPOL_none || node->policy_inherited)
     {
       node->policy = parent_node->policy;
       node->policy_inherited = true;
