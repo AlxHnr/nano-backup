@@ -138,7 +138,7 @@ static void backup(String repo_arg)
     printMetadataChanges(metadata, *root_node->summarize_expressions);
   printSearchTreeInfos(root_node);
 
-  if(containsChanges(changes))
+  if(containsChanges(&changes))
   {
     printf("\n");
 
@@ -213,7 +213,7 @@ static void restore(String repo_arg, const size_t id, String path)
   initiateRestore(metadata, id, strCopy(full_path));
 
   const MetadataChanges changes = printMetadataChanges(metadata, NULL);
-  if(containsChanges(changes) && printf("\n") == 1)
+  if(containsChanges(&changes) && printf("\n") == 1)
   {
     ensureUserConsent("restore?");
     finishRestore(metadata, id, repo_arg);
