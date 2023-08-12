@@ -90,8 +90,8 @@ static bool recurseIntoDirectory(StringTable *table, size_t length,
   }
   else if(length != repo_path_length)
   {
-    String path_in_repo = strSlice(&path_buffer[repo_path_length + 1],
-                                   length - repo_path_length - 1);
+    String path_in_repo = strWrapLength(&path_buffer[repo_path_length + 1],
+                                        length - repo_path_length - 1);
 
     item_required |= (strTableGet(table, path_in_repo) != NULL);
   }

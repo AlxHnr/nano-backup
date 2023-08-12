@@ -97,7 +97,7 @@ static bool historyPointIsHealthy(IntegrityCheckContext *context,
       pathBuilderAppend(&context->path_buffer, context->repo_path.length,
                         unique_subpath.content);
     String full_unique_path =
-      strSlice(context->path_buffer, file_buffer_length);
+      strWrapLength(context->path_buffer, file_buffer_length);
 
     const bool is_healthy =
       storedFileIsHealthy(file_info, full_unique_path);
@@ -160,7 +160,7 @@ ListOfBrokenPathNodes *checkIntegrity(CR_Region *r, Metadata *metadata,
     .unique_subpath_cache = strTableNew(disposable_r),
   };
   pathBuilderSet(&context.path_buffer,
-                 cStr(repo_path, &context.unique_subpath_buffer));
+                 strRaw(repo_path, &context.unique_subpath_buffer));
 
   checkIntegrityRecursively(&context, metadata->paths);
 

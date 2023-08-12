@@ -34,14 +34,14 @@ String path = strWrap("/etc/conf.d/boot.conf");
 
 String dirname = strSplitPath(path).head;
 
-/* Strings are not always null-terminated. Use the function cStr() to get
+/* Strings are not always null-terminated. Use the function strRaw() to get
    a terminated C string. It will copy and terminate the given String if
    required. It takes a pointer to growable memory as the second
    argument. See the examples in `third-party/CRegion/README.md` for more
    informations. */
 char *reusable_buffer = NULL;
 
-raw_c_function(cStr(dirname, &reusable_buffer));
+raw_c_function(strRaw(dirname, &reusable_buffer));
 ```
 
 ## Testing

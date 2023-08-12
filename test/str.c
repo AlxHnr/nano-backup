@@ -27,9 +27,9 @@ static String checkedStrWrap(const char *cstring)
   return string;
 }
 
-static String checkedStrSlice(const char *string, size_t length)
+static String checkedStrWrapLength(const char *string, size_t length)
 {
-  String slice = check(strSlice(string, length));
+  String slice = check(strWrapLength(string, length));
   assert_true(slice.content == string);
   assert_true(slice.length == length);
   assert_true(slice.is_terminated == false);
@@ -92,13 +92,13 @@ static void checkedStrSet(String *string, String value)
   assert_true(string->is_terminated == value.is_terminated);
 }
 
-static const char *checkedCStr(String string, char **buffer)
+static const char *checkedStrRaw(String string, char **buffer)
 {
   if(string.is_terminated)
   {
     const char *old_buffer = *buffer;
 
-    const char *cstring = cStr(string, buffer);
+    const char *cstring = strRaw(string, buffer);
     assert_true(cstring == string.content);
 
     assert_true(*buffer == old_buffer);
@@ -107,7 +107,7 @@ static const char *checkedCStr(String string, char **buffer)
   }
   else
   {
-    const char *cstring = cStr(string, buffer);
+    const char *cstring = strRaw(string, buffer);
     assert_true(cstring != NULL);
     assert_true(cstring != string.content);
     assert_true(cstring == *buffer);
@@ -140,9 +140,9 @@ static bool isParentPath(const char *parent, const char *path)
   return strIsParentPath(checkedStrWrap(parent), checkedStrWrap(path));
 }
 
-static StringSplit checkedStrSplitPath(String path)
+static PathSplit checkedStrSplitPath(String path)
 {
-  StringSplit split = strSplitPath(path);
+  PathSplit split = strSplitPath(path);
   check(split.head);
   check(split.tail);
 
@@ -164,7 +164,7 @@ static void testStrSplitPath(const char *cpath, const char *cexpected_head, cons
   String expected_head = checkedStrWrap(cexpected_head);
   String expected_tail = checkedStrWrap(cexpected_tail);
 
-  StringSplit split = checkedStrSplitPath(path);
+  PathSplit split = checkedStrSplitPath(path);
   assert_true(strEqual(split.head, expected_head));
   assert_true(strEqual(split.tail, expected_tail));
 }
@@ -180,12 +180,12 @@ int main(void)
   }
   testGroupEnd();
 
-  testGroupStart("strSlice()");
+  testGroupStart("StrWrapLength()");
   const char *cstring = "this is a test string";
 
-  String slice1 = checkedStrSlice(cstring, 4);
-  String slice2 = checkedStrSlice(&cstring[5], 9);
-  String slice3 = checkedStrSlice(&cstring[10], 11);
+  String slice1 = checkedStrWrapLength(cstring, 4);
+  String slice2 = checkedStrWrapLength(&cstring[5], 9);
+  String slice3 = checkedStrWrapLength(&cstring[10], 11);
   testGroupEnd();
 
   testGroupStart("strCopy()");
@@ -248,15 +248,15 @@ int main(void)
   }
   testGroupEnd();
 
-  testGroupStart("cStr()");
+  testGroupStart("strRaw()");
   {
     char *buffer = NULL;
     String string = checkedStrWrap(cstring);
 
-    checkedCStr(string, &buffer);
-    checkedCStr(slice1, &buffer);
-    checkedCStr(slice2, &buffer);
-    checkedCStr(slice3, &buffer);
+    checkedStrRaw(string, &buffer);
+    checkedStrRaw(slice1, &buffer);
+    checkedStrRaw(slice2, &buffer);
+    checkedStrRaw(slice3, &buffer);
   }
   testGroupEnd();
 
@@ -306,8 +306,8 @@ int main(void)
 
   testGroupStart("strSplitPath()");
   {
-    StringSplit empty_split = checkedStrSplitPath(checkedStrWrap(""));
-    StringSplit empty_split2 = checkedStrSplitPath(checkedStrWrap("/"));
+    PathSplit empty_split = checkedStrSplitPath(checkedStrWrap(""));
+    PathSplit empty_split2 = checkedStrSplitPath(checkedStrWrap("/"));
     assert_true(strEqual(empty_split.head, empty_split2.head));
     assert_true(strEqual(empty_split.tail, empty_split2.tail));
 
@@ -330,20 +330,20 @@ int main(void)
     testStrSplitPath("/this", "", "this");
     testStrSplitPath("/", "", "");
 
-    StringSplit split1 = checkedStrSplitPath(checkedStrWrap("/this/is/a/path"));
+    PathSplit split1 = checkedStrSplitPath(checkedStrWrap("/this/is/a/path"));
     assert_true(split1.tail.is_terminated);
 
-    StringSplit split2 = checkedStrSplitPath(split1.head);
+    PathSplit split2 = checkedStrSplitPath(split1.head);
     assert_true(split2.tail.is_terminated == false);
 
-    StringSplit split3 = checkedStrSplitPath(split2.head);
+    PathSplit split3 = checkedStrSplitPath(split2.head);
     assert_true(split3.tail.is_terminated == false);
 
-    StringSplit split4 = checkedStrSplitPath(split3.head);
+    PathSplit split4 = checkedStrSplitPath(split3.head);
     assert_true(split4.tail.is_terminated == false);
     assert_true(split4.head.length == 0);
 
-    StringSplit split5 = checkedStrSplitPath(split4.head);
+    PathSplit split5 = checkedStrSplitPath(split4.head);
     assert_true(split5.tail.is_terminated == false);
     assert_true(split5.tail.length == 0);
     assert_true(split5.head.length == 0);
@@ -361,7 +361,7 @@ int main(void)
     assert_true(strWhitespaceOnly(checkedStrWrap("foo")) == false);
     assert_true(strWhitespaceOnly(zero_length));
 
-    String string = checkedStrSlice("         a string.", 9);
+    String string = checkedStrWrapLength("         a string.", 9);
     assert_true(strWhitespaceOnly(string));
   }
   testGroupEnd();

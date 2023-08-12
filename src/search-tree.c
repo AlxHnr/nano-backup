@@ -55,7 +55,7 @@ static String getLine(String config, size_t start)
   while(end < config.length && config.content[end] != '\n')
     end++;
 
-  return strSlice(&config.content[start], end - start);
+  return strWrapLength(&config.content[start], end - start);
 }
 
 /** Creates a new node and adds it to its parent node. This function does
@@ -77,7 +77,7 @@ static String getLine(String config, size_t start)
 static SearchNode *newNode(StringTable *existing_nodes, String path,
                            size_t line_nr)
 {
-  StringSplit paths = strSplitPath(path);
+  PathSplit paths = strSplitPath(path);
 
   /* Ensure that a parent node exists. */
   SearchNode *parent_node = strTableGet(existing_nodes, paths.head);
@@ -94,7 +94,7 @@ static SearchNode *newNode(StringTable *existing_nodes, String path,
   {
     /* Slice out the part after the first slash. */
     String expression =
-      strSlice(&paths.tail.content[1], paths.tail.length - 1);
+      strWrapLength(&paths.tail.content[1], paths.tail.length - 1);
 
     String copy = strCopy(expression);
     memcpy(&node->name, &copy, sizeof(node->name));
@@ -242,7 +242,8 @@ SearchNode *searchTreeParse(String config)
     else if(line.content[0] == '[' && line.content[line.length - 1] == ']')
     {
       /* Slice out and copy the invalid policy name. */
-      String policy = strCopy(strSlice(&line.content[1], line.length - 2));
+      String policy =
+        strCopy(strWrapLength(&line.content[1], line.length - 2));
       die("config: line %zu: invalid policy: \"%s\"", line_nr,
           policy.content);
     }
@@ -331,7 +332,7 @@ SearchNode *searchTreeLoad(String path)
 {
   CR_Region *r = CR_RegionNew();
   FileContent content = sGetFilesContent(r, path);
-  String config = strSlice(content.content, content.size);
+  String config = strWrapLength(content.content, content.size);
 
   SearchNode *root_node = searchTreeParse(config);
   CR_RegionRelease(r);

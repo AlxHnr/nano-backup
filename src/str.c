@@ -19,7 +19,7 @@ String strWrap(const char *string)
 }
 
 /** Return a slice containing the given string. */
-String strSlice(const char *string, size_t length)
+String strWrapLength(const char *string, size_t length)
 {
   return (String){
     .content = string,
@@ -70,7 +70,7 @@ bool strEqual(String a, String b)
   @return A pointer to either the given strings content, or to the given
   buffer.
 */
-const char *cStr(String string, char **buffer)
+const char *strRaw(String string, char **buffer)
 {
   if(string.is_terminated)
   {
@@ -149,7 +149,7 @@ String strAppendPath(String a, String b)
   slash, the head will contain the entire string and the tail will be
   empty.
 */
-StringSplit strSplitPath(String path)
+PathSplit strSplitPath(String path)
 {
   size_t last_slash = path.length;
   while(last_slash > 0 && path.content[last_slash - 1] != '/')
@@ -164,7 +164,7 @@ StringSplit strSplitPath(String path)
     last_slash--;
   }
 
-  return (StringSplit){
+  return (PathSplit){
     (String){
       .content = path.content,
       .length = last_slash > 0 ? last_slash - 1 : 0,
@@ -211,7 +211,7 @@ bool strIsDotElement(String string)
 */
 bool strPathContainsDotElements(String path)
 {
-  StringSplit split = strSplitPath(path);
+  PathSplit split = strSplitPath(path);
 
   return strIsDotElement(split.tail) ||
     (split.head.length > 0 && strPathContainsDotElements(split.head));

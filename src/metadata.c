@@ -426,7 +426,7 @@ static PathNode *readPathSubnodes(FileContent content,
     assertBytesLeft(*reader_position, name_length, content, metadata_path);
 
     String name =
-      strSlice(&content.content[*reader_position], name_length);
+      strWrapLength(&content.content[*reader_position], name_length);
     *reader_position += name_length;
 
     if(memchr(name.content, '\0', name.length) != NULL)
