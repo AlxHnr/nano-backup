@@ -8,16 +8,16 @@
 
 #include "backup.h"
 #include "colors.h"
-#include "restore.h"
-#include "metadata.h"
-#include "regex-pool.h"
-#include "search-tree.h"
-#include "informations.h"
-#include "integrity.h"
-#include "str.h"
-#include "safe-wrappers.h"
 #include "error-handling.h"
 #include "garbage-collector.h"
+#include "informations.h"
+#include "integrity.h"
+#include "metadata.h"
+#include "regex-pool.h"
+#include "restore.h"
+#include "safe-wrappers.h"
+#include "search-tree.h"
+#include "str.h"
 
 /** Ensures that the user responds with "y" or "yes" to the given question
   or terminates the program with failure.
@@ -42,9 +42,7 @@ static void ensureUserConsent(const char *question)
     free(line);
     line = sReadLine(stdin);
 
-    if(line == NULL ||
-       strcmp(line, "n") == 0 ||
-       strcmp(line, "no") == 0)
+    if(line == NULL || strcmp(line, "n") == 0 || strcmp(line, "no") == 0)
     {
       free(line);
       exit(EXIT_FAILURE);
@@ -98,7 +96,8 @@ static void runGC(Metadata *metadata, String repo_path,
 
   if(gc_stats.count > 0)
   {
-    printf("%sDiscarded unreferenced items: ", prepend_newline? "\n":"");
+    printf("%sDiscarded unreferenced items: ",
+           prepend_newline ? "\n" : "");
     colorPrintf(stdout, TC_blue_bold, "%zu", gc_stats.count);
     printf(" (");
     printHumanReadableSize(gc_stats.size);
@@ -118,8 +117,8 @@ static void runIntegrityCheck(Metadata *metadata, String repo_path)
     checkIntegrity(r, metadata, repo_path);
 
   size_t broken_node_count = 0;
-  for(ListOfBrokenPathNodes *path_node = broken_nodes;
-      path_node != NULL; path_node = path_node->next)
+  for(ListOfBrokenPathNodes *path_node = broken_nodes; path_node != NULL;
+      path_node = path_node->next)
   {
     colorPrintf(stdout, TC_red_bold, "?? ");
     colorPrintf(stdout, TC_red, "%s ", path_node->node->path.content);
@@ -154,10 +153,9 @@ static void backup(String repo_arg)
   repoLockUntilExit(repo_path);
   SearchNode *root_node = searchTreeLoad(config_path);
 
-  Metadata *metadata =
-    sPathExists(metadata_path)?
-    metadataLoad(metadata_path):
-    metadataNew();
+  Metadata *metadata = sPathExists(metadata_path)
+    ? metadataLoad(metadata_path)
+    : metadataNew();
 
   initiateBackup(metadata, root_node);
   MetadataChanges changes =
@@ -171,8 +169,7 @@ static void backup(String repo_arg)
     bool printed_stats = false;
     if(changes.new_items.count > 0)
     {
-      printStats("New", TC_green_bold, changes.new_items,
-                 &printed_stats);
+      printStats("New", TC_green_bold, changes.new_items, &printed_stats);
     }
     if(changes.removed_items.count > 0)
     {
@@ -181,8 +178,7 @@ static void backup(String repo_arg)
     }
     if(changes.lost_items.count > 0)
     {
-      printStats("Lost", TC_blue_bold, changes.lost_items,
-                 &printed_stats);
+      printStats("Lost", TC_blue_bold, changes.lost_items, &printed_stats);
     }
     if(printed_stats)
     {
@@ -289,8 +285,9 @@ int main(const int arg_count, const char **arg_list)
 
     runIntegrityCheck(metadataLoadFromRepo(path_to_repo), path_to_repo);
   }
-  else if(regexec(rpCompile(strWrap("^[0-9]+$"), strWrap(__FILE__),
-                            __LINE__), arg_list[2], 0, NULL, 0) == 0)
+  else if(regexec(
+            rpCompile(strWrap("^[0-9]+$"), strWrap(__FILE__), __LINE__),
+            arg_list[2], 0, NULL, 0) == 0)
   {
     if(arg_count > 4)
     {
@@ -298,7 +295,7 @@ int main(const int arg_count, const char **arg_list)
     }
 
     restore(path_to_repo, sStringToSize(strWrap(arg_list[2])),
-            arg_count == 4? strWrap(arg_list[3]):strWrap("/"));
+            arg_count == 4 ? strWrap(arg_list[3]) : strWrap("/"));
   }
   else
   {

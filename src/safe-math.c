@@ -33,7 +33,7 @@ size_t sSizeAdd(size_t a, size_t b)
 */
 size_t sSizeMul(size_t a, size_t b)
 {
-  if(b != 0 && a > SIZE_MAX/b)
+  if(b != 0 && a > SIZE_MAX / b)
   {
     die("overflow calculating object size");
   }

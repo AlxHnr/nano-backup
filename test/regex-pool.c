@@ -11,14 +11,14 @@ int main(void)
   testGroupStart("compiling regular expressions");
   const regex_t *r1 = rpCompile(strWrap("^foo$"), strWrap(__FILE__), __LINE__);
   assert_true(r1 != NULL);
-  assert_true(regexec(r1, "foo",  0, NULL, 0) == 0);
+  assert_true(regexec(r1, "foo", 0, NULL, 0) == 0);
   assert_true(regexec(r1, "fooo", 0, NULL, 0) != 0);
-  assert_true(regexec(r1, "bar",  0, NULL, 0) != 0);
+  assert_true(regexec(r1, "bar", 0, NULL, 0) != 0);
 
   const regex_t *r2 = rpCompile(strWrap("^(foo|bar)$"), strWrap(__FILE__), __LINE__);
   assert_true(r2 != NULL);
-  assert_true(regexec(r2, "foo",  0, NULL, 0) == 0);
-  assert_true(regexec(r2, "bar",  0, NULL, 0) == 0);
+  assert_true(regexec(r2, "foo", 0, NULL, 0) == 0);
+  assert_true(regexec(r2, "bar", 0, NULL, 0) == 0);
 
   const regex_t *r3 = rpCompile(strWrap(".*"), strWrap(__FILE__), __LINE__);
   assert_true(r3 != NULL);
@@ -41,19 +41,19 @@ int main(void)
   const regex_t *r9 = rpCompile(strWrap("[abc]"), strWrap(__FILE__), __LINE__);
   assert_true(r9 != NULL);
 
-  assert_true(regexec(r1, "foo",  0, NULL, 0) == 0);
+  assert_true(regexec(r1, "foo", 0, NULL, 0) == 0);
   assert_true(regexec(r1, "fooo", 0, NULL, 0) != 0);
-  assert_true(regexec(r1, "bar",  0, NULL, 0) != 0);
-  assert_true(regexec(r2, "foo",  0, NULL, 0) == 0);
-  assert_true(regexec(r2, "bar",  0, NULL, 0) == 0);
-  assert_true(regexec(r4, "bar",  0, NULL, 0) == 0);
+  assert_true(regexec(r1, "bar", 0, NULL, 0) != 0);
+  assert_true(regexec(r2, "foo", 0, NULL, 0) == 0);
+  assert_true(regexec(r2, "bar", 0, NULL, 0) == 0);
+  assert_true(regexec(r4, "bar", 0, NULL, 0) == 0);
   assert_true(regexec(r4, "baar", 0, NULL, 0) != 0);
-  assert_true(regexec(r4, "xyz",  0, NULL, 0) == 0);
-  assert_true(regexec(r4, "  ",   0, NULL, 0) != 0);
-  assert_true(regexec(r6, "  ",   0, NULL, 0) != 0);
-  assert_true(regexec(r6, " x",   0, NULL, 0) == 0);
+  assert_true(regexec(r4, "xyz", 0, NULL, 0) == 0);
+  assert_true(regexec(r4, "  ", 0, NULL, 0) != 0);
+  assert_true(regexec(r6, "  ", 0, NULL, 0) != 0);
+  assert_true(regexec(r6, " x", 0, NULL, 0) == 0);
   assert_true(regexec(r6, " \\x", 0, NULL, 0) == 0);
-  assert_true(regexec(r9, "this is test",   0, NULL, 0) != 0);
+  assert_true(regexec(r9, "this is test", 0, NULL, 0) != 0);
   assert_true(regexec(r9, "this is a test", 0, NULL, 0) == 0);
   testGroupEnd();
 

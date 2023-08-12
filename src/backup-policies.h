@@ -32,6 +32,6 @@ typedef enum
   /** Directories which should not be printed recursively during a backup.
     This is only a helper policy for parsing config files. */
   BPOL_summarize,
-}BackupPolicy;
+} BackupPolicy;
 
 #endif

@@ -7,14 +7,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "test.h"
 #include "backup.h"
-#include "restore.h"
-#include "memory-pool.h"
-#include "test-common.h"
-#include "path-builder.h"
-#include "safe-wrappers.h"
 #include "error-handling.h"
+#include "memory-pool.h"
+#include "path-builder.h"
+#include "restore.h"
+#include "safe-wrappers.h"
+#include "test-common.h"
+#include "test.h"
 
 /** Finds the node that represents the directory in which this test runs.
   It will terminate the program if the node doesn't exist, or its parent
@@ -77,15 +77,12 @@ PathNode *findCwdNode(Metadata *metadata, String cwd, BackupHint hint)
   @return The requested subnode. If it doesn't exist, the program will be
   terminated with failure.
 */
-PathNode *findSubnode(PathNode *node,
-                      const char *subnode_name,
-                      BackupHint hint, BackupPolicy policy,
-                      size_t requested_history_length,
-                      size_t requested_subnode_count)
+PathNode *findSubnode(PathNode *node, const char *subnode_name, BackupHint hint, BackupPolicy policy,
+                      size_t requested_history_length, size_t requested_subnode_count)
 {
   String subnode_path = strAppendPath(node->path, strWrap(subnode_name));
-  return findPathNode(node->subnodes, subnode_path.content, hint, policy,
-                      requested_history_length, requested_subnode_count);
+  return findPathNode(node->subnodes, subnode_path.content, hint, policy, requested_history_length,
+                      requested_subnode_count);
 }
 
 /** Creates a backup of the given paths parent directories timestamps. */
@@ -124,8 +121,7 @@ void makeSymlink(const char *target, const char *linkpath)
   @param repetitions A value describing how often the specified content
   should be repeated.
 */
-void generateFile(const char *path, const char *content,
-                  size_t repetitions)
+void generateFile(const char *path, const char *content, size_t repetitions)
 {
   if(sPathExists(strWrap(path)))
   {
@@ -153,8 +149,7 @@ void generateFile(const char *path, const char *content,
   @param files_to_create The amount of files to create. Can't be greater
   than 256.
 */
-void generateCollidingFiles(const uint8_t *hash, size_t size,
-                            size_t files_to_create)
+void generateCollidingFiles(const uint8_t *hash, size_t size, size_t files_to_create)
 {
   assert_true(files_to_create <= UINT8_MAX + 1);
 
@@ -224,8 +219,7 @@ void removePath(const char *path)
   @param repetitions Contains how many times the given content should be
   repeated.
 */
-void regenerateFile(PathNode *node, const char *content,
-                           size_t repetitions)
+void regenerateFile(PathNode *node, const char *content, size_t repetitions)
 {
   assert_true(node->history->state.type == PST_regular);
 
@@ -258,8 +252,7 @@ void assertTmpIsCleared(void)
   PST_non_existing. */
 PathHistory *findExistingHistPoint(PathNode *node)
 {
-  for(PathHistory *point = node->history;
-      point != NULL; point = point->next)
+  for(PathHistory *point = node->history; point != NULL; point = point->next)
   {
     if(point->state.type != PST_non_existing)
     {
@@ -267,8 +260,7 @@ PathHistory *findExistingHistPoint(PathNode *node)
     }
   }
 
-  die("failed to find existing path state type for \"%s\"",
-      node->path.content);
+  die("failed to find existing path state type for \"%s\"", node->path.content);
   return NULL;
 }
 
@@ -300,25 +292,19 @@ void restoreWithTimeRecursively(PathNode *node)
     PathHistory *point = findExistingHistPoint(node);
     switch(point->state.type)
     {
-      case PST_regular:
-        restoreRegularFile(node->path.content, &point->state.metadata.reg);
-        break;
-      case PST_symlink:
-        makeSymlink(point->state.metadata.sym_target.content, node->path.content);
-        break;
+      case PST_regular: restoreRegularFile(node->path.content, &point->state.metadata.reg); break;
+      case PST_symlink: makeSymlink(point->state.metadata.sym_target.content, node->path.content); break;
       case PST_directory:
         makeDir(node->path.content);
         sUtime(node->path, point->state.metadata.dir.timestamp);
         break;
-      default:
-        die("unable to restore \"%s\"", node->path.content);
+      default: die("unable to restore \"%s\"", node->path.content);
     }
   }
 
   if(S_ISDIR(sLStat(node->path).st_mode))
   {
-    for(PathNode *subnode = node->subnodes;
-        subnode != NULL; subnode = subnode->next)
+    for(PathNode *subnode = node->subnodes; subnode != NULL; subnode = subnode->next)
     {
       restoreWithTimeRecursively(subnode);
     }
@@ -389,61 +375,47 @@ void resetStatCache(void)
 }
 
 /** Like mustHaveRegular(), but takes a stat struct instead. */
-void mustHaveRegularStats(PathNode *node, const Backup *backup,
-                          struct stat stats, uint64_t size,
+void mustHaveRegularStats(PathNode *node, const Backup *backup, struct stat stats, uint64_t size,
                           const uint8_t *hash, uint8_t slot)
 {
-  mustHaveRegular(node, backup, stats.st_uid, stats.st_gid, stats.st_mtime,
-                  stats.st_mode, size, hash, slot);
+  mustHaveRegular(node, backup, stats.st_uid, stats.st_gid, stats.st_mtime, stats.st_mode, size, hash, slot);
 }
 
 /** Wrapper around mustHaveRegular(), which extracts additional
   informations using sStat(). */
-void mustHaveRegularStat(PathNode *node, const Backup *backup,
-                         uint64_t size, const uint8_t *hash,
-                         uint8_t slot)
+void mustHaveRegularStat(PathNode *node, const Backup *backup, uint64_t size, const uint8_t *hash, uint8_t slot)
 {
-  mustHaveRegularStats(node, backup, sStat(node->path),
-                       size, hash, slot);
+  mustHaveRegularStats(node, backup, sStat(node->path), size, hash, slot);
 }
 
 /** Cached version of mustHaveRegularStat(). */
-void mustHaveRegularCached(PathNode *node, const Backup *backup,
-                           uint64_t size, const uint8_t *hash,
-                           uint8_t slot)
+void mustHaveRegularCached(PathNode *node, const Backup *backup, uint64_t size, const uint8_t *hash, uint8_t slot)
 {
-  mustHaveRegularStats(node, backup, cachedStat(node->path, sStat),
-                       size, hash, slot);
+  mustHaveRegularStats(node, backup, cachedStat(node->path, sStat), size, hash, slot);
 }
 
 /** Like mustHaveSymlinkLStat(), but takes a stat struct instead. */
-void mustHaveSymlinkStats(PathNode *node, const Backup *backup,
-                          struct stat stats, const char *sym_target)
+void mustHaveSymlinkStats(PathNode *node, const Backup *backup, struct stat stats, const char *sym_target)
 {
   mustHaveSymlink(node, backup, stats.st_uid, stats.st_gid, sym_target);
 }
 
 /** Like mustHaveRegularStat(), but for mustHaveSymlink(). */
-void mustHaveSymlinkLStat(PathNode *node, const Backup *backup,
-                          const char *sym_target)
+void mustHaveSymlinkLStat(PathNode *node, const Backup *backup, const char *sym_target)
 {
   mustHaveSymlinkStats(node, backup, sLStat(node->path), sym_target);
 }
 
 /** Cached version of mustHaveSymlinkLStat(). */
-void mustHaveSymlinkLCached(PathNode *node, const Backup *backup,
-                            const char *sym_target)
+void mustHaveSymlinkLCached(PathNode *node, const Backup *backup, const char *sym_target)
 {
-  mustHaveSymlinkStats(node, backup, cachedStat(node->path, sLStat),
-                       sym_target);
+  mustHaveSymlinkStats(node, backup, cachedStat(node->path, sLStat), sym_target);
 }
 
 /** Like mustHaveDirectory, but takes a stat struct instead. */
-void mustHaveDirectoryStats(PathNode *node, const Backup *backup,
-                            struct stat stats)
+void mustHaveDirectoryStats(PathNode *node, const Backup *backup, struct stat stats)
 {
-  mustHaveDirectory(node, backup, stats.st_uid, stats.st_gid,
-                    stats.st_mtime, stats.st_mode);
+  mustHaveDirectory(node, backup, stats.st_uid, stats.st_gid, stats.st_mtime, stats.st_mode);
 }
 
 /** Like mustHaveRegularStat(), but for mustHaveDirectory(). */
@@ -470,9 +442,7 @@ static size_t cwd_depth_count = 0;
 
   @return The "files" node.
 */
-PathNode *findFilesNode(Metadata *metadata,
-                        BackupHint hint,
-                        size_t subnode_count)
+PathNode *findFilesNode(Metadata *metadata, BackupHint hint, size_t subnode_count)
 {
   PathNode *cwd = findCwdNode(metadata, cwd_path, hint);
   assert_true(cwd->subnodes != NULL);
@@ -506,19 +476,17 @@ void completeBackup(Metadata *metadata)
   size_t phase = phases_completed;
   phases_completed++;
 
-  phase_timestamp_array =
-    sRealloc(phase_timestamp_array, sizeof *phase_timestamp_array * phases_completed);
+  phase_timestamp_array = sRealloc(phase_timestamp_array, sizeof *phase_timestamp_array * phases_completed);
 
   time_t before_finishing = sTime();
-  finishBackup(metadata,  strWrap("tmp/repo"), strWrap("tmp/repo/tmp-file"));
+  finishBackup(metadata, strWrap("tmp/repo"), strWrap("tmp/repo/tmp-file"));
   time_t after_finishing = sTime();
 
   assert_true(metadata->current_backup.timestamp >= before_finishing);
   assert_true(metadata->current_backup.timestamp <= after_finishing);
   phase_timestamp_array[phase] = metadata->current_backup.timestamp;
 
-  metadataWrite(metadata, strWrap("tmp/repo"), strWrap("tmp/repo/tmp-file"),
-                strWrap("tmp/repo/metadata"));
+  metadataWrite(metadata, strWrap("tmp/repo"), strWrap("tmp/repo/tmp-file"), strWrap("tmp/repo/metadata"));
 }
 
 /** Returns the timestamp of the backup `index`. */
@@ -550,8 +518,7 @@ void initBackupCommon(size_t stat_cache_count)
   assert_true(stat_cache_count > 0);
 
   stat_cache_array_length = stat_cache_count;
-  stat_cache_array =
-    mpAlloc(sizeof *stat_cache_array * stat_cache_array_length);
+  stat_cache_array = mpAlloc(sizeof *stat_cache_array * stat_cache_array_length);
   initStatCache();
 
   String tmp_cwd_path = getCwd();

@@ -9,18 +9,38 @@
 
 #include "CRegion/region.h"
 
-#include "regex-pool.h"
-#include "memory-pool.h"
-#include "string-table.h"
-#include "safe-wrappers.h"
 #include "error-handling.h"
+#include "memory-pool.h"
+#include "regex-pool.h"
+#include "safe-wrappers.h"
+#include "string-table.h"
 
 /* Helper strings for parsing the config file. */
-static String copy_token      = { .content = "[copy]",      .length = 6,  .is_terminated = true };
-static String mirror_token    = { .content = "[mirror]",    .length = 8,  .is_terminated = true };
-static String track_token     = { .content = "[track]",     .length = 7,  .is_terminated = true };
-static String ignore_token    = { .content = "[ignore]",    .length = 8,  .is_terminated = true };
-static String summarize_token = { .content = "[summarize]", .length = 11, .is_terminated = true };
+static String copy_token = {
+  .content = "[copy]",
+  .length = 6,
+  .is_terminated = true,
+};
+static String mirror_token = {
+  .content = "[mirror]",
+  .length = 8,
+  .is_terminated = true,
+};
+static String track_token = {
+  .content = "[track]",
+  .length = 7,
+  .is_terminated = true,
+};
+static String ignore_token = {
+  .content = "[ignore]",
+  .length = 8,
+  .is_terminated = true,
+};
+static String summarize_token = {
+  .content = "[summarize]",
+  .length = 11,
+  .is_terminated = true,
+};
 
 /** Returns a string slice, containing the current line in the given config
   files data.
@@ -37,7 +57,8 @@ static String getLine(String config, size_t start)
 {
   /* Find the index of the line ending. */
   size_t end = start;
-  while(end < config.length && config.content[end] != '\n') end++;
+  while(end < config.length && config.content[end] != '\n')
+    end++;
 
   return strSlice(&config.content[start], end - start);
 }
@@ -58,8 +79,8 @@ static String getLine(String config, size_t start)
   @return A new search node, which has inherited properties from its parent
   node.
 */
-static SearchNode *newNode(StringTable *existing_nodes,
-                           String path, size_t line_nr)
+static SearchNode *newNode(StringTable *existing_nodes, String path,
+                           size_t line_nr)
 {
   StringSplit paths = strSplitPath(path);
 
@@ -77,8 +98,8 @@ static SearchNode *newNode(StringTable *existing_nodes,
   if(paths.tail.length >= 2 && paths.tail.content[0] == '/')
   {
     /* Slice out the part after the first slash. */
-    String expression = strSlice(&paths.tail.content[1],
-                                 paths.tail.length - 1);
+    String expression =
+      strSlice(&paths.tail.content[1], paths.tail.length - 1);
 
     String copy = strCopy(expression);
     memcpy(&node->name, &copy, sizeof(node->name));
@@ -124,8 +145,8 @@ static SearchNode *newNode(StringTable *existing_nodes,
 */
 static void inheritPolicyToSubnodes(SearchNode *parent_node)
 {
-  for(SearchNode *node = parent_node->subnodes;
-      node != NULL; node = node->next)
+  for(SearchNode *node = parent_node->subnodes; node != NULL;
+      node = node->next)
   {
     if(node->policy == BPOL_none || node->policy_inherited == true)
     {
@@ -189,10 +210,8 @@ SearchNode *searchTreeParse(String config)
   BackupPolicy current_policy = BPOL_none;
 
   /* Skip UTF-8 BOM. */
-  if(config.length >= 3 &&
-     config.content[0] == (char)0xEF &&
-     config.content[1] == (char)0xBB &&
-     config.content[2] == (char)0xBF)
+  if(config.length >= 3 && config.content[0] == (char)0xEF &&
+     config.content[1] == (char)0xBB && config.content[2] == (char)0xBF)
   {
     parser_position = 3;
   }
@@ -229,13 +248,14 @@ SearchNode *searchTreeParse(String config)
     {
       /* Slice out and copy the invalid policy name. */
       String policy = strCopy(strSlice(&line.content[1], line.length - 2));
-      die("config: line %zu: invalid policy: \"%s\"", line_nr, policy.content);
+      die("config: line %zu: invalid policy: \"%s\"", line_nr,
+          policy.content);
     }
     else if(current_policy == BPOL_none)
     {
       String pattern = strCopy(line);
-      die("config: line %zu: pattern without policy: \"%s\"",
-          line_nr, pattern.content);
+      die("config: line %zu: pattern without policy: \"%s\"", line_nr,
+          pattern.content);
     }
     else if(current_policy == BPOL_ignore ||
             current_policy == BPOL_summarize)
@@ -248,8 +268,7 @@ SearchNode *searchTreeParse(String config)
         rpCompile(expression->expression, strWrap("config"), line_nr);
       expression->has_matched = false;
 
-      RegexList **shared_expression_list =
-        current_policy == BPOL_summarize
+      RegexList **shared_expression_list = current_policy == BPOL_summarize
         ? root_node->summarize_expressions
         : root_node->ignore_expressions;
 
@@ -274,16 +293,16 @@ SearchNode *searchTreeParse(String config)
          previous_definition->policy_inherited == false)
       {
         String redefined_path = strCopy(line);
-        die("config: line %zu: redefining %sline %zu: \"%s\"",
-            line_nr, previous_definition->policy != current_policy ?
-            "policy of " : "", previous_definition->policy_line_nr,
-            redefined_path.content);
+        die("config: line %zu: redefining %sline %zu: \"%s\"", line_nr,
+            previous_definition->policy != current_policy ? "policy of "
+                                                          : "",
+            previous_definition->policy_line_nr, redefined_path.content);
       }
 
       /* Use either the existing node or create a new one. */
-      SearchNode *node =
-        previous_definition != NULL ?
-        previous_definition : newNode(existing_nodes, path, line_nr);
+      SearchNode *node = previous_definition != NULL
+        ? previous_definition
+        : newNode(existing_nodes, path, line_nr);
 
       node->policy = current_policy;
       node->policy_inherited = false;

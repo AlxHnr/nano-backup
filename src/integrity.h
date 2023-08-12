@@ -5,8 +5,8 @@
 #ifndef NANO_BACKUP_SRC_INTEGRITY_H
 #define NANO_BACKUP_SRC_INTEGRITY_H
 
-#include "metadata.h"
 #include "CRegion/region.h"
+#include "metadata.h"
 
 typedef struct ListOfBrokenPathNodes ListOfBrokenPathNodes;
 struct ListOfBrokenPathNodes
@@ -15,8 +15,7 @@ struct ListOfBrokenPathNodes
   ListOfBrokenPathNodes *next;
 };
 
-extern ListOfBrokenPathNodes *checkIntegrity(CR_Region *r,
-                                             Metadata *metadata,
-                                             String repo_path);
+extern ListOfBrokenPathNodes *
+checkIntegrity(CR_Region *r, Metadata *metadata, String repo_path);
 
 #endif

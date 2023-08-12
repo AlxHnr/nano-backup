@@ -10,9 +10,9 @@
 
 #include "CRegion/alloc-growable.h"
 
+#include "error-handling.h"
 #include "safe-math.h"
 #include "safe-wrappers.h"
-#include "error-handling.h"
 
 /** Checks if the content of a regular file has changed.
 
@@ -108,8 +108,7 @@ void readSymlink(String path, struct stat stats, char **buffer_ptr)
 */
 void applyNodeChanges(PathNode *node, PathState *state, struct stat stats)
 {
-  if(state->uid != stats.st_uid ||
-     state->gid != stats.st_gid)
+  if(state->uid != stats.st_uid || state->gid != stats.st_gid)
   {
     backupHintSet(node->hint, BH_owner_changed);
     state->uid = stats.st_uid;

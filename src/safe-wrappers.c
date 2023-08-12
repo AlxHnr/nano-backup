@@ -6,17 +6,17 @@
 #include "safe-wrappers.h"
 
 #include <errno.h>
-#include <stdio.h>
-#include <utime.h>
 #include <limits.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <utime.h>
 
-#include "safe-math.h"
-#include "path-builder.h"
 #include "error-handling.h"
+#include "path-builder.h"
+#include "safe-math.h"
 
 struct FileStream
 {
@@ -212,8 +212,7 @@ bool Ftodisk(FileStream *stream)
 {
   int descriptor = fileno(stream->file);
 
-  return descriptor != -1 &&
-    fflush(stream->file) == 0 &&
+  return descriptor != -1 && fflush(stream->file) == 0 &&
     fdatasync(descriptor) == 0;
 }
 
@@ -295,11 +294,9 @@ struct dirent *sReadDir(DIR *dir, String path)
     {
       dieErrno("failed to read directory \"%s\"", path.content);
     }
-  }
-  while(dir_entry != NULL &&
-        dir_entry->d_name[0] == '.' &&
-        (dir_entry->d_name[1] == '\0' ||
-         (dir_entry->d_name[1] == '.' && dir_entry->d_name[2] == '\0')));
+  } while(dir_entry != NULL && dir_entry->d_name[0] == '.' &&
+          (dir_entry->d_name[1] == '\0' ||
+           (dir_entry->d_name[1] == '.' && dir_entry->d_name[2] == '\0')));
 
   errno = old_errno;
   return dir_entry;
@@ -432,7 +429,8 @@ void sRename(String oldpath, String newpath)
 {
   if(rename(oldpath.content, newpath.content) != 0)
   {
-    dieErrno("failed to rename \"%s\" to \"%s\"", oldpath.content, newpath.content);
+    dieErrno("failed to rename \"%s\" to \"%s\"", oldpath.content,
+             newpath.content);
   }
 }
 
@@ -466,9 +464,8 @@ void sLChown(String path, uid_t user, gid_t group)
 /** Simplified safe wrapper around utime(). */
 void sUtime(String path, time_t time)
 {
-  struct utimbuf time_buffer =
-  {
-    .actime  = time,
+  struct utimbuf time_buffer = {
+    .actime = time,
     .modtime = time,
   };
 
@@ -556,7 +553,7 @@ char *sGetCwd(void)
       capacity = sSizeMul(capacity, 2);
       buffer = sRealloc(buffer, capacity);
     }
-  }while(result == NULL);
+  } while(result == NULL);
 
   errno = old_errno;
   return buffer;
@@ -573,8 +570,8 @@ char *sGetCwd(void)
 char *sReadLine(FILE *stream)
 {
   size_t capacity = 16;
-  size_t used     = 0;
-  char *buffer    = sMalloc(capacity);
+  size_t used = 0;
+  char *buffer = sMalloc(capacity);
 
   int old_errno = errno;
   errno = 0;
@@ -613,7 +610,7 @@ char *sReadLine(FILE *stream)
       buffer[used] = (char)character;
       used++;
     }
-  }while(reached_end == false);
+  } while(reached_end == false);
   errno = old_errno;
 
   if(buffer) buffer[used] = '\0';
@@ -662,7 +659,8 @@ size_t sStringToSize(String string)
   }
   else if(value < 0)
   {
-    die("unable to convert negative value to size: \"%s\"", string.content);
+    die("unable to convert negative value to size: \"%s\"",
+        string.content);
   }
   else if((value == LLONG_MAX && errno == ERANGE) ||
           (unsigned long long int)value > SIZE_MAX)
@@ -723,7 +721,8 @@ FileContent sGetFilesContent(CR_Region *region, String path)
   /* On 32-bit systems off_t is often larger than size_t. */
   if((uint64_t)file_stats.st_size > SIZE_MAX)
   {
-    die("unable to load file into mem due to its size: \"%s\"", path.content);
+    die("unable to load file into mem due to its size: \"%s\"",
+        path.content);
   }
 
   if(file_stats.st_size > 0)

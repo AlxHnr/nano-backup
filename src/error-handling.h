@@ -12,7 +12,7 @@
 #define DIE_FUNCTION_ATTRIBUTES
 #endif
 
-extern void die(const char *format, ...)      DIE_FUNCTION_ATTRIBUTES;
+extern void die(const char *format, ...) DIE_FUNCTION_ATTRIBUTES;
 extern void dieErrno(const char *format, ...) DIE_FUNCTION_ATTRIBUTES;
 
 #undef DIE_FUNCTION_ATTRIBUTES

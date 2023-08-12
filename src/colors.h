@@ -24,12 +24,12 @@ typedef enum
   TC_cyan_bold,    /**< Cyan and bold text. */
   TC_white,        /**< White text. */
   TC_white_bold,   /**< White and bold text. */
-}TextColor;
+} TextColor;
 
-extern void colorPrintf(FILE *stream, TextColor color,
-                        const char *format, ...)
+extern void colorPrintf(FILE *stream, TextColor color, const char *format,
+                        ...)
 #ifdef __GNUC__
-__attribute__((format(printf, 3, 4)))
+  __attribute__((format(printf, 3, 4)))
 #endif
   ;
 

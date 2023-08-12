@@ -9,8 +9,8 @@
 
 #include "CRegion/global-region.h"
 
-#include "test.h"
 #include "safe-wrappers.h"
+#include "test.h"
 
 int main(void)
 {

@@ -19,10 +19,7 @@ static void testPathBuilderSet(char **buffer, const char *path)
 }
 
 /** Tests pathBuilderAppend(). */
-static void testPathBuilderAppend(char **buffer,
-                                  size_t buffer_length,
-                                  const char *path,
-                                  const char *expected_path)
+static void testPathBuilderAppend(char **buffer, size_t buffer_length, const char *path, const char *expected_path)
 {
   size_t length = pathBuilderAppend(buffer, buffer_length, path);
 
@@ -91,13 +88,13 @@ int main(void)
   testPathBuilderAppend(&buffer, 12, "make.conf", "/etc/portage/make.conf");
 
   testPathBuilderSet(&buffer, "tmp/file");
-  testPathBuilderAppend(&buffer, 8,  "",  "tmp/file/");
-  testPathBuilderAppend(&buffer, 8,  "",  "tmp/file/");
-  testPathBuilderAppend(&buffer, 9,  "",  "tmp/file//");
-  testPathBuilderAppend(&buffer, 10, "",  "tmp/file///");
-  testPathBuilderAppend(&buffer, 8,  "a", "tmp/file/a");
+  testPathBuilderAppend(&buffer, 8, "", "tmp/file/");
+  testPathBuilderAppend(&buffer, 8, "", "tmp/file/");
+  testPathBuilderAppend(&buffer, 9, "", "tmp/file//");
+  testPathBuilderAppend(&buffer, 10, "", "tmp/file///");
+  testPathBuilderAppend(&buffer, 8, "a", "tmp/file/a");
   testPathBuilderAppend(&buffer, 10, "a", "tmp/file/a/a");
   testPathBuilderAppend(&buffer, 12, "a", "tmp/file/a/a/a");
-  testPathBuilderAppend(&buffer, 7,  "",  "tmp/fil/");
+  testPathBuilderAppend(&buffer, 7, "", "tmp/fil/");
   testGroupEnd();
 }

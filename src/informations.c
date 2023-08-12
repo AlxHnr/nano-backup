@@ -4,8 +4,8 @@
 
 #include "informations.h"
 
-#include <stdio.h>
 #include <inttypes.h>
+#include <stdio.h>
 
 #include "colors.h"
 #include "safe-math.h"
@@ -42,8 +42,8 @@ static void warnPathNewline(String path)
 static void warnUnmatchedExpressions(RegexList *expression_list,
                                      const char *target_name)
 {
-  for(RegexList *expression = expression_list;
-      expression != NULL; expression = expression->next)
+  for(RegexList *expression = expression_list; expression != NULL;
+      expression = expression->next)
   {
     if(expression->has_matched == false)
     {
@@ -75,14 +75,14 @@ static const char *typeOf(SearchNode *node)
 */
 static void printSearchNodeInfos(SearchNode *root_node)
 {
-  for(SearchNode *node = root_node->subnodes;
-      node != NULL; node = node->next)
+  for(SearchNode *node = root_node->subnodes; node != NULL;
+      node = node->next)
   {
     if(node->search_match == SRT_none)
     {
       warnConfigLineNr(node->line_nr);
       fprintf(stderr, "%s never matched a %s: ", typeOf(node),
-              node->subnodes?"directory":"file");
+              node->subnodes ? "directory" : "file");
       warnPathNewline(node->name);
     }
     else if(node->subnodes != NULL)
@@ -118,20 +118,14 @@ static void changeStatsAdd(ChangeStats *stats, size_t count, uint64_t size)
 /** Adds the statistics from b to a. */
 static void metadataChangesAdd(MetadataChanges *a, MetadataChanges b)
 {
-  changeStatsAdd(&a->new_items,
-                 b.new_items.count,
-                 b.new_items.size);
+  changeStatsAdd(&a->new_items, b.new_items.count, b.new_items.size);
 
-  changeStatsAdd(&a->removed_items,
-                 b.removed_items.count,
+  changeStatsAdd(&a->removed_items, b.removed_items.count,
                  b.removed_items.size);
 
-  changeStatsAdd(&a->lost_items,
-                 b.lost_items.count,
-                 b.lost_items.size);
+  changeStatsAdd(&a->lost_items, b.lost_items.count, b.lost_items.size);
 
-  changeStatsAdd(&a->changed_items,
-                 b.changed_items.count,
+  changeStatsAdd(&a->changed_items, b.changed_items.count,
                  b.changed_items.size);
 
   a->changed_attributes =
@@ -162,13 +156,11 @@ static void incrementExtraChangedAttributes(MetadataChanges *changes,
 {
   if(hint & BH_owner_changed)
   {
-    changes->changed_attributes =
-      sSizeAdd(changes->changed_attributes, 1);
+    changes->changed_attributes = sSizeAdd(changes->changed_attributes, 1);
   }
   if(hint & BH_permissions_changed)
   {
-    changes->changed_attributes =
-      sSizeAdd(changes->changed_attributes, 1);
+    changes->changed_attributes = sSizeAdd(changes->changed_attributes, 1);
   }
 }
 
@@ -225,8 +217,7 @@ static void addNode(PathNode *node, MetadataChanges *changes,
   {
     changes->other = true;
     changes->affects_parent_timestamp |=
-      (hint >= BH_regular_to_symlink &&
-       hint <= BH_other_to_directory);
+      (hint >= BH_regular_to_symlink && hint <= BH_other_to_directory);
 
     incrementExtraChangedAttributes(changes, node->hint);
     if(node->hint == BH_timestamp_changed &&
@@ -242,11 +233,8 @@ static void addNode(PathNode *node, MetadataChanges *changes,
   changes. */
 static bool containsContentChanges(MetadataChanges changes)
 {
-  return
-    changes.new_items.count > 0 ||
-    changes.removed_items.count > 0 ||
-    changes.lost_items.count > 0 ||
-    changes.changed_items.count > 0;
+  return changes.new_items.count > 0 || changes.removed_items.count > 0 ||
+    changes.lost_items.count > 0 || changes.changed_items.count > 0;
 }
 
 /** Prints the informations in the given change stats.
@@ -256,8 +244,8 @@ static bool containsContentChanges(MetadataChanges changes)
 */
 static void printChangeStats(ChangeStats stats, const char *prefix)
 {
-  printf("%s%zu item%s", stats.count > 0? prefix:"",
-         stats.count, stats.count == 1? "":"s");
+  printf("%s%zu item%s", stats.count > 0 ? prefix : "", stats.count,
+         stats.count == 1 ? "" : "s");
 
   if(stats.size > 0)
   {
@@ -300,8 +288,7 @@ static void printSummarizedStats(MetadataChanges subnode_changes,
   }
 
   ChangeStats deleted_items = subnode_changes.removed_items;
-  changeStatsAdd(&deleted_items,
-                 subnode_changes.lost_items.count,
+  changeStatsAdd(&deleted_items, subnode_changes.lost_items.count,
                  subnode_changes.lost_items.size);
   if(deleted_items.count > 0)
   {
@@ -327,8 +314,9 @@ static void printNodePath(PathNode *node, TextColor color)
 {
   PathState *state = getExistingState(node);
 
-  colorPrintf(stdout, color, "%s%s%s", state->type == PST_symlink? "^":"",
-              node->path.content, state->type == PST_directory? "/":"");
+  colorPrintf(stdout, color, "%s%s%s",
+              state->type == PST_symlink ? "^" : "", node->path.content,
+              state->type == PST_directory ? "/" : "");
 }
 
 /** Prints informations about the given node.
@@ -367,8 +355,7 @@ static void printNode(PathNode *node, MetadataChanges subnode_changes,
       printNodePath(node, TC_blue);
     }
   }
-  else if(hint >= BH_regular_to_symlink &&
-          hint <= BH_other_to_directory)
+  else if(hint >= BH_regular_to_symlink && hint <= BH_other_to_directory)
   {
     colorPrintf(stdout, TC_cyan_bold, "<> ");
     printNodePath(node, TC_cyan);
@@ -390,8 +377,8 @@ static void printNode(PathNode *node, MetadataChanges subnode_changes,
     colorPrintf(stdout, TC_magenta_bold, "@@ ");
     printNodePath(node, TC_magenta);
 
-    if (summarize_subnode_changes == true &&
-        subnode_changes.changed_attributes > 0)
+    if(summarize_subnode_changes == true &&
+       subnode_changes.changed_attributes > 0)
     {
       printf("...");
     }
@@ -404,22 +391,21 @@ static void printNode(PathNode *node, MetadataChanges subnode_changes,
 
   bool printed_details = false;
 
-  if(hint >= BH_regular_to_symlink &&
-     hint <= BH_other_to_directory)
+  if(hint >= BH_regular_to_symlink && hint <= BH_other_to_directory)
   {
     printPrefix(&printed_details);
 
     switch(hint)
     {
-      case BH_regular_to_symlink:   printf("File -> Symlink");      break;
-      case BH_regular_to_directory: printf("File -> Directory");    break;
-      case BH_symlink_to_regular:   printf("Symlink -> File");      break;
+      case BH_regular_to_symlink: printf("File -> Symlink"); break;
+      case BH_regular_to_directory: printf("File -> Directory"); break;
+      case BH_symlink_to_regular: printf("Symlink -> File"); break;
       case BH_symlink_to_directory: printf("Symlink -> Directory"); break;
-      case BH_directory_to_regular: printf("Directory -> File");    break;
+      case BH_directory_to_regular: printf("Directory -> File"); break;
       case BH_directory_to_symlink: printf("Directory -> Symlink"); break;
-      case BH_other_to_regular:     printf("Other -> File");        break;
-      case BH_other_to_symlink:     printf("Other -> Symlink");     break;
-      case BH_other_to_directory:   printf("Other -> Directory");   break;
+      case BH_other_to_regular: printf("Other -> File"); break;
+      case BH_other_to_symlink: printf("Other -> Symlink"); break;
+      case BH_other_to_directory: printf("Other -> Directory"); break;
       default: /* ignore */ break;
     }
   }
@@ -437,11 +423,12 @@ static void printNode(PathNode *node, MetadataChanges subnode_changes,
 
   if(node->history->state.type != PST_symlink &&
      !(node->hint & BH_timestamp_changed) !=
-     !(node->hint & BH_content_changed) &&
+       !(node->hint & BH_content_changed) &&
      subnode_changes.affects_parent_timestamp == false)
   {
     printPrefix(&printed_details);
-    printf("%stimestamp", (node->hint & BH_timestamp_changed)? "":"same ");
+    printf("%stimestamp",
+           (node->hint & BH_timestamp_changed) ? "" : "same ");
   }
 
   if(node->hint & BH_policy_changed)
@@ -458,8 +445,7 @@ static void printNode(PathNode *node, MetadataChanges subnode_changes,
   PathState *existing_state = getExistingState(node);
   if(existing_state->type == PST_directory)
   {
-    if(hint == BH_added ||
-       hint == BH_regular_to_directory ||
+    if(hint == BH_added || hint == BH_regular_to_directory ||
        hint == BH_symlink_to_directory)
     {
       printPrefix(&printed_details);
@@ -519,10 +505,10 @@ static void printNode(PathNode *node, MetadataChanges subnode_changes,
 */
 static bool matchesRegexList(PathNode *node, RegexList *expression_list)
 {
-  for(RegexList *expression = expression_list;
-      expression != NULL; expression = expression->next)
+  for(RegexList *expression = expression_list; expression != NULL;
+      expression = expression->next)
   {
-    if (regexec(expression->regex, node->path.content, 0, NULL, 0) == 0)
+    if(regexec(expression->regex, node->path.content, 0, NULL, 0) == 0)
     {
       expression->has_matched = true;
       return true;
@@ -543,16 +529,14 @@ static bool matchesRegexList(PathNode *node, RegexList *expression_list)
   @return Statistics about all the nodes locatable trough the given path
   list.
 */
-static MetadataChanges recursePrintOverTree(Metadata *metadata,
-                                            PathNode *path_list,
-                                            RegexList *summarize_expressions,
-                                            bool print)
+static MetadataChanges
+recursePrintOverTree(Metadata *metadata, PathNode *path_list,
+                     RegexList *summarize_expressions, bool print)
 {
-  MetadataChanges changes =
-  {
-    .new_items     = { .count = 0, .size = 0 },
+  MetadataChanges changes = {
+    .new_items = { .count = 0, .size = 0 },
     .removed_items = { .count = 0, .size = 0 },
-    .lost_items    = { .count = 0, .size = 0 },
+    .lost_items = { .count = 0, .size = 0 },
     .changed_items = { .count = 0, .size = 0 },
     .affects_parent_timestamp = false,
     .changed_attributes = 0,
@@ -562,8 +546,7 @@ static MetadataChanges recursePrintOverTree(Metadata *metadata,
   for(PathNode *node = path_list; node != NULL; node = node->next)
   {
     MetadataChanges subnode_changes;
-    const bool summarize =
-      node->policy != BPOL_none &&
+    const bool summarize = node->policy != BPOL_none &&
       getExistingState(node)->type == PST_directory &&
       matchesRegexList(node, summarize_expressions);
     /* Once a summarize expression matched, its subnodes should not be
@@ -573,9 +556,8 @@ static MetadataChanges recursePrintOverTree(Metadata *metadata,
 
     if(print == true && summarize == true)
     {
-      subnode_changes =
-        recursePrintOverTree(metadata, node->subnodes,
-                             expressions_to_pass_down, false);
+      subnode_changes = recursePrintOverTree(
+        metadata, node->subnodes, expressions_to_pass_down, false);
       if(node->hint > BH_unchanged || containsChanges(subnode_changes))
       {
         printNode(node, subnode_changes, summarize);
@@ -602,9 +584,8 @@ static MetadataChanges recursePrintOverTree(Metadata *metadata,
     }
     else
     {
-      subnode_changes =
-        recursePrintOverTree(metadata, node->subnodes,
-                             expressions_to_pass_down, print);
+      subnode_changes = recursePrintOverTree(
+        metadata, node->subnodes, expressions_to_pass_down, print);
     }
 
     addNode(node, &changes, subnode_changes.affects_parent_timestamp);
@@ -637,7 +618,7 @@ void printHumanReadableSize(uint64_t size)
   else
   {
     uint64_t fraction = (uint64_t)(converted_value * 10.0) % 10;
-    printf("%"PRIu64".%"PRIu64" %ciB", (uint64_t)converted_value,
+    printf("%" PRIu64 ".%" PRIu64 " %ciB", (uint64_t)converted_value,
            fraction, units[unit_index]);
   }
 }
@@ -675,8 +656,7 @@ MetadataChanges printMetadataChanges(Metadata *metadata,
 bool containsChanges(MetadataChanges changes)
 {
   return containsContentChanges(changes) ||
-    changes.changed_attributes > 0 ||
-    changes.other == true;
+    changes.changed_attributes > 0 || changes.other == true;
 }
 
 /** Prints a warning on how the specified node matches the given string. */

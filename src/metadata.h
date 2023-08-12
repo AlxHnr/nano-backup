@@ -8,10 +8,10 @@
 #include <stdint.h>
 #include <sys/types.h>
 
+#include "backup-policies.h"
 #include "repository.h"
 #include "str.h"
 #include "string-table.h"
-#include "backup-policies.h"
 
 /** The different states a filepath can represent at a specific backup. */
 typedef enum
@@ -20,14 +20,14 @@ typedef enum
   PST_regular,      /**< The path represents a regular file. */
   PST_symlink,      /**< The path represents a symbolic link. */
   PST_directory,    /**< The path represent a directory. */
-}PathStateType;
+} PathStateType;
 
 /** Stores the metadata of a directory. */
 typedef struct
 {
-  mode_t mode; /**< The directories permission bits. */
+  mode_t mode;      /**< The directories permission bits. */
   time_t timestamp; /**< The directories last modification time. */
-}DirectoryInfo;
+} DirectoryInfo;
 
 /** Represents the state a path can have at a specific backup. */
 typedef struct
@@ -42,11 +42,11 @@ typedef struct
   /** Optional metadata, depending on the PathStateType. */
   union
   {
-    RegularFileInfo reg;    /**< The metadata of a regular file. */
-    String sym_target; /**< The target path of a symlink. */
-    DirectoryInfo dir;     /**< The permission bits of a directory. */
-  }metadata;
-}PathState;
+    RegularFileInfo reg; /**< The metadata of a regular file. */
+    String sym_target;   /**< The target path of a symlink. */
+    DirectoryInfo dir;   /**< The permission bits of a directory. */
+  } metadata;
+} PathState;
 
 /** Represents a backup. A Backup is only valid, if its reference count
   is greater than zero. Otherwise its id and timestamp will be undefined.
@@ -142,18 +142,18 @@ typedef enum
 
   /** A policy change causes the path to lose its history. */
   BH_loses_history = 1 << 10,
-}BackupHint;
+} BackupHint;
 
 /** Assigns a single hint to a variable while preventing to set mutually
   exclusive bits. */
 #define backupHintSet(var, hint) \
-  var = (hint <= BH_unchanged? hint: \
-         hint <= BH_other_to_directory? ((var & ~0x1FF) | hint): \
-         hint <= BH_fresh_hash? ((var & ~0xF) | hint): \
-         (var | hint))
+  var = (hint <= BH_unchanged              ? hint \
+           : hint <= BH_other_to_directory ? ((var & ~0x1FF) | hint) \
+           : hint <= BH_fresh_hash         ? ((var & ~0xF) | hint) \
+                                           : (var | hint))
 
 /** Returns the value without policy bits. */
-#define backupHintNoPol(val) ((val) & 0x1FF)
+#define backupHintNoPol(val) ((val)&0x1FF)
 
 /** A node representing a path in the filetree. */
 typedef struct PathNode PathNode;
@@ -218,12 +218,11 @@ typedef struct
   /** A list of backed up files in the filesystem. Can be NULL if this
     metadata doesn't contain any filepaths. */
   PathNode *paths;
-}Metadata;
+} Metadata;
 
 extern Metadata *metadataNew(void);
 extern Metadata *metadataLoad(String path);
-extern void metadataWrite(Metadata *metadata,
-                          String repo_path,
+extern void metadataWrite(Metadata *metadata, String repo_path,
                           String repo_tmp_file_path,
                           String repo_metadata_path);
 

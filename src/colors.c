@@ -10,15 +10,14 @@
 
 /** Contains color codes in the same order as TextColor, which can be used
   as index. */
-static const char *color_codes[] =
-{
-  "0;31", "1;31",
-  "0;32", "1;32",
-  "0;33", "1;33",
-  "0;34", "1;34",
-  "0;35", "1;35",
-  "0;36", "1;36",
-  "0;37", "1;37",
+static const char *color_codes[] = {
+  "0;31", "1;31", /* Red, bold red. */
+  "0;32", "1;32", /* Green, bold green. */
+  "0;33", "1;33", /* Yellow, bold yellow. */
+  "0;34", "1;34", /* Blue, bold blue. */
+  "0;35", "1;35", /* Magenta, bold magenta. */
+  "0;36", "1;36", /* Cyan, bold cyan. */
+  "0;37", "1;37", /* White, bold white. */
 };
 
 /** A colorized wrapper around fprintf(). If the given stream is neither

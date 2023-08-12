@@ -20,8 +20,7 @@
 */
 String strWrap(const char *string)
 {
-  return (String)
-  {
+  return (String){
     .content = string,
     .length = strlen(string),
     .is_terminated = true,
@@ -37,8 +36,7 @@ String strWrap(const char *string)
 */
 String strSlice(const char *string, size_t length)
 {
-  return (String)
-  {
+  return (String){
     .content = string,
     .length = length,
     .is_terminated = false,
@@ -58,8 +56,7 @@ String strCopy(String string)
   memcpy(cstring, string.content, string.length);
   cstring[string.length] = '\0';
 
-  return (String)
-  {
+  return (String){
     .content = cstring,
     .length = string.length,
     .is_terminated = true,
@@ -124,12 +121,10 @@ String strRemoveTrailingSlashes(String string)
     new_length--;
   }
 
-  return (String)
-  {
+  return (String){
     .content = string.content,
     .length = new_length,
-    .is_terminated =
-      new_length == string.length && string.is_terminated,
+    .is_terminated = new_length == string.length && string.is_terminated,
   };
 }
 
@@ -146,15 +141,15 @@ String strAppendPath(String a, String b)
   const size_t buffer_size = sSizeAdd(sSizeAdd(a.length, b.length), 2);
   const size_t path_length = buffer_size - 1;
 
-  char *cstring = CR_RegionAllocUnaligned(CR_GetGlobalRegion(), buffer_size);
+  char *cstring =
+    CR_RegionAllocUnaligned(CR_GetGlobalRegion(), buffer_size);
 
   memcpy(cstring, a.content, a.length);
   cstring[a.length] = '/';
   memcpy(&cstring[a.length + 1], b.content, b.length);
   cstring[path_length] = '\0';
 
-  return (String)
-  {
+  return (String){
     .content = cstring,
     .length = path_length,
     .is_terminated = true,
@@ -189,20 +184,17 @@ StringSplit strSplitPath(String path)
     last_slash--;
   }
 
-  return (StringSplit)
-  {
-    (String)
-    {
+  return (StringSplit){
+    (String){
       .content = path.content,
       .length = last_slash > 0 ? last_slash - 1 : 0,
       .is_terminated = false,
     },
-    (String)
-    {
-      .content       = &path.content[last_slash],
-      .length        = path.length - last_slash,
+    (String){
+      .content = &path.content[last_slash],
+      .length = path.length - last_slash,
       .is_terminated = path.is_terminated,
-    }
+    },
   };
 }
 
@@ -224,10 +216,8 @@ bool strWhitespaceOnly(String string)
 /** Returns true if the given string is "." or "..". */
 bool strIsDotElement(String string)
 {
-  return
-    (string.length == 1 && string.content[0] == '.') ||
-    (string.length == 2 &&
-     string.content[0] == '.' &&
+  return (string.length == 1 && string.content[0] == '.') ||
+    (string.length == 2 && string.content[0] == '.' &&
      string.content[1] == '.');
 }
 
@@ -243,10 +233,8 @@ bool strPathContainsDotElements(String path)
 {
   StringSplit split = strSplitPath(path);
 
-  return
-    strIsDotElement(split.tail) ||
-    (split.head.length > 0 &&
-     strPathContainsDotElements(split.head));
+  return strIsDotElement(split.tail) ||
+    (split.head.length > 0 && strPathContainsDotElements(split.head));
 }
 
 /** Returns true if the given path starts with the specified parent. E.g.

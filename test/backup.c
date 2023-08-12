@@ -4,16 +4,16 @@
 
 #include "backup.h"
 
-#include <unistd.h>
 #include <stdlib.h>
+#include <unistd.h>
 
-#include "test.h"
+#include "backup-common.h"
+#include "backup-dummy-hashes.h"
 #include "metadata.h"
+#include "safe-wrappers.h"
 #include "search-tree.h"
 #include "test-common.h"
-#include "backup-common.h"
-#include "safe-wrappers.h"
-#include "backup-dummy-hashes.h"
+#include "test.h"
 
 /** Performs an initial backup. */
 static void runPhase1(SearchNode *phase_1_node)
@@ -68,11 +68,11 @@ static void runPhase1(SearchNode *phase_1_node)
 
   /* Finish backup and perform additional checks. */
   completeBackup(metadata);
-  mustHaveRegularStat(one_txt,       &metadata->current_backup, 12,  (uint8_t *)"A small file", 0);
-  mustHaveRegularStat(two_txt,       &metadata->current_backup, 0,   (uint8_t *)"", 0);
-  mustHaveRegularStat(three_txt,     &metadata->current_backup, 400, three_hash, 0);
+  mustHaveRegularStat(one_txt, &metadata->current_backup, 12, (uint8_t *)"A small file", 0);
+  mustHaveRegularStat(two_txt, &metadata->current_backup, 0, (uint8_t *)"", 0);
+  mustHaveRegularStat(three_txt, &metadata->current_backup, 400, three_hash, 0);
   mustHaveRegularStat(dir_three_txt, &metadata->current_backup, 400, three_hash, 0);
-  mustHaveRegularStat(some_file,     &metadata->current_backup, 84,  some_file_hash, 0);
+  mustHaveRegularStat(some_file, &metadata->current_backup, 84, some_file_hash, 0);
   assert_true(countItemsInDir("tmp/repo") == 7);
 }
 
@@ -81,7 +81,7 @@ static void runPhase2(SearchNode *phase_1_node)
 {
   /* Generate dummy files. */
   makeDir("tmp/files/foo/dummy");
-  generateFile("tmp/files/foo/super.txt",  "This is a super file\n", 100);
+  generateFile("tmp/files/foo/super.txt", "This is a super file\n", 100);
   generateFile("tmp/files/foo/dummy/file", "dummy file", 1);
 
   /* Initiate the backup. */
@@ -133,7 +133,7 @@ static void runPhase2(SearchNode *phase_1_node)
   /* Finish backup and perform additional checks. */
   completeBackup(metadata);
   mustHaveRegularStat(super, &metadata->current_backup, 2100, super_hash, 0);
-  mustHaveRegularStat(file,  &metadata->current_backup, 10, (uint8_t *)"dummy file", 0);
+  mustHaveRegularStat(file, &metadata->current_backup, 10, (uint8_t *)"dummy file", 0);
   assert_true(countItemsInDir("tmp/repo") == 9);
 }
 
@@ -276,16 +276,16 @@ static void runPhase5(SearchNode *phase_5_node)
   makeDir("tmp/files/test/a");
   makeDir("tmp/files/test/a/b");
   makeDir("tmp/files/test/a/b/d");
-  generateFile("tmp/files/foo/bar/subdir/a1",         "1",            1);
-  generateFile("tmp/files/foo/bar/subdir/a2/b/c",     "1",            20);
-  generateFile("tmp/files/foo/bar/subdir/a2/b/d/e/f", "Test",         3);
-  generateFile("tmp/files/data/a/b/c/d",              "Large\n",      200);
-  generateFile("tmp/files/nested/b/1",                "nested-file ", 12);
-  generateFile("tmp/files/nested/b/2",                "nested ",      8);
-  generateFile("tmp/files/nested/c/d/e",              "Large\n",      200);
-  generateFile("tmp/files/test/a/b/c",                "a/b/c/",       7);
-  generateFile("tmp/files/test/a/b/d/e",              "FILE CONTENT", 1);
-  generateFile("tmp/files/test/a/b/d/f",              "CONTENT",      1);
+  generateFile("tmp/files/foo/bar/subdir/a1", "1", 1);
+  generateFile("tmp/files/foo/bar/subdir/a2/b/c", "1", 20);
+  generateFile("tmp/files/foo/bar/subdir/a2/b/d/e/f", "Test", 3);
+  generateFile("tmp/files/data/a/b/c/d", "Large\n", 200);
+  generateFile("tmp/files/nested/b/1", "nested-file ", 12);
+  generateFile("tmp/files/nested/b/2", "nested ", 8);
+  generateFile("tmp/files/nested/c/d/e", "Large\n", 200);
+  generateFile("tmp/files/test/a/b/c", "a/b/c/", 7);
+  generateFile("tmp/files/test/a/b/d/e", "FILE CONTENT", 1);
+  generateFile("tmp/files/test/a/b/d/f", "CONTENT", 1);
 
   /* Initiate the backup. */
   Metadata *metadata = metadataLoad(strWrap("tmp/repo/metadata"));
@@ -395,16 +395,16 @@ static void runPhase5(SearchNode *phase_5_node)
   /* Finish backup and perform additional checks. */
   completeBackup(metadata);
   assert_true(countItemsInDir("tmp/repo") == 19);
-  mustHaveRegularStat(subdir_a1, &metadata->current_backup, 1,    (uint8_t *)"1???????????????????", 0);
-  mustHaveRegularStat(subdir_c,  &metadata->current_backup, 20,   (uint8_t *)"11111111111111111111", 0);
-  mustHaveRegularStat(subdir_f,  &metadata->current_backup, 12,   (uint8_t *)"TestTestTest????????", 0);
-  mustHaveRegularCached(data_d,  &metadata->current_backup, 1200, data_d_hash,                       0);
-  mustHaveRegularStat(nested_1,  &metadata->current_backup, 144,  nested_1_hash,                     0);
-  mustHaveRegularStat(nested_2,  &metadata->current_backup, 56,   nested_2_hash,                     0);
-  mustHaveRegularStat(nested_e,  &metadata->current_backup, 1200, data_d_hash,                       0);
-  mustHaveRegularCached(test_c,  &metadata->current_backup, 42,   test_c_hash,                       0);
-  mustHaveRegularCached(test_e,  &metadata->current_backup, 12,   (uint8_t *)"FILE CONTENT????????", 0);
-  mustHaveRegularCached(test_f,  &metadata->current_backup, 7,    (uint8_t *)"CONTENT?????????????", 0);
+  mustHaveRegularStat(subdir_a1, &metadata->current_backup, 1, (uint8_t *)"1???????????????????", 0);
+  mustHaveRegularStat(subdir_c, &metadata->current_backup, 20, (uint8_t *)"11111111111111111111", 0);
+  mustHaveRegularStat(subdir_f, &metadata->current_backup, 12, (uint8_t *)"TestTestTest????????", 0);
+  mustHaveRegularCached(data_d, &metadata->current_backup, 1200, data_d_hash, 0);
+  mustHaveRegularStat(nested_1, &metadata->current_backup, 144, nested_1_hash, 0);
+  mustHaveRegularStat(nested_2, &metadata->current_backup, 56, nested_2_hash, 0);
+  mustHaveRegularStat(nested_e, &metadata->current_backup, 1200, data_d_hash, 0);
+  mustHaveRegularCached(test_c, &metadata->current_backup, 42, test_c_hash, 0);
+  mustHaveRegularCached(test_e, &metadata->current_backup, 12, (uint8_t *)"FILE CONTENT????????", 0);
+  mustHaveRegularCached(test_f, &metadata->current_backup, 7, (uint8_t *)"CONTENT?????????????", 0);
 }
 
 /** Performs a backup after removing various deeply nested files. */
@@ -565,7 +565,7 @@ static void runPhase7(SearchNode *phase_7_node)
   makeDir("tmp/files/unneeded/directory/a/g");
   makeDir("tmp/files/unneeded/directory/a/g/h");
   generateFile("tmp/files/unneeded/directory/a/b/c", "Content", 2);
-  generateFile("tmp/files/unneeded/directory/a/e/f", "File",    4);
+  generateFile("tmp/files/unneeded/directory/a/e/f", "File", 4);
   makeSymlink("../../b/c", "tmp/files/unneeded/directory/a/g/h/i");
 
   /* Initiate the backup. */
@@ -638,10 +638,8 @@ static void runPhase7(SearchNode *phase_7_node)
   /* Finish backup and perform additional checks. */
   completeBackup(metadata);
   assert_true(countItemsInDir("tmp/repo") == 19);
-  mustHaveRegularCached(directory_c, &metadata->current_backup, 14,
-                       (uint8_t *)"ContentContent??????", 0);
-  mustHaveRegularCached(directory_f, &metadata->current_backup, 16,
-                       (uint8_t *)"FileFileFileFile????", 0);
+  mustHaveRegularCached(directory_c, &metadata->current_backup, 14, (uint8_t *)"ContentContent??????", 0);
+  mustHaveRegularCached(directory_f, &metadata->current_backup, 16, (uint8_t *)"FileFileFileFile????", 0);
 }
 
 /** Tests how unneeded nodes get wiped. */
@@ -722,15 +720,13 @@ static void runPhase8(SearchNode *phase_8_node)
   PathNode *directory_b = findSubnode(directory_a, "b", BH_not_part_of_repository, BPOL_none, 1, 1);
   mustHaveDirectoryStat(directory_b, &metadata->current_backup);
   PathNode *directory_c = findSubnode(directory_b, "c", BH_not_part_of_repository, BPOL_mirror, 1, 0);
-  mustHaveRegularCached(directory_c, &metadata->backup_history[0], 14,
-                       (uint8_t *)"ContentContent??????", 0);
+  mustHaveRegularCached(directory_c, &metadata->backup_history[0], 14, (uint8_t *)"ContentContent??????", 0);
   PathNode *directory_d = findSubnode(directory_a, "d", BH_not_part_of_repository, BPOL_none, 1, 0);
   mustHaveDirectoryStat(directory_d, &metadata->current_backup);
   PathNode *directory_e = findSubnode(directory_a, "e", BH_not_part_of_repository, BPOL_mirror, 1, 1);
   mustHaveDirectoryCached(directory_e, &metadata->backup_history[0]);
   PathNode *directory_f = findSubnode(directory_e, "f", BH_not_part_of_repository, BPOL_mirror, 1, 0);
-  mustHaveRegularCached(directory_f, &metadata->backup_history[0], 16,
-                       (uint8_t *)"FileFileFileFile????", 0);
+  mustHaveRegularCached(directory_f, &metadata->backup_history[0], 16, (uint8_t *)"FileFileFileFile????", 0);
   PathNode *directory_g = findSubnode(directory_a, "g", BH_not_part_of_repository, BPOL_none, 1, 1);
   mustHaveDirectoryStat(directory_g, &metadata->current_backup);
   PathNode *directory_h = findSubnode(directory_g, "h", BH_not_part_of_repository, BPOL_none, 1, 1);
@@ -828,12 +824,12 @@ static void runPhase9(SearchNode *phase_9_node)
   generateFile("tmp/files/bin/one/d/e", "This is a super file\n", 100);
   generateFile("tmp/files/bin/two/four/a/b/c", "#", 19);
   generateFile("tmp/files/bin/two/five/0/zero/null", "", 0);
-  makeSymlink("/dev/null",              "tmp/files/one/two/three/d/2");
-  makeSymlink("/proc/cpuinfo",          "tmp/files/backup dir/c/1");
+  makeSymlink("/dev/null", "tmp/files/one/two/three/d/2");
+  makeSymlink("/proc/cpuinfo", "tmp/files/backup dir/c/1");
   makeSymlink("../../non-existing.txt", "tmp/files/nano/a2/b");
-  makeSymlink("../non-existing-dir",    "tmp/files/nb/a/abc/2");
-  makeSymlink("/usr/share/doc",         "tmp/files/bin/one/b/2");
-  makeSymlink("/root/.vimrc",           "tmp/files/bin/two/three");
+  makeSymlink("../non-existing-dir", "tmp/files/nb/a/abc/2");
+  makeSymlink("/usr/share/doc", "tmp/files/bin/one/b/2");
+  makeSymlink("/root/.vimrc", "tmp/files/bin/two/three");
 
   /* Initiate the backup. */
   Metadata *metadata = metadataLoad(strWrap("tmp/repo/metadata"));
@@ -1030,28 +1026,28 @@ static void runPhase9(SearchNode *phase_9_node)
   /* Finish backup and perform additional checks. */
   completeBackup(metadata);
   assert_true(countItemsInDir("tmp/repo") == 28);
-  mustHaveRegularCached(dir_b,          &metadata->current_backup, 8,    (uint8_t *)"12321232",             0);
-  mustHaveRegularCached(dir_c,          &metadata->current_backup, 8,    (uint8_t *)"abcdedcb",             0);
-  mustHaveRegularCached(three_c,        &metadata->current_backup, 12,   (uint8_t *)"FooFooFooFoo",         0);
-  mustHaveRegularCached(three_1,        &metadata->current_backup, 15,   (uint8_t *)"BARBARBARBARBAR",      0);
-  mustHaveRegularCached(backup_dir_3,   &metadata->current_backup, 11,   (uint8_t *)"Lorem Ipsum",          0);
-  mustHaveRegularCached(nano_a1_1,      &metadata->current_backup, 0,    (uint8_t *)"%%%%",                 0);
-  mustHaveRegularCached(nano_a1_2,      &metadata->current_backup, 20,   (uint8_t *)"@@@@@@@@@@@@@@@@@@@@", 0);
-  mustHaveRegularCached(nano_a2_a,      &metadata->current_backup, 20,   (uint8_t *)"[][][][][][][][][][]", 0);
-  mustHaveRegularCached(nano_a3_2,      &metadata->current_backup, 11,   (uint8_t *) "^foo$\n^bar$",        0);
-  mustHaveRegularCached(manual_123_txt, &metadata->current_backup, 9,    (uint8_t *)"-CONTENT-",            0);
-  mustHaveRegularCached(manual_b,       &metadata->current_backup, 21,   nb_manual_b_hash,                  0);
-  mustHaveRegularCached(docs_1_txt,     &metadata->current_backup, 21,   nb_manual_b_hash,                  0);
-  mustHaveRegularCached(nb_a_bar,       &metadata->current_backup, 20,   (uint8_t *)"qqqqqqqqqqqqqqqqqqqq", 0);
-  mustHaveRegularCached(nb_a_abc_1,     &metadata->current_backup, 24,   nb_a_abc_1_hash,                   0);
-  mustHaveRegularCached(bin_c_1,        &metadata->current_backup, 1200, bin_c_1_hash,                      0);
-  mustHaveRegularCached(bin_d,          &metadata->current_backup, 1200, data_d_hash,                       0);
-  mustHaveRegularCached(bin_3,          &metadata->current_backup, 144,  nested_1_hash,                     0);
-  mustHaveRegularCached(bin_one_a,      &metadata->current_backup, 400,  three_hash,                        0);
-  mustHaveRegularCached(bin_one_1,      &metadata->current_backup, 5,    (uint8_t *)"dummy",                0);
-  mustHaveRegularCached(bin_one_e,      &metadata->current_backup, 2100, super_hash,                        0);
-  mustHaveRegularCached(bin_four_c,     &metadata->current_backup, 19,   (uint8_t *)"###################",  0);
-  mustHaveRegularCached(bin_five_null,  &metadata->current_backup, 0,    (uint8_t *)"???",                  0);
+  mustHaveRegularCached(dir_b, &metadata->current_backup, 8, (uint8_t *)"12321232", 0);
+  mustHaveRegularCached(dir_c, &metadata->current_backup, 8, (uint8_t *)"abcdedcb", 0);
+  mustHaveRegularCached(three_c, &metadata->current_backup, 12, (uint8_t *)"FooFooFooFoo", 0);
+  mustHaveRegularCached(three_1, &metadata->current_backup, 15, (uint8_t *)"BARBARBARBARBAR", 0);
+  mustHaveRegularCached(backup_dir_3, &metadata->current_backup, 11, (uint8_t *)"Lorem Ipsum", 0);
+  mustHaveRegularCached(nano_a1_1, &metadata->current_backup, 0, (uint8_t *)"%%%%", 0);
+  mustHaveRegularCached(nano_a1_2, &metadata->current_backup, 20, (uint8_t *)"@@@@@@@@@@@@@@@@@@@@", 0);
+  mustHaveRegularCached(nano_a2_a, &metadata->current_backup, 20, (uint8_t *)"[][][][][][][][][][]", 0);
+  mustHaveRegularCached(nano_a3_2, &metadata->current_backup, 11, (uint8_t *)"^foo$\n^bar$", 0);
+  mustHaveRegularCached(manual_123_txt, &metadata->current_backup, 9, (uint8_t *)"-CONTENT-", 0);
+  mustHaveRegularCached(manual_b, &metadata->current_backup, 21, nb_manual_b_hash, 0);
+  mustHaveRegularCached(docs_1_txt, &metadata->current_backup, 21, nb_manual_b_hash, 0);
+  mustHaveRegularCached(nb_a_bar, &metadata->current_backup, 20, (uint8_t *)"qqqqqqqqqqqqqqqqqqqq", 0);
+  mustHaveRegularCached(nb_a_abc_1, &metadata->current_backup, 24, nb_a_abc_1_hash, 0);
+  mustHaveRegularCached(bin_c_1, &metadata->current_backup, 1200, bin_c_1_hash, 0);
+  mustHaveRegularCached(bin_d, &metadata->current_backup, 1200, data_d_hash, 0);
+  mustHaveRegularCached(bin_3, &metadata->current_backup, 144, nested_1_hash, 0);
+  mustHaveRegularCached(bin_one_a, &metadata->current_backup, 400, three_hash, 0);
+  mustHaveRegularCached(bin_one_1, &metadata->current_backup, 5, (uint8_t *)"dummy", 0);
+  mustHaveRegularCached(bin_one_e, &metadata->current_backup, 2100, super_hash, 0);
+  mustHaveRegularCached(bin_four_c, &metadata->current_backup, 19, (uint8_t *)"###################", 0);
+  mustHaveRegularCached(bin_five_null, &metadata->current_backup, 0, (uint8_t *)"???", 0);
 }
 
 /** Removes various files, which are expected to get removed during phase
@@ -1255,7 +1251,7 @@ static void runPhase10(SearchNode *phase_9_node)
   PathNode *nano_a3_1 = findSubnode(nano_a3, "1", BH_removed, BPOL_mirror, 1, 2);
   mustHaveDirectoryCached(nano_a3_1, &metadata->backup_history[0]);
   PathNode *nano_a3_2 = findSubnode(nano_a3_1, "2", BH_removed, BPOL_mirror, 1, 0);
-  mustHaveRegularCached(nano_a3_2, &metadata->backup_history[0], 11, (uint8_t *) "^foo$\n^bar$", 0);
+  mustHaveRegularCached(nano_a3_2, &metadata->backup_history[0], 11, (uint8_t *)"^foo$\n^bar$", 0);
   PathNode *nano_a3_3 = findSubnode(nano_a3_1, "3", BH_removed, BPOL_mirror, 1, 0);
   mustHaveDirectoryCached(nano_a3_3, &metadata->backup_history[0]);
 
@@ -1468,7 +1464,7 @@ static void runPhase11(SearchNode *phase_9_node)
   PathNode *nano_a3_1 = findSubnode(nano_a3, "1", BH_removed, BPOL_mirror, 1, 2);
   mustHaveDirectoryCached(nano_a3_1, &metadata->backup_history[1]);
   PathNode *nano_a3_2 = findSubnode(nano_a3_1, "2", BH_removed, BPOL_mirror, 1, 0);
-  mustHaveRegularCached(nano_a3_2, &metadata->backup_history[1], 11, (uint8_t *) "^foo$\n^bar$", 0);
+  mustHaveRegularCached(nano_a3_2, &metadata->backup_history[1], 11, (uint8_t *)"^foo$\n^bar$", 0);
   PathNode *nano_a3_3 = findSubnode(nano_a3_1, "3", BH_removed, BPOL_mirror, 1, 0);
   mustHaveDirectoryCached(nano_a3_3, &metadata->backup_history[1]);
 
@@ -1662,7 +1658,7 @@ static void runPhase12(SearchNode *phase_9_node)
   PathNode *nano_a3_1 = findSubnode(nano_a3, "1", BH_unchanged, BPOL_mirror, 1, 2);
   mustHaveDirectoryCached(nano_a3_1, &metadata->backup_history[2]);
   PathNode *nano_a3_2 = findSubnode(nano_a3_1, "2", BH_unchanged, BPOL_mirror, 1, 0);
-  mustHaveRegularCached(nano_a3_2, &metadata->backup_history[2], 11, (uint8_t *) "^foo$\n^bar$", 0);
+  mustHaveRegularCached(nano_a3_2, &metadata->backup_history[2], 11, (uint8_t *)"^foo$\n^bar$", 0);
   PathNode *nano_a3_3 = findSubnode(nano_a3_1, "3", BH_unchanged, BPOL_mirror, 1, 0);
   mustHaveDirectoryCached(nano_a3_3, &metadata->backup_history[2]);
 
@@ -1866,7 +1862,7 @@ static void runPhase13(SearchNode *phase_13_node)
   PathNode *nano_a3_1 = findSubnode(nano_a3, "1", BH_not_part_of_repository, BPOL_mirror, 1, 2);
   mustHaveDirectoryCached(nano_a3_1, &metadata->backup_history[1]);
   PathNode *nano_a3_2 = findSubnode(nano_a3_1, "2", BH_not_part_of_repository, BPOL_mirror, 1, 0);
-  mustHaveRegularCached(nano_a3_2, &metadata->backup_history[1], 11, (uint8_t *) "^foo$\n^bar$", 0);
+  mustHaveRegularCached(nano_a3_2, &metadata->backup_history[1], 11, (uint8_t *)"^foo$\n^bar$", 0);
   PathNode *nano_a3_3 = findSubnode(nano_a3_1, "3", BH_not_part_of_repository, BPOL_mirror, 1, 0);
   mustHaveDirectoryCached(nano_a3_3, &metadata->backup_history[1]);
 
@@ -1951,9 +1947,9 @@ static void runPhase14(SearchNode *phase_14_node)
   makeDir("tmp/files/c");
   makeDir("tmp/files/d");
   makeDir("tmp/files/d/3");
-  generateFile("tmp/files/a",   "This file is a", 1);
+  generateFile("tmp/files/a", "This file is a", 1);
   generateFile("tmp/files/d/1", "This file is 1", 1);
-  makeSymlink("/dev/null",      "tmp/files/b");
+  makeSymlink("/dev/null", "tmp/files/b");
   makeSymlink("invalid target", "tmp/files/d/2");
 
   /* Initiate the backup. */
@@ -1985,7 +1981,7 @@ static void runPhase14(SearchNode *phase_14_node)
   /* Finish the backup and perform additional checks. */
   completeBackup(metadata);
   assert_true(countItemsInDir("tmp/repo") == 1);
-  mustHaveRegularCached(a,   &metadata->current_backup, 14, (uint8_t *)"This file is a", 0);
+  mustHaveRegularCached(a, &metadata->current_backup, 14, (uint8_t *)"This file is a", 0);
   mustHaveRegularCached(d_1, &metadata->current_backup, 14, (uint8_t *)"This file is 1", 0);
 }
 
@@ -2089,44 +2085,39 @@ static void runPhaseCollision(SearchNode *phase_collision_node)
   makeDir("tmp/files/dir");
   makeDir("tmp/files/dir/a");
   makeDir("tmp/files/backup");
-  generateFile("tmp/files/dir/foo.txt",      "0",     27850);
-  generateFile("tmp/files/dir/bar.txt",      "ab",    1003);
-  generateFile("tmp/files/dir/a/1",          "@",     297);
-  generateFile("tmp/files/dir/a/2",          "ab",    1003);
-  generateFile("tmp/files/dir/a/test",       "???\n", 20);
-  generateFile("tmp/files/backup/important", "ab",    1003);
-  generateFile("tmp/files/backup/nano",      "%",     1572);
+  generateFile("tmp/files/dir/foo.txt", "0", 27850);
+  generateFile("tmp/files/dir/bar.txt", "ab", 1003);
+  generateFile("tmp/files/dir/a/1", "@", 297);
+  generateFile("tmp/files/dir/a/2", "ab", 1003);
+  generateFile("tmp/files/dir/a/test", "???\n", 20);
+  generateFile("tmp/files/backup/important", "ab", 1003);
+  generateFile("tmp/files/backup/nano", "%", 1572);
 
-  const uint8_t hash_1[] =
-  {
+  const uint8_t hash_1[] = {
     0xf4, 0x89, 0xac, 0xbd, 0xe8, 0x76, 0x95, 0xb9, 0x7c, 0x9b,
     0x58, 0x78, 0x2e, 0x6d, 0x94, 0x06, 0xeb, 0x90, 0x19, 0xe7,
   };
-  const uint8_t hash_3[] =
-  {
+  const uint8_t hash_3[] = {
     0x4d, 0x31, 0x16, 0x71, 0xf4, 0xda, 0xf9, 0xa2, 0x95, 0x9f,
     0x27, 0xbf, 0x9c, 0x34, 0x33, 0x23, 0x01, 0xcc, 0x8f, 0xe7,
   };
-  const uint8_t hash_19[] =
-  {
+  const uint8_t hash_19[] = {
     0xed, 0x67, 0xfe, 0x80, 0x85, 0xfc, 0x3a, 0x67, 0xb2, 0x10,
     0x8d, 0xde, 0x27, 0xf1, 0xf4, 0x69, 0x81, 0x92, 0xda, 0xac,
   };
-  const uint8_t hash_255[] =
-  {
+  const uint8_t hash_255[] = {
     0xcb, 0x91, 0x3e, 0x98, 0xa8, 0x0a, 0x55, 0x33, 0x7a, 0x33,
     0x8a, 0x42, 0x32, 0xbb, 0x8f, 0x7a, 0x76, 0x1a, 0xcc, 0xe1,
   };
-  const uint8_t hash_test[] =
-  {
+  const uint8_t hash_test[] = {
     0x6b, 0xee, 0x5d, 0xab, 0xcc, 0xab, 0x32, 0x12, 0x9e, 0x5d,
     0xd8, 0x82, 0x4b, 0x92, 0xb4, 0x18, 0x64, 0x0d, 0x91, 0xeb,
   };
 
-  generateCollidingFiles(hash_1,   27850, 1);
-  generateCollidingFiles(hash_3,   2006,  3);
-  generateCollidingFiles(hash_19,  297,   19);
-  generateCollidingFiles(hash_255, 1572,  255);
+  generateCollidingFiles(hash_1, 27850, 1);
+  generateCollidingFiles(hash_3, 2006, 3);
+  generateCollidingFiles(hash_19, 297, 19);
+  generateCollidingFiles(hash_255, 1572, 255);
 
   /* Initiate the backup. */
   Metadata *metadata = metadataNew();
@@ -2165,13 +2156,13 @@ static void runPhaseCollision(SearchNode *phase_collision_node)
   /* Finish backup and perform additional checks. */
   completeBackup(metadata);
   assert_true(countItemsInDir("tmp/repo") == 294);
-  mustHaveRegularStat(foo,       &metadata->current_backup, 27850, hash_1,    1);
-  mustHaveRegularStat(bar,       &metadata->current_backup, 2006,  hash_3,    3);
-  mustHaveRegularStat(a_1,       &metadata->current_backup, 297,   hash_19,   19);
-  mustHaveRegularStat(a_2,       &metadata->current_backup, 2006,  hash_3,    3);
-  mustHaveRegularStat(test,      &metadata->current_backup, 80,    hash_test, 0);
-  mustHaveRegularStat(important, &metadata->current_backup, 2006,  hash_3,    3);
-  mustHaveRegularStat(nano,      &metadata->current_backup, 1572,  hash_255,  255);
+  mustHaveRegularStat(foo, &metadata->current_backup, 27850, hash_1, 1);
+  mustHaveRegularStat(bar, &metadata->current_backup, 2006, hash_3, 3);
+  mustHaveRegularStat(a_1, &metadata->current_backup, 297, hash_19, 19);
+  mustHaveRegularStat(a_2, &metadata->current_backup, 2006, hash_3, 3);
+  mustHaveRegularStat(test, &metadata->current_backup, 80, hash_test, 0);
+  mustHaveRegularStat(important, &metadata->current_backup, 2006, hash_3, 3);
+  mustHaveRegularStat(nano, &metadata->current_backup, 1572, hash_255, 255);
 }
 
 /** Tests the handling of a hash collision slot overflow. */
@@ -2181,11 +2172,10 @@ static void runPhaseSlotOverflow(SearchNode *phase_collision_node)
   assertTmpIsCleared();
   makeDir("tmp/files/backup");
   makeDir("tmp/files/backup/a");
-  generateFile("tmp/files/backup/test", "x",  39);
-  generateFile("tmp/files/backup/a/b",  "[]", 107);
+  generateFile("tmp/files/backup/test", "x", 39);
+  generateFile("tmp/files/backup/a/b", "[]", 107);
 
-  const uint8_t hash_256[] =
-  {
+  const uint8_t hash_256[] = {
     0x00, 0x33, 0x90, 0x47, 0x97, 0xec, 0x01, 0x47, 0xf3, 0x2b,
     0x11, 0xe0, 0xd8, 0x9a, 0xf2, 0xfb, 0xf0, 0x00, 0x2b, 0xe2,
   };
@@ -2224,9 +2214,7 @@ static void runPhaseSlotOverflow(SearchNode *phase_collision_node)
   @param search_tree The search tree which should be passed to the test
   function.
 */
-static void phase(const char *test_name,
-                  void (*phase_fun)(SearchNode *),
-                  SearchNode *search_tree)
+static void phase(const char *test_name, void (*phase_fun)(SearchNode *), SearchNode *search_tree)
 {
   testGroupStart(test_name);
   phase_fun(search_tree);
@@ -2252,26 +2240,25 @@ int main(void)
   makeDir("tmp/files");
   testGroupEnd();
 
-  phase("initial backup",                                    runPhase1,  phase_1_node);
-  phase("discovering new files",                             runPhase2,  phase_1_node);
-  phase("removing files",                                    runPhase3,  phase_3_node);
-  phase("backup with no changes",                            runPhase4,  phase_4_node);
-  phase("generating nested files and directories",           runPhase5,  phase_5_node);
-  phase("recursive wiping of path nodes",                    runPhase6,  phase_6_node);
-  phase("generate more nested files",                        runPhase7,  phase_7_node);
-  phase("wiping of unneeded nodes",                          runPhase8,  phase_8_node);
-  phase("generate nested files with varying policies",       runPhase9,  phase_9_node);
+  phase("initial backup", runPhase1, phase_1_node);
+  phase("discovering new files", runPhase2, phase_1_node);
+  phase("removing files", runPhase3, phase_3_node);
+  phase("backup with no changes", runPhase4, phase_4_node);
+  phase("generating nested files and directories", runPhase5, phase_5_node);
+  phase("recursive wiping of path nodes", runPhase6, phase_6_node);
+  phase("generate more nested files", runPhase7, phase_7_node);
+  phase("wiping of unneeded nodes", runPhase8, phase_8_node);
+  phase("generate nested files with varying policies", runPhase9, phase_9_node);
   phase("recursive removing of paths with varying policies", runPhase10, phase_9_node);
 
   /* Create a backup of the current metadata. */
   time_t tmp_timestamp = sStat(strWrap("tmp")).st_mtime;
-  metadataWrite(metadataLoad(strWrap("tmp/repo/metadata")),
-                strWrap("tmp"), strWrap("tmp/tmp-file"),
+  metadataWrite(metadataLoad(strWrap("tmp/repo/metadata")), strWrap("tmp"), strWrap("tmp/tmp-file"),
                 strWrap("tmp/metadata-backup"));
   sUtime(strWrap("tmp"), tmp_timestamp);
 
   /* Run some backup phases. */
-  phase("backup with no changes",                        runPhase11, phase_9_node);
+  phase("backup with no changes", runPhase11, phase_9_node);
   phase("recreating nested files with varying policies", runPhase12, phase_9_node);
 
   /* Restore metadata from phase 10. */
@@ -2290,6 +2277,6 @@ int main(void)
 
   /* Run special backup phases. */
   SearchNode *phase_collision_node = searchTreeLoad(strWrap("generated-config-files/backup-phase-collision.txt"));
-  phase("file hash collision handling",     runPhaseCollision,    phase_collision_node);
+  phase("file hash collision handling", runPhaseCollision, phase_collision_node);
   phase("collision slot overflow handling", runPhaseSlotOverflow, phase_collision_node);
 }

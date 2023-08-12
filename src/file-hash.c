@@ -9,8 +9,8 @@
 #include "BLAKE2/blake2.h"
 #include "CRegion/alloc-growable.h"
 
-#include "safe-wrappers.h"
 #include "error-handling.h"
+#include "safe-wrappers.h"
 
 /** Calculates the hash of a file.
 
@@ -23,9 +23,9 @@
 */
 void fileHash(String path, struct stat stats, uint8_t *hash)
 {
-  size_t blocksize    = stats.st_blksize;
+  size_t blocksize = stats.st_blksize;
   uint64_t bytes_left = stats.st_size;
-  FileStream *stream  = sFopenRead(path);
+  FileStream *stream = sFopenRead(path);
 
   static unsigned char *buffer = NULL;
   buffer = CR_EnsureCapacity(buffer, blocksize);

@@ -5,9 +5,9 @@
 #ifndef NANO_BACKUP_SRC_INFORMATIONS_H
 #define NANO_BACKUP_SRC_INFORMATIONS_H
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdbool.h>
 
 #include "metadata.h"
 #include "search-tree.h"
@@ -20,7 +20,7 @@ typedef struct
 
   /** The size of all items affected by this change. */
   uint64_t size;
-}ChangeStats;
+} ChangeStats;
 
 /** Stores a shallow summary of the changes in a metadata tree. */
 typedef struct
@@ -37,12 +37,12 @@ typedef struct
   /** At least one node in the current list affects the modification
     timestamp of the parent directory. */
   bool affects_parent_timestamp;
-}MetadataChanges;
+} MetadataChanges;
 
 extern void printHumanReadableSize(uint64_t size);
 extern void printSearchTreeInfos(SearchNode *root_node);
-extern MetadataChanges printMetadataChanges(Metadata *metadata,
-                                            RegexList *summarize_expressions);
+extern MetadataChanges
+printMetadataChanges(Metadata *metadata, RegexList *summarize_expressions);
 extern bool containsChanges(MetadataChanges changes);
 extern void warnNodeMatches(SearchNode *node, String string);
 

@@ -28,9 +28,9 @@ struct Bucket
 
 struct StringTable
 {
-  CR_Region *region; /**< Region used by this table for allocations. */
-  Bucket **buckets; /**< An array of buckets. */
-  size_t capacity; /**< The amount of buckets in the String table. */
+  CR_Region *region;   /**< Region used by this table for allocations. */
+  Bucket **buckets;    /**< An array of buckets. */
+  size_t capacity;     /**< The amount of buckets in the String table. */
   size_t associations; /**< The amount of associations in the table. */
   uint8_t secret_key[16]; /**< Secret key for SipHash. */
 };
@@ -154,8 +154,8 @@ void *strTableGet(StringTable *table, String key)
     siphash((const uint8_t *)key.content, key.length, table->secret_key);
   const size_t bucket_id = hash % table->capacity;
 
-  for(Bucket *bucket = table->buckets[bucket_id];
-      bucket != NULL; bucket = bucket->next)
+  for(Bucket *bucket = table->buckets[bucket_id]; bucket != NULL;
+      bucket = bucket->next)
   {
     if(strEqual(key, bucket->key))
     {

@@ -4,9 +4,10 @@
 
 #include "string-table.h"
 
-#include "test.h"
 #include "error-handling.h"
+#include "test.h"
 
+/* clang-format off */
 static const char *zlib_license_chunks[] =
 {
   "original", "purpose,", "documentation", "use", "arising", "as", "",
@@ -40,6 +41,7 @@ static const char *lorem_ipsum_chunks[] =
   "Nam", "semper", "enim", "mi", "malesuada", "",
 };
 static const size_t lorem_count = sizeof(lorem_ipsum_chunks)/sizeof(void*);
+/* clang-format on */
 
 /** Tests the given table.
 
@@ -55,16 +57,14 @@ static void testStringTable(StringTable *table)
     String string = strWrap(zlib_license_chunks[index]);
     if(strTableGet(table, string) != NULL)
     {
-      die("string \"%s\" already exists in string table",
-          zlib_license_chunks[index]);
+      die("string \"%s\" already exists in string table", zlib_license_chunks[index]);
     }
 
     strTableMap(table, string, &lorem_ipsum_chunks[index]);
 
     if(strTableGet(table, string) != &lorem_ipsum_chunks[index])
     {
-      die("failed to map \"%s\" to \"%s\"", zlib_license_chunks[index],
-          lorem_ipsum_chunks[index]);
+      die("failed to map \"%s\" to \"%s\"", zlib_license_chunks[index], lorem_ipsum_chunks[index]);
     }
   }
 
@@ -75,8 +75,7 @@ static void testStringTable(StringTable *table)
 
     if(strTableGet(table, string) != &lorem_ipsum_chunks[index])
     {
-      die("\"%s\" was not mapped to \"%s\"", zlib_license_chunks[index],
-          lorem_ipsum_chunks[index]);
+      die("\"%s\" was not mapped to \"%s\"", zlib_license_chunks[index], lorem_ipsum_chunks[index]);
     }
   }
 

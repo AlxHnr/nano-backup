@@ -6,8 +6,8 @@
 
 #include <errno.h>
 #include <limits.h>
-#include <stdlib.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -41,7 +41,7 @@ static void checkReadDir(DIR *dir, const char *dir_path)
   assert_true(errno == 0);
 
   assert_true(dir_entry != NULL);
-  assert_true(strcmp(dir_entry->d_name, ".")  != 0);
+  assert_true(strcmp(dir_entry->d_name, ".") != 0);
   assert_true(strcmp(dir_entry->d_name, "..") != 0);
 }
 
@@ -127,8 +127,8 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("sPathExists()");
-  assert_error_errno(sPathExists(strWrap("empty.txt/foo")),
-                     "failed to check existence of \"empty.txt/foo\"", ENOTDIR);
+  assert_error_errno(sPathExists(strWrap("empty.txt/foo")), "failed to check existence of \"empty.txt/foo\"",
+                     ENOTDIR);
   assert_true(checkPathExists("empty.txt"));
   assert_true(checkPathExists("example.txt"));
   assert_true(checkPathExists("symlink.txt"));
@@ -149,8 +149,8 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("sStat()");
-  assert_error_errno(sStat(strWrap("non-existing-file.txt")),
-                     "failed to access \"non-existing-file.txt\"", ENOENT);
+  assert_error_errno(sStat(strWrap("non-existing-file.txt")), "failed to access \"non-existing-file.txt\"",
+                     ENOENT);
 
   struct stat example_stat = sStat(strWrap("symlink.txt"));
   assert_true(S_ISREG(example_stat.st_mode));
@@ -158,8 +158,8 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("sLStat()");
-  assert_error_errno(sLStat(strWrap("non-existing-file.txt")),
-                     "failed to access \"non-existing-file.txt\"", ENOENT);
+  assert_error_errno(sLStat(strWrap("non-existing-file.txt")), "failed to access \"non-existing-file.txt\"",
+                     ENOENT);
 
   example_stat = sLStat(strWrap("symlink.txt"));
   assert_true(!S_ISREG(example_stat.st_mode));
@@ -238,14 +238,15 @@ int main(void)
 
   testGroupStart("sGetFilesContent()");
   CR_Region *r = CR_RegionNew();
-  assert_error_errno(sGetFilesContent(r, strWrap("non-existing-file.txt")), "failed to "
-                     "access \"non-existing-file.txt\"", ENOENT);
+  assert_error_errno(sGetFilesContent(r, strWrap("non-existing-file.txt")),
+                     "failed to "
+                     "access \"non-existing-file.txt\"",
+                     ENOENT);
 
   FileContent example_content = sGetFilesContent(r, strWrap("example.txt"));
   assert_true(example_content.size == 25);
   assert_true(example_content.content != NULL);
-  assert_true(strncmp(example_content.content,
-                      "This is an example file.\n", 25) == 0);
+  assert_true(strncmp(example_content.content, "This is an example file.\n", 25) == 0);
 
   CR_RegionRelease(r);
   r = CR_RegionNew();
@@ -304,8 +305,7 @@ int main(void)
   CR_RegionRelease(r);
 
   /* Provoke errors by writing to a read-only stream. */
-  assert_error(sFwrite("hello", 5, sFopenRead(strWrap("example.txt"))),
-               "failed to write to \"example.txt\"");
+  assert_error(sFwrite("hello", 5, sFopenRead(strWrap("example.txt"))), "failed to write to \"example.txt\"");
 
   test_file = sFopenRead(strWrap("example.txt"));
   assert_true(Fwrite("hello", 5, test_file) == false);
@@ -318,8 +318,8 @@ int main(void)
   assert_true(sPathExists(strWrap("tmp/some-directory")));
   assert_true(S_ISDIR(sLStat(strWrap("tmp/some-directory")).st_mode));
 
-  assert_error_errno(sMkdir(strWrap("tmp/some-directory")),
-                     "failed to create directory: \"tmp/some-directory\"", EEXIST);
+  assert_error_errno(sMkdir(strWrap("tmp/some-directory")), "failed to create directory: \"tmp/some-directory\"",
+                     EEXIST);
   assert_error_errno(sMkdir(strWrap("tmp/non-existing/foo")),
                      "failed to create directory: \"tmp/non-existing/foo\"", ENOENT);
   testGroupEnd();
@@ -400,8 +400,9 @@ int main(void)
 
   sLChown(strWrap("tmp/dangling-symlink"), dangling_symlink_stat.st_uid, dangling_symlink_stat.st_gid);
 
-  assert_error_errno(sLChown(strWrap("tmp/non-existing"), dangling_symlink_stat.st_uid, dangling_symlink_stat.st_gid),
-                     "failed to change owner of \"tmp/non-existing\"", ENOENT);
+  assert_error_errno(
+    sLChown(strWrap("tmp/non-existing"), dangling_symlink_stat.st_uid, dangling_symlink_stat.st_gid),
+    "failed to change owner of \"tmp/non-existing\"", ENOENT);
   testGroupEnd();
 
   testGroupStart("sUtime()");
@@ -418,8 +419,8 @@ int main(void)
   sUtime(strWrap("tmp/test-symlink-1"), 12);
   assert_true(sLStat(strWrap("tmp/test-file-1")).st_mtime == 12);
 
-  assert_error_errno(sUtime(strWrap("tmp/non-existing"), 123),
-                     "failed to set timestamp of \"tmp/non-existing\"", ENOENT);
+  assert_error_errno(sUtime(strWrap("tmp/non-existing"), 123), "failed to set timestamp of \"tmp/non-existing\"",
+                     ENOENT);
   testGroupEnd();
 
   testGroupStart("sRemove()");
@@ -441,15 +442,13 @@ int main(void)
   sRemove(strWrap("tmp/dir-to-remove"));
   assert_true(sPathExists(strWrap("tmp/dir-to-remove")) == false);
 
-  assert_error_errno(sRemove(strWrap("tmp/non-existing")),
-                     "failed to remove \"tmp/non-existing\"", ENOENT);
-  assert_error_errno(sRemove(strWrap("tmp/non-existing-dir/foo")),
-                     "failed to remove \"tmp/non-existing-dir/foo\"", ENOENT);
+  assert_error_errno(sRemove(strWrap("tmp/non-existing")), "failed to remove \"tmp/non-existing\"", ENOENT);
+  assert_error_errno(sRemove(strWrap("tmp/non-existing-dir/foo")), "failed to remove \"tmp/non-existing-dir/foo\"",
+                     ENOENT);
 
   sMkdir(strWrap("tmp/non-empty-dir"));
   sFclose(sFopenWrite(strWrap("tmp/non-empty-dir/foo")));
-  assert_error_errno(sRemove(strWrap("tmp/non-empty-dir")),
-                     "failed to remove \"tmp/non-empty-dir\"", ENOTEMPTY);
+  assert_error_errno(sRemove(strWrap("tmp/non-empty-dir")), "failed to remove \"tmp/non-empty-dir\"", ENOTEMPTY);
 
   sRemove(strWrap("tmp/non-empty-dir/foo"));
   sRemove(strWrap("tmp/non-empty-dir"));
@@ -567,8 +566,7 @@ int main(void)
   assert_true(errno == 7);
 
 #if SIZE_MAX == UINT32_MAX
-  assert_error(sStringToSize(strWrap("4294967296")),
-               "value too large to convert to size: \"4294967296\"");
+  assert_error(sStringToSize(strWrap("4294967296")), "value too large to convert to size: \"4294967296\"");
 #elif SIZE_MAX == UINT64_MAX
   assert_true(sStringToSize(strWrap("9223372036854775807")) == 9223372036854775807);
   assert_true(errno == 7);
@@ -577,14 +575,10 @@ int main(void)
   assert_error(sStringToSize(strWrap("9223372036854775808")),
                "value too large to convert to size: \"9223372036854775808\"");
 
-  assert_error(sStringToSize(strWrap("-1")),
-               "unable to convert negative value to size: \"-1\"");
-  assert_error(sStringToSize(strWrap("-100964")),
-               "unable to convert negative value to size: \"-100964\"");
-  assert_error(sStringToSize(strWrap("-4294967295")),
-               "unable to convert negative value to size: \"-4294967295\"");
-  assert_error(sStringToSize(strWrap("-4294967296")),
-               "unable to convert negative value to size: \"-4294967296\"");
+  assert_error(sStringToSize(strWrap("-1")), "unable to convert negative value to size: \"-1\"");
+  assert_error(sStringToSize(strWrap("-100964")), "unable to convert negative value to size: \"-100964\"");
+  assert_error(sStringToSize(strWrap("-4294967295")), "unable to convert negative value to size: \"-4294967295\"");
+  assert_error(sStringToSize(strWrap("-4294967296")), "unable to convert negative value to size: \"-4294967296\"");
   assert_error(sStringToSize(strWrap("-9223372036854775807")),
                "unable to convert negative value to size: \"-9223372036854775807\"");
   assert_error(sStringToSize(strWrap("-9223372036854775808")),
@@ -594,12 +588,12 @@ int main(void)
   assert_error(sStringToSize(strWrap("-99999999999999999999")),
                "unable to convert negative value to size: \"-99999999999999999999\"");
 
-  assert_error(sStringToSize(strWrap("")),      "unable to convert to size: \"\"");
-  assert_error(sStringToSize(strWrap("foo")),   "unable to convert to size: \"foo\"");
+  assert_error(sStringToSize(strWrap("")), "unable to convert to size: \"\"");
+  assert_error(sStringToSize(strWrap("foo")), "unable to convert to size: \"foo\"");
   assert_error(sStringToSize(strWrap("  foo")), "unable to convert to size: \"  foo\"");
-  assert_error(sStringToSize(strWrap("ef68")),  "unable to convert to size: \"ef68\"");
-  assert_error(sStringToSize(strWrap("--1")),   "unable to convert to size: \"--1\"");
-  assert_error(sStringToSize(strWrap("++1")),   "unable to convert to size: \"++1\"");
+  assert_error(sStringToSize(strWrap("ef68")), "unable to convert to size: \"ef68\"");
+  assert_error(sStringToSize(strWrap("--1")), "unable to convert to size: \"--1\"");
+  assert_error(sStringToSize(strWrap("++1")), "unable to convert to size: \"++1\"");
   testGroupEnd();
 
   testGroupStart("sTime()");

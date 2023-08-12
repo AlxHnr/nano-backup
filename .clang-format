@@ -1,0 +1,18 @@
+---
+Language: Cpp
+BasedOnStyle: GNU
+ColumnLimit: 75
+
+AlignEscapedNewlines: DontAlign
+AlignOperands: DontAlign
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: OnlyFirstIf
+AlwaysBreakAfterDefinitionReturnType: None
+AlwaysBreakAfterReturnType: None
+BreakBeforeBinaryOperators: None
+BreakBeforeBraces: Allman
+ContinuationIndentWidth: 2
+IndentCaseLabels: true
+SpaceBeforeParens: Never
+...

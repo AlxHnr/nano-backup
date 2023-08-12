@@ -4,12 +4,12 @@
 
 #include "backup.h"
 
-#include "test.h"
+#include "backup-common.h"
 #include "metadata.h"
+#include "safe-wrappers.h"
 #include "search-tree.h"
 #include "test-common.h"
-#include "backup-common.h"
-#include "safe-wrappers.h"
+#include "test.h"
 
 /** Prepares policy change test from BPOL_none. */
 static void policyChangeFromNoneInit(SearchNode *change_from_none_init)
@@ -26,15 +26,15 @@ static void policyChangeFromNoneInit(SearchNode *change_from_none_init)
   makeDir("tmp/files/h");
   makeDir("tmp/files/h/1");
   makeDir("tmp/files/h/3");
-  generateFile("tmp/files/a/1",   "test file", 1);
-  generateFile("tmp/files/b/1",   "_123_",     1);
-  generateFile("tmp/files/c/1",   "abcdef",    1);
-  generateFile("tmp/files/d/1",   "foo-bar",   1);
-  generateFile("tmp/files/e/1",   "SomeFile",  1);
-  generateFile("tmp/files/f/1",   "somefile",  1);
-  generateFile("tmp/files/g/1",   "1 + 1 = 2", 1);
-  generateFile("tmp/files/h/1/2", ".",         5);
-  generateFile("tmp/files/h/3/4", "%",         11);
+  generateFile("tmp/files/a/1", "test file", 1);
+  generateFile("tmp/files/b/1", "_123_", 1);
+  generateFile("tmp/files/c/1", "abcdef", 1);
+  generateFile("tmp/files/d/1", "foo-bar", 1);
+  generateFile("tmp/files/e/1", "SomeFile", 1);
+  generateFile("tmp/files/f/1", "somefile", 1);
+  generateFile("tmp/files/g/1", "1 + 1 = 2", 1);
+  generateFile("tmp/files/h/1/2", ".", 5);
+  generateFile("tmp/files/h/3/4", "%", 11);
 
   /* Initiate the backup. */
   Metadata *metadata = metadataNew();
@@ -281,27 +281,27 @@ static void policyChangeFromCopyInit(SearchNode *change_from_copy_init)
   makeDir("tmp/files/r");
   makeDir("tmp/files/s");
   makeDir("tmp/files/s/2");
-  generateFile("tmp/files/a/1",   "file a content", 1);
-  generateFile("tmp/files/b",     "CONTENT",        1);
-  generateFile("tmp/files/c/1",   "foo",            1);
-  generateFile("tmp/files/e/1",   "nano backup",    1);
-  generateFile("tmp/files/f/1",   "BackupBackup",   1);
-  generateFile("tmp/files/f/2",   "Lorem Ipsum",    1);
-  generateFile("tmp/files/j/1",   "random string",  1);
-  generateFile("tmp/files/k",     "another string", 1);
-  generateFile("tmp/files/l/1",   "abc",            1);
-  generateFile("tmp/files/l/2",   "xyz",            1);
-  generateFile("tmp/files/l/3",   "123",            1);
-  generateFile("tmp/files/m",     "",               0);
-  generateFile("tmp/files/n/1",   "[]",             3);
-  generateFile("tmp/files/o/1",   "=",              12);
-  generateFile("tmp/files/p",     "FILE_CONTENT",   1);
-  generateFile("tmp/files/q/1",   "_CONTENT_",      1);
-  generateFile("tmp/files/q/2",   "_FILE_",         1);
-  generateFile("tmp/files/r/1",   "!@#$%^&*()_+",   1);
-  generateFile("tmp/files/r/2",   "_backup_",       1);
-  generateFile("tmp/files/s/1",   "abcdefghijkl",   1);
-  generateFile("tmp/files/s/2/3", "ABCDEF",         1);
+  generateFile("tmp/files/a/1", "file a content", 1);
+  generateFile("tmp/files/b", "CONTENT", 1);
+  generateFile("tmp/files/c/1", "foo", 1);
+  generateFile("tmp/files/e/1", "nano backup", 1);
+  generateFile("tmp/files/f/1", "BackupBackup", 1);
+  generateFile("tmp/files/f/2", "Lorem Ipsum", 1);
+  generateFile("tmp/files/j/1", "random string", 1);
+  generateFile("tmp/files/k", "another string", 1);
+  generateFile("tmp/files/l/1", "abc", 1);
+  generateFile("tmp/files/l/2", "xyz", 1);
+  generateFile("tmp/files/l/3", "123", 1);
+  generateFile("tmp/files/m", "", 0);
+  generateFile("tmp/files/n/1", "[]", 3);
+  generateFile("tmp/files/o/1", "=", 12);
+  generateFile("tmp/files/p", "FILE_CONTENT", 1);
+  generateFile("tmp/files/q/1", "_CONTENT_", 1);
+  generateFile("tmp/files/q/2", "_FILE_", 1);
+  generateFile("tmp/files/r/1", "!@#$%^&*()_+", 1);
+  generateFile("tmp/files/r/2", "_backup_", 1);
+  generateFile("tmp/files/s/1", "abcdefghijkl", 1);
+  generateFile("tmp/files/s/2/3", "ABCDEF", 1);
   makeSymlink("/dev/null", "tmp/files/h");
 
   /* Initiate the backup. */
@@ -660,19 +660,19 @@ static void policyChangeFromMirrorInit(SearchNode *change_from_mirror_init)
   makeDir("tmp/files/i/1");
   makeDir("tmp/files/i/3");
   makeDir("tmp/files/j");
-  generateFile("tmp/files/a/1/2", "",              0);
-  generateFile("tmp/files/b/1",   "random123",     1);
-  generateFile("tmp/files/b/2",   "Foo-Barbar",    1);
-  generateFile("tmp/files/c/1/2", "987654321",     1);
-  generateFile("tmp/files/d",     "some text",     1);
-  generateFile("tmp/files/e/1",   "tmp/files/e/1", 1);
-  generateFile("tmp/files/f",     "... Files_e_1", 1);
-  generateFile("tmp/files/g",     "",              0);
-  generateFile("tmp/files/h/1",   "0",             4);
-  generateFile("tmp/files/i/1/2", "x",             20);
-  generateFile("tmp/files/i/2",   "%",             10);
-  generateFile("tmp/files/i/3/1", "insert text",   1);
-  generateFile("tmp/files/j/1",   "void",          1);
+  generateFile("tmp/files/a/1/2", "", 0);
+  generateFile("tmp/files/b/1", "random123", 1);
+  generateFile("tmp/files/b/2", "Foo-Barbar", 1);
+  generateFile("tmp/files/c/1/2", "987654321", 1);
+  generateFile("tmp/files/d", "some text", 1);
+  generateFile("tmp/files/e/1", "tmp/files/e/1", 1);
+  generateFile("tmp/files/f", "... Files_e_1", 1);
+  generateFile("tmp/files/g", "", 0);
+  generateFile("tmp/files/h/1", "0", 4);
+  generateFile("tmp/files/i/1/2", "x", 20);
+  generateFile("tmp/files/i/2", "%", 10);
+  generateFile("tmp/files/i/3/1", "insert text", 1);
+  generateFile("tmp/files/j/1", "void", 1);
 
   /* Initiate the backup. */
   Metadata *metadata = metadataNew();
@@ -935,23 +935,23 @@ static void policyChangeFromTrackInit0(SearchNode *change_from_track_init)
   makeDir("tmp/files/m/1");
   makeDir("tmp/files/n");
   makeDir("tmp/files/o");
-  generateFile("tmp/files/a/1",   " RANDOM ",           1);
-  generateFile("tmp/files/b/1",   "_nano_",             1);
-  generateFile("tmp/files/c/1",   "",                   0);
-  generateFile("tmp/files/d/1/2", "NanoBackup",         1);
-  generateFile("tmp/files/e",     "nb repo/ gc",        1);
-  generateFile("tmp/files/f/1",   "nb backup/",         1);
+  generateFile("tmp/files/a/1", " RANDOM ", 1);
+  generateFile("tmp/files/b/1", "_nano_", 1);
+  generateFile("tmp/files/c/1", "", 0);
+  generateFile("tmp/files/d/1/2", "NanoBackup", 1);
+  generateFile("tmp/files/e", "nb repo/ gc", 1);
+  generateFile("tmp/files/f/1", "nb backup/", 1);
   sUtime(strWrap("tmp/files/f/1"), 19);
-  generateFile("tmp/files/g/1",   "",                   0);
-  generateFile("tmp/files/h/1/2", "__REMOVED__",        1);
-  generateFile("tmp/files/i/1",   "-file-",             1);
-  generateFile("tmp/files/j/1",   "abcdefghijkl",       1);
-  generateFile("tmp/files/k",     "ABCDEF 123",         1);
-  generateFile("tmp/files/l/1",   "regular file",       1);
-  generateFile("tmp/files/m/1/2", "",                   0);
-  generateFile("tmp/files/o/1",   "TEXT FILE",          1);
-  generateFile("tmp/files/o/2",   "Another dummy file", 1);
-  generateFile("tmp/files/p",     "x",                  20);
+  generateFile("tmp/files/g/1", "", 0);
+  generateFile("tmp/files/h/1/2", "__REMOVED__", 1);
+  generateFile("tmp/files/i/1", "-file-", 1);
+  generateFile("tmp/files/j/1", "abcdefghijkl", 1);
+  generateFile("tmp/files/k", "ABCDEF 123", 1);
+  generateFile("tmp/files/l/1", "regular file", 1);
+  generateFile("tmp/files/m/1/2", "", 0);
+  generateFile("tmp/files/o/1", "TEXT FILE", 1);
+  generateFile("tmp/files/o/2", "Another dummy file", 1);
+  generateFile("tmp/files/p", "x", 20);
   makeSymlink("1", "tmp/files/c/2");
   makeSymlink("/dev/null", "tmp/files/h/1/4");
 
@@ -998,7 +998,7 @@ static void policyChangeFromTrackInit0(SearchNode *change_from_track_init)
   cachedStat(h_1->path, sStat);
   cachedStat(findSubnode(h_1, "2", BH_added, BPOL_track, 1, 0)->path, sStat);
   cachedStat(findSubnode(h_1, "4", BH_added, BPOL_mirror, 1, 0)->path, sLStat);
-  cachedStat(findSubnode(h,   "5", BH_added, BPOL_copy, 1, 0)->path, sStat);
+  cachedStat(findSubnode(h, "5", BH_added, BPOL_copy, 1, 0)->path, sStat);
 
   PathNode *i = findSubnode(files, "i", BH_added, BPOL_track, 1, 1);
   cachedStat(i->path, sStat);
@@ -1070,11 +1070,11 @@ static void policyChangeFromTrackInit1(SearchNode *change_from_track_init)
   makeDir("tmp/files/p");
   sUtime(strWrap("tmp/files/p"), 139);
   makeDir("tmp/files/p/1");
-  generateFile("tmp/files/d",       "?",                17);
-  generateFile("tmp/files/e/1",     "backup tool",      1);
-  generateFile("tmp/files/e/2",     "__BACKUP__TOOL__", 1);
+  generateFile("tmp/files/d", "?", 17);
+  generateFile("tmp/files/e/1", "backup tool", 1);
+  generateFile("tmp/files/e/2", "__BACKUP__TOOL__", 1);
   generateFile("tmp/files/h/1/2/3", "This is a file\n", 1);
-  generateFile("tmp/files/o",       "file content",     1);
+  generateFile("tmp/files/o", "file content", 1);
   sUtime(strWrap("tmp/files/o"), 567123);
   makeSymlink("non-existing.txt", "tmp/files/p/1/2");
   sUtime(strWrap("tmp/files/f"), 17288);
@@ -1095,7 +1095,7 @@ static void policyChangeFromTrackInit1(SearchNode *change_from_track_init)
 
   /* Populate stat cache. */
   setStatCache(1);
-  PathNode* files = findFilesNode(metadata, BH_unchanged, 16);
+  PathNode *files = findFilesNode(metadata, BH_unchanged, 16);
 
   cachedStat(findSubnode(files, "d", BH_directory_to_regular, BPOL_track, 2, 1)->path, sStat);
 
@@ -1108,7 +1108,7 @@ static void policyChangeFromTrackInit1(SearchNode *change_from_track_init)
 
   PathNode *h = findSubnode(files, "h", BH_timestamp_changed, BPOL_track, 2, 2);
   cachedStat(h->path, sStat);
-  PathNode *h_1 = findSubnode(h,   "1", BH_unchanged, BPOL_track, 1, 2);
+  PathNode *h_1 = findSubnode(h, "1", BH_unchanged, BPOL_track, 1, 2);
   PathNode *h_2 = findSubnode(h_1, "2", BH_regular_to_directory, BPOL_track, 2, 1);
   cachedStat(h_2->path, sStat);
   cachedStat(findSubnode(h_2, "3", BH_added, BPOL_track, 1, 0)->path, sStat);
@@ -1174,7 +1174,7 @@ static void policyChangeFromTrackInit2(SearchNode *change_from_track_init)
 
   /* Populate stat cache. */
   setStatCache(2);
-  PathNode* files = findFilesNode(metadata, BH_unchanged, 16);
+  PathNode *files = findFilesNode(metadata, BH_unchanged, 16);
   cachedStat(findSubnode(files, "h", BH_directory_to_regular, BPOL_track, 3, 2)->path, sStat);
 
   /* Finish backup. */
@@ -1418,7 +1418,8 @@ static void policyChangeFromTrackChange(SearchNode *change_from_track_final)
   mustHaveNonExisting(b_1, &metadata->backup_history[2]);
   mustHaveRegularCached(b_1, &metadata->backup_history[3], 6, (uint8_t *)"_nano_", 0);
 
-  PathNode *c = findSubnode(files, "c", BH_not_part_of_repository | BH_policy_changed | BH_loses_history, BPOL_none, 1, 2);
+  PathNode *c =
+    findSubnode(files, "c", BH_not_part_of_repository | BH_policy_changed | BH_loses_history, BPOL_none, 1, 2);
   mustHaveRegularStat(c, &metadata->current_backup, 16, (uint8_t *)"generated file c", 0);
   PathNode *c_1 = findSubnode(c, "1", BH_not_part_of_repository, BPOL_track, 2, 0);
   mustHaveNonExisting(c_1, &metadata->backup_history[2]);
@@ -1427,7 +1428,8 @@ static void policyChangeFromTrackChange(SearchNode *change_from_track_final)
   mustHaveNonExisting(c_2, &metadata->backup_history[2]);
   mustHaveSymlinkLCached(c_2, &metadata->backup_history[3], "1");
 
-  PathNode *d = findSubnode(files, "d", BH_not_part_of_repository | BH_policy_changed | BH_loses_history, BPOL_none, 1, 1);
+  PathNode *d =
+    findSubnode(files, "d", BH_not_part_of_repository | BH_policy_changed | BH_loses_history, BPOL_none, 1, 1);
   setStatCache(1);
   mustHaveRegularCached(d, &metadata->backup_history[2], 17, (uint8_t *)"?????????????????", 0);
   PathNode *d_1 = findSubnode(d, "1", BH_not_part_of_repository, BPOL_track, 2, 1);
@@ -1641,8 +1643,10 @@ int main(void)
   initBackupCommon(3);
 
   testGroupStart("policy change from none");
-  SearchNode *change_from_none_init  = searchTreeLoad(strWrap("generated-config-files/policy-change-from-none-init.txt"));
-  SearchNode *change_from_none_final = searchTreeLoad(strWrap("generated-config-files/policy-change-from-none-final.txt"));
+  SearchNode *change_from_none_init =
+    searchTreeLoad(strWrap("generated-config-files/policy-change-from-none-init.txt"));
+  SearchNode *change_from_none_final =
+    searchTreeLoad(strWrap("generated-config-files/policy-change-from-none-final.txt"));
 
   policyChangeFromNoneInit(change_from_none_init);
   policyChangeFromNoneChange(change_from_none_final);
@@ -1650,8 +1654,10 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("policy change from copy");
-  SearchNode *change_from_copy_init  = searchTreeLoad(strWrap("generated-config-files/policy-change-from-copy-init.txt"));
-  SearchNode *change_from_copy_final = searchTreeLoad(strWrap("generated-config-files/policy-change-from-copy-final.txt"));
+  SearchNode *change_from_copy_init =
+    searchTreeLoad(strWrap("generated-config-files/policy-change-from-copy-init.txt"));
+  SearchNode *change_from_copy_final =
+    searchTreeLoad(strWrap("generated-config-files/policy-change-from-copy-final.txt"));
 
   policyChangeFromCopyInit(change_from_copy_init);
   policyChangeFromCopyChange(change_from_copy_final);
@@ -1659,8 +1665,10 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("policy change from mirror");
-  SearchNode *change_from_mirror_init  = searchTreeLoad(strWrap("generated-config-files/policy-change-from-mirror-init.txt"));
-  SearchNode *change_from_mirror_final = searchTreeLoad(strWrap("generated-config-files/policy-change-from-mirror-final.txt"));
+  SearchNode *change_from_mirror_init =
+    searchTreeLoad(strWrap("generated-config-files/policy-change-from-mirror-init.txt"));
+  SearchNode *change_from_mirror_final =
+    searchTreeLoad(strWrap("generated-config-files/policy-change-from-mirror-final.txt"));
 
   policyChangeFromMirrorInit(change_from_mirror_init);
   policyChangeFromMirrorChange(change_from_mirror_final);
@@ -1668,8 +1676,10 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("policy change from track");
-  SearchNode *change_from_track_init  = searchTreeLoad(strWrap("generated-config-files/policy-change-from-track-init.txt"));
-  SearchNode *change_from_track_final = searchTreeLoad(strWrap("generated-config-files/policy-change-from-track-final.txt"));
+  SearchNode *change_from_track_init =
+    searchTreeLoad(strWrap("generated-config-files/policy-change-from-track-init.txt"));
+  SearchNode *change_from_track_final =
+    searchTreeLoad(strWrap("generated-config-files/policy-change-from-track-final.txt"));
 
   policyChangeFromTrackInit0(change_from_track_init);
   policyChangeFromTrackInit1(change_from_track_init);

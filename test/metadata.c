@@ -8,13 +8,13 @@
 
 #include "CRegion/global-region.h"
 
-#include "test.h"
+#include "error-handling.h"
 #include "file-hash.h"
-#include "test-common.h"
 #include "memory-pool.h"
 #include "safe-math.h"
 #include "safe-wrappers.h"
-#include "error-handling.h"
+#include "test-common.h"
+#include "test.h"
 
 /** Writes the given metadata to the temporary test directory.
 
@@ -22,8 +22,7 @@
 */
 static void writeMetadataToTmpDir(Metadata *metadata)
 {
-  metadataWrite(metadata, strWrap("tmp"), strWrap("tmp/tmp-file"),
-                strWrap("tmp/metadata"));
+  metadataWrite(metadata, strWrap("tmp"), strWrap("tmp/tmp-file"), strWrap("tmp/metadata"));
 }
 
 /** Initializes a history point.
@@ -34,8 +33,7 @@ static void writeMetadataToTmpDir(Metadata *metadata)
   @param id The backup id which should be assigned to the point.
   @param timestamp The timestamp to be assigned to the point.
 */
-static void initHistPoint(Metadata *metadata, size_t index,
-                          size_t id, time_t timestamp)
+static void initHistPoint(Metadata *metadata, size_t index, size_t id, time_t timestamp)
 {
   metadata->backup_history[index].id = id;
   metadata->backup_history[index].timestamp = timestamp;
@@ -54,8 +52,8 @@ static void initHistPoint(Metadata *metadata, size_t index,
 
   @return A new node which should not be freed by the caller.
 */
-static PathNode *createPathNode(const char *path_str, BackupPolicy policy,
-                                PathNode *parent_node, Metadata *metadata)
+static PathNode *createPathNode(const char *path_str, BackupPolicy policy, PathNode *parent_node,
+                                Metadata *metadata)
 {
   PathNode *node = mpAlloc(sizeof *node);
 
@@ -88,12 +86,10 @@ static PathNode *createPathNode(const char *path_str, BackupPolicy policy,
 
 /** Wrapper around findPathNode(). It is almost identical, but doesn't take
   a PathNodeHint. */
-static PathNode *findNode(PathNode *start_node, const char *path_str,
-                          BackupPolicy policy, size_t history_length,
+static PathNode *findNode(PathNode *start_node, const char *path_str, BackupPolicy policy, size_t history_length,
                           size_t subnode_count)
 {
-  return findPathNode(start_node, path_str, BH_none, policy,
-                      history_length, subnode_count);
+  return findPathNode(start_node, path_str, BH_none, policy, history_length, subnode_count);
 }
 
 /** Appends a new history point to the given node.
@@ -140,13 +136,12 @@ static void appendHist(PathNode *node, Backup *backup, PathState state)
   @param slot The slot number of the file in the repository. Will be
   ignored if the files size is not greater than FILE_HASH_SIZE.
 */
-static void assignRegularValues(PathState *state, mode_t mode,
-                                time_t timestamp, uint64_t size,
-                                uint8_t *hash ,uint8_t slot)
+static void assignRegularValues(PathState *state, mode_t mode, time_t timestamp, uint64_t size, uint8_t *hash,
+                                uint8_t slot)
 {
-  state->metadata.reg.mode      = mode;
+  state->metadata.reg.mode = mode;
   state->metadata.reg.timestamp = timestamp;
-  state->metadata.reg.size      = size;
+  state->metadata.reg.size = size;
 
   if(size > FILE_HASH_SIZE)
   {
@@ -180,12 +175,10 @@ static void appendHistNonExisting(PathNode *node, Backup *backup)
   @param slot The slot number of the corresponding file in the repository.
   Will be ignored if the file size is not bigger than FILE_HASH_SIZE.
 */
-static void appendHistRegular(PathNode *node, Backup *backup, uid_t uid,
-                              gid_t gid, time_t timestamp, mode_t mode,
+static void appendHistRegular(PathNode *node, Backup *backup, uid_t uid, gid_t gid, time_t timestamp, mode_t mode,
                               uint64_t size, uint8_t *hash, uint8_t slot)
 {
-  PathState state =
-  {
+  PathState state = {
     .type = PST_regular,
     .uid = uid,
     .gid = gid,
@@ -203,11 +196,9 @@ static void appendHistRegular(PathNode *node, Backup *backup, uid_t uid,
   point will keep a reference to this string, so make sure not to mutate it
   as long as the history point is in use.
 */
-static void appendHistSymlink(PathNode *node, Backup *backup, uid_t uid,
-                              gid_t gid, const char *sym_target)
+static void appendHistSymlink(PathNode *node, Backup *backup, uid_t uid, gid_t gid, const char *sym_target)
 {
-  PathState state =
-  {
+  PathState state = {
     .type = PST_symlink,
     .uid = uid,
     .gid = gid,
@@ -218,11 +209,10 @@ static void appendHistSymlink(PathNode *node, Backup *backup, uid_t uid,
 }
 
 /** Like appendHistRegular(), but for a directory. */
-static void appendHistDirectory(PathNode *node, Backup *backup, uid_t uid,
-                                gid_t gid, time_t timestamp, mode_t mode)
+static void appendHistDirectory(PathNode *node, Backup *backup, uid_t uid, gid_t gid, time_t timestamp,
+                                mode_t mode)
 {
-  PathState state =
-  {
+  PathState state = {
     .type = PST_directory,
     .uid = uid,
     .gid = gid,
@@ -245,8 +235,7 @@ static void appendHistDirectory(PathNode *node, Backup *backup, uid_t uid,
   @param slot The slot number of the corresponding file in the repository.
   Will be ignored if the file size is not greater than FILE_HASH_SIZE.
 */
-static void appendConfHist(Metadata *metadata, Backup *backup,
-                           uint64_t size, uint8_t *hash, uint8_t slot)
+static void appendConfHist(Metadata *metadata, Backup *backup, uint64_t size, uint8_t *hash, uint8_t slot)
 {
   PathHistory *history_point = mpAlloc(sizeof *history_point);
 
@@ -300,8 +289,7 @@ static Metadata *createEmptyMetadata(size_t backup_history_length)
   else
   {
     metadata->backup_history =
-      mpAlloc(sSizeMul(sizeof *metadata->backup_history,
-                       metadata->backup_history_length));
+      mpAlloc(sSizeMul(sizeof *metadata->backup_history, metadata->backup_history_length));
   }
 
   metadata->config_history = NULL;
@@ -324,10 +312,8 @@ static Metadata *genTestData1(void)
   initHistPoint(metadata, 2, 2, 7890);
   initHistPoint(metadata, 3, 3, 9876);
 
-  appendConfHist(metadata, &metadata->backup_history[1],
-                 131, (uint8_t *)"9a2c1f8130eb0cdef201", 0);
-  appendConfHist(metadata, &metadata->backup_history[3],
-                 21,  (uint8_t *)"f8130eb0cdef2019a2c1", 98);
+  appendConfHist(metadata, &metadata->backup_history[1], 131, (uint8_t *)"9a2c1f8130eb0cdef201", 0);
+  appendConfHist(metadata, &metadata->backup_history[3], 21, (uint8_t *)"f8130eb0cdef2019a2c1", 98);
 
   PathNode *etc = createPathNode("etc", BPOL_none, NULL, metadata);
   appendHistDirectory(etc, &metadata->backup_history[3], 12, 8, INT32_MAX, 0777);
@@ -336,26 +322,22 @@ static Metadata *genTestData1(void)
   PathNode *conf_d = createPathNode("conf.d", BPOL_none, etc, metadata);
   appendHistDirectory(conf_d, &metadata->backup_history[3], 3, 5, 102934, 0123);
 
-  appendHistRegular(createPathNode("foo", BPOL_mirror, conf_d, metadata),
-                    &metadata->backup_history[3], 91, 47, 680123, 0223, 20,
-                    (uint8_t *)"66f69cd1998e54ae5533", 122);
+  appendHistRegular(createPathNode("foo", BPOL_mirror, conf_d, metadata), &metadata->backup_history[3], 91, 47,
+                    680123, 0223, 20, (uint8_t *)"66f69cd1998e54ae5533", 122);
 
-  appendHistRegular(createPathNode("bar", BPOL_mirror, conf_d, metadata),
-                    &metadata->backup_history[2], 89, 20, 310487, 0523, 48,
-                    (uint8_t *)"fffffcd1998e54ae5a70", 12);
+  appendHistRegular(createPathNode("bar", BPOL_mirror, conf_d, metadata), &metadata->backup_history[2], 89, 20,
+                    310487, 0523, 48, (uint8_t *)"fffffcd1998e54ae5a70", 12);
 
   PathNode *portage = createPathNode("portage", BPOL_track, etc, metadata);
   appendHistDirectory(portage, &metadata->backup_history[2], 89, 98, 91234, 0321);
-  appendHistDirectory(portage, &metadata->backup_history[3], 7,  19, 12837, 0666);
+  appendHistDirectory(portage, &metadata->backup_history[3], 7, 19, 12837, 0666);
 
-  PathNode *make_conf =
-    createPathNode("make.conf", BPOL_track, portage, metadata);
+  PathNode *make_conf = createPathNode("make.conf", BPOL_track, portage, metadata);
 
-  appendHistSymlink(make_conf, &metadata->backup_history[0], 59, 23,
-                    "make.conf.backup");
+  appendHistSymlink(make_conf, &metadata->backup_history[0], 59, 23, "make.conf.backup");
   appendHistNonExisting(make_conf, &metadata->backup_history[2]);
-  appendHistRegular(make_conf, &metadata->backup_history[3], 3, 4, 53238,
-                    0713, 192, (uint8_t *)"e78863d5e021dd60c1a2", 0);
+  appendHistRegular(make_conf, &metadata->backup_history[3], 3, 4, 53238, 0713, 192,
+                    (uint8_t *)"e78863d5e021dd60c1a2", 0);
 
   return metadata;
 }
@@ -375,10 +357,8 @@ static void checkTestData1(Metadata *metadata)
   checkHistPoint(metadata, 2, 2, 7890, 3);
   checkHistPoint(metadata, 3, 3, 9876, 6);
 
-  mustHaveConf(metadata, &metadata->backup_history[1], 131,
-               (uint8_t *)"9a2c1f8130eb0cdef201", 0);
-  mustHaveConf(metadata, &metadata->backup_history[3], 21,
-               (uint8_t *)"f8130eb0cdef2019a2c1", 98);
+  mustHaveConf(metadata, &metadata->backup_history[1], 131, (uint8_t *)"9a2c1f8130eb0cdef201", 0);
+  mustHaveConf(metadata, &metadata->backup_history[3], 21, (uint8_t *)"f8130eb0cdef2019a2c1", 98);
 
   assert_true(metadata->total_path_count == 6);
 
@@ -389,24 +369,22 @@ static void checkTestData1(Metadata *metadata)
   mustHaveDirectory(conf_d, &metadata->backup_history[3], 3, 5, 102934, 0123);
 
   PathNode *foo = findNode(conf_d->subnodes, "/etc/conf.d/foo", BPOL_mirror, 1, 0);
-  mustHaveRegular(foo, &metadata->backup_history[3], 91, 47, 680123, 0223,
-                  20, (uint8_t *)"66f69cd1998e54ae5533", 48);
+  mustHaveRegular(foo, &metadata->backup_history[3], 91, 47, 680123, 0223, 20, (uint8_t *)"66f69cd1998e54ae5533",
+                  48);
 
   PathNode *bar = findNode(conf_d->subnodes, "/etc/conf.d/bar", BPOL_mirror, 1, 0);
-  mustHaveRegular(bar, &metadata->backup_history[2], 89, 20, 310487, 0523,
-                  48, (uint8_t *)"fffffcd1998e54ae5a70", 12);
+  mustHaveRegular(bar, &metadata->backup_history[2], 89, 20, 310487, 0523, 48, (uint8_t *)"fffffcd1998e54ae5a70",
+                  12);
 
   PathNode *portage = findNode(etc->subnodes, "/etc/portage", BPOL_track, 2, 1);
   mustHaveDirectory(portage, &metadata->backup_history[2], 89, 98, 91234, 0321);
-  mustHaveDirectory(portage, &metadata->backup_history[3], 7,  19, 12837, 0666);
+  mustHaveDirectory(portage, &metadata->backup_history[3], 7, 19, 12837, 0666);
 
-  PathNode *make_conf =
-    findNode(portage->subnodes, "/etc/portage/make.conf", BPOL_track, 3, 0);
-  mustHaveSymlink(make_conf, &metadata->backup_history[0],
-                  59, 23, "make.conf.backup");
+  PathNode *make_conf = findNode(portage->subnodes, "/etc/portage/make.conf", BPOL_track, 3, 0);
+  mustHaveSymlink(make_conf, &metadata->backup_history[0], 59, 23, "make.conf.backup");
   mustHaveNonExisting(make_conf, &metadata->backup_history[2]);
-  mustHaveRegular(make_conf, &metadata->backup_history[3], 3, 4, 53238,
-                  0713, 192, (uint8_t *)"e78863d5e021dd60c1a2", 0);
+  mustHaveRegular(make_conf, &metadata->backup_history[3], 3, 4, 53238, 0713, 192,
+                  (uint8_t *)"e78863d5e021dd60c1a2", 0);
 }
 
 /** Generates test metadata, that can be tested with checkTestData2().
@@ -420,22 +398,21 @@ static Metadata *genTestData2(void)
   initHistPoint(metadata, 1, 1, 2645);
   initHistPoint(metadata, 2, 2, 9742);
 
-  appendConfHist(metadata, &metadata->backup_history[2],
-                 210, (uint8_t *)"0cdef2019a2c1f8130eb", 255);
+  appendConfHist(metadata, &metadata->backup_history[2], 210, (uint8_t *)"0cdef2019a2c1f8130eb", 255);
 
   PathNode *home = createPathNode("home", BPOL_none, NULL, metadata);
-  appendHistDirectory(home, &metadata->backup_history[2], 0, 0,  12878, 0755);
+  appendHistDirectory(home, &metadata->backup_history[2], 0, 0, 12878, 0755);
   metadata->paths = home;
 
   PathNode *user = createPathNode("user", BPOL_mirror, home, metadata);
   appendHistDirectory(user, &metadata->backup_history[0], 1000, 75, 120948, 0600);
 
   PathNode *bashrc = createPathNode(".bashrc", BPOL_track, user, metadata);
-  appendHistRegular(bashrc, &metadata->backup_history[0], 983, 57, 1920,
-                    0655, 1, (uint8_t *)"8130eb0cdef2019a2c1f", 255);
+  appendHistRegular(bashrc, &metadata->backup_history[0], 983, 57, 1920, 0655, 1,
+                    (uint8_t *)"8130eb0cdef2019a2c1f", 255);
   appendHistNonExisting(bashrc, &metadata->backup_history[1]);
-  appendHistRegular(bashrc, &metadata->backup_history[2], 1000, 75, 9348,
-                    0755, 252, (uint8_t *)"cdef2019a2c1f8130eb0", 43);
+  appendHistRegular(bashrc, &metadata->backup_history[2], 1000, 75, 9348, 0755, 252,
+                    (uint8_t *)"cdef2019a2c1f8130eb0", 43);
 
   PathNode *config = createPathNode(".config", BPOL_track, user, metadata);
   appendHistDirectory(config, &metadata->backup_history[0], 783, 192, INT32_MIN, 0575);
@@ -463,8 +440,7 @@ static void checkTestData2(Metadata *metadata)
   checkHistPoint(metadata, 1, 1, 2645, 2);
   checkHistPoint(metadata, 2, 2, 9742, 3);
 
-  mustHaveConf(metadata, &metadata->backup_history[2], 210,
-               (uint8_t *)"0cdef2019a2c1f8130eb", 255);
+  mustHaveConf(metadata, &metadata->backup_history[2], 210, (uint8_t *)"0cdef2019a2c1f8130eb", 255);
 
   assert_true(metadata->total_path_count == 5);
 
@@ -475,11 +451,11 @@ static void checkTestData2(Metadata *metadata)
   mustHaveDirectory(user, &metadata->backup_history[0], 1000, 75, 120948, 0600);
 
   PathNode *bashrc = findNode(user->subnodes, "/home/user/.bashrc", BPOL_track, 3, 0);
-  mustHaveRegular(bashrc, &metadata->backup_history[0], 983, 57, 1920,
-                  0655, 1, (uint8_t *)"8???????????????????", 19);
+  mustHaveRegular(bashrc, &metadata->backup_history[0], 983, 57, 1920, 0655, 1, (uint8_t *)"8???????????????????",
+                  19);
   mustHaveNonExisting(bashrc, &metadata->backup_history[1]);
-  mustHaveRegular(bashrc, &metadata->backup_history[2], 1000, 75, 9348,
-                  0755, 252, (uint8_t *)"cdef2019a2c1f8130eb0", 43);
+  mustHaveRegular(bashrc, &metadata->backup_history[2], 1000, 75, 9348, 0755, 252,
+                  (uint8_t *)"cdef2019a2c1f8130eb0", 43);
 
   PathNode *config = findNode(user->subnodes, "/home/user/.config", BPOL_track, 1, 0);
   mustHaveDirectory(config, &metadata->backup_history[0], 783, 192, INT32_MIN, 0575);
@@ -505,19 +481,18 @@ static Metadata *genUnusedBackupPoints(void)
   initHistPoint(metadata, 4, 4, 54111);
   initHistPoint(metadata, 5, 5, 47622);
 
-  appendConfHist(metadata, &metadata->backup_history[1],
-                 3, (uint8_t *)"fbc92e19ee0cd2140faa", 0);
+  appendConfHist(metadata, &metadata->backup_history[1], 3, (uint8_t *)"fbc92e19ee0cd2140faa", 0);
 
   PathNode *home = createPathNode("home", BPOL_none, NULL, metadata);
-  appendHistDirectory(home, &metadata->backup_history[1], 0, 0,  12878, 0755);
+  appendHistDirectory(home, &metadata->backup_history[1], 0, 0, 12878, 0755);
   metadata->paths = home;
 
   PathNode *user = createPathNode("user", BPOL_mirror, home, metadata);
   appendHistDirectory(user, &metadata->backup_history[3], 1000, 75, 120948, 0600);
 
   PathNode *bashrc = createPathNode(".bashrc", BPOL_track, user, metadata);
-  appendHistRegular(bashrc, &metadata->backup_history[1], 983, 57, 1920,
-                    0655, 0, (uint8_t *)"8130eb0cdef2019a2c1f", 1);
+  appendHistRegular(bashrc, &metadata->backup_history[1], 983, 57, 1920, 0655, 0,
+                    (uint8_t *)"8130eb0cdef2019a2c1f", 1);
   appendHistNonExisting(bashrc, &metadata->backup_history[4]);
 
   PathNode *config = createPathNode(".config", BPOL_track, user, metadata);
@@ -535,11 +510,10 @@ static void checkLoadedUnusedBackupPoints(Metadata *metadata)
   assert_true(metadata->backup_history_length == 3);
 
   checkHistPoint(metadata, 0, 0, 140908, 3);
-  checkHistPoint(metadata, 1, 1, -6810,  1);
-  checkHistPoint(metadata, 2, 2, 54111,  2);
+  checkHistPoint(metadata, 1, 1, -6810, 1);
+  checkHistPoint(metadata, 2, 2, 54111, 2);
 
-  mustHaveConf(metadata, &metadata->backup_history[0], 3,
-               (uint8_t *)"fbc?????????????????", 73);
+  mustHaveConf(metadata, &metadata->backup_history[0], 3, (uint8_t *)"fbc?????????????????", 73);
 
   assert_true(metadata->total_path_count == 4);
 
@@ -550,8 +524,8 @@ static void checkLoadedUnusedBackupPoints(Metadata *metadata)
   mustHaveDirectory(user, &metadata->backup_history[1], 1000, 75, 120948, 0600);
 
   PathNode *bashrc = findNode(user->subnodes, "/home/user/.bashrc", BPOL_track, 2, 0);
-  mustHaveRegular(bashrc, &metadata->backup_history[0], 983, 57, 1920,
-                  0655, 0, (uint8_t *)"xxxxxxxxxxxxxxxxxxxx", 27);
+  mustHaveRegular(bashrc, &metadata->backup_history[0], 983, 57, 1920, 0655, 0, (uint8_t *)"xxxxxxxxxxxxxxxxxxxx",
+                  27);
   mustHaveNonExisting(bashrc, &metadata->backup_history[2]);
 
   PathNode *config = findNode(user->subnodes, "/home/user/.config", BPOL_track, 1, 0);
@@ -572,11 +546,10 @@ static Metadata *genCurrentBackupData(void)
   initHistPoint(metadata, 0, 0, 48390);
   initHistPoint(metadata, 1, 1, 84908);
 
-  appendConfHist(metadata, &metadata->current_backup,
-                 6723, (uint8_t *)"fbc92e19ee0cd2140faa", 76);
+  appendConfHist(metadata, &metadata->current_backup, 6723, (uint8_t *)"fbc92e19ee0cd2140faa", 76);
 
   PathNode *home = createPathNode("home", BPOL_none, NULL, metadata);
-  appendHistDirectory(home, &metadata->backup_history[0], 0, 0,  12878, 0755);
+  appendHistDirectory(home, &metadata->backup_history[0], 0, 0, 12878, 0755);
   metadata->paths = home;
 
   PathNode *user = createPathNode("user", BPOL_mirror, home, metadata);
@@ -584,8 +557,8 @@ static Metadata *genCurrentBackupData(void)
 
   PathNode *bashrc = createPathNode(".bashrc", BPOL_track, user, metadata);
   appendHistNonExisting(bashrc, &metadata->current_backup);
-  appendHistRegular(bashrc, &metadata->backup_history[1], 983, 57, 1920,
-                    0655, 7, (uint8_t *)"8130eb0cdef2019a2c1f", 8);
+  appendHistRegular(bashrc, &metadata->backup_history[1], 983, 57, 1920, 0655, 7,
+                    (uint8_t *)"8130eb0cdef2019a2c1f", 8);
 
   return metadata;
 }
@@ -603,8 +576,7 @@ static void checkLoadedCurrentBackupData(Metadata *metadata)
   checkHistPoint(metadata, 1, 1, 48390, 1);
   checkHistPoint(metadata, 2, 2, 84908, 1);
 
-  mustHaveConf(metadata, &metadata->backup_history[0], 6723,
-               (uint8_t *)"fbc92e19ee0cd2140faa", 76);
+  mustHaveConf(metadata, &metadata->backup_history[0], 6723, (uint8_t *)"fbc92e19ee0cd2140faa", 76);
 
   assert_true(metadata->total_path_count == 3);
 
@@ -616,8 +588,8 @@ static void checkLoadedCurrentBackupData(Metadata *metadata)
 
   PathNode *bashrc = findNode(user->subnodes, "/home/user/.bashrc", BPOL_track, 2, 0);
   mustHaveNonExisting(bashrc, &metadata->backup_history[0]);
-  mustHaveRegular(bashrc, &metadata->backup_history[2], 983, 57, 1920,
-                  0655, 7, (uint8_t *)"8130eb0-------------", 0);
+  mustHaveRegular(bashrc, &metadata->backup_history[2], 983, 57, 1920, 0655, 7, (uint8_t *)"8130eb0-------------",
+                  0);
 }
 
 /** Generates an empty dummy metadata tree without a config history. It can
@@ -630,7 +602,7 @@ static Metadata *genNoConfHist(void)
   initHistPoint(metadata, 2, 2, 91834);
 
   PathNode *home = createPathNode("home", BPOL_none, NULL, metadata);
-  appendHistDirectory(home, &metadata->backup_history[0], 0, 0,  12878, 0755);
+  appendHistDirectory(home, &metadata->backup_history[0], 0, 0, 12878, 0755);
   metadata->paths = home;
 
   PathNode *user = createPathNode("user", BPOL_mirror, home, metadata);
@@ -638,8 +610,8 @@ static Metadata *genNoConfHist(void)
 
   PathNode *bashrc = createPathNode(".bashrc", BPOL_track, user, metadata);
   appendHistNonExisting(bashrc, &metadata->backup_history[0]);
-  appendHistRegular(bashrc, &metadata->backup_history[1], 983, 57, 1920,
-                    0655, 579, (uint8_t *)"8130eb0cdef2019a2c1f", 128);
+  appendHistRegular(bashrc, &metadata->backup_history[1], 983, 57, 1920, 0655, 579,
+                    (uint8_t *)"8130eb0cdef2019a2c1f", 128);
 
   return metadata;
 }
@@ -667,8 +639,8 @@ static void checkNoConfHist(Metadata *metadata)
 
   PathNode *bashrc = findNode(user->subnodes, "/home/user/.bashrc", BPOL_track, 2, 0);
   mustHaveNonExisting(bashrc, &metadata->backup_history[0]);
-  mustHaveRegular(bashrc, &metadata->backup_history[1], 983, 57, 1920,
-                  0655, 579, (uint8_t *)"8130eb0cdef2019a2c1f", 128);
+  mustHaveRegular(bashrc, &metadata->backup_history[1], 983, 57, 1920, 0655, 579,
+                  (uint8_t *)"8130eb0cdef2019a2c1f", 128);
 }
 
 /** Generates a dummy metadata struct with no path tree. It can be checked
@@ -679,10 +651,8 @@ static Metadata *genNoPathTree(void)
   initHistPoint(metadata, 0, 0, 3249);
   initHistPoint(metadata, 1, 1, 29849483);
 
-  appendConfHist(metadata, &metadata->backup_history[0],
-                 19, (uint8_t *)"fbc92e19ee0cd2140faa", 34);
-  appendConfHist(metadata, &metadata->backup_history[1],
-                 103894, (uint8_t *)"some test bytes?????", 35);
+  appendConfHist(metadata, &metadata->backup_history[0], 19, (uint8_t *)"fbc92e19ee0cd2140faa", 34);
+  appendConfHist(metadata, &metadata->backup_history[1], 103894, (uint8_t *)"some test bytes?????", 35);
 
   return metadata;
 }
@@ -697,10 +667,8 @@ static void checkNoPathTree(Metadata *metadata)
   checkHistPoint(metadata, 0, 0, 3249, 1);
   checkHistPoint(metadata, 1, 1, 29849483, 1);
 
-  mustHaveConf(metadata, &metadata->backup_history[0],
-               19, (uint8_t *)"fbc92e19ee0cd2140fa%", 8);
-  mustHaveConf(metadata, &metadata->backup_history[1],
-               103894, (uint8_t *)"some test bytes?????", 35);
+  mustHaveConf(metadata, &metadata->backup_history[0], 19, (uint8_t *)"fbc92e19ee0cd2140fa%", 8);
+  mustHaveConf(metadata, &metadata->backup_history[1], 103894, (uint8_t *)"some test bytes?????", 35);
 
   assert_true(metadata->total_path_count == 0);
   assert_true(metadata->paths == NULL);
@@ -745,19 +713,18 @@ static Metadata *initOnlyCurrentBackupData(Metadata *metadata)
 {
   metadata->current_backup.timestamp = 1348981;
 
-  appendConfHist(metadata, &metadata->current_backup,
-                 6723, (uint8_t *)"fbc92e19ee0cd2140faa", 1);
+  appendConfHist(metadata, &metadata->current_backup, 6723, (uint8_t *)"fbc92e19ee0cd2140faa", 1);
 
   PathNode *home = createPathNode("home", BPOL_none, NULL, metadata);
-  appendHistDirectory(home, &metadata->current_backup, 0, 0,  12878, 0755);
+  appendHistDirectory(home, &metadata->current_backup, 0, 0, 12878, 0755);
   metadata->paths = home;
 
   PathNode *user = createPathNode("user", BPOL_mirror, home, metadata);
   appendHistDirectory(user, &metadata->current_backup, 1000, 75, 120948, 0600);
 
   PathNode *bashrc = createPathNode(".bashrc", BPOL_track, user, metadata);
-  appendHistRegular(bashrc, &metadata->current_backup, 983, 57, -1,
-                    0655, 0, (uint8_t *)"8130eb0cdef2019a2c1f", 127);
+  appendHistRegular(bashrc, &metadata->current_backup, 983, 57, -1, 0655, 0, (uint8_t *)"8130eb0cdef2019a2c1f",
+                    127);
 
   return metadata;
 }
@@ -772,8 +739,7 @@ static void checkOnlyCurrentBackupData(Metadata *metadata)
 
   checkHistPoint(metadata, 0, 0, 1348981, 4);
 
-  mustHaveConf(metadata, &metadata->backup_history[0], 6723,
-               (uint8_t *)"fbc92e19ee0cd2140faa", 1);
+  mustHaveConf(metadata, &metadata->backup_history[0], 6723, (uint8_t *)"fbc92e19ee0cd2140faa", 1);
 
   assert_true(metadata->total_path_count == 3);
 
@@ -784,8 +750,8 @@ static void checkOnlyCurrentBackupData(Metadata *metadata)
   mustHaveDirectory(user, &metadata->backup_history[0], 1000, 75, 120948, 0600);
 
   PathNode *bashrc = findNode(user->subnodes, "/home/user/.bashrc", BPOL_track, 1, 0);
-  mustHaveRegular(bashrc, &metadata->backup_history[0], 983, 57, -1,
-                  0655, 0, (uint8_t *)"....................", 217);
+  mustHaveRegular(bashrc, &metadata->backup_history[0], 983, 57, -1, 0655, 0, (uint8_t *)"....................",
+                  217);
 }
 
 /** Generates a metadata tree containing various nodes which are not part
@@ -799,10 +765,8 @@ static Metadata *genNodesToWipe(void)
   initHistPoint(metadata, 2, 2, 7890);
   initHistPoint(metadata, 3, 3, 9876);
 
-  appendConfHist(metadata, &metadata->backup_history[1],
-                 131, (uint8_t *)"9a2c1f8130eb0cdef201", 0);
-  appendConfHist(metadata, &metadata->backup_history[3],
-                 21,  (uint8_t *)"f8130eb0cdef2019a2c1", 98);
+  appendConfHist(metadata, &metadata->backup_history[1], 131, (uint8_t *)"9a2c1f8130eb0cdef201", 0);
+  appendConfHist(metadata, &metadata->backup_history[3], 21, (uint8_t *)"f8130eb0cdef2019a2c1", 98);
 
   PathNode *etc = createPathNode("etc", BPOL_none, NULL, metadata);
   appendHistDirectory(etc, &metadata->backup_history[3], 12, 8, INT32_MAX, 0777);
@@ -810,28 +774,26 @@ static Metadata *genNodesToWipe(void)
 
   PathNode *conf_d = createPathNode("conf.d", BPOL_none, etc, metadata);
   appendHistDirectory(conf_d, &metadata->backup_history[3], 3, 5, 102934, 0123);
-  appendHistRegular(createPathNode("foo", BPOL_mirror, conf_d, metadata),
-                    &metadata->backup_history[3], 91, 47, 680123, 0223, 20,
-                    (uint8_t *)"66f69cd1998e54ae5533", 122);
-  appendHistRegular(createPathNode("bar", BPOL_mirror, conf_d, metadata),
-                    &metadata->backup_history[2], 89, 20, 310487, 0523, 48,
-                    (uint8_t *)"fffffcd1998e54ae5a70", 12);
+  appendHistRegular(createPathNode("foo", BPOL_mirror, conf_d, metadata), &metadata->backup_history[3], 91, 47,
+                    680123, 0223, 20, (uint8_t *)"66f69cd1998e54ae5533", 122);
+  appendHistRegular(createPathNode("bar", BPOL_mirror, conf_d, metadata), &metadata->backup_history[2], 89, 20,
+                    310487, 0523, 48, (uint8_t *)"fffffcd1998e54ae5a70", 12);
 
   PathNode *portage = createPathNode("portage", BPOL_track, etc, metadata);
   appendHistDirectory(portage, &metadata->backup_history[2], 89, 98, 91234, 0321);
-  appendHistDirectory(portage, &metadata->backup_history[3], 7,  19, 12837, 0666);
+  appendHistDirectory(portage, &metadata->backup_history[3], 7, 19, 12837, 0666);
   PathNode *make_conf = createPathNode("make.conf", BPOL_track, portage, metadata);
   appendHistSymlink(make_conf, &metadata->backup_history[0], 59, 23, "make.conf.backup");
   appendHistNonExisting(make_conf, &metadata->backup_history[2]);
-  appendHistRegular(make_conf, &metadata->backup_history[3], 3, 4, 53238,
-                    0713, 192, (uint8_t *)"e78863d5e021dd60c1a2", 0);
+  appendHistRegular(make_conf, &metadata->backup_history[3], 3, 4, 53238, 0713, 192,
+                    (uint8_t *)"e78863d5e021dd60c1a2", 0);
   PathNode *package_use = createPathNode("package.use", BPOL_copy, portage, metadata);
   appendHistDirectory(package_use, &metadata->backup_history[3], 34, 25, 184912, 0754);
-  appendHistSymlink(createPathNode("packages", BPOL_mirror, package_use, metadata),
-                    &metadata->backup_history[1], 32, 28, "../packages.txt");
+  appendHistSymlink(createPathNode("packages", BPOL_mirror, package_use, metadata), &metadata->backup_history[1],
+                    32, 28, "../packages.txt");
 
   /* Decrement wiped nodes reference count. */
-  conf_d->hint    = BH_not_part_of_repository;
+  conf_d->hint = BH_not_part_of_repository;
   make_conf->hint = BH_not_part_of_repository | BH_policy_changed | BH_loses_history;
   metadata->backup_history[3].ref_count -= 3;
   metadata->backup_history[2].ref_count -= 2;
@@ -854,17 +816,15 @@ static void checkWipedNodes(Metadata *metadata)
   checkHistPoint(metadata, 1, 1, 7890, 1);
   checkHistPoint(metadata, 2, 2, 9876, 4);
 
-  mustHaveConf(metadata, &metadata->backup_history[0], 131,
-               (uint8_t *)"9a2c1f8130eb0cdef201", 0);
-  mustHaveConf(metadata, &metadata->backup_history[2], 21,
-               (uint8_t *)"f8130eb0cdef2019a2c1", 98);
+  mustHaveConf(metadata, &metadata->backup_history[0], 131, (uint8_t *)"9a2c1f8130eb0cdef201", 0);
+  mustHaveConf(metadata, &metadata->backup_history[2], 21, (uint8_t *)"f8130eb0cdef2019a2c1", 98);
 
   PathNode *etc = findNode(metadata->paths, "/etc", BPOL_none, 1, 1);
   mustHaveDirectory(etc, &metadata->backup_history[2], 12, 8, INT32_MAX, 0777);
 
   PathNode *portage = findNode(etc->subnodes, "/etc/portage", BPOL_track, 2, 1);
   mustHaveDirectory(portage, &metadata->backup_history[1], 89, 98, 91234, 0321);
-  mustHaveDirectory(portage, &metadata->backup_history[2], 7,  19, 12837, 0666);
+  mustHaveDirectory(portage, &metadata->backup_history[2], 7, 19, 12837, 0666);
 
   PathNode *package_use = findNode(portage->subnodes, "/etc/portage/package.use", BPOL_copy, 1, 1);
   mustHaveDirectory(package_use, &metadata->backup_history[2], 34, 25, 184912, 0754);
@@ -873,9 +833,7 @@ static void checkWipedNodes(Metadata *metadata)
 }
 
 /** Combines sFopenWrite(), sFwrite() and sFclose. */
-static void writeBytesToFile(size_t size,
-                             const char *data,
-                             const char *path)
+static void writeBytesToFile(size_t size, const char *data, const char *path)
 {
   FileStream *writer = sFopenWrite(strWrap(path));
   sFwrite(data, size, writer);
@@ -890,8 +848,7 @@ static void writeBytesToFile(size_t size,
   @param byte The character which should replace the old one.
   @param filename The name of the final metadata file.
 */
-static void writeWithBrokenChar3(Metadata *metadata, String *path,
-                                char byte, const char *filename)
+static void writeWithBrokenChar3(Metadata *metadata, String *path, char byte, const char *filename)
 {
   const char old_byte = path->content[path->length - 3];
 
@@ -902,11 +859,11 @@ static void writeWithBrokenChar3(Metadata *metadata, String *path,
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-qual"
 #endif
-  *((char   *)&path->content[path->length - 3]) = byte;
+  *((char *)&path->content[path->length - 3]) = byte;
   *((size_t *)&path->length) -= 2;
   metadataWrite(metadata, strWrap("tmp"), strWrap("tmp/tmp-file"), strWrap(filename));
   *((size_t *)&path->length) += 2;
-  *((char   *)&path->content[path->length - 3]) = old_byte;
+  *((char *)&path->content[path->length - 3]) = old_byte;
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
 #endif
@@ -963,12 +920,12 @@ static void generateBrokenMetadata(void)
   writeBytesToFile(402, test_data, "tmp/missing-path-state-type");
   writeBytesToFile(647, test_data, "tmp/incomplete-32-bit-value");
   writeBytesToFile(217, test_data, "tmp/missing-32-bit-value");
-  writeBytesToFile(3,   test_data, "tmp/incomplete-size");
+  writeBytesToFile(3, test_data, "tmp/incomplete-size");
   writeBytesToFile(327, test_data, "tmp/missing-size");
   writeBytesToFile(520, test_data, "tmp/incomplete-time");
   writeBytesToFile(656, test_data, "tmp/missing-time");
   writeBytesToFile(148, test_data, "tmp/incomplete-hash");
-  writeBytesToFile(85,  test_data, "tmp/missing-hash");
+  writeBytesToFile(85, test_data, "tmp/missing-hash");
   writeBytesToFile(249, test_data, "tmp/incomplete-path");
   writeBytesToFile(188, test_data, "tmp/missing-path");
   writeBytesToFile(384, test_data, "tmp/incomplete-symlink-target-path");
@@ -1031,13 +988,13 @@ static void generateBrokenMetadata(void)
   *((size_t *)&foo->path.length) += 3;
 
   /* Generate metadata containing dot filenames. */
-  *((char   *)&conf_d->path.content[conf_d->path.length - 6]) = '.';
-  *((char   *)&conf_d->path.content[conf_d->path.length - 5]) = '.';
+  *((char *)&conf_d->path.content[conf_d->path.length - 6]) = '.';
+  *((char *)&conf_d->path.content[conf_d->path.length - 5]) = '.';
   *((size_t *)&conf_d->path.length) -= 4;
   metadataWrite(metadata, strWrap("tmp"), strWrap("tmp/tmp-file"), strWrap("tmp/dot-filename-2"));
   *((size_t *)&conf_d->path.length) += 4;
-  *((char   *)&conf_d->path.content[conf_d->path.length - 5]) = 'o';
-  *((char   *)&conf_d->path.content[conf_d->path.length - 6]) = 'c';
+  *((char *)&conf_d->path.content[conf_d->path.length - 5]) = 'o';
+  *((char *)&conf_d->path.content[conf_d->path.length - 6]) = 'c';
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
 #endif
@@ -1046,8 +1003,8 @@ static void generateBrokenMetadata(void)
   writeWithBrokenChar3(metadata, &bar->path, '.', "tmp/dot-filename-3");
 
   /* Generate metadata containing slashes in filenames. */
-  char *conf_d_bytes    = findString(test_data, "conf.d",    700);
-  char *portage_bytes   = findString(test_data, "portage",   700);
+  char *conf_d_bytes = findString(test_data, "conf.d", 700);
+  char *portage_bytes = findString(test_data, "portage", 700);
   char *make_conf_bytes = findString(test_data, "make.conf", 700);
   writeWithBrokenChar3(metadata, &bar->path, '/', "tmp/slash-filename-1");
 
@@ -1070,7 +1027,7 @@ static void generateBrokenMetadata(void)
   copyStringRaw(make_conf_bytes, "make.conf");
 
   /* Generate metadata containing null-bytes in filenames. */
-  writeWithBrokenChar3(metadata, &foo->path,    '\0', "tmp/null-byte-filename-1");
+  writeWithBrokenChar3(metadata, &foo->path, '\0', "tmp/null-byte-filename-1");
   writeWithBrokenChar3(metadata, &conf_d->path, '\0', "tmp/null-byte-filename-2");
 
   portage_bytes[2] = '\0';
@@ -1120,8 +1077,7 @@ static void generateBrokenMetadata(void)
 static void testRejectingCorruptedMetadata(void)
 {
   generateBrokenMetadata();
-  assert_error_errno(metadataLoad(strWrap("non-existing.txt")),
-                     "failed to access \"non-existing.txt\"", ENOENT);
+  assert_error_errno(metadataLoad(strWrap("non-existing.txt")), "failed to access \"non-existing.txt\"", ENOENT);
   assert_error(metadataLoad(strWrap("tmp/missing-byte")),
                "corrupted metadata: expected 1 byte, got 0: \"tmp/missing-byte\"");
   assert_error(metadataLoad(strWrap("tmp/missing-slot")),
@@ -1164,8 +1120,7 @@ static void testRejectingCorruptedMetadata(void)
                "corrupted metadata: expected 8 bytes, got 7: \"tmp/last-byte-missing\"");
   assert_error(metadataLoad(strWrap("tmp/unneeded-trailing-bytes")),
                "unneeded trailing bytes in \"tmp/unneeded-trailing-bytes\"");
-  assert_error(metadataLoad(strWrap("tmp/path-count-zero")),
-               "unneeded trailing bytes in \"tmp/path-count-zero\"");
+  assert_error(metadataLoad(strWrap("tmp/path-count-zero")), "unneeded trailing bytes in \"tmp/path-count-zero\"");
 
   assert_error(metadataLoad(strWrap("tmp/filename-with-length-zero-1")),
                "contains filename with length zero: \"tmp/filename-with-length-zero-1\"");

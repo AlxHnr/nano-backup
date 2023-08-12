@@ -7,10 +7,10 @@
 
 #include <sys/stat.h>
 
-#include "search-tree.h"
-#include "str.h"
 #include "backup-policies.h"
 #include "search-result-type.h"
+#include "search-tree.h"
+#include "str.h"
 
 /**Contains the result of a search query. */
 typedef struct
@@ -33,7 +33,7 @@ typedef struct
 
   /** Further informations about the file. */
   struct stat stats;
-}SearchResult;
+} SearchResult;
 
 /** An opaque struct representing a search. */
 typedef struct SearchContext SearchContext;

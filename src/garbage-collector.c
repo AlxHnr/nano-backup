@@ -9,9 +9,9 @@
 #include "CRegion/region.h"
 
 #include "path-builder.h"
-#include "string-table.h"
 #include "safe-math.h"
 #include "safe-wrappers.h"
+#include "string-table.h"
 
 static char *path_buffer = NULL;
 
@@ -28,8 +28,8 @@ static void populateTableRecursively(StringTable *table, PathNode *node)
     return;
   }
 
-  for(PathHistory *point = node->history;
-      point != NULL; point = point->next)
+  for(PathHistory *point = node->history; point != NULL;
+      point = point->next)
   {
     if(point->state.type != PST_regular ||
        point->state.metadata.reg.size <= FILE_HASH_SIZE)
@@ -47,8 +47,8 @@ static void populateTableRecursively(StringTable *table, PathNode *node)
     }
   }
 
-  for(PathNode *subnode = node->subnodes;
-      subnode != NULL; subnode = subnode->next)
+  for(PathNode *subnode = node->subnodes; subnode != NULL;
+      subnode = subnode->next)
   {
     populateTableRecursively(table, subnode);
   }
@@ -70,10 +70,9 @@ static bool recurseIntoDirectory(StringTable *table, size_t length,
                                  GCStats *gc_stats)
 {
   bool item_required = length == repo_path_length;
-  struct stat stats =
-    length == repo_path_length?
-    sStat(strWrap(path_buffer)):
-    sLStat(strWrap(path_buffer));
+  struct stat stats = length == repo_path_length
+    ? sStat(strWrap(path_buffer))
+    : sLStat(strWrap(path_buffer));
 
   if(S_ISDIR(stats.st_mode))
   {
@@ -95,9 +94,8 @@ static bool recurseIntoDirectory(StringTable *table, size_t length,
   }
   else if(length != repo_path_length)
   {
-    String path_in_repo =
-      strSlice(&path_buffer[repo_path_length + 1],
-               length - repo_path_length - 1);
+    String path_in_repo = strSlice(&path_buffer[repo_path_length + 1],
+                                   length - repo_path_length - 1);
 
     item_required |= (strTableGet(table, path_in_repo) != NULL);
   }
@@ -127,7 +125,7 @@ GCStats collectGarbage(Metadata *metadata, String repo_path)
 {
   CR_Region *table_region = CR_RegionNew();
   StringTable *table = strTableNew(table_region);
-  strTableMap(table, strWrap("config"),   (void *)0x1);
+  strTableMap(table, strWrap("config"), (void *)0x1);
   strTableMap(table, strWrap("metadata"), (void *)0x1);
   strTableMap(table, strWrap("lockfile"), (void *)0x1);
 

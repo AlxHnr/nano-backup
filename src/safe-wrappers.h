@@ -6,11 +6,11 @@
 #ifndef NANO_BACKUP_SRC_SAFE_WRAPPERS_H
 #define NANO_BACKUP_SRC_SAFE_WRAPPERS_H
 
-#include <time.h>
-#include <stdio.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdbool.h>
+#include <stdio.h>
+#include <time.h>
 
 #include <dirent.h>
 #include <sys/stat.h>
@@ -70,7 +70,7 @@ typedef struct
 
   /** The size of the content in bytes. */
   size_t size;
-}FileContent;
+} FileContent;
 
 extern FileContent sGetFilesContent(CR_Region *region, String path);
 

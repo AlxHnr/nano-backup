@@ -10,8 +10,7 @@
 
 #include "str.h"
 
-extern const regex_t *rpCompile(String expression,
-                                String file_name,
+extern const regex_t *rpCompile(String expression, String file_name,
                                 size_t line_nr);
 
 #endif

@@ -6,10 +6,10 @@
 
 #include <stdlib.h>
 
-#include "str.h"
-#include "safe-wrappers.h"
 #include "backup-helpers.h"
 #include "error-handling.h"
+#include "safe-wrappers.h"
+#include "str.h"
 
 /** Searches the path state which the given node had during the given
   backup id. If not found, it returns NULL. If the nodes policy doesn't
@@ -21,8 +21,8 @@ static PathState *searchPathState(PathNode *node, size_t id)
     return &node->history->state;
   }
 
-  for(PathHistory *point = node->history;
-      point != NULL; point = point->next)
+  for(PathHistory *point = node->history; point != NULL;
+      point = point->next)
   {
     if(point->backup->id >= id)
     {
@@ -55,7 +55,8 @@ static PathState *findExistingPathState(PathNode *node, size_t id)
 
   if(state == NULL)
   {
-    die("path didn't exist at the specified time: \"%s\"", node->path.content);
+    die("path didn't exist at the specified time: \"%s\"",
+        node->path.content);
   }
 
   return state;
@@ -131,9 +132,7 @@ static void checkAndHandleChanges(PathNode *node, PathState *state,
   if(could_exist && sPathExists(node->path))
   {
     struct stat stats =
-      state->type == PST_symlink?
-      sLStat(node->path):
-      sStat(node->path);
+      state->type == PST_symlink ? sLStat(node->path) : sStat(node->path);
 
     handleFiletypeChanges(node, state, stats);
     if(backupHintNoPol(node->hint) == BH_none)
@@ -154,8 +153,7 @@ static void checkAndHandleChanges(PathNode *node, PathState *state,
   @param id The id of the backup against which should be compared.
 */
 static void checkAndHandleChangesRecursively(PathNode *node,
-                                             PathState *state,
-                                             size_t id,
+                                             PathState *state, size_t id,
                                              bool could_exist)
 {
   checkAndHandleChanges(node, state, could_exist);
@@ -169,14 +167,14 @@ static void checkAndHandleChangesRecursively(PathNode *node,
     could_exist = false;
   }
 
-  for(PathNode *subnode = node->subnodes;
-      subnode != NULL; subnode = subnode->next)
+  for(PathNode *subnode = node->subnodes; subnode != NULL;
+      subnode = subnode->next)
   {
     PathState *subnode_state = searchExistingPathState(subnode, id);
     if(subnode_state != NULL)
     {
-      checkAndHandleChangesRecursively(subnode, subnode_state,
-                                       id, could_exist);
+      checkAndHandleChangesRecursively(subnode, subnode_state, id,
+                                       could_exist);
     }
   }
 }
@@ -189,14 +187,12 @@ static void checkAndHandleChangesRecursively(PathNode *node,
   @param could_exist True if the path to restore could exist. See
   checkAndHandleChanges() for more informations.
 */
-static void initiateRestoreRecursively(PathNode *node_list,
-                                       size_t id, String path,
-                                       bool could_exist)
+static void initiateRestoreRecursively(PathNode *node_list, size_t id,
+                                       String path, bool could_exist)
 {
   bool found_node = false;
 
-  for(PathNode *node = node_list;
-      node != NULL && found_node == false;
+  for(PathNode *node = node_list; node != NULL && found_node == false;
       node = node->next)
   {
     if(strEqual(node->path, path))
@@ -218,8 +214,7 @@ static void initiateRestoreRecursively(PathNode *node_list,
 
       checkAndHandleChanges(node, state, could_exist);
 
-      bool subnode_could_exist =
-        could_exist &&
+      bool subnode_could_exist = could_exist &&
         !(backupHintNoPol(node->hint) >= BH_added &&
           backupHintNoPol(node->hint) <= BH_other_to_directory);
 
@@ -269,7 +264,8 @@ void initiateRestore(Metadata *metadata, size_t id, String path)
   @param info Informations about the file.
   @param repo_path The path to the repository containing the file.
 */
-void restoreFile(String path, const RegularFileInfo *info, String repo_path)
+void restoreFile(String path, const RegularFileInfo *info,
+                 String repo_path)
 {
   if(info->size > FILE_HASH_SIZE)
   {
@@ -337,7 +333,8 @@ static void restorePath(PathNode *node, PathState *state, String repo_path)
 
   @return True if the restoring affected the parent directories timestamp.
 */
-static bool finishRestoreRecursively(PathNode *node, size_t id, String repo_path)
+static bool finishRestoreRecursively(PathNode *node, size_t id,
+                                     String repo_path)
 {
   bool affects_parent_timestamp = false;
 
@@ -424,8 +421,8 @@ static bool finishRestoreRecursively(PathNode *node, size_t id, String repo_path
   {
     bool subnode_changes_timestamp = false;
 
-    for(PathNode *subnode = node->subnodes;
-        subnode != NULL; subnode = subnode->next)
+    for(PathNode *subnode = node->subnodes; subnode != NULL;
+        subnode = subnode->next)
     {
       subnode_changes_timestamp |=
         finishRestoreRecursively(subnode, id, repo_path);

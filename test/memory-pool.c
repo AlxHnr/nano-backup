@@ -9,22 +9,22 @@
 int main(void)
 {
   testGroupStart("mpAlloc()");
-  void *data59    = mpAlloc(59);
-  void *data1     = mpAlloc(1);
-  void *data123   = mpAlloc(123);
-  void *data4096  = mpAlloc(4096);
+  void *data59 = mpAlloc(59);
+  void *data1 = mpAlloc(1);
+  void *data123 = mpAlloc(123);
+  void *data4096 = mpAlloc(4096);
 
-  void *data32    = mpAlloc(32);
-  void *data80    = mpAlloc(80);
+  void *data32 = mpAlloc(32);
+  void *data80 = mpAlloc(80);
   void *data16384 = mpAlloc(16384);
 
-  assert_true(data59    != NULL);
-  assert_true(data1     != NULL);
-  assert_true(data123   != NULL);
-  assert_true(data4096  != NULL);
+  assert_true(data59 != NULL);
+  assert_true(data1 != NULL);
+  assert_true(data123 != NULL);
+  assert_true(data4096 != NULL);
 
-  assert_true(data32    != NULL);
-  assert_true(data80    != NULL);
+  assert_true(data32 != NULL);
+  assert_true(data80 != NULL);
   assert_true(data16384 != NULL);
 
   /* Assert that all the pointer defined above don't point to the same

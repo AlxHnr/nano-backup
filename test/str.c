@@ -82,8 +82,7 @@ static String checkedStrAppendPath(String a, String b)
   @param cb The second string to pass to strAppendPath().
   @param cexpected_result The expected result.
 */
-static void testStrAppendPath(const char *ca, const char *cb,
-                              const char *cexpected_result)
+static void testStrAppendPath(const char *ca, const char *cb, const char *cexpected_result)
 {
   String a = checkedStrWrap(ca);
   String b = checkedStrWrap(cb);
@@ -136,8 +135,7 @@ static String checkedStrRemoveTrailingSlashes(String string)
   String trimmed = check(strRemoveTrailingSlashes(string));
   assert_true(trimmed.content == string.content);
   assert_true(trimmed.length <= string.length);
-  assert_true(trimmed.is_terminated ==
-              (trimmed.length == string.length && string.is_terminated));
+  assert_true(trimmed.is_terminated == (trimmed.length == string.length && string.is_terminated));
 
   return trimmed;
 }
@@ -185,11 +183,9 @@ static StringSplit checkedStrSplitPath(String path)
   @param cexpected_head The expected head.
   @param cexpected_tail The expected tail.
 */
-static void testStrSplitPath(const char *cpath,
-                             const char *cexpected_head,
-                             const char *cexpected_tail)
+static void testStrSplitPath(const char *cpath, const char *cexpected_head, const char *cexpected_tail)
 {
-  String path          = checkedStrWrap(cpath);
+  String path = checkedStrWrap(cpath);
   String expected_head = checkedStrWrap(cexpected_head);
   String expected_tail = checkedStrWrap(cexpected_tail);
 
@@ -218,9 +214,10 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("strCopy()");
-  String zero_length = (String)
-  {
-    .content = "some-data", .length = 0, .is_terminated = false,
+  String zero_length = (String){
+    .content = "some-data",
+    .length = 0,
+    .is_terminated = false,
   };
   {
     String bar = checkedStrWrap("bar");
@@ -290,15 +287,12 @@ int main(void)
 
   testGroupStart("strRemoveTrailingSlashes()");
   {
-    testStrRemoveTrailingSlashes(checkedStrWrap(""),    checkedStrWrap(""));
-    testStrRemoveTrailingSlashes(zero_length,           checkedStrWrap(""));
+    testStrRemoveTrailingSlashes(checkedStrWrap(""), checkedStrWrap(""));
+    testStrRemoveTrailingSlashes(zero_length, checkedStrWrap(""));
     testStrRemoveTrailingSlashes(checkedStrWrap("foo"), checkedStrWrap("foo"));
-    testStrRemoveTrailingSlashes(checkedStrWrap("/home/arch/foo-bar"),
-                                 checkedStrWrap("/home/arch/foo-bar"));
-    testStrRemoveTrailingSlashes(checkedStrWrap("/home/arch/foo-bar/"),
-                                 checkedStrWrap("/home/arch/foo-bar"));
-    testStrRemoveTrailingSlashes(checkedStrWrap("/home/arch/foo-bar//////"),
-                                 checkedStrWrap("/home/arch/foo-bar"));
+    testStrRemoveTrailingSlashes(checkedStrWrap("/home/arch/foo-bar"), checkedStrWrap("/home/arch/foo-bar"));
+    testStrRemoveTrailingSlashes(checkedStrWrap("/home/arch/foo-bar/"), checkedStrWrap("/home/arch/foo-bar"));
+    testStrRemoveTrailingSlashes(checkedStrWrap("/home/arch/foo-bar//////"), checkedStrWrap("/home/arch/foo-bar"));
     testStrRemoveTrailingSlashes(checkedStrWrap("///////////////"), zero_length);
     testStrRemoveTrailingSlashes(checkedStrWrap("////////////"), checkedStrWrap(""));
     assert_true(checkedStrRemoveTrailingSlashes(checkedStrWrap("/home/test")).is_terminated);
@@ -313,31 +307,25 @@ int main(void)
 
   testGroupStart("strAppendPath()");
   {
-    testStrAppendPath("",    "",    "/");
-    testStrAppendPath("foo", "",    "foo/");
-    testStrAppendPath("",    "bar", "/bar");
-    testStrAppendPath("/",   "",    "//");
-    testStrAppendPath("",    "/",   "//");
-    testStrAppendPath("/",   "/",   "///");
+    testStrAppendPath("", "", "/");
+    testStrAppendPath("foo", "", "foo/");
+    testStrAppendPath("", "bar", "/bar");
+    testStrAppendPath("/", "", "//");
+    testStrAppendPath("", "/", "//");
+    testStrAppendPath("/", "/", "///");
     testStrAppendPath("foo", "bar", "foo/bar");
 
     testStrAppendPath("/foo/bar//", "/foo", "/foo/bar////foo");
-    testStrAppendPath("/etc/init.d", "start.sh",  "/etc/init.d/start.sh");
-    testStrAppendPath("etc/init.d",  "start.sh",  "etc/init.d/start.sh");
-    testStrAppendPath("etc/init.d",  "/start.sh", "etc/init.d//start.sh");
+    testStrAppendPath("/etc/init.d", "start.sh", "/etc/init.d/start.sh");
+    testStrAppendPath("etc/init.d", "start.sh", "etc/init.d/start.sh");
+    testStrAppendPath("etc/init.d", "/start.sh", "etc/init.d//start.sh");
 
-    assert_true(strEqual(checkedStrAppendPath(slice1, slice2),
-                         checkedStrWrap("this/is a test")));
-    assert_true(strEqual(checkedStrAppendPath(slice2, slice3),
-                         checkedStrWrap("is a test/test string")));
-    assert_true(strEqual(checkedStrAppendPath(slice3, slice1),
-                         checkedStrWrap("test string/this")));
-    assert_true(strEqual(checkedStrAppendPath(slice2, zero_length),
-                         checkedStrWrap("is a test/")));
-    assert_true(strEqual(checkedStrAppendPath(zero_length, slice1),
-                         checkedStrWrap("/this")));
-    assert_true(strEqual(checkedStrAppendPath(zero_length, zero_length),
-                         checkedStrWrap("/")));
+    assert_true(strEqual(checkedStrAppendPath(slice1, slice2), checkedStrWrap("this/is a test")));
+    assert_true(strEqual(checkedStrAppendPath(slice2, slice3), checkedStrWrap("is a test/test string")));
+    assert_true(strEqual(checkedStrAppendPath(slice3, slice1), checkedStrWrap("test string/this")));
+    assert_true(strEqual(checkedStrAppendPath(slice2, zero_length), checkedStrWrap("is a test/")));
+    assert_true(strEqual(checkedStrAppendPath(zero_length, slice1), checkedStrWrap("/this")));
+    assert_true(strEqual(checkedStrAppendPath(zero_length, zero_length), checkedStrWrap("/")));
   }
   testGroupEnd();
 
@@ -552,45 +540,45 @@ int main(void)
 
   testGroupStart("strIsParentPath()");
   {
-    assert_true(isParentPath("",              "")     == false);
-    assert_true(isParentPath("",              "/")    == false);
-    assert_true(isParentPath("",              "///")  == false);
-    assert_true(isParentPath("/",             "")     == false);
-    assert_true(isParentPath("/",             "/etc") == false);
-    assert_true(isParentPath("",              "/etc"));
-    assert_true(isParentPath("",              "/etc/portage"));
-    assert_true(isParentPath("/",             "/etc/portage") == false);
-    assert_true(isParentPath("/et",           "/etc/portage") == false);
-    assert_true(isParentPath("/et",           "/et//portage"));
-    assert_true(isParentPath("/etc",          "/etc/portage"));
-    assert_true(isParentPath("/etc",          "/etc/portage/"));
-    assert_true(isParentPath("/etc",          "/etc/portage///"));
-    assert_true(isParentPath("/et?",          "/etc/portage")    == false);
-    assert_true(isParentPath("/etc/",         "/etc/portage")    == false);
-    assert_true(isParentPath("/etc/p",        "/etc/portage")    == false);
-    assert_true(isParentPath("/etc/portage",  "/etc/portage")    == false);
-    assert_true(isParentPath("/etc/portage",  "/etc/portage/")   == false);
-    assert_true(isParentPath("/etc/portage",  "/etc/portage//")  == false);
-    assert_true(isParentPath("/etc/portage",  "/etc/portage///") == false);
+    assert_true(isParentPath("", "") == false);
+    assert_true(isParentPath("", "/") == false);
+    assert_true(isParentPath("", "///") == false);
+    assert_true(isParentPath("/", "") == false);
+    assert_true(isParentPath("/", "/etc") == false);
+    assert_true(isParentPath("", "/etc"));
+    assert_true(isParentPath("", "/etc/portage"));
+    assert_true(isParentPath("/", "/etc/portage") == false);
+    assert_true(isParentPath("/et", "/etc/portage") == false);
+    assert_true(isParentPath("/et", "/et//portage"));
+    assert_true(isParentPath("/etc", "/etc/portage"));
+    assert_true(isParentPath("/etc", "/etc/portage/"));
+    assert_true(isParentPath("/etc", "/etc/portage///"));
+    assert_true(isParentPath("/et?", "/etc/portage") == false);
+    assert_true(isParentPath("/etc/", "/etc/portage") == false);
+    assert_true(isParentPath("/etc/p", "/etc/portage") == false);
+    assert_true(isParentPath("/etc/portage", "/etc/portage") == false);
+    assert_true(isParentPath("/etc/portage", "/etc/portage/") == false);
+    assert_true(isParentPath("/etc/portage", "/etc/portage//") == false);
+    assert_true(isParentPath("/etc/portage", "/etc/portage///") == false);
     assert_true(isParentPath("/etc/portage/", "/etc/portage") == false);
     assert_true(isParentPath("/etc/portage/", "/etc/") == false);
     assert_true(isParentPath("/etc/portage/", "/etc") == false);
     assert_true(isParentPath("/etc/portage/", "") == false);
-    assert_true(isParentPath("/etc/portage",  "/etc/portage/make.conf/foo"));
+    assert_true(isParentPath("/etc/portage", "/etc/portage/make.conf/foo"));
     assert_true(isParentPath("/etc/portage/", "/etc/portage/make.conf/foo") == false);
-    assert_true(isParentPath("",                           "/etc/portage/make.conf/foo"));
-    assert_true(isParentPath("/etc",                       "/etc/portage/make.conf/foo"));
-    assert_true(isParentPath("/etc/portage",               "/etc/portage/make.conf/foo"));
-    assert_true(isParentPath("/etc/portage/make.conf",     "/etc/portage/make.conf/foo"));
+    assert_true(isParentPath("", "/etc/portage/make.conf/foo"));
+    assert_true(isParentPath("/etc", "/etc/portage/make.conf/foo"));
+    assert_true(isParentPath("/etc/portage", "/etc/portage/make.conf/foo"));
+    assert_true(isParentPath("/etc/portage/make.conf", "/etc/portage/make.conf/foo"));
     assert_true(isParentPath("/etc/portage/make.conf/foo", "/etc/portage/make.conf/foo") == false);
-    assert_true(isParentPath("foo",           "foo/a"));
-    assert_true(isParentPath("foo/a",         "foo/a/bar"));
-    assert_true(isParentPath("foo/a/bar",     "foo/a/bar/1"));
-    assert_true(isParentPath("foo/a/bar/1",   "foo/a/bar/1/2"));
+    assert_true(isParentPath("foo", "foo/a"));
+    assert_true(isParentPath("foo/a", "foo/a/bar"));
+    assert_true(isParentPath("foo/a/bar", "foo/a/bar/1"));
+    assert_true(isParentPath("foo/a/bar/1", "foo/a/bar/1/2"));
     assert_true(isParentPath("foo/a/bar/1/2", "foo/a/bar/1/2/3"));
     assert_true(isParentPath("foo/a/bar/2/2", "foo/a/bar/1/2/3") == false);
-    assert_true(isParentPath("/etc",  "/etc//")  == false);
-    assert_true(isParentPath("/etc/", "/etc//")  == false);
+    assert_true(isParentPath("/etc", "/etc//") == false);
+    assert_true(isParentPath("/etc/", "/etc//") == false);
     assert_true(isParentPath("/etc/", "/etc///") == false);
     assert_true(isParentPath("/etc/", "/etc//portage"));
     assert_true(isParentPath("/etc/", "/etc///portage"));

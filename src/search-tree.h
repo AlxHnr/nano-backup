@@ -5,12 +5,12 @@
 #ifndef NANO_BACKUP_SRC_SEARCH_TREE_H
 #define NANO_BACKUP_SRC_SEARCH_TREE_H
 
-#include <stdbool.h>
 #include <regex.h>
+#include <stdbool.h>
 
-#include "str.h"
-#include "search-result-type.h"
 #include "backup-policies.h"
+#include "search-result-type.h"
+#include "str.h"
 
 /** A list of compiled regular expressions. */
 typedef struct RegexList RegexList;

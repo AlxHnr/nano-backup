@@ -5,8 +5,8 @@
 #ifndef NANO_BACKUP_SRC_STR_H
 #define NANO_BACKUP_SRC_STR_H
 
-#include <stddef.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 /** A string type which doesn't own the memory it points to. It can be used
   for cheap string slicing.
@@ -22,14 +22,14 @@ typedef struct
 
   /** True if the content is null terminated. */
   const bool is_terminated;
-}String;
+} String;
 
 /** A struct representing a string splitting. */
 typedef struct
 {
   String head; /**< The part before the split. */
   String tail; /**< The part after the split. */
-}StringSplit;
+} StringSplit;
 
 extern String strWrap(const char *string);
 extern String strSlice(const char *string, size_t length);

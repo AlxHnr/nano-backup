@@ -5,8 +5,8 @@
 #ifndef NANO_BACKUP_SRC_RESTORE_H
 #define NANO_BACKUP_SRC_RESTORE_H
 
-#include "str.h"
 #include "metadata.h"
+#include "str.h"
 
 extern void initiateRestore(Metadata *metadata, size_t id, String path);
 extern void restoreFile(String path, const RegularFileInfo *info,

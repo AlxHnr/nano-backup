@@ -4,15 +4,15 @@
 
 #include "integrity.h"
 
-#include "test.h"
-#include "test-common.h"
 #include "CRegion/region.h"
 #include "backup.h"
 #include "safe-wrappers.h"
 #include "search-tree.h"
 #include "string-table.h"
+#include "test-common.h"
+#include "test.h"
 
-static String repo_path     = { .content = "tmp/repo",          .length = 8,  .is_terminated = true };
+static String repo_path = { .content = "tmp/repo", .length = 8, .is_terminated = true };
 static String metadata_path = { .content = "tmp/repo/metadata", .length = 17, .is_terminated = true };
 static String tmp_file_path = { .content = "tmp/repo/tmp-file", .length = 17, .is_terminated = true };
 
@@ -77,19 +77,15 @@ int main(void)
 
   testGroupStart("checkIntegrity() on corrupted repository");
   /* tmp/files/21-bytes.txt: overwrite content with same size. */
-  writeToFile("tmp/repo/9/14/63ea1831fa59be6f547140553e6134f3ec0bbx15x0",
-              "modified content here");
+  writeToFile("tmp/repo/9/14/63ea1831fa59be6f547140553e6134f3ec0bbx15x0", "modified content here");
   /* tmp/files/unchanged extra file: overwrite content with different size. */
-  writeToFile("tmp/repo/d/b2/4bcdd36e05535b459499592289600e8baf013x32x0",
-              "content with different size here");
+  writeToFile("tmp/repo/d/b2/4bcdd36e05535b459499592289600e8baf013x32x0", "content with different size here");
   /* tmp/files/empty-file.txt: delete history state. */
   sRemove(strWrap("tmp/repo/8/d1/1e56f239ac968dfa0f587bb357cde360c7137x27x0"));
   /* tmp/files/smaller file: modify history state. */
-  writeToFile("tmp/repo/3/62/c96d3be9b03223ed9507e4fabee4a424bc7bbx24x0",
-              "string modified and is the same size");
+  writeToFile("tmp/repo/3/62/c96d3be9b03223ed9507e4fabee4a424bc7bbx24x0", "string modified and is the same size");
   /* tmp/files/Another File.txt: modify deduplicated history state. */
-  writeToFile("tmp/repo/3/9a/fc73eccf34f7cf5ff3fd564910f294610bdb3x17x0",
-              "broken content 123412341234");
+  writeToFile("tmp/repo/3/9a/fc73eccf34f7cf5ff3fd564910f294610bdb3x17x0", "broken content 123412341234");
   /* tmp/files/additional-file-03: replace with non-file (symlink with same st_size). */
   sRemove(strWrap("tmp/repo/8/4b/6afb97314b5c2f7b8eefede7f7f9c1db0c84fx23x0"));
   sSymlink(strWrap("nano-backup nano-backup nano-backup"),
@@ -97,8 +93,8 @@ int main(void)
 
   size_t broken_path_node_count = 0;
   StringTable *broken_path_nodes = strTableNew(r);
-  for(ListOfBrokenPathNodes *path_node = checkIntegrity(r, metadata, repo_path);
-      path_node != NULL; path_node = path_node->next)
+  for(ListOfBrokenPathNodes *path_node = checkIntegrity(r, metadata, repo_path); path_node != NULL;
+      path_node = path_node->next)
   {
     assert_true(path_node->node->path.is_terminated);
     assert_true(strIsParentPath(cwd, path_node->node->path));

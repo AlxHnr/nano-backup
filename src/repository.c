@@ -6,19 +6,19 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <inttypes.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <stdbool.h>
-#include <inttypes.h>
 
-#include "CRegion/region.h"
 #include "CRegion/alloc-growable.h"
+#include "CRegion/region.h"
 
+#include "error-handling.h"
 #include "safe-math.h"
 #include "safe-wrappers.h"
-#include "error-handling.h"
 
 /** A struct for safely writing files into backup repositories. */
 struct RepoWriter
@@ -51,7 +51,7 @@ struct RepoWriter
     /** If the repo writer was not opened in raw mode, the final filepath
       will be generated from this file info. */
     const RegularFileInfo *info;
-  }rename_to;
+  } rename_to;
 };
 
 /** A struct for reading files from backup repositories. */
@@ -72,17 +72,16 @@ struct RepoReader
   file info, including its terminating null byte. */
 static size_t getFilePathRequiredCapacity(const RegularFileInfo *info)
 {
-  return
-    snprintf(NULL, 0, "%x", info->slot) +
-    snprintf(NULL, 0, "%"PRIx64, info->size) +
-    (FILE_HASH_SIZE * 2) + 5; /* 2 Slashes, 2 X's and '\0'. */
+  return snprintf(NULL, 0, "%x", info->slot) +
+    snprintf(NULL, 0, "%" PRIx64, info->size) + (FILE_HASH_SIZE * 2) +
+    5; /* 2 Slashes, 2 X's and '\0'. */
 }
 
 /** Writes the unique path of the given file info into the specified
   buffer. */
 static void buildFilePath(char *buffer, const RegularFileInfo *info)
 {
-  sprintf(buffer,     "%02x", info->hash[0]);
+  sprintf(buffer, "%02x", info->hash[0]);
   sprintf(&buffer[3], "%02x", info->hash[1]);
   buffer[2] = buffer[1];
   buffer[1] = '/';
@@ -96,7 +95,7 @@ static void buildFilePath(char *buffer, const RegularFileInfo *info)
   }
 
   char *suffix_buffer = &buffer[FILE_HASH_SIZE * 2];
-  sprintf(suffix_buffer, "x%"PRIx64"x%x", info->size, info->slot);
+  sprintf(suffix_buffer, "x%" PRIx64 "x%x", info->size, info->slot);
 }
 
 /** A reusable buffer for constructing paths of files inside repos. */
@@ -128,8 +127,7 @@ static void fillPathBufferWithInfo(String repo_path,
   behind repoWriterOpenFile() and repoWriterOpenRaw(). */
 static RepoWriter *createRepoWriter(String repo_path,
                                     String repo_tmp_file_path,
-                                    String source_file_path,
-                                    bool raw_mode)
+                                    String source_file_path, bool raw_mode)
 {
   FileStream *stream = sFopenWrite(repo_tmp_file_path);
   RepoWriter *writer = sMalloc(sizeof *writer);
@@ -165,7 +163,8 @@ bool repoRegularFileExists(String repo_path, const RegularFileInfo *info)
   CR_EnsureCapacity(), to which the given pointer will be assigned.
   @param info The info from which the filepath will be built.
 */
-void repoBuildRegularFilePath(char **buffer_ptr, const RegularFileInfo *info)
+void repoBuildRegularFilePath(char **buffer_ptr,
+                              const RegularFileInfo *info)
 {
   const size_t required_capacity = getFilePathRequiredCapacity(info);
   *buffer_ptr = CR_EnsureCapacity(*buffer_ptr, required_capacity);
@@ -186,16 +185,15 @@ void repoBuildRegularFilePath(char **buffer_ptr, const RegularFileInfo *info)
 
   @return A new RepoReader which must be closed using repoReaderClose().
 */
-RepoReader *repoReaderOpenFile(String repo_path,
-                               String source_file_path,
+RepoReader *repoReaderOpenFile(String repo_path, String source_file_path,
                                const RegularFileInfo *info)
 {
   fillPathBufferWithInfo(repo_path, info);
   FILE *stream = fopen(path_buffer, "rb");
   if(stream == NULL)
   {
-    dieErrno("failed to open \"%s\" in \"%s\"",
-             source_file_path.content, repo_path.content);
+    dieErrno("failed to open \"%s\" in \"%s\"", source_file_path.content,
+             repo_path.content);
   }
 
   RepoReader *reader = sMalloc(sizeof *reader);
@@ -282,8 +280,7 @@ void repoReaderClose(RepoReader *reader_to_close)
   @return A new RepoWriter, which must be closed by the caller using
   repoWriterClose().
 */
-RepoWriter *repoWriterOpenFile(String repo_path,
-                               String repo_tmp_file_path,
+RepoWriter *repoWriterOpenFile(String repo_path, String repo_tmp_file_path,
                                String source_file_path,
                                const RegularFileInfo *info)
 {
@@ -301,10 +298,8 @@ RepoWriter *repoWriterOpenFile(String repo_path,
   returned RepoWriter will keep a reference to this string, so make sure
   not to modify or free it as long as the writer is in use.
 */
-RepoWriter *repoWriterOpenRaw(String repo_path,
-                              String repo_tmp_file_path,
-                              String source_file_path,
-                              String final_path)
+RepoWriter *repoWriterOpenRaw(String repo_path, String repo_tmp_file_path,
+                              String source_file_path, String final_path)
 {
   RepoWriter *writer = createRepoWriter(repo_path, repo_tmp_file_path,
                                         source_file_path, true);
@@ -342,8 +337,7 @@ void repoWriterWrite(const void *data, size_t size, RepoWriter *writer)
 static void fdatasyncDirectory(String path)
 {
   int dir_descriptor = open(path.content, O_RDONLY, 0);
-  if(dir_descriptor == -1 ||
-     fdatasync(dir_descriptor) != 0 ||
+  if(dir_descriptor == -1 || fdatasync(dir_descriptor) != 0 ||
      close(dir_descriptor) != 0)
   {
     dieErrno("failed to sync directory to device: \"%s\"", path.content);
@@ -419,7 +413,7 @@ typedef struct
 
   /** Either a relative or absolute path to the lockfile. */
   const char *file_path;
-}LockfileInfo;
+} LockfileInfo;
 
 /** Called when the progam terminates to cleanup a locked repository.
 

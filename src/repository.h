@@ -21,9 +21,9 @@ typedef struct RepoReader RepoReader;
 /** Stores the metadata of a regular file. */
 typedef struct
 {
-  mode_t mode; /**< The permission bits of the file. */
+  mode_t mode;      /**< The permission bits of the file. */
   time_t timestamp; /**< The files last modification time. */
-  uint64_t size; /**< The file size. */
+  uint64_t size;    /**< The file size. */
 
   /** The hash of the file. This array is only defined if the file size is
     greater than zero. If the files size is smaller than or equal to
@@ -36,7 +36,7 @@ typedef struct
     have the same size and hash. This variable is only defined if the file
     size is greater than FILE_HASH_SIZE. */
   uint8_t slot;
-}RegularFileInfo;
+} RegularFileInfo;
 
 extern bool repoRegularFileExists(String repo_path,
                                   const RegularFileInfo *info);

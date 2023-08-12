@@ -7,10 +7,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "error-handling.h"
 #include "informations.h"
 #include "safe-math.h"
 #include "safe-wrappers.h"
-#include "error-handling.h"
 
 /** A simple string buffer. */
 typedef struct
@@ -23,7 +23,7 @@ typedef struct
 
   /** The total capacity of the allocated buffer. */
   size_t capacity;
-}StringBuffer;
+} StringBuffer;
 
 /** Represents a directory search state. */
 typedef struct
@@ -38,7 +38,7 @@ typedef struct
     ignored, it will be treated like a node with the policy stored in this
     variable. */
   BackupPolicy fallback_policy;
-}DirSearch;
+} DirSearch;
 
 /** Represents a generic search state. */
 typedef struct
@@ -63,8 +63,8 @@ typedef struct
 
     /** The state variables of the current directories search state. */
     DirSearch search;
-  }access;
-}DirSearchState;
+  } access;
+} DirSearchState;
 
 /** A stack of search states, used for storing and restoring states when
   recursing into directories. */
@@ -78,7 +78,7 @@ typedef struct
 
   /** The total count of allocated states. */
   size_t capacity;
-}DirSearchStateStack;
+} DirSearchStateStack;
 
 struct SearchContext
 {
@@ -161,18 +161,15 @@ static SearchResult buildSearchResult(SearchContext *context,
                                       SearchNode *node,
                                       BackupPolicy policy)
 {
-  struct stat stats =
-    node != NULL && node->subnodes != NULL?
-    sStat(strWrap(context->buffer.str)):
-    sLStat(strWrap(context->buffer.str));
+  struct stat stats = node != NULL && node->subnodes != NULL
+    ? sStat(strWrap(context->buffer.str))
+    : sLStat(strWrap(context->buffer.str));
 
-  return (SearchResult)
-  {
-    .type =
-      S_ISREG(stats.st_mode)? SRT_regular:
-      S_ISLNK(stats.st_mode)? SRT_symlink:
-      S_ISDIR(stats.st_mode)? SRT_directory:
-      SRT_other,
+  return (SearchResult){
+    .type = S_ISREG(stats.st_mode) ? SRT_regular
+      : S_ISLNK(stats.st_mode)     ? SRT_symlink
+      : S_ISDIR(stats.st_mode)     ? SRT_directory
+                                   : SRT_other,
 
     .path = strSlice(context->buffer.str, context->buffer.length),
 
@@ -196,8 +193,7 @@ static void recursionStepRaw(SearchContext *context, SearchNode *node,
   /* Store the directories path length before recursing into it. */
   context->state.path_length = context->buffer.length;
 
-  if(node != NULL &&
-     node->policy == BPOL_none &&
+  if(node != NULL && node->policy == BPOL_none &&
      node->subnodes_contain_regex == false)
   {
     context->state.is_dir_search = false;
@@ -206,8 +202,9 @@ static void recursionStepRaw(SearchContext *context, SearchNode *node,
   else
   {
     context->state.is_dir_search = true;
-    context->state.access.search.dir = sOpenDir(strWrap(context->buffer.str));
-    context->state.access.search.subnodes = node? node->subnodes : NULL;
+    context->state.access.search.dir =
+      sOpenDir(strWrap(context->buffer.str));
+    context->state.access.search.subnodes = node ? node->subnodes : NULL;
     context->state.access.search.fallback_policy = policy;
   }
 }
@@ -309,12 +306,13 @@ static bool nodeMatches(SearchNode *node, String string)
 */
 static SearchResult finishSearchStep(SearchContext *context)
 {
-  struct dirent *dir_entry =
-    sReadDir(context->state.access.search.dir, strWrap(context->buffer.str));
+  struct dirent *dir_entry = sReadDir(context->state.access.search.dir,
+                                      strWrap(context->buffer.str));
 
   if(dir_entry == NULL)
   {
-    sCloseDir(context->state.access.search.dir, strWrap(context->buffer.str));
+    sCloseDir(context->state.access.search.dir,
+              strWrap(context->buffer.str));
     return finishDirectory(context);
   }
 
@@ -354,8 +352,8 @@ static SearchResult finishSearchStep(SearchContext *context)
   }
 
   /* Match against ignore expressions. */
-  for(RegexList *element = context->ignore_expressions;
-      element != NULL; element = element->next)
+  for(RegexList *element = context->ignore_expressions; element != NULL;
+      element = element->next)
   {
     if(regexec(element->regex, context->buffer.str, 0, NULL, 0) == 0)
     {

@@ -15,7 +15,7 @@ typedef struct
 
   /** The size of removed files from the repository. */
   uint64_t size;
-}GCStats;
+} GCStats;
 
 extern GCStats collectGarbage(Metadata *metadata, String repo_path);
 

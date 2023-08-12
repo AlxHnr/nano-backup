@@ -4,10 +4,10 @@
 
 #include "garbage-collector.h"
 
-#include "test.h"
-#include "test-common.h"
 #include "path-builder.h"
 #include "safe-wrappers.h"
+#include "test-common.h"
+#include "test.h"
 
 /** Generates various dummy files in "tmp/repo". */
 static void populateRepoWithDummyFiles(void)
@@ -30,18 +30,17 @@ static void populateRepoWithDummyFiles(void)
   sFclose(sFopenWrite(strWrap("tmp/repo/a/3/5/is")));
   sFclose(sFopenWrite(strWrap("tmp/repo/a/3/5/a")));
   sFclose(sFopenWrite(strWrap("tmp/repo/a/3/5/test")));
-  sSymlink(strWrap("../file.txt"),          strWrap("tmp/repo/file.txt"));
-  sSymlink(strWrap("foo"),                  strWrap("tmp/repo/a/b/bar"));
-  sSymlink(strWrap("bar"),                  strWrap("tmp/repo/a/c/q"));
-  sSymlink(strWrap("../../../a"),           strWrap("tmp/repo/a/3/6/link-1"));
-  sSymlink(strWrap("../../../../repo"),     strWrap("tmp/repo/a/3/6/link-2"));
+  sSymlink(strWrap("../file.txt"), strWrap("tmp/repo/file.txt"));
+  sSymlink(strWrap("foo"), strWrap("tmp/repo/a/b/bar"));
+  sSymlink(strWrap("bar"), strWrap("tmp/repo/a/c/q"));
+  sSymlink(strWrap("../../../a"), strWrap("tmp/repo/a/3/6/link-1"));
+  sSymlink(strWrap("../../../../repo"), strWrap("tmp/repo/a/3/6/link-2"));
   sSymlink(strWrap("../../../../file.txt"), strWrap("tmp/repo/a/3/6/link-3"));
-  sSymlink(strWrap("non-existing"),         strWrap("tmp/repo/a/2/broken"));
+  sSymlink(strWrap("non-existing"), strWrap("tmp/repo/a/2/broken"));
 }
 
 /** Wrapper around collectGarbage() which checks the returned stats. */
-static void testCollectGarbage(Metadata *metadata, const char *repo_path,
-                               size_t count, uint64_t size)
+static void testCollectGarbage(Metadata *metadata, const char *repo_path, size_t count, uint64_t size)
 {
   GCStats stats = collectGarbage(metadata, strWrap(repo_path));
 

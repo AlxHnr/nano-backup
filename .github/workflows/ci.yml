@@ -48,9 +48,12 @@ jobs:
     strategy:
       matrix:
         linter:
+          - clang-format
           - clang-tidy
           - cppcheck
         include:
+          - linter: clang-format
+            command: ./scripts/check-clang-format.sh
           - linter: clang-tidy
             command: >
               ./scripts/generate-compile-commands-json.sh &&

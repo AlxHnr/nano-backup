@@ -33,7 +33,7 @@ typedef struct
 
   /** Cache to store the result of checked files. */
   StringTable *unique_subpath_cache;
-}IntegrityCheckContext;
+} IntegrityCheckContext;
 
 /** Check the integrity of a single stored file.
 
@@ -95,7 +95,7 @@ static bool historyPointIsHealthy(IntegrityCheckContext *context,
   const void *cached_result =
     strTableGet(context->unique_subpath_cache, unique_subpath);
   void *subpath_is_healthy = (void *)0x1;
-  void *subpath_is_broken  = (void *)0x2;
+  void *subpath_is_broken = (void *)0x2;
 
   if(cached_result == NULL)
   {
@@ -124,8 +124,8 @@ static void checkIntegrityRecursively(IntegrityCheckContext *context,
 {
   for(PathNode *node = node_list; node != NULL; node = node->next)
   {
-    for(PathHistory *point = node->history;
-        point != NULL; point = point->next)
+    for(PathHistory *point = node->history; point != NULL;
+        point = point->next)
     {
       if(!historyPointIsHealthy(context, point))
       {

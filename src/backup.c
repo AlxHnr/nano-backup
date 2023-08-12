@@ -9,14 +9,14 @@
 
 #include "CRegion/alloc-growable.h"
 
-#include "search.h"
-#include "file-hash.h"
-#include "safe-math.h"
-#include "repository.h"
-#include "memory-pool.h"
-#include "safe-wrappers.h"
 #include "backup-helpers.h"
 #include "error-handling.h"
+#include "file-hash.h"
+#include "memory-pool.h"
+#include "repository.h"
+#include "safe-math.h"
+#include "safe-wrappers.h"
+#include "search.h"
 
 /** Reusable buffer for file IO. */
 static unsigned char *io_buffer = NULL;
@@ -127,8 +127,8 @@ static SearchNode *matchesSearchSubnodes(String path, SearchNode *result)
   if(result != NULL)
   {
     String path_tail = strSplitPath(path).tail;
-    for(SearchNode *node = result->subnodes;
-        node != NULL; node = node->next)
+    for(SearchNode *node = result->subnodes; node != NULL;
+        node = node->next)
     {
       if(searchNodeMatches(node, path_tail))
       {
@@ -196,8 +196,8 @@ static void prepareNodeForWipingRecursively(Metadata *metadata,
                                             PathNode *node)
 {
   prepareNodeForWiping(metadata, node);
-  for(PathNode *subnode = node->subnodes;
-      subnode != NULL; subnode = subnode->next)
+  for(PathNode *subnode = node->subnodes; subnode != NULL;
+      subnode = subnode->next)
   {
     prepareNodeForWipingRecursively(metadata, subnode);
   }
@@ -238,8 +238,8 @@ static void markAsRemovedRecursively(Metadata *metadata, PathNode *node,
     }
   }
 
-  for(PathNode *subnode = node->subnodes;
-      subnode != NULL; subnode = subnode->next)
+  for(PathNode *subnode = node->subnodes; subnode != NULL;
+      subnode = subnode->next)
   {
     markAsRemovedRecursively(metadata, subnode, extend_tracked_histories);
   }
@@ -279,8 +279,8 @@ static void handlePolicyChanges(Metadata *metadata, PathNode *node,
 
     if(node->history->state.type != PST_directory)
     {
-      for(PathNode *subnode = node->subnodes;
-          subnode != NULL; subnode = subnode->next)
+      for(PathNode *subnode = node->subnodes; subnode != NULL;
+          subnode = subnode->next)
       {
         prepareNodeForWipingRecursively(metadata, subnode);
       }
@@ -446,8 +446,8 @@ static void handleNotFoundSubnodes(Metadata *metadata,
                                    PathNode *subnode_list,
                                    RegexList *ignore_list)
 {
-  for(PathNode *subnode = subnode_list;
-      subnode != NULL; subnode = subnode->next)
+  for(PathNode *subnode = subnode_list; subnode != NULL;
+      subnode = subnode->next)
   {
     if(subnode->hint != BH_none)
     {
@@ -493,8 +493,7 @@ static SearchResultType initiateMetadataRecursively(Metadata *metadata,
 {
   SearchResult result = searchGetNext(context);
   if(result.type == SRT_end_of_directory ||
-     result.type == SRT_end_of_search ||
-     result.type == SRT_other)
+     result.type == SRT_end_of_search || result.type == SRT_other)
   {
     return result.type;
   }
@@ -526,19 +525,18 @@ static SearchResultType initiateMetadataRecursively(Metadata *metadata,
 
   if(result.type == SRT_directory)
   {
-    while(initiateMetadataRecursively(metadata, &node->subnodes,
-                                      context, ignore_list)
-          != SRT_end_of_directory);
+    while(initiateMetadataRecursively(metadata, &node->subnodes, context,
+                                      ignore_list) != SRT_end_of_directory)
+      ;
   }
 
   if(backupHintNoPol(node->hint) == BH_directory_to_regular ||
      backupHintNoPol(node->hint) == BH_directory_to_symlink)
   {
-    if(result.policy == BPOL_none ||
-       result.policy == BPOL_track)
+    if(result.policy == BPOL_none || result.policy == BPOL_track)
     {
-      for(PathNode *subnode = node->subnodes;
-          subnode != NULL; subnode = subnode->next)
+      for(PathNode *subnode = node->subnodes; subnode != NULL;
+          subnode = subnode->next)
       {
         markAsRemovedRecursively(metadata, subnode,
                                  result.policy == BPOL_track);
@@ -546,8 +544,8 @@ static SearchResultType initiateMetadataRecursively(Metadata *metadata,
     }
     else
     {
-      for(PathNode *subnode = node->subnodes;
-          subnode != NULL; subnode = subnode->next)
+      for(PathNode *subnode = node->subnodes; subnode != NULL;
+          subnode = subnode->next)
       {
         prepareNodeForWipingRecursively(metadata, subnode);
       }
@@ -556,8 +554,8 @@ static SearchResultType initiateMetadataRecursively(Metadata *metadata,
   else if(result.policy == BPOL_track &&
           node->history->state.type == PST_regular)
   {
-    for(PathNode *subnode = node->subnodes;
-        subnode != NULL; subnode = subnode->next)
+    for(PathNode *subnode = node->subnodes; subnode != NULL;
+        subnode = subnode->next)
     {
       markAsRemovedRecursively(metadata, subnode, false);
     }
@@ -572,8 +570,8 @@ static SearchResultType initiateMetadataRecursively(Metadata *metadata,
   if(result.policy == BPOL_none)
   {
     bool has_needed_subnode = false;
-    for(PathNode *subnode = node->subnodes;
-        subnode != NULL; subnode = subnode->next)
+    for(PathNode *subnode = node->subnodes; subnode != NULL;
+        subnode = subnode->next)
     {
       if(backupHintNoPol(subnode->hint) != BH_not_part_of_repository)
       {
@@ -606,17 +604,15 @@ static SearchResultType initiateMetadataRecursively(Metadata *metadata,
   determine the ideal block size.
 */
 static void copyFileIntoRepo(PathNode *node, String repo_path,
-                             String repo_tmp_file_path,
-                             struct stat stats)
+                             String repo_tmp_file_path, struct stat stats)
 {
   RegularFileInfo *reg = &node->history->state.metadata.reg;
   size_t blocksize = stats.st_blksize;
   uint64_t bytes_left = reg->size;
 
   FileStream *reader = sFopenRead(node->path);
-  RepoWriter *writer = repoWriterOpenFile(repo_path,
-                                          repo_tmp_file_path,
-                                          node->path, reg);
+  RepoWriter *writer =
+    repoWriterOpenFile(repo_path, repo_tmp_file_path, node->path, reg);
 
   io_buffer = CR_EnsureCapacity(io_buffer, blocksize);
 
@@ -791,8 +787,7 @@ static void addFileToRepo(PathNode *node, String repo_path,
   @param repo_tmp_file_path The path to the repositories temporary file.
 */
 static void finishBackupRecursively(Metadata *metadata,
-                                    PathNode *node_list,
-                                    String repo_path,
+                                    PathNode *node_list, String repo_path,
                                     String repo_tmp_file_path)
 {
   for(PathNode *node = node_list; node != NULL; node = node->next)
@@ -808,8 +803,8 @@ static void finishBackupRecursively(Metadata *metadata,
       addFileToRepo(node, repo_path, repo_tmp_file_path);
     }
 
-    finishBackupRecursively(metadata, node->subnodes,
-                            repo_path, repo_tmp_file_path);
+    finishBackupRecursively(metadata, node->subnodes, repo_path,
+                            repo_tmp_file_path);
   }
 }
 
@@ -833,8 +828,9 @@ void initiateBackup(Metadata *metadata, SearchNode *root_node)
 {
   SearchContext *context = searchNew(root_node);
   while(initiateMetadataRecursively(metadata, &metadata->paths, context,
-                                    *root_node->ignore_expressions)
-        != SRT_end_of_search);
+                                    *root_node->ignore_expressions) !=
+        SRT_end_of_search)
+    ;
 
   handleNotFoundSubnodes(metadata, root_node, root_node->policy,
                          metadata->paths, *root_node->ignore_expressions);
