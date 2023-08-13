@@ -447,10 +447,10 @@ static PathNode *readPathSubnodes(const FileContent content,
             strIsDotElement(name))
     {
       die("contains invalid filename \"%s\": \"%s\"",
-          strCopy(name).content, metadata_path.content);
+          strLegacyCopy(name).content, metadata_path.content);
     }
 
-    StringView full_path = strAppendPath(
+    StringView full_path = strLegacyAppendPath(
       parent_node == NULL ? strWrap("") : parent_node->path, name);
 
     strSet(&node->path, full_path);

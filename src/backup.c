@@ -42,7 +42,8 @@ static void setPathHistoryState(PathState *state,
     state->type = PST_symlink;
     static char *buffer = NULL;
     readSymlink(result.path, result.stats, &buffer);
-    strSet(&state->metadata.symlink_target, strCopy(strWrap(buffer)));
+    strSet(&state->metadata.symlink_target,
+           strLegacyCopy(strWrap(buffer)));
   }
   else if(result.type == SRT_directory)
   {
@@ -503,7 +504,7 @@ initiateMetadataRecursively(Metadata *metadata, PathNode **node_list,
   {
     node = mpAlloc(sizeof *node);
 
-    StringView path_copy = strCopy(result.path);
+    StringView path_copy = strLegacyCopy(result.path);
     memcpy(&node->path, &path_copy, sizeof(node->path));
 
     node->hint = BH_added;

@@ -18,12 +18,10 @@ extern StringView strWrap(const char *string);
 extern StringView strWrapLength(const char *string, size_t length);
 extern const char *strRaw(StringView string, char **buffer);
 
-extern StringView strCopy(StringView string);
 extern void strSet(StringView *string, StringView value);
 extern bool strEqual(StringView a, StringView b);
 
 extern StringView strRemoveTrailingSlashes(StringView string);
-extern StringView strAppendPath(StringView path, StringView filename);
 extern bool strWhitespaceOnly(StringView string);
 extern bool strIsDotElement(StringView string);
 extern bool strPathContainsDotElements(StringView path);
@@ -35,5 +33,9 @@ typedef struct
   StringView tail;
 } PathSplit;
 extern PathSplit strSplitPath(StringView path);
+
+extern StringView strLegacyCopy(StringView string);
+extern StringView strLegacyAppendPath(StringView path,
+                                      StringView filename);
 
 #endif

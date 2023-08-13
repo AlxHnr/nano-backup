@@ -96,7 +96,7 @@ static SearchNode *newNode(StringTable *existing_nodes, StringView path,
     StringView expression =
       strWrapLength(&paths.tail.content[1], paths.tail.length - 1);
 
-    StringView copy = strCopy(expression);
+    StringView copy = strLegacyCopy(expression);
     strSet(&node->name, copy);
 
     node->regex = rpCompile(node->name, strWrap("config"), line_nr);
@@ -105,7 +105,7 @@ static SearchNode *newNode(StringTable *existing_nodes, StringView path,
   }
   else
   {
-    strSet(&node->name, strCopy(paths.tail));
+    strSet(&node->name, strLegacyCopy(paths.tail));
 
     node->regex = NULL;
   }
@@ -240,13 +240,13 @@ SearchNode *searchTreeParse(StringView config)
     {
       /* Slice out and copy the invalid policy name. */
       StringView policy =
-        strCopy(strWrapLength(&line.content[1], line.length - 2));
+        strLegacyCopy(strWrapLength(&line.content[1], line.length - 2));
       die("config: line %zu: invalid policy: \"%s\"", line_nr,
           policy.content);
     }
     else if(current_policy == BPOL_none)
     {
-      StringView pattern = strCopy(line);
+      StringView pattern = strLegacyCopy(line);
       die("config: line %zu: pattern without policy: \"%s\"", line_nr,
           pattern.content);
     }
@@ -255,7 +255,7 @@ SearchNode *searchTreeParse(StringView config)
     {
       RegexList *expression = mpAlloc(sizeof *expression);
 
-      strSet(&expression->expression, strCopy(line));
+      strSet(&expression->expression, strLegacyCopy(line));
       expression->line_nr = line_nr;
       expression->regex =
         rpCompile(expression->expression, strWrap("config"), line_nr);
@@ -274,7 +274,7 @@ SearchNode *searchTreeParse(StringView config)
       if(strPathContainsDotElements(line))
       {
         die("config: line %zu: path contains \".\" or \"..\": \"%s\"",
-            line_nr, strCopy(line).content);
+            line_nr, strLegacyCopy(line).content);
       }
 
       StringView path = strRemoveTrailingSlashes(line);
@@ -285,7 +285,7 @@ SearchNode *searchTreeParse(StringView config)
          previous_definition->policy != BPOL_none &&
          !previous_definition->policy_inherited)
       {
-        StringView redefined_path = strCopy(line);
+        StringView redefined_path = strLegacyCopy(line);
         die("config: line %zu: redefining %sline %zu: \"%s\"", line_nr,
             previous_definition->policy != current_policy ? "policy of "
                                                           : "",
@@ -304,7 +304,7 @@ SearchNode *searchTreeParse(StringView config)
     }
     else
     {
-      StringView path = strCopy(line);
+      StringView path = strLegacyCopy(line);
       die("config: line %zu: invalid path: \"%s\"", line_nr, path.content);
     }
 

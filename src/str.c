@@ -34,7 +34,7 @@ StringView strWrapLength(const char *string, const size_t length)
 
   @return A new string which lifetime will be bound to the entire program.
 */
-StringView strCopy(StringView string)
+StringView strLegacyCopy(StringView string)
 {
   char *cstring = CR_RegionAllocUnaligned(CR_GetGlobalRegion(),
                                           sSizeAdd(string.length, 1));
@@ -116,7 +116,7 @@ StringView strRemoveTrailingSlashes(StringView string)
 
   @return A new string which lifetime will be bound to the entire program.
 */
-StringView strAppendPath(StringView path, StringView filename)
+StringView strLegacyAppendPath(StringView path, StringView filename)
 {
   const size_t buffer_size =
     sSizeAdd(sSizeAdd(path.length, filename.length), 2);

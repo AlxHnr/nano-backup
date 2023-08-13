@@ -94,7 +94,7 @@ static size_t skipCwd(SearchIterator *iterator, StringView cwd, const SearchNode
 */
 static StringView trimCwd(StringView string, StringView cwd)
 {
-  return strCopy(strWrap(&string.content[cwd.length + 1]));
+  return strLegacyCopy(strWrap(&string.content[cwd.length + 1]));
 }
 
 /** Asserts that all nodes in the given search tree got correctly set and

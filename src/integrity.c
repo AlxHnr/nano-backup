@@ -101,7 +101,8 @@ static bool historyPointIsHealthy(IntegrityCheckContext *context,
 
     const bool is_healthy =
       storedFileIsHealthy(file_info, full_unique_path);
-    strTableMap(context->unique_subpath_cache, strCopy(unique_subpath),
+    strTableMap(context->unique_subpath_cache,
+                strLegacyCopy(unique_subpath),
                 is_healthy ? subpath_is_healthy : subpath_is_broken);
     return is_healthy;
   }

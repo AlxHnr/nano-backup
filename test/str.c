@@ -39,7 +39,7 @@ static StringView checkedStrWrapLength(const char *string, const size_t length)
 
 static StringView checkedStrCopy(StringView string)
 {
-  StringView copy = check(strCopy(string));
+  StringView copy = check(strLegacyCopy(string));
 
   assert_true(copy.content != string.content);
   assert_true(copy.length == string.length);
@@ -52,7 +52,7 @@ static StringView checkedStrCopy(StringView string)
 
 static StringView checkedStrAppendPath(StringView a, StringView b)
 {
-  StringView string = check(strAppendPath(a, b));
+  StringView string = check(strLegacyAppendPath(a, b));
 
   assert_true(string.content != a.content);
   assert_true(string.content != b.content);

@@ -125,7 +125,7 @@ static size_t checkPathTree(const PathNode *parent_node, const Metadata *metadat
     }
     else if(node->path.content[node->path.length] != '\0')
     {
-      die("unterminated path string in metadata: \"%s\"", strCopy(node->path).content);
+      die("unterminated path string in metadata: \"%s\"", strLegacyCopy(node->path).content);
     }
     else if(check_path_table && strTableGet(metadata->path_table, node->path) == NULL)
     {
@@ -212,7 +212,7 @@ static void checkPathState(const PathNode *node, const PathHistory *point, const
 StringView getCwd(void)
 {
   char *cwd = sGetCwd();
-  StringView cwd_string = strCopy(strWrap(cwd));
+  StringView cwd_string = strLegacyCopy(strWrap(cwd));
   free(cwd);
 
   return cwd_string;

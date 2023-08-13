@@ -76,19 +76,19 @@ PathNode *findCwdNode(Metadata *metadata, StringView cwd, const BackupHint hint)
 PathNode *findSubnode(PathNode *node, const char *subnode_name, const BackupHint hint, const BackupPolicy policy,
                       const size_t requested_history_length, const size_t requested_subnode_count)
 {
-  StringView subnode_path = strAppendPath(node->path, strWrap(subnode_name));
+  StringView subnode_path = strLegacyAppendPath(node->path, strWrap(subnode_name));
   return findPathNode(node->subnodes, subnode_path.content, hint, policy, requested_history_length,
                       requested_subnode_count);
 }
 
 time_t getParentTime(const char *path)
 {
-  return sStat(strCopy(strSplitPath(strWrap(path)).head)).st_mtime;
+  return sStat(strLegacyCopy(strSplitPath(strWrap(path)).head)).st_mtime;
 }
 
 void restoreParentTime(const char *path, const time_t time)
 {
-  StringView parent_path = strCopy(strSplitPath(strWrap(path)).head);
+  StringView parent_path = strLegacyCopy(strSplitPath(strWrap(path)).head);
   sUtime(parent_path, time);
 }
 

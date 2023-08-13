@@ -119,9 +119,12 @@ static void runIntegrityCheck(const Metadata *metadata,
 static void backup(StringView repo_arg)
 {
   StringView repo_path = strRemoveTrailingSlashes(repo_arg);
-  StringView config_path = strAppendPath(repo_path, strWrap("config"));
-  StringView metadata_path = strAppendPath(repo_path, strWrap("metadata"));
-  StringView tmp_file_path = strAppendPath(repo_path, strWrap("tmp-file"));
+  StringView config_path =
+    strLegacyAppendPath(repo_path, strWrap("config"));
+  StringView metadata_path =
+    strLegacyAppendPath(repo_path, strWrap("metadata"));
+  StringView tmp_file_path =
+    strLegacyAppendPath(repo_path, strWrap("tmp-file"));
 
   if(!sPathExists(config_path))
   {
@@ -173,7 +176,8 @@ static void backup(StringView repo_arg)
 static Metadata *metadataLoadFromRepo(StringView repo_arg)
 {
   StringView repo_path = strRemoveTrailingSlashes(repo_arg);
-  StringView metadata_path = strAppendPath(repo_path, strWrap("metadata"));
+  StringView metadata_path =
+    strLegacyAppendPath(repo_path, strWrap("metadata"));
 
   if(!sPathExists(metadata_path))
   {
@@ -194,7 +198,7 @@ static StringView buildFullPath(StringView path)
   {
     char *cwd = sGetCwd();
     StringView full_path =
-      strAppendPath(strRemoveTrailingSlashes(strWrap(cwd)), path);
+      strLegacyAppendPath(strRemoveTrailingSlashes(strWrap(cwd)), path);
     free(cwd);
 
     return full_path;
@@ -211,7 +215,7 @@ static void restore(StringView repo_arg, const size_t id, StringView path)
 {
   Metadata *metadata = metadataLoadFromRepo(repo_arg);
   StringView full_path = strRemoveTrailingSlashes(buildFullPath(path));
-  initiateRestore(metadata, id, strCopy(full_path));
+  initiateRestore(metadata, id, strLegacyCopy(full_path));
 
   const ChangeSummary changes = printMetadataChanges(metadata, NULL);
   if(containsChanges(&changes) && printf("\n") == 1)

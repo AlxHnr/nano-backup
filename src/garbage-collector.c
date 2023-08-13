@@ -40,7 +40,7 @@ static void populateTableRecursively(StringTable *table,
 
     if(strTableGet(table, path) == NULL)
     {
-      strTableMap(table, strCopy(path), (void *)0x1);
+      strTableMap(table, strLegacyCopy(path), (void *)0x1);
     }
   }
 
