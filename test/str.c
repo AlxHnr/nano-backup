@@ -51,37 +51,30 @@ static StringView checkedStrCopy(StringView string, Allocator *a)
   return copy;
 }
 
-static StringView checkedStrAppendPath(StringView a, StringView b)
+static StringView checkedStrAppendPath(StringView path, StringView filename, Allocator *a)
 {
-  StringView string = check(strLegacyAppendPath(a, b));
+  StringView string = check(strAppendPath(path, filename, a));
 
-  assert_true(string.content != a.content);
-  assert_true(string.content != b.content);
-  assert_true(string.length == a.length + b.length + 1);
+  assert_true(string.content != path.content);
+  assert_true(string.content != filename.content);
+  assert_true(string.length == path.length + filename.length + 1);
   assert_true(string.is_terminated);
 
-  assert_true(memcmp(string.content, a.content, a.length) == 0);
-  assert_true(string.content[a.length] == '/');
-  assert_true(memcmp(&string.content[a.length + 1], b.content, b.length) == 0);
-  assert_true(string.content[a.length + 1 + b.length] == '\0');
+  assert_true(memcmp(string.content, path.content, path.length) == 0);
+  assert_true(string.content[path.length] == '/');
+  assert_true(memcmp(&string.content[path.length + 1], filename.content, filename.length) == 0);
+  assert_true(string.content[path.length + 1 + filename.length] == '\0');
 
   return string;
 }
 
-/** Tests strAppendPath().
-
-  @param ca The first string to pass to strAppendPath().
-  @param cb The second string to pass to strAppendPath().
-  @param cexpected_result The expected result.
-*/
-static void testStrAppendPath(const char *ca, const char *cb, const char *cexpected_result)
+static void testStrAppendPath(const char *raw_path, const char *raw_filename, const char *expected_result,
+                              Allocator *a)
 {
-  StringView a = checkedStr(ca);
-  StringView b = checkedStr(cb);
-  StringView result = checkedStrAppendPath(a, b);
-  StringView expected_result = checkedStr(cexpected_result);
-
-  assert_true(strEqual(result, expected_result));
+  StringView path = checkedStr(raw_path);
+  StringView filename = checkedStr(raw_filename);
+  StringView result = checkedStrAppendPath(path, filename, a);
+  assert_true(strEqual(result, checkedStr(expected_result)));
 }
 
 static void checkedStrSet(StringView *string, StringView value)
@@ -293,25 +286,30 @@ int main(void)
 
   testGroupStart("strAppendPath()");
   {
-    testStrAppendPath("", "", "/");
-    testStrAppendPath("foo", "", "foo/");
-    testStrAppendPath("", "bar", "/bar");
-    testStrAppendPath("/", "", "//");
-    testStrAppendPath("", "/", "//");
-    testStrAppendPath("/", "/", "///");
-    testStrAppendPath("foo", "bar", "foo/bar");
+    CR_Region *r = CR_RegionNew();
+    Allocator *a = allocatorWrapRegion(r);
 
-    testStrAppendPath("/foo/bar//", "/foo", "/foo/bar////foo");
-    testStrAppendPath("/etc/init.d", "start.sh", "/etc/init.d/start.sh");
-    testStrAppendPath("etc/init.d", "start.sh", "etc/init.d/start.sh");
-    testStrAppendPath("etc/init.d", "/start.sh", "etc/init.d//start.sh");
+    testStrAppendPath("", "", "/", a);
+    testStrAppendPath("foo", "", "foo/", a);
+    testStrAppendPath("", "bar", "/bar", a);
+    testStrAppendPath("/", "", "//", a);
+    testStrAppendPath("", "/", "//", a);
+    testStrAppendPath("/", "/", "///", a);
+    testStrAppendPath("foo", "bar", "foo/bar", a);
 
-    assert_true(strEqual(checkedStrAppendPath(slice1, slice2), checkedStr("this/is a test")));
-    assert_true(strEqual(checkedStrAppendPath(slice2, slice3), checkedStr("is a test/test string")));
-    assert_true(strEqual(checkedStrAppendPath(slice3, slice1), checkedStr("test string/this")));
-    assert_true(strEqual(checkedStrAppendPath(slice2, zero_length), checkedStr("is a test/")));
-    assert_true(strEqual(checkedStrAppendPath(zero_length, slice1), checkedStr("/this")));
-    assert_true(strEqual(checkedStrAppendPath(zero_length, zero_length), checkedStr("/")));
+    testStrAppendPath("/foo/bar//", "/foo", "/foo/bar////foo", a);
+    testStrAppendPath("/etc/init.d", "start.sh", "/etc/init.d/start.sh", a);
+    testStrAppendPath("etc/init.d", "start.sh", "etc/init.d/start.sh", a);
+    testStrAppendPath("etc/init.d", "/start.sh", "etc/init.d//start.sh", a);
+
+    assert_true(strEqual(checkedStrAppendPath(slice1, slice2, a), checkedStr("this/is a test")));
+    assert_true(strEqual(checkedStrAppendPath(slice2, slice3, a), checkedStr("is a test/test string")));
+    assert_true(strEqual(checkedStrAppendPath(slice3, slice1, a), checkedStr("test string/this")));
+    assert_true(strEqual(checkedStrAppendPath(slice2, zero_length, a), checkedStr("is a test/")));
+    assert_true(strEqual(checkedStrAppendPath(zero_length, slice1, a), checkedStr("/this")));
+    assert_true(strEqual(checkedStrAppendPath(zero_length, zero_length, a), checkedStr("/")));
+
+    CR_RegionRelease(r);
   }
   testGroupEnd();
 

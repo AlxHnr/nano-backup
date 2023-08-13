@@ -36,6 +36,8 @@ typedef struct
   StringView tail;
 } PathSplit;
 extern PathSplit strSplitPath(StringView path);
+extern StringView strAppendPath(StringView path, StringView filename,
+                                Allocator *a);
 
 extern StringView strLegacyCopy(StringView string);
 extern StringView strLegacyAppendPath(StringView path,

@@ -235,6 +235,32 @@ bool strIsParentPath(StringView parent, StringView path)
     memcmp(path.content, parent.content, parent.length) == 0;
 }
 
+/** Append the given filename to the specified path and add a '/' in
+  between.
+
+  @param path Base path to which the filename should be appended.
+  @param filename Will be appended to the given path.
+  @param a Used for allocating the returned string.
+*/
+StringView strAppendPath(StringView path, StringView filename,
+                         Allocator *a)
+{
+  const size_t new_path_length =
+    sSizeAdd(sSizeAdd(path.length, 1), filename.length);
+
+  char *raw_string = allocate(a, sSizeAdd(new_path_length, 1));
+  memcpy(raw_string, path.content, path.length);
+  raw_string[path.length] = '/';
+  memcpy(&raw_string[path.length + 1], filename.content, filename.length);
+  raw_string[new_path_length] = '\0';
+
+  return (StringView){
+    .content = raw_string,
+    .length = new_path_length,
+    .is_terminated = true,
+  };
+}
+
 StringView strLegacyCopy(StringView string)
 {
   char *cstring = CR_RegionAllocUnaligned(CR_GetGlobalRegion(),
