@@ -11,32 +11,6 @@
 #include "safe-wrappers.h"
 #include "string-table.h"
 
-static StringView copy_token = {
-  .content = "[copy]",
-  .length = 6,
-  .is_terminated = true,
-};
-static StringView mirror_token = {
-  .content = "[mirror]",
-  .length = 8,
-  .is_terminated = true,
-};
-static StringView track_token = {
-  .content = "[track]",
-  .length = 7,
-  .is_terminated = true,
-};
-static StringView ignore_token = {
-  .content = "[ignore]",
-  .length = 8,
-  .is_terminated = true,
-};
-static StringView summarize_token = {
-  .content = "[summarize]",
-  .length = 11,
-  .is_terminated = true,
-};
-
 /** Returns a string slice, containing the current line in the given config
   files data.
 
@@ -208,6 +182,11 @@ SearchNode *searchTreeParse(StringView config)
     parser_position = 3;
   }
 
+  StringView copy_token = str("[copy]");
+  StringView mirror_token = str("[mirror]");
+  StringView track_token = str("[track]");
+  StringView ignore_token = str("[ignore]");
+  StringView summarize_token = str("[summarize]");
   while(parser_position < config.length)
   {
     StringView line = getLine(config, parser_position);
