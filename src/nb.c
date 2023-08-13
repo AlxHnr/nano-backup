@@ -56,7 +56,7 @@ static void ensureUserConsent(const char *question)
   not. Will be updated by this function.
 */
 static void printStats(const char *summary, const TextColor color,
-                       const ChangeStats stats, bool *printed_stats)
+                       const ChangeDetail stats, bool *printed_stats)
 {
   if(*printed_stats)
   {
@@ -70,22 +70,22 @@ static void printStats(const char *summary, const TextColor color,
   printf("%s: ", summary);
   colorPrintf(stdout, color, "%zu", stats.affected_items_count);
   printf(" (");
-  printHumanReadableSize(stats.affected_items_size_total);
+  printHumanReadableSize(stats.affected_items_total_size);
   printf(")");
 }
 
 static void runGC(const Metadata *metadata, String repo_path,
                   const bool prepend_newline)
 {
-  const GCStats gc_stats = collectGarbage(metadata, repo_path);
+  const GCStatistics gc_stats = collectGarbage(metadata, repo_path);
 
-  if(gc_stats.count > 0)
+  if(gc_stats.deleted_items_count > 0)
   {
     printf("%sDiscarded unreferenced items: ",
            prepend_newline ? "\n" : "");
-    colorPrintf(stdout, TC_blue_bold, "%zu", gc_stats.count);
+    colorPrintf(stdout, TC_blue_bold, "%zu", gc_stats.deleted_items_count);
     printf(" (");
-    printHumanReadableSize(gc_stats.size);
+    printHumanReadableSize(gc_stats.deleted_items_total_size);
     printf(")\n");
   }
 }

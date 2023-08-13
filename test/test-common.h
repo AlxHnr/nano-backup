@@ -18,7 +18,7 @@ extern void mustHaveNonExisting(const PathNode *node, const Backup *backup);
 extern void mustHaveRegular(const PathNode *node, const Backup *backup, uid_t uid, gid_t gid, time_t timestamp,
                             mode_t mode, uint64_t size, const uint8_t *hash, uint8_t slot);
 extern void mustHaveSymlink(const PathNode *node, const Backup *backup, uid_t uid, gid_t gid,
-                            const char *sym_target);
+                            const char *symlink_target);
 extern void mustHaveDirectory(const PathNode *node, const Backup *backup, uid_t uid, gid_t gid, time_t timestamp,
                               mode_t mode);
 

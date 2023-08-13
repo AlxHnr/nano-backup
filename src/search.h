@@ -13,8 +13,8 @@ typedef struct
   SearchResultType type;
 
   /** The full path to the found file, containing a null-terminated buffer.
-    It shares memory with the SearchContext to which it belongs and will be
-    invalidated with the next call to searchGetNext(). */
+    It shares memory with the SearchIterator to which it belongs and will
+    be invalidated with the next call to searchGetNext(). */
   String path;
 
   /** The SearchNode which has matched the found path. Will be NULL if the
@@ -29,10 +29,9 @@ typedef struct
   struct stat stats;
 } SearchResult;
 
-/** An opaque struct representing a search. */
-typedef struct SearchContext SearchContext;
+typedef struct SearchIterator SearchIterator;
 
-extern SearchContext *searchNew(SearchNode *root_node);
-extern SearchResult searchGetNext(SearchContext *context);
+extern SearchIterator *searchNew(SearchNode *root_node);
+extern SearchResult searchGetNext(SearchIterator *iterator);
 
 #endif

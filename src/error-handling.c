@@ -9,7 +9,7 @@
 /** Prints an error message and terminates the program. It takes the same
   arguments as printf().
 
-  @param format A valid formating string. This string doesn't need to
+  @param format A valid formatting string. This string doesn't need to
   contain newlines.
   @param ... Additional arguments.
 */

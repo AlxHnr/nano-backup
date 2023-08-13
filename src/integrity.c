@@ -72,12 +72,12 @@ static bool storedFileIsHealthy(const RegularFileInfo *file_info,
 static bool historyPointIsHealthy(IntegrityCheckContext *context,
                                   const PathHistory *point)
 {
-  if(point->state.type != PST_regular)
+  if(point->state.type != PST_regular_file)
   {
     return true;
   }
 
-  const RegularFileInfo *file_info = &point->state.metadata.reg;
+  const RegularFileInfo *file_info = &point->state.metadata.file_info;
   if(file_info->size <= FILE_HASH_SIZE)
   {
     return true;

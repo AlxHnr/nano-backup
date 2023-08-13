@@ -14,7 +14,6 @@
 #include "safe-wrappers.h"
 #include "search.h"
 
-/** Reusable buffer for file IO. */
 static unsigned char *io_buffer = NULL;
 
 /** Sets all values inside the given state to the properties in the
@@ -31,25 +30,26 @@ static void setPathHistoryState(PathState *state,
   state->uid = result.stats.st_uid;
   state->gid = result.stats.st_gid;
 
-  if(result.type == SRT_regular)
+  if(result.type == SRT_regular_file)
   {
-    state->type = PST_regular;
-    state->metadata.reg.mode = result.stats.st_mode;
-    state->metadata.reg.timestamp = result.stats.st_mtime;
-    state->metadata.reg.size = result.stats.st_size;
+    state->type = PST_regular_file;
+    state->metadata.file_info.permission_bits = result.stats.st_mode;
+    state->metadata.file_info.modification_time = result.stats.st_mtime;
+    state->metadata.file_info.size = result.stats.st_size;
   }
   else if(result.type == SRT_symlink)
   {
     state->type = PST_symlink;
     static char *buffer = NULL;
     readSymlink(result.path, result.stats, &buffer);
-    strSet(&state->metadata.sym_target, strCopy(strWrap(buffer)));
+    strSet(&state->metadata.symlink_target, strCopy(strWrap(buffer)));
   }
   else if(result.type == SRT_directory)
   {
     state->type = PST_directory;
-    state->metadata.dir.mode = result.stats.st_mode;
-    state->metadata.dir.timestamp = result.stats.st_mtime;
+    state->metadata.directory_info.permission_bits = result.stats.st_mode;
+    state->metadata.directory_info.modification_time =
+      result.stats.st_mtime;
   }
 }
 
@@ -323,7 +323,7 @@ static void handleRemovedPath(Metadata *metadata, PathNode *node,
 static void handleFiletypeChanges(PathNode *node,
                                   const SearchResult result)
 {
-  if(node->history->state.type == PST_regular)
+  if(node->history->state.type == PST_regular_file)
   {
     if(result.type == SRT_symlink)
     {
@@ -336,7 +336,7 @@ static void handleFiletypeChanges(PathNode *node,
   }
   else if(node->history->state.type == PST_symlink)
   {
-    if(result.type == SRT_regular)
+    if(result.type == SRT_regular_file)
     {
       backupHintSet(node->hint, BH_symlink_to_regular);
     }
@@ -347,7 +347,7 @@ static void handleFiletypeChanges(PathNode *node,
   }
   else if(node->history->state.type == PST_directory)
   {
-    if(result.type == SRT_regular)
+    if(result.type == SRT_regular_file)
     {
       backupHintSet(node->hint, BH_directory_to_regular);
     }
@@ -486,7 +486,7 @@ static void handleNotFoundSubnodes(Metadata *metadata,
 */
 static SearchResultType
 initiateMetadataRecursively(Metadata *metadata, PathNode **node_list,
-                            SearchContext *context,
+                            SearchIterator *context,
                             const RegexList *ignore_list)
 {
   const SearchResult result = searchGetNext(context);
@@ -550,7 +550,7 @@ initiateMetadataRecursively(Metadata *metadata, PathNode **node_list,
     }
   }
   else if(result.policy == BPOL_track &&
-          node->history->state.type == PST_regular)
+          node->history->state.type == PST_regular_file)
   {
     for(PathNode *subnode = node->subnodes; subnode != NULL;
         subnode = subnode->next)
@@ -605,13 +605,14 @@ static void copyFileIntoRepo(PathNode *node, String repo_path,
                              String repo_tmp_file_path,
                              const struct stat stats)
 {
-  const RegularFileInfo *reg = &node->history->state.metadata.reg;
+  const RegularFileInfo *file_info =
+    &node->history->state.metadata.file_info;
   const size_t blocksize = stats.st_blksize;
-  uint64_t bytes_left = reg->size;
+  uint64_t bytes_left = file_info->size;
 
   FileStream *reader = sFopenRead(node->path);
-  RepoWriter *writer =
-    repoWriterOpenFile(repo_path, repo_tmp_file_path, node->path, reg);
+  RepoWriter *writer = repoWriterOpenFile(repo_path, repo_tmp_file_path,
+                                          node->path, file_info);
 
   io_buffer = CR_EnsureCapacity(io_buffer, blocksize);
 
@@ -653,17 +654,19 @@ static void copyFileIntoRepo(PathNode *node, String repo_path,
 static bool equalsToStoredFile(const PathNode *node, String repo_path,
                                const struct stat stats)
 {
-  const RegularFileInfo *reg = &node->history->state.metadata.reg;
+  const RegularFileInfo *file_info =
+    &node->history->state.metadata.file_info;
   const size_t blocksize = stats.st_blksize;
 
   FileStream *stream = sFopenRead(node->path);
 
   io_buffer = CR_EnsureCapacity(io_buffer, sSizeMul(blocksize, 2));
 
-  RepoReader *repo_stream = repoReaderOpenFile(repo_path, node->path, reg);
+  RepoReader *repo_stream =
+    repoReaderOpenFile(repo_path, node->path, file_info);
   unsigned char *repo_buffer = &io_buffer[blocksize];
 
-  uint64_t bytes_left = reg->size;
+  uint64_t bytes_left = file_info->size;
   bool files_equal = true;
   while(bytes_left > 0 && files_equal)
   {
@@ -709,21 +712,21 @@ static bool equalsToStoredFile(const PathNode *node, String repo_path,
 static bool searchFileDuplicates(PathNode *node, String repo_path,
                                  const struct stat stats)
 {
-  RegularFileInfo *reg = &node->history->state.metadata.reg;
-  reg->slot = 0;
+  RegularFileInfo *file_info = &node->history->state.metadata.file_info;
+  file_info->slot = 0;
 
-  while(repoRegularFileExists(repo_path, reg))
+  while(repoRegularFileExists(repo_path, file_info))
   {
     if(equalsToStoredFile(node, repo_path, stats))
     {
       return true;
     }
-    else if(reg->slot == UINT8_MAX)
+    else if(file_info->slot == UINT8_MAX)
     {
       die("overflow calculating slot number");
     }
 
-    reg->slot++;
+    file_info->slot++;
   }
 
   return false;
@@ -741,19 +744,20 @@ static bool searchFileDuplicates(PathNode *node, String repo_path,
 static void addFileToRepo(PathNode *node, String repo_path,
                           String repo_tmp_file_path)
 {
-  RegularFileInfo *reg = &node->history->state.metadata.reg;
+  RegularFileInfo *file_info = &node->history->state.metadata.file_info;
 
   /* Die if the file has changed since the metadata was initiated. */
   const struct stat stats = sStat(node->path);
-  if(node->history->state.metadata.reg.timestamp != stats.st_mtime)
+  if(node->history->state.metadata.file_info.modification_time !=
+     stats.st_mtime)
   {
     die("file has changed during backup: \"%s\"", node->path.content);
   }
-  else if(reg->size > FILE_HASH_SIZE)
+  else if(file_info->size > FILE_HASH_SIZE)
   {
     if(!(node->hint & BH_fresh_hash))
     {
-      fileHash(node->path, stats, reg->hash);
+      fileHash(node->path, stats, file_info->hash);
     }
 
     if(!searchFileDuplicates(node, repo_path, stats))
@@ -765,7 +769,7 @@ static void addFileToRepo(PathNode *node, String repo_path,
   {
     /* Store small files directly in its hash buffer. */
     FileStream *stream = sFopenRead(node->path);
-    sFread(&reg->hash, reg->size, stream);
+    sFread(&file_info->hash, file_info->size, stream);
     const bool stream_not_at_end = sFbytesLeft(stream);
     sFclose(stream);
 
@@ -793,8 +797,8 @@ static void finishBackupRecursively(Metadata *metadata,
   for(PathNode *node = node_list; node != NULL; node = node->next)
   {
     /* Handle only new regular files. */
-    if(node->history->state.type == PST_regular &&
-       node->history->state.metadata.reg.size > 0 &&
+    if(node->history->state.type == PST_regular_file &&
+       node->history->state.metadata.file_info.size > 0 &&
        (backupHintNoPol(node->hint) == BH_added ||
         backupHintNoPol(node->hint) == BH_symlink_to_regular ||
         backupHintNoPol(node->hint) == BH_directory_to_regular ||
@@ -826,7 +830,7 @@ static void finishBackupRecursively(Metadata *metadata,
 */
 void initiateBackup(Metadata *metadata, SearchNode *root_node)
 {
-  SearchContext *context = searchNew(root_node);
+  SearchIterator *context = searchNew(root_node);
   while(initiateMetadataRecursively(metadata, &metadata->paths, context,
                                     *root_node->ignore_expressions) !=
         SRT_end_of_search)
@@ -851,5 +855,5 @@ void finishBackup(Metadata *metadata, String repo_path,
 {
   finishBackupRecursively(metadata, metadata->paths, repo_path,
                           repo_tmp_file_path);
-  metadata->current_backup.timestamp = sTime();
+  metadata->current_backup.completion_time = sTime();
 }

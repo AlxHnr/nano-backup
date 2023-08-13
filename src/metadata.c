@@ -229,28 +229,30 @@ static PathHistory *readPathHistory(const FileContent content,
     point->state.gid = read32(content, reader_position, metadata_path);
   }
 
-  if(point->state.type == PST_regular)
+  if(point->state.type == PST_regular_file)
   {
-    point->state.metadata.reg.mode =
+    point->state.metadata.file_info.permission_bits =
       read32(content, reader_position, metadata_path);
 
-    point->state.metadata.reg.timestamp =
+    point->state.metadata.file_info.modification_time =
       readTime(content, reader_position, metadata_path);
 
-    point->state.metadata.reg.size =
+    point->state.metadata.file_info.size =
       read64(content, reader_position, metadata_path);
 
-    if(point->state.metadata.reg.size > FILE_HASH_SIZE)
+    if(point->state.metadata.file_info.size > FILE_HASH_SIZE)
     {
-      readBytes(content, reader_position, point->state.metadata.reg.hash,
-                FILE_HASH_SIZE, metadata_path);
-      point->state.metadata.reg.slot =
+      readBytes(content, reader_position,
+                point->state.metadata.file_info.hash, FILE_HASH_SIZE,
+                metadata_path);
+      point->state.metadata.file_info.slot =
         read8(content, reader_position, metadata_path);
     }
-    else if(point->state.metadata.reg.size > 0)
+    else if(point->state.metadata.file_info.size > 0)
     {
-      readBytes(content, reader_position, point->state.metadata.reg.hash,
-                point->state.metadata.reg.size, metadata_path);
+      readBytes(content, reader_position,
+                point->state.metadata.file_info.hash,
+                point->state.metadata.file_info.size, metadata_path);
     }
   }
   else if(point->state.type == PST_symlink)
@@ -265,13 +267,13 @@ static PathHistory *readPathHistory(const FileContent content,
 
     buffer[target_length] = '\0';
 
-    strSet(&point->state.metadata.sym_target, strWrap(buffer));
+    strSet(&point->state.metadata.symlink_target, strWrap(buffer));
   }
   else if(point->state.type == PST_directory)
   {
-    point->state.metadata.dir.mode =
+    point->state.metadata.directory_info.permission_bits =
       read32(content, reader_position, metadata_path);
-    point->state.metadata.dir.timestamp =
+    point->state.metadata.directory_info.modification_time =
       readTime(content, reader_position, metadata_path);
   }
   else if(point->state.type != PST_non_existing)
@@ -350,34 +352,36 @@ static void writePathHistoryList(const PathHistory *starting_point,
       write32(point->state.gid, writer);
     }
 
-    if(point->state.type == PST_regular)
+    if(point->state.type == PST_regular_file)
     {
-      write32(point->state.metadata.reg.mode, writer);
-      write64(point->state.metadata.reg.timestamp, writer);
-      write64(point->state.metadata.reg.size, writer);
+      write32(point->state.metadata.file_info.permission_bits, writer);
+      write64(point->state.metadata.file_info.modification_time, writer);
+      write64(point->state.metadata.file_info.size, writer);
 
-      if(point->state.metadata.reg.size > FILE_HASH_SIZE)
+      if(point->state.metadata.file_info.size > FILE_HASH_SIZE)
       {
-        repoWriterWrite(point->state.metadata.reg.hash, FILE_HASH_SIZE,
-                        writer);
-        write8(point->state.metadata.reg.slot, writer);
+        repoWriterWrite(point->state.metadata.file_info.hash,
+                        FILE_HASH_SIZE, writer);
+        write8(point->state.metadata.file_info.slot, writer);
       }
-      else if(point->state.metadata.reg.size > 0)
+      else if(point->state.metadata.file_info.size > 0)
       {
-        repoWriterWrite(point->state.metadata.reg.hash,
-                        point->state.metadata.reg.size, writer);
+        repoWriterWrite(point->state.metadata.file_info.hash,
+                        point->state.metadata.file_info.size, writer);
       }
     }
     else if(point->state.type == PST_symlink)
     {
-      String target_path = point->state.metadata.sym_target;
+      String target_path = point->state.metadata.symlink_target;
       write64(target_path.length, writer);
       repoWriterWrite(target_path.content, target_path.length, writer);
     }
     else if(point->state.type == PST_directory)
     {
-      write32(point->state.metadata.dir.mode, writer);
-      write64(point->state.metadata.dir.timestamp, writer);
+      write32(point->state.metadata.directory_info.permission_bits,
+              writer);
+      write64(point->state.metadata.directory_info.modification_time,
+              writer);
     }
   }
 }
@@ -504,7 +508,7 @@ Metadata *metadataNew(void)
   Metadata *metadata = mpAlloc(sizeof *metadata);
 
   metadata->current_backup.id = 0;
-  metadata->current_backup.timestamp = 0;
+  metadata->current_backup.completion_time = 0;
   metadata->current_backup.ref_count = 0;
 
   metadata->backup_history_length = 0;
@@ -535,7 +539,7 @@ Metadata *metadataLoad(String path)
   Metadata *metadata = mpAlloc(sizeof *metadata);
 
   metadata->current_backup.id = 0;
-  metadata->current_backup.timestamp = 0;
+  metadata->current_backup.completion_time = 0;
   metadata->current_backup.ref_count = 0;
 
   /* Read backup history. */
@@ -558,7 +562,7 @@ Metadata *metadataLoad(String path)
   {
     metadata->backup_history[id].id = id;
 
-    metadata->backup_history[id].timestamp =
+    metadata->backup_history[id].completion_time =
       readTime(content, &reader_position, path);
 
     metadata->backup_history[id].ref_count = 0;
@@ -615,7 +619,7 @@ void metadataWrite(Metadata *metadata, String repo_path,
 
   if(metadata->current_backup.ref_count > 0)
   {
-    write64(metadata->current_backup.timestamp, writer);
+    write64(metadata->current_backup.completion_time, writer);
   }
 
   for(size_t index = 0; index < metadata->backup_history_length; index++)
@@ -623,7 +627,7 @@ void metadataWrite(Metadata *metadata, String repo_path,
     Backup *backup = &metadata->backup_history[index];
     if(backup->ref_count > 0)
     {
-      write64(backup->timestamp, writer);
+      write64(backup->completion_time, writer);
     }
   }
 

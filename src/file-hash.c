@@ -14,10 +14,10 @@
   should be calculated.
   @param stats A stat struct with informations about the file. Required to
   determine the files size and optimal buffer size.
-  @param hash The location to which the hash will be written. Its size must
-  be at least FILE_HASH_SIZE.
+  @param hash_out The location to which the hash will be written. Its size
+  must be at least FILE_HASH_SIZE.
 */
-void fileHash(String path, const struct stat stats, uint8_t *hash)
+void fileHash(String path, const struct stat stats, uint8_t *hash_out)
 {
   const size_t blocksize = stats.st_blksize;
   uint64_t bytes_left = stats.st_size;
@@ -47,5 +47,5 @@ void fileHash(String path, const struct stat stats, uint8_t *hash)
     die("file changed while calculating hash: \"%s\"", path.content);
   }
 
-  blake2b_final(&state, hash, FILE_HASH_SIZE);
+  blake2b_final(&state, hash_out, FILE_HASH_SIZE);
 }

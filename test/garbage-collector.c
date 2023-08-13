@@ -37,10 +37,10 @@ static void populateRepoWithDummyFiles(void)
 static void testCollectGarbage(const Metadata *metadata, const char *repo_path, const size_t count,
                                const uint64_t size)
 {
-  const GCStats stats = collectGarbage(metadata, strWrap(repo_path));
+  const GCStatistics stats = collectGarbage(metadata, strWrap(repo_path));
 
-  assert_true(stats.count == count);
-  assert_true(stats.size == size);
+  assert_true(stats.deleted_items_count == count);
+  assert_true(stats.deleted_items_total_size == size);
 }
 
 int main(void)

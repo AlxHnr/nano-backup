@@ -144,7 +144,7 @@ static void change1NoneFiletypeChange(SearchNode *none_filetype_node)
 
   /* Modify various path nodes. */
   e->history->state.uid++;
-  e->history->state.metadata.dir.timestamp++;
+  e->history->state.metadata.directory_info.modification_time++;
 
   /* Finish the backup and perform additional checks. */
   completeBackup(metadata);
@@ -272,7 +272,7 @@ static void postNoneFiletypeChange(SearchNode *none_filetype_node)
 
   /* Modify various path nodes. */
   e->history->state.uid--;
-  e->history->state.metadata.dir.timestamp--;
+  e->history->state.metadata.directory_info.modification_time--;
 
   /* Finish the backup and perform additional checks. */
   completeBackup(metadata);
@@ -613,7 +613,7 @@ static void modifyFiletypeChange(SearchNode *filetype_node, const BackupPolicy p
   generateFile("tmp/files/4/a/c/1", "q", 21);
   generateFile("tmp/files/4/a/c/2", "=", 20);
 
-  node_5->history->state.metadata.dir.mode++;
+  node_5->history->state.metadata.directory_info.permission_bits++;
   removePath("tmp/files/5");
   generateFile("tmp/files/5", "?", 13);
 
@@ -648,7 +648,7 @@ static void modifyFiletypeChange(SearchNode *filetype_node, const BackupPolicy p
   removePath("tmp/files/8/e/f");
   removePath("tmp/files/8/e");
   removePath("tmp/files/8");
-  node_8->history->state.metadata.dir.mode++;
+  node_8->history->state.metadata.directory_info.permission_bits++;
   makeSymlink("2", "tmp/files/8");
 
   removePath("tmp/files/9");

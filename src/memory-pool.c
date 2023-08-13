@@ -12,7 +12,7 @@
   @return A pointer to the allocated and uninitialized data inside the
   memory pool. This data should not be freed or reallocated by the caller.
 */
-void *mpAlloc(size_t size)
+void *mpAlloc(const size_t size)
 {
   return CR_RegionAlloc(CR_GetGlobalRegion(), size);
 }

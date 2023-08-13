@@ -13,15 +13,15 @@
 typedef enum
 {
   PST_non_existing,
-  PST_regular,
+  PST_regular_file,
   PST_symlink,
   PST_directory,
 } PathStateType;
 
 typedef struct
 {
-  mode_t mode;      /**< The directories permission bits. */
-  time_t timestamp; /**< The directories last modification time. */
+  mode_t permission_bits;
+  time_t modification_time;
 } DirectoryInfo;
 
 /** Represents the state a path can have at a specific backup. */
@@ -31,15 +31,15 @@ typedef struct
     other values in this struct are undefined. */
   PathStateType type;
 
-  uid_t uid; /**< The user id of the paths owner. */
-  gid_t gid; /**< The group id of the paths owner. */
+  uid_t uid;
+  gid_t gid;
 
   /** Optional metadata, depending on the PathStateType. */
   union
   {
-    RegularFileInfo reg;
-    String sym_target;
-    DirectoryInfo dir;
+    RegularFileInfo file_info;
+    String symlink_target;
+    DirectoryInfo directory_info;
   } metadata;
 } PathState;
 
@@ -53,8 +53,7 @@ struct Backup
     reading/writing metadata. */
   size_t id;
 
-  /** The time at which the backup was completed. */
-  time_t timestamp;
+  time_t completion_time;
 
   /** The amount of states in history belonging to this backup. */
   size_t ref_count;
@@ -188,9 +187,9 @@ typedef struct
 
   /** The history of the repositories config file. Its path states will
     have always the type PST_regular and all its variables will be
-    undefined, with the exception of metadata.reg. In metadata.reg only
-    "size", "hash" and "slot" will be defined. If this metadata doesn't
-    have a config history, it will point to NULL. */
+    undefined, with the exception of metadata.file_info. In
+    metadata.file_info only "size", "hash" and "slot" will be defined. If
+    this metadata doesn't have a config history, it will point to NULL. */
   PathHistory *config_history;
 
   /** The amount of paths in the tree. It is only used as a helper variable

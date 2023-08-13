@@ -28,14 +28,14 @@ static void populateTableRecursively(StringTable *table,
   for(const PathHistory *point = node->history; point != NULL;
       point = point->next)
   {
-    if(point->state.type != PST_regular ||
-       point->state.metadata.reg.size <= FILE_HASH_SIZE)
+    if(point->state.type != PST_regular_file ||
+       point->state.metadata.file_info.size <= FILE_HASH_SIZE)
     {
       continue;
     }
 
     static char *buffer = NULL;
-    repoBuildRegularFilePath(&buffer, &point->state.metadata.reg);
+    repoBuildRegularFilePath(&buffer, &point->state.metadata.file_info);
     String path = strWrap(buffer);
 
     if(strTableGet(table, path) == NULL)
@@ -65,7 +65,7 @@ static void populateTableRecursively(StringTable *table,
 static bool recurseIntoDirectory(const StringTable *table,
                                  const size_t length,
                                  const size_t repo_path_length,
-                                 GCStats *gc_stats)
+                                 GCStatistics *gc_stats)
 {
   bool item_required = length == repo_path_length;
   const struct stat stats = length == repo_path_length
@@ -101,11 +101,13 @@ static bool recurseIntoDirectory(const StringTable *table,
   if(!item_required)
   {
     sRemove(strWrap(path_buffer));
-    gc_stats->count = sSizeAdd(gc_stats->count, 1);
+    gc_stats->deleted_items_count =
+      sSizeAdd(gc_stats->deleted_items_count, 1);
 
     if(S_ISREG(stats.st_mode))
     {
-      gc_stats->size = sUint64Add(gc_stats->size, stats.st_size);
+      gc_stats->deleted_items_total_size =
+        sUint64Add(gc_stats->deleted_items_total_size, stats.st_size);
     }
   }
 
@@ -119,7 +121,7 @@ static bool recurseIntoDirectory(const StringTable *table,
 
   @return Statistics about items removed from the repository.
 */
-GCStats collectGarbage(const Metadata *metadata, String repo_path)
+GCStatistics collectGarbage(const Metadata *metadata, String repo_path)
 {
   CR_Region *table_region = CR_RegionNew();
   StringTable *table = strTableNew(table_region);
@@ -133,7 +135,10 @@ GCStats collectGarbage(const Metadata *metadata, String repo_path)
     populateTableRecursively(table, node);
   }
 
-  GCStats gc_stats = { .count = 0, .size = 0 };
+  GCStatistics gc_stats = {
+    .deleted_items_count = 0,
+    .deleted_items_total_size = 0,
+  };
 
   const size_t length = pathBuilderSet(&path_buffer, repo_path.content);
   recurseIntoDirectory(table, length, length, &gc_stats);

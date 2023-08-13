@@ -97,25 +97,25 @@ static void printSearchNodeInfos(const SearchNode *root_node)
   }
 }
 
-static void changeStatsAdd(ChangeStats *stats, const size_t count,
-                           const uint64_t size)
+static void changeDetailAdd(ChangeDetail *details, const size_t count,
+                            const uint64_t size)
 {
-  stats->affected_items_count =
-    sSizeAdd(stats->affected_items_count, count);
-  stats->affected_items_size_total =
-    sUint64Add(stats->affected_items_size_total, size);
+  details->affected_items_count =
+    sSizeAdd(details->affected_items_count, count);
+  details->affected_items_total_size =
+    sUint64Add(details->affected_items_total_size, size);
 }
 
-static void metadataChangesAdd(ChangeSummary *a, const ChangeSummary *b)
+static void changeSummaryAdd(ChangeSummary *a, const ChangeSummary *b)
 {
-  changeStatsAdd(&a->new_items, b->new_items.affected_items_count,
-                 b->new_items.affected_items_size_total);
-  changeStatsAdd(&a->removed_items, b->removed_items.affected_items_count,
-                 b->removed_items.affected_items_size_total);
-  changeStatsAdd(&a->lost_items, b->lost_items.affected_items_count,
-                 b->lost_items.affected_items_size_total);
-  changeStatsAdd(&a->changed_items, b->changed_items.affected_items_count,
-                 b->changed_items.affected_items_size_total);
+  changeDetailAdd(&a->new_items, b->new_items.affected_items_count,
+                  b->new_items.affected_items_total_size);
+  changeDetailAdd(&a->removed_items, b->removed_items.affected_items_count,
+                  b->removed_items.affected_items_total_size);
+  changeDetailAdd(&a->lost_items, b->lost_items.affected_items_count,
+                  b->lost_items.affected_items_total_size);
+  changeDetailAdd(&a->changed_items, b->changed_items.affected_items_count,
+                  b->changed_items.affected_items_total_size);
   a->changed_attributes =
     sSizeAdd(a->changed_attributes, b->changed_attributes);
   a->other_changes_exist |= b->other_changes_exist;
@@ -167,24 +167,24 @@ static void addNode(const PathNode *node, ChangeSummary *changes,
   const PathState *state = getExistingState(node);
   uint64_t size = 0;
 
-  if(state->type == PST_regular)
+  if(state->type == PST_regular_file)
   {
-    size = state->metadata.reg.size;
+    size = state->metadata.file_info.size;
   }
 
   if(hint == BH_added)
   {
-    changeStatsAdd(&changes->new_items, 1, size);
+    changeDetailAdd(&changes->new_items, 1, size);
     changes->affects_parent_timestamp = true;
   }
   else if(hint == BH_removed)
   {
-    changeStatsAdd(&changes->removed_items, 1, size);
+    changeDetailAdd(&changes->removed_items, 1, size);
     changes->affects_parent_timestamp = true;
   }
   else if(hint == BH_not_part_of_repository)
   {
-    changeStatsAdd(&changes->lost_items, 1, size);
+    changeDetailAdd(&changes->lost_items, 1, size);
 
     if(node->policy == BPOL_mirror && !(node->hint & BH_policy_changed))
     {
@@ -193,7 +193,7 @@ static void addNode(const PathNode *node, ChangeSummary *changes,
   }
   else if(hint & BH_content_changed)
   {
-    changeStatsAdd(&changes->changed_items, 1, size);
+    changeDetailAdd(&changes->changed_items, 1, size);
     changes->affects_parent_timestamp = true;
     incrementExtraChangedAttributes(changes, hint);
   }
@@ -226,21 +226,22 @@ static bool containsContentChanges(const ChangeSummary *changes)
     changes->changed_items.affected_items_count > 0;
 }
 
-/** Prints the informations in the given change stats.
+/** Prints the informations in the given change details.
 
-  @param stats The struct containing the informations.
+  @param details The struct containing the informations.
   @param prefix The string to print before each number larger than 0.
 */
-static void printChangeStats(const ChangeStats stats, const char *prefix)
+static void printChangeDetail(const ChangeDetail details,
+                              const char *prefix)
 {
-  printf("%s%zu item%s", stats.affected_items_count > 0 ? prefix : "",
-         stats.affected_items_count,
-         stats.affected_items_count == 1 ? "" : "s");
+  printf("%s%zu item%s", details.affected_items_count > 0 ? prefix : "",
+         details.affected_items_count,
+         details.affected_items_count == 1 ? "" : "s");
 
-  if(stats.affected_items_size_total > 0)
+  if(details.affected_items_total_size > 0)
   {
     printf(", %s", prefix);
-    printHumanReadableSize(stats.affected_items_size_total);
+    printHumanReadableSize(details.affected_items_total_size);
   }
 }
 
@@ -265,38 +266,36 @@ static void printPrefix(bool *printed_prefix)
 
 /** Print a summary of all changes in subnodes.
 
-  @param subnode_changes Contains the changes to print.
+  @param summary Contains the changes to print.
   @param printed_prefix See printPrefix().
 */
-static void printSummarizedStats(const ChangeSummary *subnode_changes,
-                                 bool *printed_prefix)
+static void printSummarizedDetail(const ChangeSummary *summary,
+                                  bool *printed_prefix)
 {
-  if(subnode_changes->new_items.affected_items_count > 0)
+  if(summary->new_items.affected_items_count > 0)
   {
     printPrefix(printed_prefix);
-    printChangeStats(subnode_changes->new_items, "+");
+    printChangeDetail(summary->new_items, "+");
   }
 
-  ChangeStats deleted_items = subnode_changes->removed_items;
-  changeStatsAdd(&deleted_items,
-                 subnode_changes->lost_items.affected_items_count,
-                 subnode_changes->lost_items.affected_items_size_total);
+  ChangeDetail deleted_items = summary->removed_items;
+  changeDetailAdd(&deleted_items, summary->lost_items.affected_items_count,
+                  summary->lost_items.affected_items_total_size);
   if(deleted_items.affected_items_count > 0)
   {
     printPrefix(printed_prefix);
-    printChangeStats(deleted_items, "-");
+    printChangeDetail(deleted_items, "-");
   }
-  if(subnode_changes->changed_items.affected_items_count > 0)
+  if(summary->changed_items.affected_items_count > 0)
   {
     printPrefix(printed_prefix);
-    printf("%zu changed",
-           subnode_changes->changed_items.affected_items_count);
+    printf("%zu changed", summary->changed_items.affected_items_count);
   }
-  if(subnode_changes->changed_attributes > 0)
+  if(summary->changed_attributes > 0)
   {
     printPrefix(printed_prefix);
-    printf("%zu metadata change%s", subnode_changes->changed_attributes,
-           subnode_changes->changed_attributes == 1 ? "" : "s");
+    printf("%zu metadata change%s", summary->changed_attributes,
+           summary->changed_attributes == 1 ? "" : "s");
   }
 }
 
@@ -312,13 +311,11 @@ static void printNodePath(const PathNode *node, const TextColor color)
 /** Prints informations about the given node.
 
   @param node The node to consider.
-  @param subnode_changes Statistics gathered from all the current nodes
-  subnodes.
+  @param summary Statistics gathered from all the current nodes subnodes.
   @param summarize_subnode_changes True if the subnode changes should be
   printed in a concise way.
 */
-static void printNode(const PathNode *node,
-                      const ChangeSummary *subnode_changes,
+static void printNode(const PathNode *node, const ChangeSummary *summary,
                       const bool summarize_subnode_changes)
 {
   const BackupHint hint = backupHintNoPol(node->hint);
@@ -356,8 +353,7 @@ static void printNode(const PathNode *node,
     colorPrintf(stdout, TC_yellow_bold, "!! ");
     printNodePath(node, TC_yellow);
   }
-  else if(summarize_subnode_changes &&
-          containsContentChanges(subnode_changes))
+  else if(summarize_subnode_changes && containsContentChanges(summary))
   {
     colorPrintf(stdout, TC_yellow_bold, "!! ");
     printNodePath(node, TC_yellow);
@@ -368,8 +364,7 @@ static void printNode(const PathNode *node,
     colorPrintf(stdout, TC_magenta_bold, "@@ ");
     printNodePath(node, TC_magenta);
 
-    if(summarize_subnode_changes &&
-       subnode_changes->changed_attributes > 0)
+    if(summarize_subnode_changes && summary->changed_attributes > 0)
     {
       printf("...");
     }
@@ -380,11 +375,11 @@ static void printNode(const PathNode *node,
     printNodePath(node, TC_blue);
   }
 
-  bool printed_details = false;
+  bool has_printed_details = false;
 
   if(hint >= BH_regular_to_symlink && hint <= BH_other_to_directory)
   {
-    printPrefix(&printed_details);
+    printPrefix(&has_printed_details);
 
     switch(hint)
     {
@@ -403,33 +398,33 @@ static void printNode(const PathNode *node,
 
   if(node->hint & BH_owner_changed)
   {
-    printPrefix(&printed_details);
+    printPrefix(&has_printed_details);
     printf("owner");
   }
   if(node->hint & BH_permissions_changed)
   {
-    printPrefix(&printed_details);
+    printPrefix(&has_printed_details);
     printf("permissions");
   }
 
   if(node->history->state.type != PST_symlink &&
      !(node->hint & BH_timestamp_changed) !=
        !(node->hint & BH_content_changed) &&
-     !subnode_changes->affects_parent_timestamp)
+     !summary->affects_parent_timestamp)
   {
-    printPrefix(&printed_details);
+    printPrefix(&has_printed_details);
     printf("%stimestamp",
            (node->hint & BH_timestamp_changed) ? "" : "same ");
   }
 
   if(node->hint & BH_policy_changed)
   {
-    printPrefix(&printed_details);
+    printPrefix(&has_printed_details);
     printf("policy changed");
   }
   if(node->hint & BH_loses_history)
   {
-    printPrefix(&printed_details);
+    printPrefix(&has_printed_details);
     printf("looses history");
   }
 
@@ -439,40 +434,41 @@ static void printNode(const PathNode *node,
     if(hint == BH_added || hint == BH_regular_to_directory ||
        hint == BH_symlink_to_directory)
     {
-      printPrefix(&printed_details);
-      printChangeStats(subnode_changes->new_items, "+");
+      printPrefix(&has_printed_details);
+      printChangeDetail(summary->new_items, "+");
     }
     else if(hint == BH_removed)
     {
-      printPrefix(&printed_details);
-      printChangeStats(subnode_changes->removed_items, "-");
+      printPrefix(&has_printed_details);
+      printChangeDetail(summary->removed_items, "-");
     }
     else if(hint == BH_not_part_of_repository)
     {
-      printPrefix(&printed_details);
-      printChangeStats(subnode_changes->lost_items, "-");
+      printPrefix(&has_printed_details);
+      printChangeDetail(summary->lost_items, "-");
     }
     else if(summarize_subnode_changes)
     {
-      printSummarizedStats(subnode_changes, &printed_details);
+      printSummarizedDetail(summary, &has_printed_details);
     }
   }
   else if(hint == BH_directory_to_regular ||
           hint == BH_directory_to_symlink)
   {
-    ChangeStats lost_files = { .affected_items_count = 0,
-                               .affected_items_size_total = 0 };
-    changeStatsAdd(
-      &lost_files, subnode_changes->removed_items.affected_items_count,
-      subnode_changes->removed_items.affected_items_size_total);
-    changeStatsAdd(&lost_files,
-                   subnode_changes->lost_items.affected_items_count,
-                   subnode_changes->lost_items.affected_items_size_total);
-    printPrefix(&printed_details);
-    printChangeStats(lost_files, "-");
+    ChangeDetail lost_files = {
+      .affected_items_count = 0,
+      .affected_items_total_size = 0,
+    };
+    changeDetailAdd(&lost_files,
+                    summary->removed_items.affected_items_count,
+                    summary->removed_items.affected_items_total_size);
+    changeDetailAdd(&lost_files, summary->lost_items.affected_items_count,
+                    summary->lost_items.affected_items_total_size);
+    printPrefix(&has_printed_details);
+    printChangeDetail(lost_files, "-");
   }
 
-  if(printed_details)
+  if(has_printed_details)
   {
     printf(")");
   }
@@ -481,7 +477,7 @@ static void printNode(const PathNode *node,
   {
     colorPrintf(stdout, TC_magenta, " -> ");
     colorPrintf(stdout, TC_cyan, "%s",
-                existing_state->metadata.sym_target.content);
+                existing_state->metadata.symlink_target.content);
   }
 
   printf("\n");
@@ -531,13 +527,13 @@ static ChangeSummary recursePrintOverTree(const Metadata *metadata,
 {
   ChangeSummary changes = {
     .new_items = { .affected_items_count = 0,
-                   .affected_items_size_total = 0 },
+                   .affected_items_total_size = 0 },
     .removed_items = { .affected_items_count = 0,
-                       .affected_items_size_total = 0 },
+                       .affected_items_total_size = 0 },
     .lost_items = { .affected_items_count = 0,
-                    .affected_items_size_total = 0 },
+                    .affected_items_total_size = 0 },
     .changed_items = { .affected_items_count = 0,
-                       .affected_items_size_total = 0 },
+                       .affected_items_total_size = 0 },
     .affects_parent_timestamp = false,
     .changed_attributes = 0,
     .other_changes_exist = false,
@@ -545,7 +541,7 @@ static ChangeSummary recursePrintOverTree(const Metadata *metadata,
 
   for(const PathNode *node = path_list; node != NULL; node = node->next)
   {
-    ChangeSummary subnode_changes;
+    ChangeSummary summary;
     const bool summarize = node->policy != BPOL_none &&
       getExistingState(node)->type == PST_directory &&
       matchesRegexList(node, summarize_expressions);
@@ -556,11 +552,11 @@ static ChangeSummary recursePrintOverTree(const Metadata *metadata,
 
     if(print && summarize)
     {
-      subnode_changes = recursePrintOverTree(
-        metadata, node->subnodes, expressions_to_pass_down, false);
-      if(node->hint > BH_unchanged || containsChanges(&subnode_changes))
+      summary = recursePrintOverTree(metadata, node->subnodes,
+                                     expressions_to_pass_down, false);
+      if(node->hint > BH_unchanged || containsChanges(&summary))
       {
-        printNode(node, &subnode_changes, summarize);
+        printNode(node, &summary, summarize);
       }
     }
     else if(print && node->hint > BH_unchanged &&
@@ -572,24 +568,24 @@ static ChangeSummary recursePrintOverTree(const Metadata *metadata,
       const bool print_subnodes =
         backupHintNoPol(node->hint) > BH_other_to_directory;
 
-      subnode_changes =
+      summary =
         recursePrintOverTree(metadata, node->subnodes,
                              expressions_to_pass_down, print_subnodes);
 
       if(!(node->hint == BH_timestamp_changed &&
-           subnode_changes.affects_parent_timestamp))
+           summary.affects_parent_timestamp))
       {
-        printNode(node, &subnode_changes, summarize);
+        printNode(node, &summary, summarize);
       }
     }
     else
     {
-      subnode_changes = recursePrintOverTree(
-        metadata, node->subnodes, expressions_to_pass_down, print);
+      summary = recursePrintOverTree(metadata, node->subnodes,
+                                     expressions_to_pass_down, print);
     }
 
-    addNode(node, &changes, subnode_changes.affects_parent_timestamp);
-    metadataChangesAdd(&changes, &subnode_changes);
+    addNode(node, &changes, summary.affects_parent_timestamp);
+    changeSummaryAdd(&changes, &summary);
   }
 
   return changes;

@@ -23,12 +23,12 @@ static void writeMetadataToTmpDir(Metadata *metadata)
   @param index The index of the history point in the array, which should be
   initialized.
   @param id The backup id which should be assigned to the point.
-  @param timestamp The timestamp to be assigned to the point.
+  @param modification_time The timestamp to be assigned to the point.
 */
-static void initHistPoint(Metadata *metadata, size_t index, size_t id, time_t timestamp)
+static void initHistPoint(Metadata *metadata, size_t index, size_t id, time_t modification_time)
 {
   metadata->backup_history[index].id = id;
-  metadata->backup_history[index].timestamp = timestamp;
+  metadata->backup_history[index].completion_time = modification_time;
   metadata->backup_history[index].ref_count = 0;
 }
 
@@ -120,29 +120,29 @@ static void appendHist(PathNode *node, Backup *backup, const PathState state)
   documentation of RegularMetadata.
 
   @param state A path state which must have the type PST_regular.
-  @param mode The permission bits of the file.
-  @param timestamp The modification timestamp of the file.
+  @param permission_bits The permission bits of the file.
+  @param modification_time The modification timestamp of the file.
   @param size The size of the file described by the path state.
   @param hash The hash of the file or the files entire content, depending
   on the files size.
   @param slot The slot number of the file in the repository. Will be
   ignored if the files size is not greater than FILE_HASH_SIZE.
 */
-static void assignRegularValues(PathState *state, const mode_t mode, const time_t timestamp, const uint64_t size,
-                                const uint8_t *hash, const uint8_t slot)
+static void assignRegularValues(PathState *state, const mode_t permission_bits, const time_t modification_time,
+                                const uint64_t size, const uint8_t *hash, const uint8_t slot)
 {
-  state->metadata.reg.mode = mode;
-  state->metadata.reg.timestamp = timestamp;
-  state->metadata.reg.size = size;
+  state->metadata.file_info.permission_bits = permission_bits;
+  state->metadata.file_info.modification_time = modification_time;
+  state->metadata.file_info.size = size;
 
   if(size > FILE_HASH_SIZE)
   {
-    memcpy(state->metadata.reg.hash, hash, FILE_HASH_SIZE);
-    state->metadata.reg.slot = slot;
+    memcpy(state->metadata.file_info.hash, hash, FILE_HASH_SIZE);
+    state->metadata.file_info.slot = slot;
   }
   else if(size > 0)
   {
-    memcpy(state->metadata.reg.hash, hash, size);
+    memcpy(state->metadata.file_info.hash, hash, size);
   }
 }
 
@@ -158,8 +158,8 @@ static void appendHistNonExisting(PathNode *node, Backup *backup)
 
   @param uid The user id of the files owner.
   @param gid The group id of the files owner.
-  @param timestamp The modification time of the file.
-  @param mode The permission bits of the file.
+  @param modification_time The modification time of the file.
+  @param permission_bits The permission bits of the file.
   @param size The files size.
   @param hash A pointer to the hash of the file. Will be ignored if the
   file size is 0. Otherwise it will be defined like in the documentation of
@@ -168,16 +168,16 @@ static void appendHistNonExisting(PathNode *node, Backup *backup)
   Will be ignored if the file size is not bigger than FILE_HASH_SIZE.
 */
 static void appendHistRegular(PathNode *node, Backup *backup, const uid_t uid, const gid_t gid,
-                              const time_t timestamp, const mode_t mode, const uint64_t size, const uint8_t *hash,
-                              const uint8_t slot)
+                              const time_t modification_time, const mode_t permission_bits, const uint64_t size,
+                              const uint8_t *hash, const uint8_t slot)
 {
   PathState state = {
-    .type = PST_regular,
+    .type = PST_regular_file,
     .uid = uid,
     .gid = gid,
   };
 
-  assignRegularValues(&state, mode, timestamp, size, hash, slot);
+  assignRegularValues(&state, permission_bits, modification_time, size, hash, slot);
   appendHist(node, backup, state);
 }
 
@@ -185,18 +185,18 @@ static void appendHistRegular(PathNode *node, Backup *backup, const uid_t uid, c
   symbolic link to the given node. It is like appendHistRegular(), but
   takes the following additional arguments:
 
-  @param sym_target The target path of the symlink. The created history
+  @param symlink_target The target path of the symlink. The created history
   point will keep a reference to this string, so make sure not to mutate it
   as long as the history point is in use.
 */
 static void appendHistSymlink(PathNode *node, Backup *backup, const uid_t uid, const gid_t gid,
-                              const char *sym_target)
+                              const char *symlink_target)
 {
   const PathState state = {
     .type = PST_symlink,
     .uid = uid,
     .gid = gid,
-    .metadata.sym_target = strWrap(sym_target),
+    .metadata.symlink_target = strWrap(symlink_target),
   };
 
   appendHist(node, backup, state);
@@ -204,7 +204,7 @@ static void appendHistSymlink(PathNode *node, Backup *backup, const uid_t uid, c
 
 /** Like appendHistRegular(), but for a directory. */
 static void appendHistDirectory(PathNode *node, Backup *backup, const uid_t uid, const gid_t gid,
-                                const time_t timestamp, const mode_t mode)
+                                const time_t modification_time, const mode_t permission_bits)
 {
   PathState state = {
     .type = PST_directory,
@@ -212,8 +212,8 @@ static void appendHistDirectory(PathNode *node, Backup *backup, const uid_t uid,
     .gid = gid,
   };
 
-  state.metadata.dir.mode = mode;
-  state.metadata.dir.timestamp = timestamp;
+  state.metadata.directory_info.permission_bits = permission_bits;
+  state.metadata.directory_info.modification_time = modification_time;
   appendHist(node, backup, state);
 }
 
@@ -253,7 +253,7 @@ static void appendConfHist(Metadata *metadata, Backup *backup, const uint64_t si
   backup->ref_count = sSizeAdd(backup->ref_count, 1);
 
   memset(&history_point->state, 0, sizeof(history_point->state));
-  history_point->state.type = PST_regular;
+  history_point->state.type = PST_regular_file;
   history_point->state.uid = 0;
   history_point->state.gid = 0;
 
@@ -273,7 +273,7 @@ static Metadata *createEmptyMetadata(const size_t backup_history_length)
   Metadata *metadata = mpAlloc(sizeof *metadata);
 
   metadata->current_backup.id = 0;
-  metadata->current_backup.timestamp = 0;
+  metadata->current_backup.completion_time = 0;
   metadata->current_backup.ref_count = 0;
 
   metadata->backup_history_length = backup_history_length;
@@ -537,7 +537,7 @@ static void checkLoadedUnusedBackupPoints(Metadata *metadata)
 static Metadata *genCurrentBackupData(void)
 {
   Metadata *metadata = createEmptyMetadata(2);
-  metadata->current_backup.timestamp = 57645;
+  metadata->current_backup.completion_time = 57645;
   initHistPoint(metadata, 0, 0, 48390);
   initHistPoint(metadata, 1, 1, 84908);
 
@@ -563,7 +563,7 @@ static Metadata *genCurrentBackupData(void)
 static void checkLoadedCurrentBackupData(Metadata *metadata)
 {
   checkMetadata(metadata, 1, true);
-  assert_true(metadata->current_backup.timestamp == 0);
+  assert_true(metadata->current_backup.completion_time == 0);
   assert_true(metadata->current_backup.ref_count == 0);
   assert_true(metadata->backup_history_length == 3);
 
@@ -615,7 +615,7 @@ static Metadata *genNoConfHist(void)
 static void checkNoConfHist(Metadata *metadata)
 {
   checkMetadata(metadata, 0, true);
-  assert_true(metadata->current_backup.timestamp == 0);
+  assert_true(metadata->current_backup.completion_time == 0);
   assert_true(metadata->current_backup.ref_count == 0);
   assert_true(metadata->backup_history_length == 3);
   assert_true(metadata->config_history == NULL);
@@ -706,7 +706,7 @@ static void checkEmptyMetadata(Metadata *metadata)
 */
 static Metadata *initOnlyCurrentBackupData(Metadata *metadata)
 {
-  metadata->current_backup.timestamp = 1348981;
+  metadata->current_backup.completion_time = 1348981;
 
   appendConfHist(metadata, &metadata->current_backup, 6723, (uint8_t *)"fbc92e19ee0cd2140faa", 1);
 
@@ -728,7 +728,7 @@ static Metadata *initOnlyCurrentBackupData(Metadata *metadata)
 static void checkOnlyCurrentBackupData(Metadata *metadata)
 {
   checkMetadata(metadata, 1, true);
-  assert_true(metadata->current_backup.timestamp == 0);
+  assert_true(metadata->current_backup.completion_time == 0);
   assert_true(metadata->current_backup.ref_count == 0);
   assert_true(metadata->backup_history_length == 1);
 

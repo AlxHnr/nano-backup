@@ -11,16 +11,16 @@
 typedef struct RegexList RegexList;
 struct RegexList
 {
-  /** The regular expression as a string. The buffer inside this string is
-    guaranteed to be null-terminated. */
+  /** The expression in compiled form. */
+  const regex_t *regex;
+
+  /** The uncompiled regular expression as a string. The buffer inside this
+    string is guaranteed to be null-terminated. */
   String expression;
 
   /** The number of the line in the config file on which this expression
     was defined. */
   size_t line_nr;
-
-  /** The expression in compiled form. */
-  const regex_t *regex;
 
   /** True, if this expression matched anything in its lifetime. */
   bool has_matched;

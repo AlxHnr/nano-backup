@@ -8,7 +8,7 @@ typedef enum
     searchGetNext(). */
   SRT_none,
 
-  SRT_regular = 1 << 0, /**< A regular file. */
+  SRT_regular_file = 1 << 0,
   SRT_symlink = 1 << 1,
   SRT_directory = 1 << 2,
   SRT_other = 1 << 3, /**< Any other filetype, like a block device. */

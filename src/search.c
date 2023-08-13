@@ -68,12 +68,12 @@ typedef struct
   size_t capacity;
 } DirSearchStateStack;
 
-struct SearchContext
+struct SearchIterator
 {
   /** A buffer for constructing paths. */
   StringBuffer buffer;
 
-  /* The ignore expression list of the tree, to which the current context
+  /* The ignore expression list of the tree, to which the current iterator
      belongs to. Can be NULL. */
   RegexList *ignore_expressions;
 
@@ -84,82 +84,83 @@ struct SearchContext
   DirSearchStateStack state_stack;
 };
 
-/** Backups the contexts search state into its state stack. The stack will
+/** Backups the iterators search state into its state stack. The stack will
   be reallocated if required. It will not modify the current search state
-  of the given context.
+  of the given iterator.
 
-  @param context A valid context with a stack capacity greater than 0.
+  @param iterator A valid iterator with a stack capacity greater than 0.
 */
-static void pushCurrentState(SearchContext *context)
+static void pushCurrentState(SearchIterator *iterator)
 {
   /* Grow state array if needed. */
-  if(context->state_stack.used == context->state_stack.capacity)
+  if(iterator->state_stack.used == iterator->state_stack.capacity)
   {
-    context->state_stack.capacity =
-      sSizeMul(context->state_stack.capacity, 2);
-    context->state_stack.state_array =
-      sRealloc(context->state_stack.state_array,
-               sSizeMul(sizeof *context->state_stack.state_array,
-                        context->state_stack.capacity));
+    iterator->state_stack.capacity =
+      sSizeMul(iterator->state_stack.capacity, 2);
+    iterator->state_stack.state_array =
+      sRealloc(iterator->state_stack.state_array,
+               sSizeMul(sizeof *iterator->state_stack.state_array,
+                        iterator->state_stack.capacity));
   }
 
-  context->state_stack.state_array[context->state_stack.used] =
-    context->state;
-  context->state_stack.used++;
+  iterator->state_stack.state_array[iterator->state_stack.used] =
+    iterator->state;
+  iterator->state_stack.used++;
 }
 
 /** Appends the given filename to the currently traversed path. The
-  contexts buffer will be resized if required.
+  iterators buffer will be resized if required.
 
-  @param context The context with the buffer that should be updated.
+  @param iterator The iterator with the buffer that should be updated.
   @param filename The filename that should be appended.
 */
-static void setPathToFile(SearchContext *context, String filename)
+static void setPathToFile(SearchIterator *iterator, String filename)
 {
   /* Add 2 extra bytes for the slash and '\0'. */
   const size_t required_capacity =
-    sSizeAdd(2, sSizeAdd(context->state.path_length, filename.length));
+    sSizeAdd(2, sSizeAdd(iterator->state.path_length, filename.length));
   const size_t new_length = required_capacity - 1;
 
   /* Ensure that the new path fits into the buffer. */
-  if(required_capacity > context->buffer.capacity)
+  if(required_capacity > iterator->buffer.capacity)
   {
-    context->buffer.str = sRealloc(context->buffer.str, required_capacity);
-    context->buffer.capacity = required_capacity;
+    iterator->buffer.str =
+      sRealloc(iterator->buffer.str, required_capacity);
+    iterator->buffer.capacity = required_capacity;
   }
 
   /* Construct the path to the file described by the current node. */
-  memcpy(&context->buffer.str[context->state.path_length + 1],
+  memcpy(&iterator->buffer.str[iterator->state.path_length + 1],
          filename.content, filename.length);
-  context->buffer.str[context->state.path_length] = '/';
-  context->buffer.str[new_length] = '\0';
-  context->buffer.length = new_length;
+  iterator->buffer.str[iterator->state.path_length] = '/';
+  iterator->buffer.str[new_length] = '\0';
+  iterator->buffer.length = new_length;
 }
 
 /** Constructs a SearchResult with informations from its arguments.
 
-  @param context A valid SearchContext with a filepath in its buffer.
-  @param node The node associated with the path in the contexts buffer. Can
-  be NULL.
-  @param policy The policy of the file in the contexts buffer.
+  @param iterator A valid SearchIterator with a filepath in its buffer.
+  @param node The node associated with the path in the iterators buffer.
+  Can be NULL.
+  @param policy The policy of the file in the iterators buffer.
 
   @return A SearchResult.
 */
-static SearchResult buildSearchResult(const SearchContext *context,
+static SearchResult buildSearchResult(const SearchIterator *iterator,
                                       const SearchNode *node,
                                       const BackupPolicy policy)
 {
   const struct stat stats = node != NULL && node->subnodes != NULL
-    ? sStat(strWrap(context->buffer.str))
-    : sLStat(strWrap(context->buffer.str));
+    ? sStat(strWrap(iterator->buffer.str))
+    : sLStat(strWrap(iterator->buffer.str));
 
   return (SearchResult){
-    .type = S_ISREG(stats.st_mode) ? SRT_regular
+    .type = S_ISREG(stats.st_mode) ? SRT_regular_file
       : S_ISLNK(stats.st_mode)     ? SRT_symlink
       : S_ISDIR(stats.st_mode)     ? SRT_directory
                                    : SRT_other,
 
-    .path = strWrapLength(context->buffer.str, context->buffer.length),
+    .path = strWrapLength(iterator->buffer.str, iterator->buffer.length),
 
     .node = node,
     .policy = policy,
@@ -167,41 +168,42 @@ static SearchResult buildSearchResult(const SearchContext *context,
   };
 }
 
-/** Starts a recursion step and stores it in the contexts current state. It
-  will not backup the search state and will simply overwrite it.
+/** Starts a recursion step and stores it in the iterators current state.
+  It will not backup the search state and will simply overwrite it.
 
-  @param context A valid context with a valid directory path in its buffer.
-  This is the directory for which the recursion will be initialised.
+  @param iterator A valid iterator with a valid directory path in its
+  buffer. This is the directory for which the recursion will be
+  initialised.
   @param node The node associated with the directory. Can be NULL.
   @param policy The directories policy.
 */
-static void recursionStepRaw(SearchContext *context, SearchNode *node,
+static void recursionStepRaw(SearchIterator *iterator, SearchNode *node,
                              const BackupPolicy policy)
 {
   /* Store the directories path length before recursing into it. */
-  context->state.path_length = context->buffer.length;
+  iterator->state.path_length = iterator->buffer.length;
 
   if(node != NULL && node->policy == BPOL_none &&
      !node->subnodes_contain_regex)
   {
-    context->state.is_dir_search = false;
-    context->state.access.current_node = node->subnodes;
+    iterator->state.is_dir_search = false;
+    iterator->state.access.current_node = node->subnodes;
   }
   else
   {
-    context->state.is_dir_search = true;
-    context->state.access.search.dir =
-      sOpenDir(strWrap(context->buffer.str));
-    context->state.access.search.subnodes = node ? node->subnodes : NULL;
-    context->state.access.search.fallback_policy = policy;
+    iterator->state.is_dir_search = true;
+    iterator->state.access.search.dir =
+      sOpenDir(strWrap(iterator->buffer.str));
+    iterator->state.access.search.subnodes = node ? node->subnodes : NULL;
+    iterator->state.access.search.fallback_policy = policy;
   }
 }
 
-static void recursionStep(SearchContext *context, SearchNode *node,
+static void recursionStep(SearchIterator *iterator, SearchNode *node,
                           const BackupPolicy policy)
 {
-  pushCurrentState(context);
-  recursionStepRaw(context, node, policy);
+  pushCurrentState(iterator);
+  recursionStepRaw(iterator, node, policy);
 }
 
 /** Completes a search step and returns a SearchResult with informations
@@ -209,19 +211,19 @@ static void recursionStep(SearchContext *context, SearchNode *node,
   will only make sure, that if this search step hits a directory, a
   recursion step will be initialized.
 
-  @param context A valid search context, with a filepath in its buffer.
+  @param iterator A valid search iterator, with a filepath in its buffer.
   This is the filepath, for which the search step will be completed.
-  @param node The node corresponding to the file in the context buffers
+  @param node The node corresponding to the file in the iterator buffers
   filepath. Can be NULL.
-  @param policy The policy for the context buffers filepath.
+  @param policy The policy for the iterator buffers filepath.
 
   @return A SearchResult.
 */
-static SearchResult finishNodeStep(SearchContext *context,
+static SearchResult finishNodeStep(SearchIterator *iterator,
                                    SearchNode *node,
                                    const BackupPolicy policy)
 {
-  SearchResult found_file = buildSearchResult(context, node, policy);
+  SearchResult found_file = buildSearchResult(iterator, node, policy);
 
   if(node != NULL)
   {
@@ -230,37 +232,37 @@ static SearchResult finishNodeStep(SearchContext *context,
 
   if(found_file.type == SRT_directory)
   {
-    recursionStep(context, node, policy);
+    recursionStep(iterator, node, policy);
   }
 
   return found_file;
 }
 
-/** Pops a search state from the given contexts stack and sets it as its
+/** Pops a search state from the given iterators stack and sets it as its
   current search state. If the stack is empty, it will destroy the given
-  context and end the search.
+  iterator and end the search.
 
-  @param context A valid SearchContext which may be destroyed by this
+  @param iterator A valid SearchIterator which may be destroyed by this
   function.
 
   @return A SearchResult with either the type SRT_end_of_directory or
   SRT_end_of_search.
 */
-static SearchResult finishDirectory(SearchContext *context)
+static SearchResult finishDirectory(SearchIterator *iterator)
 {
-  if(context->state_stack.used > 0)
+  if(iterator->state_stack.used > 0)
   {
-    context->state_stack.used--;
-    context->state =
-      context->state_stack.state_array[context->state_stack.used];
+    iterator->state_stack.used--;
+    iterator->state =
+      iterator->state_stack.state_array[iterator->state_stack.used];
 
     return (SearchResult){ .type = SRT_end_of_directory };
   }
   else
   {
-    free(context->state_stack.state_array);
-    free(context->buffer.str);
-    free(context);
+    free(iterator->state_stack.state_array);
+    free(iterator->buffer.str);
+    free(iterator);
 
     return (SearchResult){ .type = SRT_end_of_search };
   }
@@ -282,32 +284,32 @@ static bool nodeMatches(const SearchNode *node, String string)
   active directory stream. If this file is a directory, a recursion step
   into it will be initialized.
 
-  @param context A valid context which current state represents a directory
-  search. It will be destroyed if the search reaches its end trough this
-  search step. In this case the returned SearchResult will have the type
-  SRT_end_of_search.
+  @param iterator A valid iterator which current state represents a
+  directory search. It will be destroyed if the search reaches its end
+  trough this search step. In this case the returned SearchResult will have
+  the type SRT_end_of_search.
 
   @return A SearchResult.
 */
-static SearchResult finishSearchStep(SearchContext *context)
+static SearchResult finishSearchStep(SearchIterator *iterator)
 {
   const struct dirent *dir_entry = sReadDir(
-    context->state.access.search.dir, strWrap(context->buffer.str));
+    iterator->state.access.search.dir, strWrap(iterator->buffer.str));
 
   if(dir_entry == NULL)
   {
-    sCloseDir(context->state.access.search.dir,
-              strWrap(context->buffer.str));
-    return finishDirectory(context);
+    sCloseDir(iterator->state.access.search.dir,
+              strWrap(iterator->buffer.str));
+    return finishDirectory(iterator);
   }
 
   /* Create new path for matching. */
   String dir_entry_name = strWrap(dir_entry->d_name);
-  setPathToFile(context, dir_entry_name);
+  setPathToFile(iterator, dir_entry_name);
 
   /* Match subnodes against dir_entry. */
   SearchNode *matched_node = NULL;
-  for(SearchNode *node = context->state.access.search.subnodes;
+  for(SearchNode *node = iterator->state.access.search.subnodes;
       node != NULL; node = node->next)
   {
     if(nodeMatches(node, dir_entry_name))
@@ -320,128 +322,128 @@ static SearchResult finishSearchStep(SearchContext *context)
       {
         warnNodeMatches(node, dir_entry_name);
         warnNodeMatches(matched_node, dir_entry_name);
-        die("ambiguous rules for path: \"%s\"", context->buffer.str);
+        die("ambiguous rules for path: \"%s\"", iterator->buffer.str);
       }
     }
   }
 
   if(matched_node != NULL)
   {
-    return finishNodeStep(context, matched_node, matched_node->policy);
+    return finishNodeStep(iterator, matched_node, matched_node->policy);
   }
 
   /* Skip current path, if no fallback policy was defined. */
-  if(context->state.access.search.fallback_policy == BPOL_none)
+  if(iterator->state.access.search.fallback_policy == BPOL_none)
   {
-    return finishSearchStep(context);
+    return finishSearchStep(iterator);
   }
 
   /* Match against ignore expressions. */
-  for(RegexList *element = context->ignore_expressions; element != NULL;
+  for(RegexList *element = iterator->ignore_expressions; element != NULL;
       element = element->next)
   {
-    if(regexec(element->regex, context->buffer.str, 0, NULL, 0) == 0)
+    if(regexec(element->regex, iterator->buffer.str, 0, NULL, 0) == 0)
     {
       element->has_matched = true;
-      return finishSearchStep(context);
+      return finishSearchStep(iterator);
     }
   }
 
-  return finishNodeStep(context, NULL,
-                        context->state.access.search.fallback_policy);
+  return finishNodeStep(iterator, NULL,
+                        iterator->state.access.search.fallback_policy);
 }
 
 /** Completes a search step by directly accessing next node available in
-  the search context. Counterpart to finishSearchStep().
+  the search iterator. Counterpart to finishSearchStep().
 
-  @param context A valid context which current state represents direct
+  @param iterator A valid iterator which current state represents direct
   access. It will be destroyed, if this search step is the last step. In
   this case the returned SearchResult will have the type SRT_end_of_search.
 
   @return A SearchResult.
 */
-static SearchResult finishCurrentNode(SearchContext *context)
+static SearchResult finishCurrentNode(SearchIterator *iterator)
 {
-  if(context->state.access.current_node == NULL)
+  if(iterator->state.access.current_node == NULL)
   {
-    return finishDirectory(context);
+    return finishDirectory(iterator);
   }
 
   /* Save node and move current_node one by step. */
-  SearchNode *node = context->state.access.current_node;
-  context->state.access.current_node = node->next;
+  SearchNode *node = iterator->state.access.current_node;
+  iterator->state.access.current_node = node->next;
 
-  setPathToFile(context, node->name);
+  setPathToFile(iterator, node->name);
 
-  if(sPathExists(strWrap(context->buffer.str)))
+  if(sPathExists(strWrap(iterator->buffer.str)))
   {
-    return finishNodeStep(context, node, node->policy);
+    return finishNodeStep(iterator, node, node->policy);
   }
   else
   {
-    return finishCurrentNode(context);
+    return finishCurrentNode(iterator);
   }
 }
 
-/** Creates a new SearchContext for searching the filesystem.
+/** Creates a new SearchIterator for searching the filesystem.
 
   @param root_node A search tree used for searching the filesystem. This
   tree will be modified during search to denote nodes that have matched an
   existing file. See the documentation of SearchNode for more informations.
-  The returned SearchContext will keep references into this tree, so make
-  sure not to modify it as long as the context is in use.
+  The returned SearchIterator will keep references into this tree, so make
+  sure not to modify it as long as the iterator is in use.
 
-  @return A new search context from which files and directories can be
+  @return A new search iterator from which files and directories can be
   queried by using searchGetNext(). It will be automatically destroyed if
   the search has reached its end.
 */
-SearchContext *searchNew(SearchNode *root_node)
+SearchIterator *searchNew(SearchNode *root_node)
 {
-  SearchContext *context = sMalloc(sizeof *context);
+  SearchIterator *iterator = sMalloc(sizeof *iterator);
 
   /* Initialize string buffer. */
-  context->buffer.capacity = 8;
-  context->buffer.str = sMalloc(context->buffer.capacity);
+  iterator->buffer.capacity = 8;
+  iterator->buffer.str = sMalloc(iterator->buffer.capacity);
 
   /* Initialize a search step into "/". */
-  context->buffer.str[0] = '/';
-  context->buffer.str[1] = '\0';
-  context->buffer.length = 1;
+  iterator->buffer.str[0] = '/';
+  iterator->buffer.str[1] = '\0';
+  iterator->buffer.length = 1;
 
-  recursionStepRaw(context, root_node, root_node->policy);
+  recursionStepRaw(iterator, root_node, root_node->policy);
 
   /* Prevent found paths from starting with two slashes. */
-  context->state.path_length = 0;
+  iterator->state.path_length = 0;
 
   /* Store reference to ignore expression list. */
-  context->ignore_expressions = *root_node->ignore_expressions;
+  iterator->ignore_expressions = *root_node->ignore_expressions;
 
   /* Initialise the state stack. */
-  context->state_stack.used = 0;
-  context->state_stack.capacity = 4;
-  context->state_stack.state_array =
-    sMalloc(sSizeMul(sizeof *context->state_stack.state_array,
-                     context->state_stack.capacity));
+  iterator->state_stack.used = 0;
+  iterator->state_stack.capacity = 4;
+  iterator->state_stack.state_array =
+    sMalloc(sSizeMul(sizeof *iterator->state_stack.state_array,
+                     iterator->state_stack.capacity));
 
-  return context;
+  return iterator;
 }
 
-/** Queries the next file from the given search context.
+/** Queries the next file from the given search iterator.
 
-  @param context A valid search context. If the search has reached its end,
-  the context will be destroyed and the returned SearchResult will have the
-  type SRT_end_of_search.
+  @param iterator A valid search iterator. If the search has reached its
+  end, the iterator will be destroyed and the returned SearchResult will
+  have the type SRT_end_of_search.
 
   @return The next search result.
 */
-SearchResult searchGetNext(SearchContext *context)
+SearchResult searchGetNext(SearchIterator *iterator)
 {
-  if(context->state.is_dir_search)
+  if(iterator->state.is_dir_search)
   {
-    return finishSearchStep(context);
+    return finishSearchStep(iterator);
   }
   else
   {
-    return finishCurrentNode(context);
+    return finishCurrentNode(iterator);
   }
 }

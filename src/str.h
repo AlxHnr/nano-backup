@@ -4,11 +4,11 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-/** A string slice type which doesn't own the memory it points to. */
+/** Immutable string slice which doesn't own the memory it points to. */
 typedef struct
 {
-  /** A pointer to the beginning of the string. It may not be null
-    terminated. Use strRaw() for passing Strings to C functions. */
+  /** May not be null terminated. Use strRaw() for interacting with C
+    functions. */
   const char *const content;
   const size_t length;
   const bool is_terminated;

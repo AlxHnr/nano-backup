@@ -24,13 +24,13 @@ static void checkFileContentChanges(PathNode *node, PathState *state,
   uint8_t hash[FILE_HASH_SIZE];
   size_t bytes_used = FILE_HASH_SIZE;
 
-  if(state->metadata.reg.size > FILE_HASH_SIZE)
+  if(state->metadata.file_info.size > FILE_HASH_SIZE)
   {
     fileHash(node->path, stats, hash);
   }
   else
   {
-    bytes_used = state->metadata.reg.size;
+    bytes_used = state->metadata.file_info.size;
 
     FileStream *stream = sFopenRead(node->path);
     sFread(hash, bytes_used, stream);
@@ -44,12 +44,12 @@ static void checkFileContentChanges(PathNode *node, PathState *state,
     }
   }
 
-  if(memcmp(state->metadata.reg.hash, hash, bytes_used) != 0)
+  if(memcmp(state->metadata.file_info.hash, hash, bytes_used) != 0)
   {
     backupHintSet(node->hint, BH_content_changed);
     backupHintSet(node->hint, BH_fresh_hash);
 
-    memcpy(state->metadata.reg.hash, hash, bytes_used);
+    memcpy(state->metadata.file_info.hash, hash, bytes_used);
   }
 }
 
@@ -114,27 +114,27 @@ void applyNodeChanges(PathNode *node, PathState *state,
   }
 
   /* Path state specific change checks. */
-  if(state->type == PST_regular)
+  if(state->type == PST_regular_file)
   {
-    if(state->metadata.reg.mode != stats.st_mode)
+    if(state->metadata.file_info.permission_bits != stats.st_mode)
     {
       backupHintSet(node->hint, BH_permissions_changed);
-      state->metadata.reg.mode = stats.st_mode;
+      state->metadata.file_info.permission_bits = stats.st_mode;
     }
 
-    if(state->metadata.reg.timestamp != stats.st_mtime)
+    if(state->metadata.file_info.modification_time != stats.st_mtime)
     {
       backupHintSet(node->hint, BH_timestamp_changed);
-      state->metadata.reg.timestamp = stats.st_mtime;
+      state->metadata.file_info.modification_time = stats.st_mtime;
     }
 
-    if(state->metadata.reg.size != (uint64_t)stats.st_size)
+    if(state->metadata.file_info.size != (uint64_t)stats.st_size)
     {
       backupHintSet(node->hint, BH_content_changed);
-      state->metadata.reg.size = stats.st_size;
+      state->metadata.file_info.size = stats.st_size;
     }
     else if((node->hint & BH_timestamp_changed) &&
-            state->metadata.reg.size > 0)
+            state->metadata.file_info.size > 0)
     {
       checkFileContentChanges(node, state, stats);
     }
@@ -144,24 +144,24 @@ void applyNodeChanges(PathNode *node, PathState *state,
     static char *buffer = NULL;
     readSymlink(node->path, stats, &buffer);
 
-    if(!strEqual(state->metadata.sym_target, strWrap(buffer)))
+    if(!strEqual(state->metadata.symlink_target, strWrap(buffer)))
     {
-      strSet(&state->metadata.sym_target, strCopy(strWrap(buffer)));
+      strSet(&state->metadata.symlink_target, strCopy(strWrap(buffer)));
       backupHintSet(node->hint, BH_content_changed);
     }
   }
   else if(state->type == PST_directory)
   {
-    if(state->metadata.dir.mode != stats.st_mode)
+    if(state->metadata.directory_info.permission_bits != stats.st_mode)
     {
       backupHintSet(node->hint, BH_permissions_changed);
-      state->metadata.dir.mode = stats.st_mode;
+      state->metadata.directory_info.permission_bits = stats.st_mode;
     }
 
-    if(state->metadata.dir.timestamp != stats.st_mtime)
+    if(state->metadata.directory_info.modification_time != stats.st_mtime)
     {
       backupHintSet(node->hint, BH_timestamp_changed);
-      state->metadata.dir.timestamp = stats.st_mtime;
+      state->metadata.directory_info.modification_time = stats.st_mtime;
     }
   }
 }

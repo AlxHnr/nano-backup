@@ -133,21 +133,21 @@ static void modifyNoneChangeTest(SearchNode *change_detection_node)
   /* Modify various path nodes. */
   a->history->state.uid++;
   b->history->state.gid++;
-  c->history->state.metadata.dir.mode++;
-  d->history->state.metadata.dir.timestamp++;
+  c->history->state.metadata.directory_info.permission_bits++;
+  d->history->state.metadata.directory_info.modification_time++;
 
   e->history->state.uid++;
-  e->history->state.metadata.dir.mode++;
+  e->history->state.metadata.directory_info.permission_bits++;
 
   f->history->state.gid++;
-  f->history->state.metadata.dir.timestamp++;
+  f->history->state.metadata.directory_info.modification_time++;
 
-  g->history->state.metadata.dir.mode++;
-  g->history->state.metadata.dir.timestamp++;
+  g->history->state.metadata.directory_info.permission_bits++;
+  g->history->state.metadata.directory_info.modification_time++;
 
   h->history->state.gid++;
-  h->history->state.metadata.dir.mode++;
-  h->history->state.metadata.dir.timestamp++;
+  h->history->state.metadata.directory_info.permission_bits++;
+  h->history->state.metadata.directory_info.modification_time++;
 
   /* Finish the backup and perform additional checks. */
   completeBackup(metadata);
@@ -575,36 +575,36 @@ static void modifyChangeDetectionTest(SearchNode *change_detection_node, const B
   /* Modify various path nodes. */
   node_0->history->state.uid++;
   node_1->history->state.gid++;
-  node_2->history->state.metadata.dir.mode++;
-  node_3->history->state.metadata.dir.timestamp++;
-  node_4->history->state.metadata.dir.mode++;
-  node_4->history->state.metadata.dir.timestamp++;
+  node_2->history->state.metadata.directory_info.permission_bits++;
+  node_3->history->state.metadata.directory_info.modification_time++;
+  node_4->history->state.metadata.directory_info.permission_bits++;
+  node_4->history->state.metadata.directory_info.modification_time++;
   node_5->history->state.uid++;
-  node_5->history->state.metadata.dir.mode++;
+  node_5->history->state.metadata.directory_info.permission_bits++;
 
   remakeSymlink("/dev/null", "tmp/files/5/6");
   node_6->history->state.uid++;
 
   node_7->history->state.uid++;
   node_8->history->state.gid++;
-  node_8->history->state.metadata.dir.timestamp++;
+  node_8->history->state.metadata.directory_info.modification_time++;
 
   regenerateFile(node_9, "This is test", 1);
   node_9->history->state.uid++;
 
-  node_10->history->state.metadata.reg.timestamp++;
+  node_10->history->state.metadata.file_info.modification_time++;
   node_11->history->state.uid++;
-  node_11->history->state.metadata.reg.mode++;
+  node_11->history->state.metadata.file_info.permission_bits++;
 
   regenerateFile(node_12, "a short string", 1);
   node_12->history->state.gid++;
-  node_12->history->state.metadata.reg.mode++;
+  node_12->history->state.metadata.file_info.permission_bits++;
 
   node_13->history->state.gid++;
-  node_13->history->state.metadata.dir.mode++;
-  node_13->history->state.metadata.dir.timestamp++;
+  node_13->history->state.metadata.directory_info.permission_bits++;
+  node_13->history->state.metadata.directory_info.modification_time++;
   node_14->history->state.uid++;
-  node_14->history->state.metadata.dir.timestamp++;
+  node_14->history->state.metadata.directory_info.modification_time++;
   node_15->history->state.uid++;
   node_16->history->state.gid++;
   remakeSymlink("symlink-content", "tmp/files/17");
@@ -618,8 +618,8 @@ static void modifyChangeDetectionTest(SearchNode *change_detection_node, const B
   node_20->history->state.gid++;
 
   node_21->history->state.gid++;
-  node_22->history->state.metadata.reg.mode++;
-  node_23->history->state.metadata.reg.timestamp++;
+  node_22->history->state.metadata.file_info.permission_bits++;
+  node_23->history->state.metadata.file_info.modification_time++;
   regenerateFile(node_24, "nested ", 9);
   regenerateFile(node_25, "a/B/c/", 7);
 
@@ -627,46 +627,46 @@ static void modifyChangeDetectionTest(SearchNode *change_detection_node, const B
   node_26->history->state.gid++;
 
   regenerateFile(node_27, "M", 21);
-  node_27->history->state.metadata.reg.mode++;
+  node_27->history->state.metadata.file_info.permission_bits++;
 
   regenerateFile(node_28, "0", 2124);
-  node_28->history->state.metadata.reg.timestamp++;
+  node_28->history->state.metadata.file_info.modification_time++;
 
   regenerateFile(node_29, "Empty\n", 200);
   node_29->history->state.uid++;
-  node_29->history->state.metadata.reg.timestamp++;
+  node_29->history->state.metadata.file_info.modification_time++;
 
   node_30->history->state.uid++;
-  node_30->history->state.metadata.reg.mode++;
-  node_30->history->state.metadata.reg.timestamp++;
+  node_30->history->state.metadata.file_info.permission_bits++;
+  node_30->history->state.metadata.file_info.modification_time++;
   node_31->history->state.uid++;
   node_31->history->state.gid++;
   regenerateFile(node_32, "A small file.", 1);
   regenerateFile(node_33, "another file", 1);
 
   regenerateFile(node_34, "some dummy text", 1);
-  node_34->history->state.metadata.reg.timestamp++;
+  node_34->history->state.metadata.file_info.modification_time++;
 
   regenerateFile(node_35, "?", 1);
-  node_35->history->state.metadata.reg.mode++;
+  node_35->history->state.metadata.file_info.permission_bits++;
 
   regenerateFile(node_36, "nano backup", 1);
   node_36->history->state.gid++;
-  node_36->history->state.metadata.reg.mode++;
+  node_36->history->state.metadata.file_info.permission_bits++;
 
   regenerateFile(node_37, "", 0);
   regenerateFile(node_38, "@", 1);
   node_39->history->state.gid++;
-  node_40->history->state.metadata.reg.timestamp++;
+  node_40->history->state.metadata.file_info.modification_time++;
 
   regenerateFile(node_41, "", 0);
-  node_41->history->state.metadata.reg.mode++;
+  node_41->history->state.metadata.file_info.permission_bits++;
 
   regenerateFile(node_42, "Backup\n", 74);
   node_42->history->state.gid++;
 
   regenerateFile(node_43, "Large\n", 2);
-  node_43->history->state.metadata.reg.timestamp++;
+  node_43->history->state.metadata.file_info.modification_time++;
 
   regenerateFile(node_44, "Q", 20);
   regenerateFile(node_45, "q", 21);
@@ -768,7 +768,7 @@ static void changeDetectionTest(SearchNode *change_detection_node, const BackupP
   PathNode *node_31 = findSubnode(files, "31", BH_owner_changed, policy, 1, 0);
   mustHaveRegularStat(node_31, &metadata->current_backup, 2100, super_hash, 0);
   PathNode *node_32 = findSubnode(files, "32", BH_content_changed, policy, 1, 0);
-  node_32->history->state.metadata.reg.hash[12] = '?';
+  node_32->history->state.metadata.file_info.hash[12] = '?';
   mustHaveRegularStat(node_32, &metadata->current_backup, 13, (uint8_t *)"A small file??", 0);
   PathNode *node_33 = findSubnode(files, "33", BH_unchanged, policy, 1, 0);
   mustHaveRegularStat(node_33, &metadata->backup_history[1], 12, (uint8_t *)"Another file", 0);
@@ -782,7 +782,7 @@ static void changeDetectionTest(SearchNode *change_detection_node, const BackupP
   PathNode *node_37 = findSubnode(files, "37", BH_content_changed, policy, 1, 0);
   mustHaveRegularStat(node_37, &metadata->current_backup, 0, nested_2_hash, 0);
   PathNode *node_38 = findSubnode(files, "38", BH_content_changed, policy, 1, 0);
-  node_38->history->state.metadata.reg.hash[0] = 'P';
+  node_38->history->state.metadata.file_info.hash[0] = 'P';
   mustHaveRegularStat(node_38, &metadata->current_backup, 1, (uint8_t *)"PPP", 0);
   PathNode *node_39 = findSubnode(files, "39", BH_owner_changed, policy, 1, 0);
   mustHaveRegularStat(node_39, &metadata->current_backup, 0, (uint8_t *)"", 0);
@@ -791,20 +791,20 @@ static void changeDetectionTest(SearchNode *change_detection_node, const BackupP
   PathNode *node_41 = findSubnode(files, "41", BH_permissions_changed | BH_content_changed, policy, 1, 0);
   mustHaveRegularStat(node_41, &metadata->current_backup, 0, (uint8_t *)"random file", 0);
   PathNode *node_42 = findSubnode(files, "42", BH_owner_changed | BH_content_changed, policy, 1, 0);
-  memset(node_42->history->state.metadata.reg.hash, 'X', FILE_HASH_SIZE);
-  node_42->history->state.metadata.reg.slot = 52;
+  memset(node_42->history->state.metadata.file_info.hash, 'X', FILE_HASH_SIZE);
+  node_42->history->state.metadata.file_info.slot = 52;
   mustHaveRegularStat(node_42, &metadata->current_backup, 518, (uint8_t *)"XXXXXXXXXXXXXXXXXXXX", 52);
   PathNode *node_43 = findSubnode(files, "43", BH_timestamp_changed | BH_content_changed, policy, 1, 0);
   mustHaveRegularStat(node_43, &metadata->current_backup, 12, data_d_hash, 0);
   PathNode *node_44 = findSubnode(files, "44", BH_content_changed, policy, 1, 0);
   mustHaveRegularStat(node_44, &metadata->current_backup, 20, nested_1_hash, 0);
   PathNode *node_45 = findSubnode(files, "45", BH_content_changed, policy, 1, 0);
-  memset(&node_45->history->state.metadata.reg.hash[10], 'J', 10);
-  node_45->history->state.metadata.reg.slot = 149;
+  memset(&node_45->history->state.metadata.file_info.hash[10], 'J', 10);
+  node_45->history->state.metadata.file_info.slot = 149;
   mustHaveRegularStat(node_45, &metadata->current_backup, 21, (uint8_t *)"Small fileJJJJJJJJJJ", 149);
   PathNode *node_46 = findSubnode(files, "46", BH_owner_changed | BH_content_changed, policy, 1, 0);
-  memset(&node_46->history->state.metadata.reg.hash[9], '=', 11);
-  node_46->history->state.metadata.reg.slot = 2;
+  memset(&node_46->history->state.metadata.file_info.hash[9], '=', 11);
+  node_46->history->state.metadata.file_info.slot = 2;
   mustHaveRegularStat(node_46, &metadata->current_backup, 615, (uint8_t *)"Test file===========", 2);
 
   /* Finish the backup and perform additional checks. */
@@ -1185,7 +1185,7 @@ static void trackChangeDetectionTest(SearchNode *track_detection_node)
   mustHaveRegularStats(node_31, &metadata->backup_history[1], node_31_stats, 2100, super_hash, 0);
 
   PathNode *node_32 = findSubnode(files, "32", BH_content_changed, BPOL_track, 2, 0);
-  node_32->history->state.metadata.reg.hash[12] = '?';
+  node_32->history->state.metadata.file_info.hash[12] = '?';
   mustHaveRegularStat(node_32, &metadata->current_backup, 13, (uint8_t *)"A small file??", 0);
   mustHaveRegularStat(node_32, &metadata->backup_history[1], 12, (uint8_t *)"A small file", 0);
 
@@ -1217,7 +1217,7 @@ static void trackChangeDetectionTest(SearchNode *track_detection_node)
   mustHaveRegularStat(node_37, &metadata->backup_history[1], 56, nested_2_hash, 0);
 
   PathNode *node_38 = findSubnode(files, "38", BH_content_changed, BPOL_track, 2, 0);
-  node_38->history->state.metadata.reg.hash[0] = 'P';
+  node_38->history->state.metadata.file_info.hash[0] = 'P';
   mustHaveRegularStat(node_38, &metadata->current_backup, 1, (uint8_t *)"PPP", 0);
   mustHaveRegularStat(node_38, &metadata->backup_history[1], 0, (uint8_t *)"", 0);
 
@@ -1240,8 +1240,8 @@ static void trackChangeDetectionTest(SearchNode *track_detection_node)
   mustHaveRegularStats(node_41, &metadata->backup_history[1], node_41_stats, 11, (uint8_t *)"random file", 0);
 
   PathNode *node_42 = findSubnode(files, "42", BH_owner_changed | BH_content_changed, BPOL_track, 2, 0);
-  memset(node_42->history->state.metadata.reg.hash, 'X', FILE_HASH_SIZE);
-  node_42->history->state.metadata.reg.slot = 7;
+  memset(node_42->history->state.metadata.file_info.hash, 'X', FILE_HASH_SIZE);
+  node_42->history->state.metadata.file_info.slot = 7;
   mustHaveRegularStat(node_42, &metadata->current_backup, 518, (uint8_t *)"XXXXXXXXXXXXXXXXXXXX", 7);
   struct stat node_42_stats = sStat(node_42->path);
   node_42_stats.st_gid++;
@@ -1258,14 +1258,14 @@ static void trackChangeDetectionTest(SearchNode *track_detection_node)
   mustHaveRegularStat(node_44, &metadata->backup_history[1], 144, nested_1_hash, 0);
 
   PathNode *node_45 = findSubnode(files, "45", BH_content_changed, BPOL_track, 2, 0);
-  memset(&node_45->history->state.metadata.reg.hash[10], 'J', 10);
-  node_45->history->state.metadata.reg.slot = 99;
+  memset(&node_45->history->state.metadata.file_info.hash[10], 'J', 10);
+  node_45->history->state.metadata.file_info.slot = 99;
   mustHaveRegularStat(node_45, &metadata->current_backup, 21, (uint8_t *)"Small fileJJJJJJJJJJ", 99);
   mustHaveRegularStat(node_45, &metadata->backup_history[1], 10, (uint8_t *)"Small file", 0);
 
   PathNode *node_46 = findSubnode(files, "46", BH_owner_changed | BH_content_changed, BPOL_track, 2, 0);
-  memset(&node_46->history->state.metadata.reg.hash[9], '=', 11);
-  node_46->history->state.metadata.reg.slot = 0;
+  memset(&node_46->history->state.metadata.file_info.hash[9], '=', 11);
+  node_46->history->state.metadata.file_info.slot = 0;
   mustHaveRegularStat(node_46, &metadata->current_backup, 615, (uint8_t *)"Test file===========", 0);
   struct stat node_46_stats = sStat(node_46->path);
   node_46_stats.st_uid++;

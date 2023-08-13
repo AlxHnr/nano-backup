@@ -24,7 +24,7 @@ static void checkSearchResult(const SearchResult result)
 {
   switch(result.type)
   {
-    case SRT_regular: assert_true(S_ISREG(result.stats.st_mode)); break;
+    case SRT_regular_file: assert_true(S_ISREG(result.stats.st_mode)); break;
     case SRT_symlink: assert_true(S_ISLNK(result.stats.st_mode)); break;
     case SRT_directory: assert_true(S_ISDIR(result.stats.st_mode)); break;
     case SRT_other: break;
@@ -34,11 +34,11 @@ static void checkSearchResult(const SearchResult result)
   assert_true(result.path.content[result.path.length] == '\0');
 }
 
-/** Skips all search results in the given context, which belong to the
+/** Skips all search results in the given iterator, which belong to the
   given path. It will terminate the program with failure if any error was
   encountered.
 
-  @param context The context that should be fast-forwarded to the given
+  @param iterator The iterator that should be fast-forwarded to the given
   path.
   @param cwd The path which should be skipped.
   @param root_node The root of the search tree.
@@ -46,18 +46,18 @@ static void checkSearchResult(const SearchResult result)
   @return The recursion depth count for unwinding and leaving the
   directories which lead to the given cwd.
 */
-static size_t skipCwd(SearchContext *context, String cwd, const SearchNode *root_node)
+static size_t skipCwd(SearchIterator *iterator, String cwd, const SearchNode *root_node)
 {
   size_t recursion_depth = 0;
   const SearchNode *node = root_node->subnodes;
 
   while(true)
   {
-    const SearchResult result = searchGetNext(context);
+    const SearchResult result = searchGetNext(iterator);
 
     if(result.type != SRT_directory)
     {
-      die("failed to find \"%s\" in the given context", cwd.content);
+      die("failed to find \"%s\" in the given iterator", cwd.content);
     }
     else if(result.node == NULL || result.node != node)
     {
@@ -134,29 +134,29 @@ static const SearchNode *checkCwdTree(const SearchNode *root_node, const size_t 
   return node;
 }
 
-/** Finishes the search for the given context by leaving all the
+/** Finishes the search for the given iterator by leaving all the
   directories which lead to the current working directory. Counterpart to
   skipCwd().
 
-  @param context The context which should be finished.
+  @param iterator The iterator which should be finished.
   @param recursion_depth The recursion depth required to reach the current
   working directory.
 */
-static void finishSearch(SearchContext *context, const size_t recursion_depth)
+static void finishSearch(SearchIterator *iterator, const size_t recursion_depth)
 {
   for(size_t counter = 0; counter < recursion_depth; counter++)
   {
-    SearchResult result = searchGetNext(context);
+    SearchResult result = searchGetNext(iterator);
     assert_true(result.type == SRT_end_of_directory);
   }
 
-  assert_true(searchGetNext(context).type == SRT_end_of_search);
+  assert_true(searchGetNext(iterator).type == SRT_end_of_search);
 }
 
-/** Performs a search with the given context until its current directory
+/** Performs a search with the given iterator until its current directory
   has reached its end and stores the paths in the given StringTable.
 
-  @param context The context used for searching.
+  @param iterator The iterator used for searching.
   @param table The table, in which the found paths will be mapped to their
   policy. The paths will only contain the part after the given cwd and the
   policy will be incremented by 1.
@@ -165,13 +165,13 @@ static void finishSearch(SearchContext *context, const size_t recursion_depth)
 
   @return The amount of files found during search.
 */
-static size_t populateDirectoryTable(SearchContext *context, StringTable *table, String cwd)
+static size_t populateDirectoryTable(SearchIterator *iterator, StringTable *table, String cwd)
 {
   size_t file_count = 0;
   size_t recursion_depth = 1;
   while(recursion_depth > 0)
   {
-    const SearchResult result = searchGetNext(context);
+    const SearchResult result = searchGetNext(iterator);
     if(result.type == SRT_end_of_directory)
     {
       recursion_depth--;
@@ -189,7 +189,7 @@ static size_t populateDirectoryTable(SearchContext *context, StringTable *table,
         die("path \"%s\" was found twice during search", relative_path.content);
       }
 
-      file_count += (result.type == SRT_regular || result.type == SRT_symlink);
+      file_count += (result.type == SRT_regular_file || result.type == SRT_symlink);
       recursion_depth += result.type == SRT_directory;
 
       FoundPathInfo *info = mpAlloc(sizeof *info);
@@ -287,35 +287,35 @@ static void checkIgnoreExpression(const SearchNode *node, const char *expression
 static void testSimpleSearch(String cwd)
 {
   SearchNode *root = searchTreeLoad(strWrap("generated-config-files/simple-search.txt"));
-  SearchContext *context = searchNew(root);
-  assert_true(context != NULL);
+  SearchIterator *iterator = searchNew(root);
+  assert_true(iterator != NULL);
 
-  const size_t cwd_depth = skipCwd(context, cwd, root);
+  const size_t cwd_depth = skipCwd(iterator, cwd, root);
   CR_Region *paths_region = CR_RegionNew();
   StringTable *paths = strTableNew(paths_region);
-  assert_true(populateDirectoryTable(context, paths, cwd) == 29);
-  finishSearch(context, cwd_depth);
+  assert_true(populateDirectoryTable(iterator, paths, cwd) == 29);
+  finishSearch(iterator, cwd_depth);
 
   /* Check nodes in search tree. */
   const SearchNode *n_cwd = checkCwdTree(root, cwd_depth);
-  const SearchNode *n_e_txt = findSubnode(n_cwd, "^e.*\\.txt$", SRT_regular);
+  const SearchNode *n_e_txt = findSubnode(n_cwd, "^e.*\\.txt$", SRT_regular_file);
   const SearchNode *n_symlink_txt = findSubnode(n_cwd, "symlink.txt", SRT_symlink);
   findSubnode(n_cwd, "non-existing-directory", SRT_none);
 
   const SearchNode *n_test_dir = findSubnode(n_cwd, "test directory", SRT_directory);
   const SearchNode *n_empty = findSubnode(n_test_dir, ".empty", SRT_directory);
-  const SearchNode *n_3 = findSubnode(n_test_dir, " 3$", SRT_regular);
+  const SearchNode *n_3 = findSubnode(n_test_dir, " 3$", SRT_regular_file);
   const SearchNode *n_symlink = findSubnode(n_test_dir, "symlink", SRT_symlink);
   findSubnode(n_test_dir, "non-existing-file.txt", SRT_none);
   findSubnode(n_test_dir, "^non-existing-regex$", SRT_none);
 
   const SearchNode *n_hidden = findSubnode(n_test_dir, ".hidden", SRT_directory);
   const SearchNode *n_hidden_hidden = findSubnode(n_hidden, ".hidden", SRT_directory);
-  const SearchNode *n_txt = findSubnode(n_hidden, "\\.txt$", SRT_regular);
+  const SearchNode *n_txt = findSubnode(n_hidden, "\\.txt$", SRT_regular_file);
 
   const SearchNode *n_foo_1 = findSubnode(n_test_dir, "foo 1", SRT_directory);
   const SearchNode *n_bar = findSubnode(n_foo_1, "bar", SRT_directory);
-  const SearchNode *n_test_file_c = findSubnode(n_foo_1, "test-file-c.txt", SRT_regular);
+  const SearchNode *n_test_file_c = findSubnode(n_foo_1, "test-file-c.txt", SRT_regular_file);
 
   /* Check found paths. */
   checkHasIgnoredProperly(paths);
@@ -368,21 +368,21 @@ static void testSimpleSearch(String cwd)
 static void testIgnoreExpressions(String cwd)
 {
   SearchNode *root = searchTreeLoad(strWrap("generated-config-files/ignore-expressions.txt"));
-  SearchContext *context = searchNew(root);
-  assert_true(context != NULL);
+  SearchIterator *iterator = searchNew(root);
+  assert_true(iterator != NULL);
 
-  const size_t cwd_depth = skipCwd(context, cwd, root);
+  const size_t cwd_depth = skipCwd(iterator, cwd, root);
   CR_Region *paths_region = CR_RegionNew();
   StringTable *paths = strTableNew(paths_region);
-  assert_true(populateDirectoryTable(context, paths, cwd) == 19);
-  finishSearch(context, cwd_depth);
+  assert_true(populateDirectoryTable(iterator, paths, cwd) == 19);
+  finishSearch(iterator, cwd_depth);
 
   /* Check nodes in search tree. */
   const SearchNode *n_cwd = checkCwdTree(root, cwd_depth);
   const SearchNode *n_symlink = findSubnode(n_cwd, "symlink", SRT_symlink);
   const SearchNode *n_test_dir = findSubnode(n_cwd, "test directory", SRT_directory);
   const SearchNode *n_hidden_symlink = findSubnode(n_test_dir, ".hidden symlink", SRT_symlink);
-  const SearchNode *n_bar_a_txt = findSubnode(n_test_dir, "^bar-a\\.txt$", SRT_regular);
+  const SearchNode *n_bar_a_txt = findSubnode(n_test_dir, "^bar-a\\.txt$", SRT_regular_file);
 
   /* Check found paths. */
   checkHasIgnoredProperly(paths);
@@ -443,21 +443,21 @@ static void testIgnoreExpressions(String cwd)
 static void testSymlinkFollowing(String cwd)
 {
   SearchNode *root = searchTreeLoad(strWrap("generated-config-files/symlink-following.txt"));
-  SearchContext *context = searchNew(root);
-  assert_true(context != NULL);
+  SearchIterator *iterator = searchNew(root);
+  assert_true(iterator != NULL);
 
-  const size_t cwd_depth = skipCwd(context, cwd, root);
+  const size_t cwd_depth = skipCwd(iterator, cwd, root);
   CR_Region *paths_region = CR_RegionNew();
   StringTable *paths = strTableNew(paths_region);
-  assert_true(populateDirectoryTable(context, paths, cwd) == 20);
-  finishSearch(context, cwd_depth);
+  assert_true(populateDirectoryTable(iterator, paths, cwd) == 20);
+  finishSearch(iterator, cwd_depth);
 
   /* Check nodes in search tree. */
   const SearchNode *n_cwd = checkCwdTree(root, cwd_depth);
   const SearchNode *n_test_dir = findSubnode(n_cwd, "test directory", SRT_directory);
 
   const SearchNode *n_hidden_symlink = findSubnode(n_test_dir, ".hidden symlink", SRT_directory);
-  const SearchNode *n_2_txt = findSubnode(n_hidden_symlink, "2.txt", SRT_regular);
+  const SearchNode *n_2_txt = findSubnode(n_hidden_symlink, "2.txt", SRT_regular_file);
 
   const SearchNode *n_empty_dir = findSubnode(n_test_dir, "empty-directory", SRT_directory);
   findSubnode(n_empty_dir, ".*", SRT_none);
@@ -511,22 +511,22 @@ static void testSymlinkFollowing(String cwd)
 static void testMismatchedPaths(String cwd)
 {
   SearchNode *root = searchTreeLoad(strWrap("generated-config-files/mismatched-paths.txt"));
-  SearchContext *context = searchNew(root);
-  assert_true(context != NULL);
+  SearchIterator *iterator = searchNew(root);
+  assert_true(iterator != NULL);
 
-  const size_t cwd_depth = skipCwd(context, cwd, root);
+  const size_t cwd_depth = skipCwd(iterator, cwd, root);
   CR_Region *paths_region = CR_RegionNew();
   StringTable *paths = strTableNew(paths_region);
-  assert_true(populateDirectoryTable(context, paths, cwd) == 2);
-  finishSearch(context, cwd_depth);
+  assert_true(populateDirectoryTable(iterator, paths, cwd) == 2);
+  finishSearch(iterator, cwd_depth);
 
   /* Check nodes in search tree. */
   const SearchNode *n_cwd = checkCwdTree(root, cwd_depth);
 
-  const SearchNode *n_empty_txt = findSubnode(n_cwd, "empty.txt", SRT_regular);
+  const SearchNode *n_empty_txt = findSubnode(n_cwd, "empty.txt", SRT_regular_file);
   findSubnode(n_empty_txt, "file 1.txt", SRT_none);
 
-  const SearchNode *n_symlink_txt = findSubnode(n_cwd, "symlink.txt", SRT_regular);
+  const SearchNode *n_symlink_txt = findSubnode(n_cwd, "symlink.txt", SRT_regular_file);
   findSubnode(n_symlink_txt, "foo-bar.txt", SRT_none);
 
   const SearchNode *n_test_dir = findSubnode(n_cwd, "test directory", SRT_directory);
@@ -570,24 +570,24 @@ static void testMismatchedPaths(String cwd)
 static void testComplexSearch(String cwd)
 {
   SearchNode *root = searchTreeLoad(strWrap("generated-config-files/complex-search.txt"));
-  SearchContext *context = searchNew(root);
-  assert_true(context != NULL);
+  SearchIterator *iterator = searchNew(root);
+  assert_true(iterator != NULL);
 
-  const size_t cwd_depth = skipCwd(context, cwd, root);
+  const size_t cwd_depth = skipCwd(iterator, cwd, root);
   CR_Region *paths_region = CR_RegionNew();
   StringTable *paths = strTableNew(paths_region);
-  assert_true(populateDirectoryTable(context, paths, cwd) == 26);
-  finishSearch(context, cwd_depth);
+  assert_true(populateDirectoryTable(iterator, paths, cwd) == 26);
+  finishSearch(iterator, cwd_depth);
 
   /* Check nodes in search tree. */
   const SearchNode *n_cwd = checkCwdTree(root, cwd_depth);
-  const SearchNode *n_es = findSubnode(n_cwd, "^[es]", SRT_regular | SRT_symlink);
+  const SearchNode *n_es = findSubnode(n_cwd, "^[es]", SRT_regular_file | SRT_symlink);
 
   const SearchNode *n_test_dir = findSubnode(n_cwd, "^tes", SRT_directory);
   const SearchNode *n_symlink = findSubnode(n_test_dir, " symlink", SRT_directory);
-  const SearchNode *n_star = findSubnode(n_symlink, ".*", SRT_regular);
+  const SearchNode *n_star = findSubnode(n_symlink, ".*", SRT_regular_file);
 
-  const SearchNode *n_hidden_123 = findSubnode(n_test_dir, "^.hidden [1-3]$", SRT_regular);
+  const SearchNode *n_hidden_123 = findSubnode(n_test_dir, "^.hidden [1-3]$", SRT_regular_file);
   findSubnode(n_hidden_123, "2.txt", SRT_none);
   findSubnode(n_hidden_123, ".*", SRT_none);
 

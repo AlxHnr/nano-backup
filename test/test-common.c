@@ -26,7 +26,7 @@ static size_t countSubnodes(const PathNode *parent_node)
   checked. */
 static bool checkRegularValues(const PathState *state, const uint64_t size, const uint8_t *hash, uint8_t slot)
 {
-  if(state->metadata.reg.size != size)
+  if(state->metadata.file_info.size != size)
   {
     return false;
   }
@@ -36,9 +36,10 @@ static bool checkRegularValues(const PathState *state, const uint64_t size, cons
   }
   else if(size > FILE_HASH_SIZE)
   {
-    return (memcmp(state->metadata.reg.hash, hash, FILE_HASH_SIZE) == 0) && state->metadata.reg.slot == slot;
+    return (memcmp(state->metadata.file_info.hash, hash, FILE_HASH_SIZE) == 0) &&
+      state->metadata.file_info.slot == slot;
   }
-  return size == 0 || memcmp(state->metadata.reg.hash, hash, size) == 0;
+  return size == 0 || memcmp(state->metadata.file_info.hash, hash, size) == 0;
 }
 
 /** Checks if the next node in the given history point is greater. This
@@ -75,7 +76,7 @@ static size_t checkConfHist(const Metadata *metadata)
 
   for(const PathHistory *point = metadata->config_history; point != NULL; point = point->next)
   {
-    if(point->state.type != PST_regular)
+    if(point->state.type != PST_regular_file)
     {
       die("config history point doesn't represent a regular file");
     }
@@ -259,7 +260,7 @@ void checkMetadata(const Metadata *metadata, const size_t config_history_length,
 {
   assert_true(metadata != NULL);
   assert_true(metadata->current_backup.id == 0);
-  assert_true(metadata->current_backup.timestamp == 0);
+  assert_true(metadata->current_backup.completion_time == 0);
 
   if(metadata->backup_history_length == 0)
   {
@@ -280,14 +281,14 @@ void checkMetadata(const Metadata *metadata, const size_t config_history_length,
   @param metadata The metadata containing the backup history.
   @param index The index of the history point to check.
   @param id The id which the point must have.
-  @param timestamp The timestamp which the point must have.
+  @param completion_time The timestamp which the point must have.
   @param ref_count The reference count which the point must have.
 */
-void checkHistPoint(const Metadata *metadata, const size_t index, const size_t id, const time_t timestamp,
+void checkHistPoint(const Metadata *metadata, const size_t index, const size_t id, const time_t completion_time,
                     const size_t ref_count)
 {
   assert_true(metadata->backup_history[index].id == id);
-  assert_true(metadata->backup_history[index].timestamp == timestamp);
+  assert_true(metadata->backup_history[index].completion_time == completion_time);
   assert_true(metadata->backup_history[index].ref_count == ref_count);
 }
 
@@ -372,21 +373,21 @@ void mustHaveNonExisting(const PathNode *node, const Backup *backup)
 /** Assert that the given node contains a history point with the specified
   properties. */
 void mustHaveRegular(const PathNode *node, const Backup *backup, const uid_t uid, const gid_t gid,
-                     const time_t timestamp, const mode_t mode, const uint64_t size, const uint8_t *hash,
-                     const uint8_t slot)
+                     const time_t modification_time, const mode_t permission_bits, const uint64_t size,
+                     const uint8_t *hash, const uint8_t slot)
 {
   const PathHistory *point = findHistoryPoint(node, backup);
-  if(point->state.type != PST_regular)
+  if(point->state.type != PST_regular_file)
   {
     die("backup point %zu in node \"%s\" doesn't have the state PST_regular", backup->id, node->path.content);
   }
-  else if(point->state.metadata.reg.mode != mode)
+  else if(point->state.metadata.file_info.permission_bits != permission_bits)
   {
     die("backup point %zu in node \"%s\" contains invalid permission bits", backup->id, node->path.content);
   }
-  else if(point->state.metadata.reg.timestamp != timestamp)
+  else if(point->state.metadata.file_info.modification_time != modification_time)
   {
-    die("backup point %zu in node \"%s\" contains invalid timestamp", backup->id, node->path.content);
+    die("backup point %zu in node \"%s\" contains invalid modification_time", backup->id, node->path.content);
   }
   else if(!checkRegularValues(&point->state, size, hash, slot))
   {
@@ -399,17 +400,17 @@ void mustHaveRegular(const PathNode *node, const Backup *backup, const uid_t uid
 /** Assert that the given node contains a symlink history point with the
   specified properties. */
 void mustHaveSymlink(const PathNode *node, const Backup *backup, const uid_t uid, const gid_t gid,
-                     const char *sym_target)
+                     const char *symlink_target)
 {
   const PathHistory *point = findHistoryPoint(node, backup);
   if(point->state.type != PST_symlink)
   {
     die("backup point %zu in node \"%s\" doesn't have the state PST_symlink", backup->id, node->path.content);
   }
-  else if(!strEqual(point->state.metadata.sym_target, strWrap(sym_target)))
+  else if(!strEqual(point->state.metadata.symlink_target, strWrap(symlink_target)))
   {
     die("backup point %zu in node \"%s\" doesn't contain the symlink target \"%s\"", backup->id,
-        node->path.content, sym_target);
+        node->path.content, symlink_target);
   }
 
   checkPathState(node, point, uid, gid);
@@ -418,20 +419,20 @@ void mustHaveSymlink(const PathNode *node, const Backup *backup, const uid_t uid
 /** Assert that the given node contains a directory history point with the
   specified properties. */
 void mustHaveDirectory(const PathNode *node, const Backup *backup, const uid_t uid, const gid_t gid,
-                       const time_t timestamp, const mode_t mode)
+                       const time_t modification_time, const mode_t permission_bits)
 {
   const PathHistory *point = findHistoryPoint(node, backup);
   if(point->state.type != PST_directory)
   {
     die("backup point %zu in node \"%s\" doesn't have the state PST_directory", backup->id, node->path.content);
   }
-  else if(point->state.metadata.dir.mode != mode)
+  else if(point->state.metadata.directory_info.permission_bits != permission_bits)
   {
     die("backup point %zu in node \"%s\" contains invalid permission bits", backup->id, node->path.content);
   }
-  else if(point->state.metadata.dir.timestamp != timestamp)
+  else if(point->state.metadata.directory_info.modification_time != modification_time)
   {
-    die("backup point %zu in node \"%s\" contains invalid timestamp", backup->id, node->path.content);
+    die("backup point %zu in node \"%s\" contains invalid modification_time", backup->id, node->path.content);
   }
 
   checkPathState(node, point, uid, gid);

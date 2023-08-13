@@ -16,9 +16,9 @@ typedef struct RepoReader RepoReader;
 
 typedef struct
 {
-  mode_t mode;      /**< The permission bits of the file. */
-  time_t timestamp; /**< The files last modification time. */
-  uint64_t size;    /**< The file size. */
+  mode_t permission_bits;
+  time_t modification_time;
+  uint64_t size;
 
   /** The hash of the file. This array is only defined if the file size is
     greater than zero. If the files size is smaller than or equal to

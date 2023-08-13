@@ -212,11 +212,11 @@ void removePath(const char *path)
 */
 void regenerateFile(PathNode *node, const char *content, const size_t repetitions)
 {
-  assert_true(node->history->state.type == PST_regular);
+  assert_true(node->history->state.type == PST_regular_file);
 
   removePath(node->path.content);
   generateFile(node->path.content, content, repetitions);
-  sUtime(node->path, node->history->state.metadata.reg.timestamp);
+  sUtime(node->path, node->history->state.metadata.file_info.modification_time);
 }
 
 /** Changes the path to which a symlink points.
@@ -265,7 +265,7 @@ void restoreRegularFile(const char *path, const RegularFileInfo *info)
   const time_t parent_time = getParentTime(path);
 
   restoreFile(strWrap(path), info, strWrap("tmp/repo"));
-  sUtime(strWrap(path), info->timestamp);
+  sUtime(strWrap(path), info->modification_time);
 
   restoreParentTime(path, parent_time);
 }
@@ -282,11 +282,11 @@ void restoreWithTimeRecursively(PathNode *node)
     PathHistory *point = findExistingHistPoint(node);
     switch(point->state.type)
     {
-      case PST_regular: restoreRegularFile(node->path.content, &point->state.metadata.reg); break;
-      case PST_symlink: makeSymlink(point->state.metadata.sym_target.content, node->path.content); break;
+      case PST_regular_file: restoreRegularFile(node->path.content, &point->state.metadata.file_info); break;
+      case PST_symlink: makeSymlink(point->state.metadata.symlink_target.content, node->path.content); break;
       case PST_directory:
         makeDir(node->path.content);
-        sUtime(node->path, point->state.metadata.dir.timestamp);
+        sUtime(node->path, point->state.metadata.directory_info.modification_time);
         break;
       default: die("unable to restore \"%s\"", node->path.content);
     }
@@ -386,21 +386,21 @@ void mustHaveRegularCached(const PathNode *node, const Backup *backup, const uin
 
 /** Like mustHaveSymlinkLStat(), but takes a stat struct instead. */
 void mustHaveSymlinkStats(const PathNode *node, const Backup *backup, const struct stat stats,
-                          const char *sym_target)
+                          const char *symlink_target)
 {
-  mustHaveSymlink(node, backup, stats.st_uid, stats.st_gid, sym_target);
+  mustHaveSymlink(node, backup, stats.st_uid, stats.st_gid, symlink_target);
 }
 
 /** Like mustHaveRegularStat(), but for mustHaveSymlink(). */
-void mustHaveSymlinkLStat(const PathNode *node, const Backup *backup, const char *sym_target)
+void mustHaveSymlinkLStat(const PathNode *node, const Backup *backup, const char *symlink_target)
 {
-  mustHaveSymlinkStats(node, backup, sLStat(node->path), sym_target);
+  mustHaveSymlinkStats(node, backup, sLStat(node->path), symlink_target);
 }
 
 /** Cached version of mustHaveSymlinkLStat(). */
-void mustHaveSymlinkLCached(const PathNode *node, const Backup *backup, const char *sym_target)
+void mustHaveSymlinkLCached(const PathNode *node, const Backup *backup, const char *symlink_target)
 {
-  mustHaveSymlinkStats(node, backup, cachedStat(node->path, sLStat), sym_target);
+  mustHaveSymlinkStats(node, backup, cachedStat(node->path, sLStat), symlink_target);
 }
 
 /** Like mustHaveDirectory, but takes a stat struct instead. */
@@ -472,9 +472,9 @@ void completeBackup(Metadata *metadata)
   finishBackup(metadata, strWrap("tmp/repo"), strWrap("tmp/repo/tmp-file"));
   const time_t after_finishing = sTime();
 
-  assert_true(metadata->current_backup.timestamp >= before_finishing);
-  assert_true(metadata->current_backup.timestamp <= after_finishing);
-  phase_timestamp_array[phase] = metadata->current_backup.timestamp;
+  assert_true(metadata->current_backup.completion_time >= before_finishing);
+  assert_true(metadata->current_backup.completion_time <= after_finishing);
+  phase_timestamp_array[phase] = metadata->current_backup.completion_time;
 
   metadataWrite(metadata, strWrap("tmp/repo"), strWrap("tmp/repo/tmp-file"), strWrap("tmp/repo/metadata"));
 }

@@ -11,15 +11,16 @@
 typedef struct
 {
   size_t affected_items_count;
-  uint64_t affected_items_size_total;
-} ChangeStats;
+  uint64_t affected_items_total_size;
+} ChangeDetail;
 
 typedef struct
 {
-  ChangeStats new_items;
-  ChangeStats removed_items;
-  ChangeStats lost_items;
-  ChangeStats changed_items;
+  ChangeDetail new_items;
+  ChangeDetail removed_items;
+  ChangeDetail lost_items;
+  ChangeDetail changed_items;
+
   /** Amount of timestamp attribute changes which where not caused by
     subnode changes. */
   size_t changed_attributes;

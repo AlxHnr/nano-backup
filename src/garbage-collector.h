@@ -5,13 +5,11 @@
 
 typedef struct
 {
-  /** The amount of removed items from the repository. */
-  size_t count;
+  size_t deleted_items_count;
+  uint64_t deleted_items_total_size;
+} GCStatistics;
 
-  /** The size of removed files from the repository. */
-  uint64_t size;
-} GCStats;
-
-extern GCStats collectGarbage(const Metadata *metadata, String repo_path);
+extern GCStatistics collectGarbage(const Metadata *metadata,
+                                   String repo_path);
 
 #endif
