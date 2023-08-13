@@ -1,3 +1,19 @@
 ---
-Checks: 'bugprone-*,-bugprone-easily-swappable-parameters,-bugprone-sizeof-expression,clang-analyzer-*,clang-diagnostic-*,misc-*,-misc-no-recursion,performante-*,portability-*,readability-inconsistent-declaration-parameter-name'
+Checks: 'bugprone-*,-bugprone-easily-swappable-parameters,-bugprone-sizeof-expression,clang-analyzer-*,clang-diagnostic-*,misc-*,-misc-no-recursion,performante-*,portability-*,readability-identifier-naming,readability-inconsistent-declaration-parameter-name'
+CheckOptions:
+  - key: readability-identifier-naming.FunctionCase
+    value: camelBack
+  - key: readability-identifier-naming.MacroDefinitionCase
+    value: UPPER_CASE
+  - key: readability-identifier-naming.MemberCase
+    value: lower_case
+  - key: readability-identifier-naming.ParameterCase
+    value: lower_case
+# Broken, see https://github.com/llvm/llvm-project/issues/55422
+  - key: readability-identifier-naming.StructCase
+    value: CamelCase
+  - key: readability-identifier-naming.TypedefCase
+    value: CamelCase
+  - key: readability-identifier-naming.VariableCase
+    value: lower_case
 ...

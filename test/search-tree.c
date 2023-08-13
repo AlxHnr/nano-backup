@@ -210,7 +210,7 @@ static void testSimpleConfigFile(String path)
 }
 
 /** Test parsing the config file "inheritance-1.txt". */
-static void testInheritance_1(void)
+static void testInheritance1(void)
 {
   const SearchNode *root = searchTreeLoad(strWrap("valid-config-files/inheritance-1.txt"));
   checkRootNode(root, BPOL_track, 14, 1, false, 0, 0);
@@ -231,7 +231,7 @@ static void testInheritance_1(void)
 }
 
 /** Test parsing the config file "inheritance-2.txt". */
-static void testInheritance_2(void)
+static void testInheritance2(void)
 {
   const SearchNode *root = searchTreeLoad(strWrap("valid-config-files/inheritance-2.txt"));
   checkRootNode(root, BPOL_copy, 3, 1, false, 3, 0);
@@ -256,7 +256,7 @@ static void testInheritance_2(void)
 }
 
 /** Tests parsing the config file "inheritance-3.txt". */
-static void testInheritance_3(void)
+static void testInheritance3(void)
 {
   const SearchNode *root = searchTreeLoad(strWrap("valid-config-files/inheritance-3.txt"));
   checkRootNode(root, BPOL_none, 0, 2, false, 2, 0);
@@ -554,9 +554,9 @@ static void testNullBytesConfigFiles(void)
 int main(void)
 {
   testGroupStart("various config files");
-  testInheritance_1();
-  testInheritance_2();
-  testInheritance_3();
+  testInheritance1();
+  testInheritance2();
+  testInheritance3();
   testRootWithRegexSubnodes();
   testPathsWithWhitespaces();
 
