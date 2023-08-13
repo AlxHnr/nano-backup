@@ -4,7 +4,6 @@
 
 #include "CRegion/alloc-growable.h"
 #include "file-hash.h"
-#include "path-builder.h"
 #include "safe-wrappers.h"
 #include "string-table.h"
 
@@ -19,8 +18,8 @@ typedef struct
 
   StringView repo_path;
 
-  /** Reusable buffer pre-populated with the content of repo_path. */
-  char *path_buffer;
+  /** Wraps a single reusable buffer for path building. */
+  Allocator *reusable_buffer_allocator;
 
   /** Reusable buffer created with CR_RegionAllocGrowable(). */
   char *unique_subpath_buffer;
@@ -93,11 +92,9 @@ static bool historyPointIsHealthy(IntegrityCheckContext *context,
 
   if(cached_result == NULL)
   {
-    const size_t file_buffer_length =
-      pathBuilderAppend(&context->path_buffer, context->repo_path.length,
-                        unique_subpath.content);
     StringView full_unique_path =
-      strUnterminated(context->path_buffer, file_buffer_length);
+      strAppendPath(context->repo_path, unique_subpath,
+                    context->reusable_buffer_allocator);
 
     const bool is_healthy =
       storedFileIsHealthy(file_info, full_unique_path);
@@ -157,13 +154,11 @@ ListOfBrokenPathNodes *checkIntegrity(CR_Region *r,
     .r = r,
     .broken_nodes = NULL,
     .repo_path = repo_path,
-    .path_buffer = CR_RegionAllocGrowable(disposable_r, 1),
+    .reusable_buffer_allocator =
+      allocatorWrapOneSingleGrowableBuffer(disposable_r),
     .unique_subpath_buffer = CR_RegionAllocGrowable(disposable_r, 1),
     .unique_subpath_cache = strTableNew(disposable_r),
   };
-  pathBuilderSet(
-    &context.path_buffer,
-    strGetContent(repo_path, allocatorWrapRegion(disposable_r)));
 
   checkIntegrityRecursively(&context, metadata->paths);
 
