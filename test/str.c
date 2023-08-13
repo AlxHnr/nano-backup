@@ -27,9 +27,9 @@ static StringView checkedStr(const char *cstring)
   return string;
 }
 
-static StringView checkedStrWrapLength(const char *string, const size_t length)
+static StringView checkedStrUnterminated(const char *string, const size_t length)
 {
-  StringView slice = check(strWrapLength(string, length));
+  StringView slice = check(strUnterminated(string, length));
   assert_true(slice.content == string);
   assert_true(slice.length == length);
   assert_true(!slice.is_terminated);
@@ -180,12 +180,12 @@ int main(void)
   }
   testGroupEnd();
 
-  testGroupStart("StrWrapLength()");
+  testGroupStart("strUnterminated()");
   const char *cstring = "this is a test string";
 
-  StringView slice1 = checkedStrWrapLength(cstring, 4);
-  StringView slice2 = checkedStrWrapLength(&cstring[5], 9);
-  StringView slice3 = checkedStrWrapLength(&cstring[10], 11);
+  StringView slice1 = checkedStrUnterminated(cstring, 4);
+  StringView slice2 = checkedStrUnterminated(&cstring[5], 9);
+  StringView slice3 = checkedStrUnterminated(&cstring[10], 11);
   testGroupEnd();
 
   testGroupStart("strCopy()");
@@ -361,7 +361,7 @@ int main(void)
     assert_true(!strWhitespaceOnly(checkedStr("foo")));
     assert_true(strWhitespaceOnly(zero_length));
 
-    StringView string = checkedStrWrapLength("         a string.", 9);
+    StringView string = checkedStrUnterminated("         a string.", 9);
     assert_true(strWhitespaceOnly(string));
   }
   testGroupEnd();

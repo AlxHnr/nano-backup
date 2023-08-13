@@ -382,22 +382,22 @@ static void testBrokenConfigFiles(void)
     char error_buffer[128];
 
     FileContent content = sGetFilesContent(r, str("broken-config-files/invalid-regex.txt"));
-    assert_error_any(searchTreeParse(strWrapLength(content.content, content.size)));
+    assert_error_any(searchTreeParse(strUnterminated(content.content, content.size)));
     getLastErrorMessage(error_buffer, sizeof(error_buffer));
     assert_true(strstr(error_buffer, "config: line 5: ") == error_buffer);
 
     content = sGetFilesContent(r, str("broken-config-files/invalid-ignore-expression.txt"));
-    assert_error_any(searchTreeParse(strWrapLength(content.content, content.size)));
+    assert_error_any(searchTreeParse(strUnterminated(content.content, content.size)));
     getLastErrorMessage(error_buffer, sizeof(error_buffer));
     assert_true(strstr(error_buffer, "config: line 6: ") == error_buffer);
 
     content = sGetFilesContent(r, str("broken-config-files/invalid-summarize-expression.txt"));
-    assert_error_any(searchTreeParse(strWrapLength(content.content, content.size)));
+    assert_error_any(searchTreeParse(strUnterminated(content.content, content.size)));
     getLastErrorMessage(error_buffer, sizeof(error_buffer));
     assert_true(strstr(error_buffer, "config: line 8: ") == error_buffer);
 
     content = sGetFilesContent(r, str("broken-config-files/multiple-errors.txt"));
-    assert_error_any(searchTreeParse(strWrapLength(content.content, content.size)));
+    assert_error_any(searchTreeParse(strUnterminated(content.content, content.size)));
     getLastErrorMessage(error_buffer, sizeof(error_buffer));
     assert_true(strstr(error_buffer, "config: line 9: ") == error_buffer);
 

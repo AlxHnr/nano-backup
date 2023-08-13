@@ -435,7 +435,7 @@ static PathNode *readPathSubnodes(const FileContent content,
     assertBytesLeft(*reader_position, name_length, content, metadata_path);
 
     StringView name =
-      strWrapLength(&content.content[*reader_position], name_length);
+      strUnterminated(&content.content[*reader_position], name_length);
     *reader_position += name_length;
 
     if(memchr(name.content, '\0', name.length) != NULL)
@@ -600,9 +600,8 @@ void metadataWrite(Metadata *metadata, StringView repo_path,
                    StringView repo_tmp_file_path,
                    StringView repo_metadata_path)
 {
-  RepoWriter *writer =
-    repoWriterOpenRaw(repo_path, repo_tmp_file_path, str("metadata"),
-                      repo_metadata_path);
+  RepoWriter *writer = repoWriterOpenRaw(
+    repo_path, repo_tmp_file_path, str("metadata"), repo_metadata_path);
 
   /* Count referenced history points and update IDs. */
   size_t id_counter = metadata->current_backup.ref_count > 0;

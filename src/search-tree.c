@@ -55,7 +55,7 @@ static StringView getLine(StringView config, const size_t start)
   while(end < config.length && config.content[end] != '\n')
     end++;
 
-  return strWrapLength(&config.content[start], end - start);
+  return strUnterminated(&config.content[start], end - start);
 }
 
 /** Creates a new node and adds it to its parent node. This function does
@@ -94,7 +94,7 @@ static SearchNode *newNode(StringTable *existing_nodes, StringView path,
   {
     /* Slice out the part after the first slash. */
     StringView expression =
-      strWrapLength(&paths.tail.content[1], paths.tail.length - 1);
+      strUnterminated(&paths.tail.content[1], paths.tail.length - 1);
 
     StringView copy = strLegacyCopy(expression);
     strSet(&node->name, copy);
@@ -240,7 +240,7 @@ SearchNode *searchTreeParse(StringView config)
     {
       /* Slice out and copy the invalid policy name. */
       StringView policy =
-        strLegacyCopy(strWrapLength(&line.content[1], line.length - 2));
+        strLegacyCopy(strUnterminated(&line.content[1], line.length - 2));
       die("config: line %zu: invalid policy: \"%s\"", line_nr,
           policy.content);
     }
@@ -329,7 +329,7 @@ SearchNode *searchTreeLoad(StringView path)
 {
   CR_Region *r = CR_RegionNew();
   const FileContent content = sGetFilesContent(r, path);
-  StringView config = strWrapLength(content.content, content.size);
+  StringView config = strUnterminated(content.content, content.size);
 
   SearchNode *root_node = searchTreeParse(config);
   CR_RegionRelease(r);

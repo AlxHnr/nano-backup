@@ -15,7 +15,7 @@ typedef struct
 } StringView;
 
 extern StringView str(const char *string);
-extern StringView strWrapLength(const char *string, size_t length);
+extern StringView strUnterminated(const char *string, size_t length);
 extern const char *strRaw(StringView string, char **buffer);
 
 extern void strSet(StringView *string, StringView value);

@@ -97,7 +97,7 @@ static bool historyPointIsHealthy(IntegrityCheckContext *context,
       pathBuilderAppend(&context->path_buffer, context->repo_path.length,
                         unique_subpath.content);
     StringView full_unique_path =
-      strWrapLength(context->path_buffer, file_buffer_length);
+      strUnterminated(context->path_buffer, file_buffer_length);
 
     const bool is_healthy =
       storedFileIsHealthy(file_info, full_unique_path);

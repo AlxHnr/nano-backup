@@ -92,7 +92,7 @@ static bool recurseIntoDirectory(const StringTable *table,
   }
   else if(length != repo_path_length)
   {
-    StringView path_in_repo = strWrapLength(
+    StringView path_in_repo = strUnterminated(
       &path_buffer[repo_path_length + 1], length - repo_path_length - 1);
 
     item_required |= (strTableGet(table, path_in_repo) != NULL);

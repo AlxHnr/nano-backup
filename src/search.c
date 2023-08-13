@@ -160,7 +160,7 @@ static SearchResult buildSearchResult(const SearchIterator *iterator,
       : S_ISDIR(stats.st_mode)     ? SRT_directory
                                    : SRT_other,
 
-    .path = strWrapLength(iterator->buffer.str, iterator->buffer.length),
+    .path = strUnterminated(iterator->buffer.str, iterator->buffer.length),
 
     .node = node,
     .policy = policy,

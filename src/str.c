@@ -19,7 +19,7 @@ StringView str(const char *string)
 }
 
 /** Return a slice containing the given string. */
-StringView strWrapLength(const char *string, const size_t length)
+StringView strUnterminated(const char *string, const size_t length)
 {
   return (StringView){
     .content = string,
