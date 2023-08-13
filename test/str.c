@@ -93,9 +93,9 @@ static void checkedStrSet(StringView *string, StringView value)
   assert_true(string->is_terminated == value.is_terminated);
 }
 
-static StringView checkedStrRemoveTrailingSlashes(StringView string)
+static StringView checkedStrStripTrailingSlashes(StringView string)
 {
-  StringView trimmed = check(strRemoveTrailingSlashes(string));
+  StringView trimmed = check(strStripTrailingSlashes(string));
   assert_true(trimmed.content == string.content);
   assert_true(trimmed.length <= string.length);
   assert_true(trimmed.is_terminated == (trimmed.length == string.length && string.is_terminated));
@@ -103,9 +103,9 @@ static StringView checkedStrRemoveTrailingSlashes(StringView string)
   return trimmed;
 }
 
-static void testStrRemoveTrailingSlashes(StringView original, StringView expected)
+static void testStrStripTrailingSlashes(StringView original, StringView expected)
 {
-  StringView trimmed = checkedStrRemoveTrailingSlashes(original);
+  StringView trimmed = checkedStrStripTrailingSlashes(original);
   assert_true(trimmed.length == expected.length);
   assert_true(strEqual(trimmed, expected));
 }
@@ -246,23 +246,23 @@ int main(void)
   }
   testGroupEnd();
 
-  testGroupStart("strRemoveTrailingSlashes()");
+  testGroupStart("strStripTrailingSlashes()");
   {
-    testStrRemoveTrailingSlashes(checkedStr(""), checkedStr(""));
-    testStrRemoveTrailingSlashes(zero_length, checkedStr(""));
-    testStrRemoveTrailingSlashes(checkedStr("foo"), checkedStr("foo"));
-    testStrRemoveTrailingSlashes(checkedStr("/home/arch/foo-bar"), checkedStr("/home/arch/foo-bar"));
-    testStrRemoveTrailingSlashes(checkedStr("/home/arch/foo-bar/"), checkedStr("/home/arch/foo-bar"));
-    testStrRemoveTrailingSlashes(checkedStr("/home/arch/foo-bar//////"), checkedStr("/home/arch/foo-bar"));
-    testStrRemoveTrailingSlashes(checkedStr("///////////////"), zero_length);
-    testStrRemoveTrailingSlashes(checkedStr("////////////"), checkedStr(""));
-    assert_true(checkedStrRemoveTrailingSlashes(checkedStr("/home/test")).is_terminated);
-    assert_true(!checkedStrRemoveTrailingSlashes(checkedStr("/home/")).is_terminated);
-    assert_true(checkedStrRemoveTrailingSlashes(checkedStr("/home")).is_terminated);
-    assert_true(checkedStrRemoveTrailingSlashes(checkedStr("this is a test")).is_terminated);
-    assert_true(checkedStrRemoveTrailingSlashes(checkedStr("this is a tes/t")).is_terminated);
-    assert_true(!checkedStrRemoveTrailingSlashes(checkedStr("//////////")).is_terminated);
-    assert_true(checkedStrRemoveTrailingSlashes(checkedStr("////////// ")).is_terminated);
+    testStrStripTrailingSlashes(checkedStr(""), checkedStr(""));
+    testStrStripTrailingSlashes(zero_length, checkedStr(""));
+    testStrStripTrailingSlashes(checkedStr("foo"), checkedStr("foo"));
+    testStrStripTrailingSlashes(checkedStr("/home/arch/foo-bar"), checkedStr("/home/arch/foo-bar"));
+    testStrStripTrailingSlashes(checkedStr("/home/arch/foo-bar/"), checkedStr("/home/arch/foo-bar"));
+    testStrStripTrailingSlashes(checkedStr("/home/arch/foo-bar//////"), checkedStr("/home/arch/foo-bar"));
+    testStrStripTrailingSlashes(checkedStr("///////////////"), zero_length);
+    testStrStripTrailingSlashes(checkedStr("////////////"), checkedStr(""));
+    assert_true(checkedStrStripTrailingSlashes(checkedStr("/home/test")).is_terminated);
+    assert_true(!checkedStrStripTrailingSlashes(checkedStr("/home/")).is_terminated);
+    assert_true(checkedStrStripTrailingSlashes(checkedStr("/home")).is_terminated);
+    assert_true(checkedStrStripTrailingSlashes(checkedStr("this is a test")).is_terminated);
+    assert_true(checkedStrStripTrailingSlashes(checkedStr("this is a tes/t")).is_terminated);
+    assert_true(!checkedStrStripTrailingSlashes(checkedStr("//////////")).is_terminated);
+    assert_true(checkedStrStripTrailingSlashes(checkedStr("////////// ")).is_terminated);
   }
   testGroupEnd();
 

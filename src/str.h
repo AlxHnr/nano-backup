@@ -23,7 +23,7 @@ extern const char *strGetContent(StringView string, Allocator *a);
 extern void strSet(StringView *string, StringView value);
 extern bool strEqual(StringView a, StringView b);
 
-extern StringView strRemoveTrailingSlashes(StringView string);
+extern StringView strStripTrailingSlashes(StringView string);
 extern bool strWhitespaceOnly(StringView string);
 extern bool strIsDotElement(StringView string);
 extern bool strPathContainsDotElements(StringView path);

@@ -147,8 +147,7 @@ void applyNodeChanges(PathNode *node, PathState *state,
 
     if(!strEqual(state->metadata.symlink_target, str(buffer)))
     {
-      strSet(&state->metadata.symlink_target,
-             strLegacyCopy(str(buffer)));
+      strSet(&state->metadata.symlink_target, strLegacyCopy(str(buffer)));
       backupHintSet(node->hint, BH_content_changed);
     }
   }

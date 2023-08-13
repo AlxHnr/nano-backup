@@ -89,7 +89,7 @@ bool strEqual(StringView a, StringView b)
   @return The same string with a shorter length. It points to the same
   content as the initial string.
 */
-StringView strRemoveTrailingSlashes(StringView string)
+StringView strStripTrailingSlashes(StringView string)
 {
   size_t new_length = string.length;
   while(new_length > 0 && string.content[new_length - 1] == '/')
@@ -224,7 +224,7 @@ bool strPathContainsDotElements(StringView path)
 */
 bool strIsParentPath(StringView parent, StringView path)
 {
-  return parent.length < strRemoveTrailingSlashes(path).length &&
+  return parent.length < strStripTrailingSlashes(path).length &&
     path.content[parent.length] == '/' &&
     memcmp(path.content, parent.content, parent.length) == 0;
 }

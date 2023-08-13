@@ -118,9 +118,8 @@ static void runIntegrityCheck(const Metadata *metadata,
 
 static void backup(StringView repo_arg)
 {
-  StringView repo_path = strRemoveTrailingSlashes(repo_arg);
-  StringView config_path =
-    strLegacyAppendPath(repo_path, str("config"));
+  StringView repo_path = strStripTrailingSlashes(repo_arg);
+  StringView config_path = strLegacyAppendPath(repo_path, str("config"));
   StringView metadata_path =
     strLegacyAppendPath(repo_path, str("metadata"));
   StringView tmp_file_path =
@@ -175,7 +174,7 @@ static void backup(StringView repo_arg)
 
 static Metadata *metadataLoadFromRepo(StringView repo_arg)
 {
-  StringView repo_path = strRemoveTrailingSlashes(repo_arg);
+  StringView repo_path = strStripTrailingSlashes(repo_arg);
   StringView metadata_path =
     strLegacyAppendPath(repo_path, str("metadata"));
 
@@ -198,7 +197,7 @@ static StringView buildFullPath(StringView path)
   {
     char *cwd = sGetCwd();
     StringView full_path =
-      strLegacyAppendPath(strRemoveTrailingSlashes(str(cwd)), path);
+      strLegacyAppendPath(strStripTrailingSlashes(str(cwd)), path);
     free(cwd);
 
     return full_path;
@@ -214,7 +213,7 @@ static StringView buildFullPath(StringView path)
 static void restore(StringView repo_arg, const size_t id, StringView path)
 {
   Metadata *metadata = metadataLoadFromRepo(repo_arg);
-  StringView full_path = strRemoveTrailingSlashes(buildFullPath(path));
+  StringView full_path = strStripTrailingSlashes(buildFullPath(path));
   initiateRestore(metadata, id, strLegacyCopy(full_path));
 
   const ChangeSummary changes = printMetadataChanges(metadata, NULL);
@@ -264,9 +263,8 @@ int main(const int arg_count, const char **arg_list)
 
     runIntegrityCheck(metadataLoadFromRepo(path_to_repo), path_to_repo);
   }
-  else if(regexec(
-            rpCompile(str("^[0-9]+$"), str(__FILE__), __LINE__),
-            arg_list[2], 0, NULL, 0) == 0)
+  else if(regexec(rpCompile(str("^[0-9]+$"), str(__FILE__), __LINE__),
+                  arg_list[2], 0, NULL, 0) == 0)
   {
     if(arg_count > 4)
     {

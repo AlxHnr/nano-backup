@@ -256,7 +256,7 @@ SearchNode *searchTreeParse(StringView config)
             line_nr, strLegacyCopy(line).content);
       }
 
-      StringView path = strRemoveTrailingSlashes(line);
+      StringView path = strStripTrailingSlashes(line);
       SearchNode *previous_definition = strTableGet(existing_nodes, path);
 
       /* Terminate with an error if the path was already defined. */

@@ -1121,12 +1121,10 @@ static void testRejectingCorruptedMetadata(void)
   assert_error(metadataLoad(str("tmp/filename-with-length-zero-2")),
                "contains filename with length zero: \"tmp/filename-with-length-zero-2\"");
 
-  assert_error(metadataLoad(str("tmp/dot-filename-1")),
-               "contains invalid filename \".\": \"tmp/dot-filename-1\"");
+  assert_error(metadataLoad(str("tmp/dot-filename-1")), "contains invalid filename \".\": \"tmp/dot-filename-1\"");
   assert_error(metadataLoad(str("tmp/dot-filename-2")),
                "contains invalid filename \"..\": \"tmp/dot-filename-2\"");
-  assert_error(metadataLoad(str("tmp/dot-filename-3")),
-               "contains invalid filename \".\": \"tmp/dot-filename-3\"");
+  assert_error(metadataLoad(str("tmp/dot-filename-3")), "contains invalid filename \".\": \"tmp/dot-filename-3\"");
 
   assert_error(metadataLoad(str("tmp/slash-filename-1")),
                "contains invalid filename \"/\": \"tmp/slash-filename-1\"");
