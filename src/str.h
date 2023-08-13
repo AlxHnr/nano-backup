@@ -36,7 +36,6 @@ typedef struct
 } PathSplit;
 extern PathSplit strSplitPath(StringView path);
 
-extern const char *strLegacyRaw(StringView string, char **buffer);
 extern StringView strLegacyCopy(StringView string);
 extern StringView strLegacyAppendPath(StringView path,
                                       StringView filename);

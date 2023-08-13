@@ -228,19 +228,3 @@ bool strIsParentPath(StringView parent, StringView path)
     path.content[parent.length] == '/' &&
     memcmp(path.content, parent.content, parent.length) == 0;
 }
-
-const char *strLegacyRaw(StringView string, char **buffer)
-{
-  if(string.is_terminated)
-  {
-    return string.content;
-  }
-  else
-  {
-    *buffer = CR_EnsureCapacity(*buffer, sSizeAdd(string.length, 1));
-    memcpy(*buffer, string.content, string.length);
-    (*buffer)[string.length] = '\0';
-
-    return *buffer;
-  }
-}

@@ -161,8 +161,9 @@ ListOfBrokenPathNodes *checkIntegrity(CR_Region *r,
     .unique_subpath_buffer = CR_RegionAllocGrowable(disposable_r, 1),
     .unique_subpath_cache = strTableNew(disposable_r),
   };
-  pathBuilderSet(&context.path_buffer,
-                 strLegacyRaw(repo_path, &context.unique_subpath_buffer));
+  pathBuilderSet(
+    &context.path_buffer,
+    strGetContent(repo_path, allocatorWrapRegion(disposable_r)));
 
   checkIntegrityRecursively(&context, metadata->paths);
 
