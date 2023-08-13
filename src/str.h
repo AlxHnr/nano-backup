@@ -19,9 +19,10 @@ typedef struct
 extern StringView str(const char *string);
 extern StringView strUnterminated(const char *string, size_t length);
 extern const char *strGetContent(StringView string, Allocator *a);
-
 extern void strSet(StringView *string, StringView value);
 extern bool strEqual(StringView a, StringView b);
+extern StringView strCopy(StringView string, Allocator *a);
+extern char *strCopyRaw(StringView string, Allocator *a);
 
 extern StringView strStripTrailingSlashes(StringView string);
 extern bool strWhitespaceOnly(StringView string);

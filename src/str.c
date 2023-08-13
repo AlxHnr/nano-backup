@@ -42,32 +42,7 @@ const char *strGetContent(StringView string, Allocator *a)
   {
     return string.content;
   }
-
-  char *content = allocate(a, sSizeAdd(string.length, 1));
-  memcpy(content, string.content, string.length);
-  content[string.length] = '\0';
-
-  return content;
-}
-
-/** Creates a copy of the given string.
-
-  @param string The string to copy.
-
-  @return A new string which lifetime will be bound to the entire program.
-*/
-StringView strLegacyCopy(StringView string)
-{
-  char *cstring = CR_RegionAllocUnaligned(CR_GetGlobalRegion(),
-                                          sSizeAdd(string.length, 1));
-  memcpy(cstring, string.content, string.length);
-  cstring[string.length] = '\0';
-
-  return (StringView){
-    .content = cstring,
-    .length = string.length,
-    .is_terminated = true,
-  };
+  return strCopyRaw(string, a);
 }
 
 /** Set the content of the given string to the specified value. */
@@ -80,6 +55,37 @@ bool strEqual(StringView a, StringView b)
 {
   return a.length == b.length &&
     memcmp(a.content, b.content, a.length) == 0;
+}
+
+/** Create a copy of the given string view.
+
+  @param string To be copied.
+  @param a Used for allocating the returned string.
+
+  @return String allocated with the given allocator.
+*/
+StringView strCopy(StringView string, Allocator *a)
+{
+  return (StringView){
+    .content = strCopyRaw(string, a),
+    .length = string.length,
+    .is_terminated = true,
+  };
+}
+
+/** Create a raw C string copy of the given string view.
+
+  @param string To be copied.
+  @param a Used for allocating the returned string.
+
+  @return Null-terminated C string allocated with the given allocator.
+*/
+char *strCopyRaw(StringView string, Allocator *a)
+{
+  char *raw_string = allocate(a, sSizeAdd(string.length, 1));
+  memcpy(raw_string, string.content, string.length);
+  raw_string[string.length] = '\0';
+  return raw_string;
 }
 
 /** Removes trailing slashes from a string.
@@ -227,4 +233,18 @@ bool strIsParentPath(StringView parent, StringView path)
   return parent.length < strStripTrailingSlashes(path).length &&
     path.content[parent.length] == '/' &&
     memcmp(path.content, parent.content, parent.length) == 0;
+}
+
+StringView strLegacyCopy(StringView string)
+{
+  char *cstring = CR_RegionAllocUnaligned(CR_GetGlobalRegion(),
+                                          sSizeAdd(string.length, 1));
+  memcpy(cstring, string.content, string.length);
+  cstring[string.length] = '\0';
+
+  return (StringView){
+    .content = cstring,
+    .length = string.length,
+    .is_terminated = true,
+  };
 }

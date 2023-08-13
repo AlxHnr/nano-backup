@@ -38,9 +38,9 @@ static StringView checkedStrUnterminated(const char *string, const size_t length
   return slice;
 }
 
-static StringView checkedStrCopy(StringView string)
+static StringView checkedStrCopy(StringView string, Allocator *a)
 {
-  StringView copy = check(strLegacyCopy(string));
+  StringView copy = check(strCopy(string, a));
 
   assert_true(copy.content != string.content);
   assert_true(copy.length == string.length);
@@ -146,6 +146,12 @@ static void testStrSplitPath(const char *cpath, const char *cexpected_head, cons
 
 int main(void)
 {
+  StringView zero_length = (StringView){
+    .content = "some-data",
+    .length = 0,
+    .is_terminated = false,
+  };
+
   testGroupStart("str()");
   {
     checkedStr("");
@@ -161,29 +167,6 @@ int main(void)
   StringView slice1 = checkedStrUnterminated(cstring, 4);
   StringView slice2 = checkedStrUnterminated(&cstring[5], 9);
   StringView slice3 = checkedStrUnterminated(&cstring[10], 11);
-  testGroupEnd();
-
-  testGroupStart("strCopy()");
-  StringView zero_length = (StringView){
-    .content = "some-data",
-    .length = 0,
-    .is_terminated = false,
-  };
-  {
-    StringView bar = checkedStr("bar");
-    checkedStrCopy(bar);
-
-    StringView empty = checkedStr("");
-    StringView empty_copy = checkedStrCopy(empty);
-    assert_true(empty_copy.length == 0);
-
-    StringView zero_length_copy = checkedStrCopy(zero_length);
-    assert_true(zero_length_copy.length == 0);
-
-    checkedStrCopy(slice1);
-    checkedStrCopy(slice2);
-    checkedStrCopy(slice3);
-  }
   testGroupEnd();
 
   testGroupStart("strSet()");
@@ -220,6 +203,48 @@ int main(void)
     assert_true(!strEqual(slice1, slice3));
     assert_true(!strEqual(slice2, slice3));
     assert_true(!strEqual(slice3, slice2));
+  }
+  testGroupEnd();
+
+  testGroupStart("strCopy()");
+  {
+    CR_Region *r = CR_RegionNew();
+    Allocator *a = allocatorWrapRegion(r);
+
+    checkedStrCopy(checkedStr("bar"), a);
+
+    StringView empty_copy = checkedStrCopy(checkedStr(""), a);
+    assert_true(empty_copy.length == 0);
+
+    StringView zero_length_copy = checkedStrCopy(zero_length, a);
+    assert_true(zero_length_copy.length == 0);
+
+    checkedStrCopy(slice1, a);
+    checkedStrCopy(slice2, a);
+    checkedStrCopy(slice3, a);
+
+    CR_RegionRelease(r);
+  }
+  testGroupEnd();
+
+  testGroupStart("strCopyRaw()");
+  {
+    CR_Region *r = CR_RegionNew();
+    Allocator *a = allocatorWrapRegion(r);
+
+    StringView string = str("A basic example string");
+    const char *raw_string = strCopyRaw(string, a);
+    assert_true(raw_string != NULL);
+    assert_true(raw_string != string.content);
+    assert_true(raw_string[string.length] == '\0');
+    assert_true(memcmp(raw_string, string.content, string.length) == 0);
+
+    const char *raw_empty_string = strCopyRaw(zero_length, a);
+    assert_true(raw_empty_string != NULL);
+    assert_true(raw_empty_string != string.content);
+    assert_true(raw_empty_string[0] == '\0');
+
+    CR_RegionRelease(r);
   }
   testGroupEnd();
 
