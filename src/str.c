@@ -70,7 +70,7 @@ bool strEqual(StringView a, StringView b)
   @return A pointer to either the given strings content, or to the given
   buffer.
 */
-const char *strRaw(StringView string, char **buffer)
+const char *strLegacyRaw(StringView string, char **buffer)
 {
   if(string.is_terminated)
   {

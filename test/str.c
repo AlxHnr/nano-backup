@@ -92,13 +92,13 @@ static void checkedStrSet(StringView *string, StringView value)
   assert_true(string->is_terminated == value.is_terminated);
 }
 
-static const char *checkedStrRaw(StringView string, char **buffer)
+static const char *checkedStrLegacyRaw(StringView string, char **buffer)
 {
   if(string.is_terminated)
   {
     const char *old_buffer = *buffer;
 
-    const char *cstring = strRaw(string, buffer);
+    const char *cstring = strLegacyRaw(string, buffer);
     assert_true(cstring == string.content);
 
     assert_true(*buffer == old_buffer);
@@ -107,7 +107,7 @@ static const char *checkedStrRaw(StringView string, char **buffer)
   }
   else
   {
-    const char *cstring = strRaw(string, buffer);
+    const char *cstring = strLegacyRaw(string, buffer);
     assert_true(cstring != NULL);
     assert_true(cstring != string.content);
     assert_true(cstring == *buffer);
@@ -248,15 +248,15 @@ int main(void)
   }
   testGroupEnd();
 
-  testGroupStart("strRaw()");
+  testGroupStart("strLegacyRaw()");
   {
     char *buffer = NULL;
     StringView string = checkedStr(cstring);
 
-    checkedStrRaw(string, &buffer);
-    checkedStrRaw(slice1, &buffer);
-    checkedStrRaw(slice2, &buffer);
-    checkedStrRaw(slice3, &buffer);
+    checkedStrLegacyRaw(string, &buffer);
+    checkedStrLegacyRaw(slice1, &buffer);
+    checkedStrLegacyRaw(slice2, &buffer);
+    checkedStrLegacyRaw(slice3, &buffer);
   }
   testGroupEnd();
 

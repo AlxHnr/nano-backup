@@ -162,7 +162,7 @@ ListOfBrokenPathNodes *checkIntegrity(CR_Region *r,
     .unique_subpath_cache = strTableNew(disposable_r),
   };
   pathBuilderSet(&context.path_buffer,
-                 strRaw(repo_path, &context.unique_subpath_buffer));
+                 strLegacyRaw(repo_path, &context.unique_subpath_buffer));
 
   checkIntegrityRecursively(&context, metadata->paths);
 

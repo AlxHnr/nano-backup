@@ -7,7 +7,7 @@
 /** Immutable string slice which doesn't own the memory it points to. */
 typedef struct
 {
-  /** May not be null terminated. Use strRaw() for interacting with C
+  /** May not be null terminated. Use strLegacyRaw() for interacting with C
     functions. */
   const char *const content;
   const size_t length;
@@ -16,7 +16,6 @@ typedef struct
 
 extern StringView str(const char *string);
 extern StringView strUnterminated(const char *string, size_t length);
-extern const char *strRaw(StringView string, char **buffer);
 
 extern void strSet(StringView *string, StringView value);
 extern bool strEqual(StringView a, StringView b);
@@ -34,6 +33,7 @@ typedef struct
 } PathSplit;
 extern PathSplit strSplitPath(StringView path);
 
+extern const char *strLegacyRaw(StringView string, char **buffer);
 extern StringView strLegacyCopy(StringView string);
 extern StringView strLegacyAppendPath(StringView path,
                                       StringView filename);
