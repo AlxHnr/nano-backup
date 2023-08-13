@@ -37,9 +37,9 @@ extern void mustHaveRegularCached(const PathNode *node, const Backup *backup, ui
                                   uint8_t slot);
 
 extern void mustHaveSymlinkStats(const PathNode *node, const Backup *backup, struct stat stats,
-                                 const char *sym_target);
-extern void mustHaveSymlinkLStat(const PathNode *node, const Backup *backup, const char *sym_target);
-extern void mustHaveSymlinkLCached(const PathNode *node, const Backup *backup, const char *sym_target);
+                                 const char *symlink_target);
+extern void mustHaveSymlinkLStat(const PathNode *node, const Backup *backup, const char *symlink_target);
+extern void mustHaveSymlinkLCached(const PathNode *node, const Backup *backup, const char *symlink_target);
 
 extern void mustHaveDirectoryStats(const PathNode *node, const Backup *backup, struct stat stats);
 extern void mustHaveDirectoryStat(const PathNode *node, const Backup *backup);

@@ -111,22 +111,23 @@ String strRemoveTrailingSlashes(String string)
 /** Appends the two given strings with a slash in between. E.g.
   strAppendPath("/etc", "init.d") -> "/etc/init.d".
 
-  @param a The string to which b will be appended.
-  @param b The string which will be appended to a.
+  @param path The string to which b will be appended.
+  @param filename The string which will be appended to a.
 
   @return A new string which lifetime will be bound to the entire program.
 */
-String strAppendPath(String a, String b)
+String strAppendPath(String path, String filename)
 {
-  const size_t buffer_size = sSizeAdd(sSizeAdd(a.length, b.length), 2);
+  const size_t buffer_size =
+    sSizeAdd(sSizeAdd(path.length, filename.length), 2);
   const size_t path_length = buffer_size - 1;
 
   char *cstring =
     CR_RegionAllocUnaligned(CR_GetGlobalRegion(), buffer_size);
 
-  memcpy(cstring, a.content, a.length);
-  cstring[a.length] = '/';
-  memcpy(&cstring[a.length + 1], b.content, b.length);
+  memcpy(cstring, path.content, path.length);
+  cstring[path.length] = '/';
+  memcpy(&cstring[path.length + 1], filename.content, filename.length);
   cstring[path_length] = '\0';
 
   return (String){
