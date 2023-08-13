@@ -62,7 +62,8 @@ static void checkFileContentChanges(PathNode *node, PathState *state,
   If it points to NULL, a new buffer will be allocated by
   CR_EnsureCapacity(), to which the given pointer will be assigned.
 */
-void readSymlink(String path, const struct stat stats, char **buffer_ptr)
+void readSymlink(StringView path, const struct stat stats,
+                 char **buffer_ptr)
 {
   const uint64_t buffer_length = sUint64Add(stats.st_size, 1);
   if(buffer_length > SIZE_MAX)

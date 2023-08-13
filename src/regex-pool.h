@@ -5,7 +5,7 @@
 
 #include "str.h"
 
-extern const regex_t *rpCompile(String expression, String file_name,
-                                size_t line_nr);
+extern const regex_t *rpCompile(StringView expression,
+                                StringView file_name, size_t line_nr);
 
 #endif

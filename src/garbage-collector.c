@@ -36,7 +36,7 @@ static void populateTableRecursively(StringTable *table,
 
     static char *buffer = NULL;
     repoBuildRegularFilePath(&buffer, &point->state.metadata.file_info);
-    String path = strWrap(buffer);
+    StringView path = strWrap(buffer);
 
     if(strTableGet(table, path) == NULL)
     {
@@ -92,8 +92,8 @@ static bool recurseIntoDirectory(const StringTable *table,
   }
   else if(length != repo_path_length)
   {
-    String path_in_repo = strWrapLength(&path_buffer[repo_path_length + 1],
-                                        length - repo_path_length - 1);
+    StringView path_in_repo = strWrapLength(
+      &path_buffer[repo_path_length + 1], length - repo_path_length - 1);
 
     item_required |= (strTableGet(table, path_in_repo) != NULL);
   }
@@ -121,7 +121,7 @@ static bool recurseIntoDirectory(const StringTable *table,
 
   @return Statistics about items removed from the repository.
 */
-GCStatistics collectGarbage(const Metadata *metadata, String repo_path)
+GCStatistics collectGarbage(const Metadata *metadata, StringView repo_path)
 {
   CR_Region *table_region = CR_RegionNew();
   StringTable *table = strTableNew(table_region);

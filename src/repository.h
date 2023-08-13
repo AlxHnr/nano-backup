@@ -33,29 +33,29 @@ typedef struct
   uint8_t slot;
 } RegularFileInfo;
 
-extern bool repoRegularFileExists(String repo_path,
+extern bool repoRegularFileExists(StringView repo_path,
                                   const RegularFileInfo *info);
 extern void repoBuildRegularFilePath(char **buffer_ptr,
                                      const RegularFileInfo *info);
 
-extern RepoReader *repoReaderOpenFile(String repo_path,
-                                      String source_file_path,
+extern RepoReader *repoReaderOpenFile(StringView repo_path,
+                                      StringView source_file_path,
                                       const RegularFileInfo *info);
 extern void repoReaderRead(void *data, size_t size, RepoReader *reader);
 extern void repoReaderClose(RepoReader *reader);
 
-extern RepoWriter *repoWriterOpenFile(String repo_path,
-                                      String repo_tmp_file_path,
-                                      String source_file_path,
+extern RepoWriter *repoWriterOpenFile(StringView repo_path,
+                                      StringView repo_tmp_file_path,
+                                      StringView source_file_path,
                                       const RegularFileInfo *info);
-extern RepoWriter *repoWriterOpenRaw(String repo_path,
-                                     String repo_tmp_file_path,
-                                     String source_file_path,
-                                     String final_path);
+extern RepoWriter *repoWriterOpenRaw(StringView repo_path,
+                                     StringView repo_tmp_file_path,
+                                     StringView source_file_path,
+                                     StringView final_path);
 extern void repoWriterWrite(const void *data, size_t size,
                             RepoWriter *writer);
 extern void repoWriterClose(RepoWriter *writer);
 
-extern void repoLockUntilExit(String repo_path);
+extern void repoLockUntilExit(StringView repo_path);
 
 #endif

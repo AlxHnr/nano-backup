@@ -17,7 +17,7 @@ typedef struct
     lifetime of this list is bound to the region `r` in this struct. */
   ListOfBrokenPathNodes *broken_nodes;
 
-  String repo_path;
+  StringView repo_path;
 
   /** Reusable buffer pre-populated with the content of repo_path. */
   char *path_buffer;
@@ -39,7 +39,7 @@ typedef struct
   @return True if the given file is healthy.
 */
 static bool storedFileIsHealthy(const RegularFileInfo *file_info,
-                                const String path_to_stored_file)
+                                const StringView path_to_stored_file)
 {
   if(!sPathExists(path_to_stored_file))
   {
@@ -84,7 +84,7 @@ static bool historyPointIsHealthy(IntegrityCheckContext *context,
   }
 
   repoBuildRegularFilePath(&context->unique_subpath_buffer, file_info);
-  String unique_subpath = strWrap(context->unique_subpath_buffer);
+  StringView unique_subpath = strWrap(context->unique_subpath_buffer);
 
   const void *cached_result =
     strTableGet(context->unique_subpath_cache, unique_subpath);
@@ -96,7 +96,7 @@ static bool historyPointIsHealthy(IntegrityCheckContext *context,
     const size_t file_buffer_length =
       pathBuilderAppend(&context->path_buffer, context->repo_path.length,
                         unique_subpath.content);
-    String full_unique_path =
+    StringView full_unique_path =
       strWrapLength(context->path_buffer, file_buffer_length);
 
     const bool is_healthy =
@@ -146,8 +146,9 @@ static void checkIntegrityRecursively(IntegrityCheckContext *context,
   nodes associated with corrupted files. The lifetime of the returned list
   will be bound to the given region.
 */
-ListOfBrokenPathNodes *
-checkIntegrity(CR_Region *r, const Metadata *metadata, String repo_path)
+ListOfBrokenPathNodes *checkIntegrity(CR_Region *r,
+                                      const Metadata *metadata,
+                                      StringView repo_path)
 {
   CR_Region *disposable_r = CR_RegionNew();
 

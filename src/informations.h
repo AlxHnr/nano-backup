@@ -37,6 +37,6 @@ extern ChangeSummary
 printMetadataChanges(const Metadata *metadata,
                      RegexList *summarize_expressions);
 extern bool containsChanges(const ChangeSummary *changes);
-extern void warnNodeMatches(const SearchNode *node, String string);
+extern void warnNodeMatches(const SearchNode *node, StringView string);
 
 #endif

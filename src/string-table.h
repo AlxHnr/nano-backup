@@ -9,7 +9,7 @@
 typedef struct StringTable StringTable;
 
 extern StringTable *strTableNew(CR_Region *region);
-extern void strTableMap(StringTable *table, String key, void *data);
-extern void *strTableGet(const StringTable *table, String key);
+extern void strTableMap(StringTable *table, StringView key, void *data);
+extern void *strTableGet(const StringTable *table, StringView key);
 
 #endif

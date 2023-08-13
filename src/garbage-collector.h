@@ -10,6 +10,6 @@ typedef struct
 } GCStatistics;
 
 extern GCStatistics collectGarbage(const Metadata *metadata,
-                                   String repo_path);
+                                   StringView repo_path);
 
 #endif

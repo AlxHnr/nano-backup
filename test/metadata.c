@@ -56,14 +56,14 @@ static PathNode *createPathNode(const char *path_str, const BackupPolicy policy,
 
   if(parent_node == NULL)
   {
-    String path = strAppendPath(strWrap(""), strWrap(path_str));
+    StringView path = strAppendPath(strWrap(""), strWrap(path_str));
     strSet(&node->path, path);
 
     node->next = NULL;
   }
   else
   {
-    String path = strAppendPath(parent_node->path, strWrap(path_str));
+    StringView path = strAppendPath(parent_node->path, strWrap(path_str));
     strSet(&node->path, path);
 
     node->next = parent_node->subnodes;
@@ -842,7 +842,7 @@ static void writeBytesToFile(const size_t size, const char *data, const char *pa
   @param byte The character which should replace the old one.
   @param filename The name of the final metadata file.
 */
-static void writeWithBrokenChar3(Metadata *metadata, String *path, const char byte, const char *filename)
+static void writeWithBrokenChar3(Metadata *metadata, StringView *path, const char byte, const char *filename)
 {
   const char old_byte = path->content[path->length - 3];
 

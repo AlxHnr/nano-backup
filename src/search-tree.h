@@ -16,7 +16,7 @@ struct RegexList
 
   /** The uncompiled regular expression as a string. The buffer inside this
     string is guaranteed to be null-terminated. */
-  String expression;
+  StringView expression;
 
   /** The number of the line in the config file on which this expression
     was defined. */
@@ -33,7 +33,7 @@ struct SearchNode
 {
   /** The name or expression of the node. The buffer inside this string is
     guaranteed to be null-terminated. */
-  String name;
+  StringView name;
 
   /** The number of the line in the config file on which this node appeared
     initially. This may not be the line on which this node got a policy
@@ -80,7 +80,7 @@ struct SearchNode
   SearchNode *next;
 };
 
-extern SearchNode *searchTreeParse(String config);
-extern SearchNode *searchTreeLoad(String path);
+extern SearchNode *searchTreeParse(StringView config);
+extern SearchNode *searchTreeLoad(StringView path);
 
 #endif

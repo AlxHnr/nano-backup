@@ -24,7 +24,7 @@ static size_t countSubnodes(const SearchNode *parent_node)
   terminate the test suite with failure if the node does not exist. */
 static const SearchNode *findSubnode(const SearchNode *parent_node, const char *string)
 {
-  String node_name = strWrap(string);
+  StringView node_name = strWrap(string);
   for(const SearchNode *node = parent_node->subnodes; node != NULL; node = node->next)
   {
     if(strEqual(node->name, node_name))
@@ -65,7 +65,7 @@ static size_t countExpressions(const RegexList *expression_list)
 */
 static bool checkExpressionList(const RegexList *expression_list, const char *pattern, const size_t line_nr)
 {
-  String expression_string = strWrap(pattern);
+  StringView expression_string = strWrap(pattern);
   for(const RegexList *expression = expression_list; expression != NULL; expression = expression->next)
   {
     if(expression->has_matched == false && expression->line_nr == line_nr &&
@@ -189,7 +189,7 @@ static void checkNode(const SearchNode *node, const SearchNode *root_node, const
   @param path A null-terminated string, containing a path to a valid config
   file.
 */
-static void testSimpleConfigFile(String path)
+static void testSimpleConfigFile(StringView path)
 {
   const SearchNode *root = searchTreeLoad(path);
   checkRootNode(root, BPOL_none, 0, 2, false, 0, 0);
@@ -352,7 +352,7 @@ static void assertParseError(const char *path, const char *message)
 {
   CR_Region *r = CR_RegionNew();
   const FileContent content = sGetFilesContent(r, strWrap(path));
-  String config = { .content = content.content, .length = content.size };
+  StringView config = { .content = content.content, .length = content.size };
 
   assert_error(searchTreeParse(config), message);
 
@@ -507,7 +507,7 @@ static void testInsertNullBytes(const char *path)
     return;
   }
 
-  String config = { .content = content.content, .length = content.size };
+  StringView config = { .content = content.content, .length = content.size };
 
   for(size_t index = 0; index < content.size; index++)
   {
@@ -536,7 +536,7 @@ static void testNullBytesConfigFiles(void)
 
   for(size_t dir_index = 0; dir_index < sizeof(config_paths) / sizeof(config_paths[0]); dir_index++)
   {
-    String dir_path = strWrap(config_paths[dir_index]);
+    StringView dir_path = strWrap(config_paths[dir_index]);
     const size_t path_length = pathBuilderSet(&buffer, dir_path.content);
     DIR *dir = sOpenDir(dir_path);
 

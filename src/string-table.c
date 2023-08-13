@@ -16,7 +16,7 @@ struct Bucket
   /** Hash of the key. Required to resize the string table. */
   uint64_t hash;
 
-  String key;
+  StringView key;
   void *data;
 
   Bucket *next;
@@ -109,7 +109,7 @@ StringTable *strTableNew(CR_Region *region)
   only store a reference to the data, so the caller should not move it
   unless the table is not used anymore.
 */
-void strTableMap(StringTable *table, String key, void *data)
+void strTableMap(StringTable *table, StringView key, void *data)
 {
   if(table->associations == table->capacity)
   {
@@ -137,7 +137,7 @@ void strTableMap(StringTable *table, String key, void *data)
 
   @return Associated data or NULL if the key was not found.
 */
-void *strTableGet(const StringTable *table, String key)
+void *strTableGet(const StringTable *table, StringView key)
 {
   const size_t hash =
     siphash((const uint8_t *)key.content, key.length, table->secret_key);

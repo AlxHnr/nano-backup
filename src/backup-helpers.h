@@ -6,7 +6,8 @@
 #include "metadata.h"
 #include "str.h"
 
-extern void readSymlink(String path, struct stat stats, char **buffer_ptr);
+extern void readSymlink(StringView path, struct stat stats,
+                        char **buffer_ptr);
 extern void applyNodeChanges(PathNode *node, PathState *state,
                              struct stat stats);
 

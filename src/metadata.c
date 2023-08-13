@@ -30,7 +30,7 @@ static const union
 
 static void assertBytesLeft(const size_t reader_position,
                             const size_t bytes, const FileContent content,
-                            String metadata_path)
+                            StringView metadata_path)
 {
   if(sSizeAdd(reader_position, bytes) > content.size)
   {
@@ -86,7 +86,7 @@ static uint64_t convertEndian64(uint64_t value)
 }
 
 static uint8_t read8(const FileContent content, size_t *reader_position,
-                     String metadata_path)
+                     StringView metadata_path)
 {
   assertBytesLeft(*reader_position, sizeof(uint8_t), content,
                   metadata_path);
@@ -103,7 +103,7 @@ static void write8(const uint8_t value, RepoWriter *writer)
 }
 
 static uint32_t read32(const FileContent content, size_t *reader_position,
-                       String metadata_path)
+                       StringView metadata_path)
 {
   assertBytesLeft(*reader_position, sizeof(uint32_t), content,
                   metadata_path);
@@ -122,7 +122,7 @@ static void write32(const uint32_t value, RepoWriter *writer)
 }
 
 static uint64_t read64(const FileContent content, size_t *reader_position,
-                       String metadata_path)
+                       StringView metadata_path)
 {
   assertBytesLeft(*reader_position, sizeof(uint64_t), content,
                   metadata_path);
@@ -141,7 +141,7 @@ static void write64(const uint64_t value, RepoWriter *writer)
 }
 
 static size_t readSize(const FileContent content, size_t *reader_position,
-                       String metadata_path)
+                       StringView metadata_path)
 {
   const uint64_t size = read64(content, reader_position, metadata_path);
 
@@ -155,7 +155,7 @@ static size_t readSize(const FileContent content, size_t *reader_position,
 }
 
 static time_t readTime(const FileContent content, size_t *reader_position,
-                       String metadata_path)
+                       StringView metadata_path)
 {
   CR_StaticAssert(sizeof(time_t) == 4 || sizeof(time_t) == 8);
 
@@ -185,7 +185,7 @@ static time_t readTime(const FileContent content, size_t *reader_position,
 */
 static void readBytes(const FileContent content, size_t *reader_position,
                       uint8_t *buffer, const size_t size,
-                      String metadata_path)
+                      StringView metadata_path)
 {
   assertBytesLeft(*reader_position, size, content, metadata_path);
 
@@ -207,7 +207,7 @@ static void readBytes(const FileContent content, size_t *reader_position,
 */
 static PathHistory *readPathHistory(const FileContent content,
                                     size_t *reader_position,
-                                    String metadata_path,
+                                    StringView metadata_path,
                                     Metadata *metadata)
 {
   PathHistory *point = mpAlloc(sizeof *point);
@@ -298,7 +298,7 @@ static PathHistory *readPathHistory(const FileContent content,
 */
 static PathHistory *readFullPathHistory(const FileContent content,
                                         size_t *reader_position,
-                                        String metadata_path,
+                                        StringView metadata_path,
                                         Metadata *metadata)
 {
   const size_t history_length =
@@ -372,7 +372,7 @@ static void writePathHistoryList(const PathHistory *starting_point,
     }
     else if(point->state.type == PST_symlink)
     {
-      String target_path = point->state.metadata.symlink_target;
+      StringView target_path = point->state.metadata.symlink_target;
       write64(target_path.length, writer);
       repoWriterWrite(target_path.content, target_path.length, writer);
     }
@@ -407,7 +407,7 @@ static void writePathHistoryList(const PathHistory *starting_point,
 */
 static PathNode *readPathSubnodes(const FileContent content,
                                   size_t *reader_position,
-                                  String metadata_path,
+                                  StringView metadata_path,
                                   PathNode *parent_node,
                                   Metadata *metadata)
 {
@@ -434,7 +434,7 @@ static PathNode *readPathSubnodes(const FileContent content,
 
     assertBytesLeft(*reader_position, name_length, content, metadata_path);
 
-    String name =
+    StringView name =
       strWrapLength(&content.content[*reader_position], name_length);
     *reader_position += name_length;
 
@@ -450,7 +450,7 @@ static PathNode *readPathSubnodes(const FileContent content,
           strCopy(name).content, metadata_path.content);
     }
 
-    String full_path = strAppendPath(
+    StringView full_path = strAppendPath(
       parent_node == NULL ? strWrap("") : parent_node->path, name);
 
     strSet(&node->path, full_path);
@@ -488,7 +488,7 @@ static void writePathList(const PathNode *node_list, RepoWriter *writer)
   {
     if(backupHintNoPol(node->hint) != BH_not_part_of_repository)
     {
-      String name = strSplitPath(node->path).tail;
+      StringView name = strSplitPath(node->path).tail;
       write64(name.length, writer);
       repoWriterWrite(name.content, name.length, writer);
 
@@ -530,7 +530,7 @@ Metadata *metadataNew(void)
   @return The metadata, allocated inside the internal memory pool, which
   should not be freed by the caller.
 */
-Metadata *metadataLoad(String path)
+Metadata *metadataLoad(StringView path)
 {
   CR_Region *content_region = CR_RegionNew();
   const FileContent content = sGetFilesContent(content_region, path);
@@ -596,8 +596,9 @@ Metadata *metadataLoad(String path)
   @param repo_tmp_file_path The path to the repositories temporary file.
   @param repo_metadata_path The path to the repositories metadata file.
 */
-void metadataWrite(Metadata *metadata, String repo_path,
-                   String repo_tmp_file_path, String repo_metadata_path)
+void metadataWrite(Metadata *metadata, StringView repo_path,
+                   StringView repo_tmp_file_path,
+                   StringView repo_metadata_path)
 {
   RepoWriter *writer =
     repoWriterOpenRaw(repo_path, repo_tmp_file_path, strWrap("metadata"),

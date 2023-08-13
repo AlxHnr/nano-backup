@@ -17,7 +17,7 @@
   @param hash_out The location to which the hash will be written. Its size
   must be at least FILE_HASH_SIZE.
 */
-void fileHash(String path, const struct stat stats, uint8_t *hash_out)
+void fileHash(StringView path, const struct stat stats, uint8_t *hash_out)
 {
   const size_t blocksize = stats.st_blksize;
   uint64_t bytes_left = stats.st_size;

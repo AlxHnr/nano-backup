@@ -19,15 +19,15 @@
 /** A struct for safely writing files into backup repositories. */
 struct RepoWriter
 {
-  String repo_path;
+  StringView repo_path;
 
   /** The path to the repositories temporary dummy file. */
-  String repo_tmp_file_path;
+  StringView repo_tmp_file_path;
 
   /** The path to the source file in the filesystem, which gets written
     to the repository trough this writer. This is required for printing
     useful error messages. */
-  String source_file_path;
+  StringView source_file_path;
 
   /** The FileStream wrapped by this struct. */
   FileStream *stream;
@@ -41,7 +41,7 @@ struct RepoWriter
   {
     /** If the repo writer was opened in raw mode, it will contain the
       final path to which the temporary file will be renamed to. */
-    String path;
+    StringView path;
 
     /** If the repo writer was not opened in raw mode, the final filepath
       will be generated from this file info. */
@@ -52,11 +52,11 @@ struct RepoWriter
 /** A struct for reading files from backup repositories. */
 struct RepoReader
 {
-  String repo_path;
+  StringView repo_path;
 
   /** The original filepath representing the file read trough this reader.
     This is required for printing useful error messages. */
-  String source_file_path;
+  StringView source_file_path;
 
   /** The FILE stream wrapped by this struct. */
   FILE *stream;
@@ -101,7 +101,7 @@ static char *path_buffer = NULL;
   @param info The informations describing the file, for which the path
   should be build.
 */
-static void fillPathBufferWithInfo(String repo_path,
+static void fillPathBufferWithInfo(StringView repo_path,
                                    const RegularFileInfo *info)
 {
   /* The +1 is for the slash after the repo path. */
@@ -116,9 +116,9 @@ static void fillPathBufferWithInfo(String repo_path,
   buildFilePath(hash_buffer, info);
 }
 
-static RepoWriter *createRepoWriter(String repo_path,
-                                    String repo_tmp_file_path,
-                                    String source_file_path,
+static RepoWriter *createRepoWriter(StringView repo_path,
+                                    StringView repo_tmp_file_path,
+                                    StringView source_file_path,
                                     const bool raw_mode)
 {
   FileStream *stream = sFopenWrite(repo_tmp_file_path);
@@ -141,7 +141,8 @@ static RepoWriter *createRepoWriter(String repo_path,
 
   @return True, if the given file exists.
 */
-bool repoRegularFileExists(String repo_path, const RegularFileInfo *info)
+bool repoRegularFileExists(StringView repo_path,
+                           const RegularFileInfo *info)
 {
   fillPathBufferWithInfo(repo_path, info);
   return sPathExists(strWrap(path_buffer));
@@ -177,7 +178,8 @@ void repoBuildRegularFilePath(char **buffer_ptr,
 
   @return A new RepoReader which must be closed using repoReaderClose().
 */
-RepoReader *repoReaderOpenFile(String repo_path, String source_file_path,
+RepoReader *repoReaderOpenFile(StringView repo_path,
+                               StringView source_file_path,
                                const RegularFileInfo *info)
 {
   fillPathBufferWithInfo(repo_path, info);
@@ -206,8 +208,8 @@ void repoReaderRead(void *data, const size_t size, RepoReader *reader)
 {
   if(fread(data, 1, size, reader->stream) != size)
   {
-    String repo_path = reader->repo_path;
-    String source_file_path = reader->source_file_path;
+    StringView repo_path = reader->repo_path;
+    StringView source_file_path = reader->source_file_path;
     const bool reached_end_of_file = feof(reader->stream);
 
     const int old_errno = errno;
@@ -272,8 +274,9 @@ void repoReaderClose(RepoReader *reader_to_close)
   @return A new RepoWriter, which must be closed by the caller using
   repoWriterClose().
 */
-RepoWriter *repoWriterOpenFile(String repo_path, String repo_tmp_file_path,
-                               String source_file_path,
+RepoWriter *repoWriterOpenFile(StringView repo_path,
+                               StringView repo_tmp_file_path,
+                               StringView source_file_path,
                                const RegularFileInfo *info)
 {
   RepoWriter *writer = createRepoWriter(repo_path, repo_tmp_file_path,
@@ -290,8 +293,10 @@ RepoWriter *repoWriterOpenFile(String repo_path, String repo_tmp_file_path,
   returned RepoWriter will keep a reference to this string, so make sure
   not to modify or free it as long as the writer is in use.
 */
-RepoWriter *repoWriterOpenRaw(String repo_path, String repo_tmp_file_path,
-                              String source_file_path, String final_path)
+RepoWriter *repoWriterOpenRaw(StringView repo_path,
+                              StringView repo_tmp_file_path,
+                              StringView source_file_path,
+                              StringView final_path)
 {
   RepoWriter *writer = createRepoWriter(repo_path, repo_tmp_file_path,
                                         source_file_path, true);
@@ -312,8 +317,8 @@ void repoWriterWrite(const void *data, const size_t size,
 {
   if(!Fwrite(data, size, writer->stream))
   {
-    String repo_path = writer->repo_path;
-    String source_file_path = writer->source_file_path;
+    StringView repo_path = writer->repo_path;
+    StringView source_file_path = writer->source_file_path;
 
     Fdestroy(writer->stream);
     free(writer);
@@ -327,7 +332,7 @@ void repoWriterWrite(const void *data, const size_t size,
 
   @param path The path to the directory to sync to disk.
 */
-static void fdatasyncDirectory(String path)
+static void fdatasyncDirectory(StringView path)
 {
   const int dir_descriptor = open(path.content, O_RDONLY, 0);
   if(dir_descriptor == -1 || fdatasync(dir_descriptor) != 0 ||
@@ -364,7 +369,7 @@ void repoWriterClose(RepoWriter *writer_to_close)
   }
   else
   {
-    String repo_path = writer.repo_path;
+    StringView repo_path = writer.repo_path;
     fillPathBufferWithInfo(repo_path, writer.rename_to.info);
 
     /* Ensure that the final paths parent directories exists. */
@@ -429,10 +434,10 @@ static void cleanupLockfile(void *lockfile_info_ptr)
   @param repo_path Either a relative or absolute path to the repository to
   lock.
 */
-void repoLockUntilExit(String repo_path)
+void repoLockUntilExit(StringView repo_path)
 {
   /* Must be allocated before the region to outlive it. */
-  String lockfile_path = strAppendPath(repo_path, strWrap("lockfile"));
+  StringView lockfile_path = strAppendPath(repo_path, strWrap("lockfile"));
 
   CR_Region *r = CR_RegionNew();
   LockfileInfo *lockfile_info = CR_RegionAlloc(r, sizeof *lockfile_info);

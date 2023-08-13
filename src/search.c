@@ -114,7 +114,7 @@ static void pushCurrentState(SearchIterator *iterator)
   @param iterator The iterator with the buffer that should be updated.
   @param filename The filename that should be appended.
 */
-static void setPathToFile(SearchIterator *iterator, String filename)
+static void setPathToFile(SearchIterator *iterator, StringView filename)
 {
   /* Add 2 extra bytes for the slash and '\0'. */
   const size_t required_capacity =
@@ -268,7 +268,7 @@ static SearchResult finishDirectory(SearchIterator *iterator)
   }
 }
 
-static bool nodeMatches(const SearchNode *node, String string)
+static bool nodeMatches(const SearchNode *node, StringView string)
 {
   if(node->regex)
   {
@@ -304,7 +304,7 @@ static SearchResult finishSearchStep(SearchIterator *iterator)
   }
 
   /* Create new path for matching. */
-  String dir_entry_name = strWrap(dir_entry->d_name);
+  StringView dir_entry_name = strWrap(dir_entry->d_name);
   setPathToFile(iterator, dir_entry_name);
 
   /* Match subnodes against dir_entry. */

@@ -23,37 +23,37 @@ extern void sAtexit(void (*function)(void));
   printing better error messages. */
 typedef struct FileStream FileStream;
 
-extern FileStream *sFopenRead(String path);
-extern FileStream *sFopenWrite(String path);
+extern FileStream *sFopenRead(StringView path);
+extern FileStream *sFopenWrite(StringView path);
 extern void sFread(void *ptr, size_t size, FileStream *stream);
 extern void sFwrite(const void *ptr, size_t size, FileStream *stream);
 extern bool Fwrite(const void *ptr, size_t size, FileStream *stream);
 extern bool Ftodisk(FileStream *stream);
 extern bool sFbytesLeft(FileStream *stream);
 extern void sFclose(FileStream *stream);
-extern String Fdestroy(FileStream *stream);
+extern StringView Fdestroy(FileStream *stream);
 
-extern DIR *sOpenDir(String path);
-extern struct dirent *sReadDir(DIR *dir, String path);
-extern void sCloseDir(DIR *dir, String path);
+extern DIR *sOpenDir(StringView path);
+extern struct dirent *sReadDir(DIR *dir, StringView path);
+extern void sCloseDir(DIR *dir, StringView path);
 
-extern bool sPathExists(String path);
-extern struct stat sStat(String path);
-extern struct stat sLStat(String path);
-extern void sMkdir(String path);
-extern void sSymlink(String target, String path);
-extern void sRename(String oldpath, String newpath);
-extern void sChmod(String path, mode_t mode);
-extern void sChown(String path, uid_t user, gid_t group);
-extern void sLChown(String path, uid_t user, gid_t group);
-extern void sUtime(String path, time_t time);
-extern void sRemove(String path);
-extern void sRemoveRecursively(String path);
+extern bool sPathExists(StringView path);
+extern struct stat sStat(StringView path);
+extern struct stat sLStat(StringView path);
+extern void sMkdir(StringView path);
+extern void sSymlink(StringView target, StringView path);
+extern void sRename(StringView oldpath, StringView newpath);
+extern void sChmod(StringView path, mode_t mode);
+extern void sChown(StringView path, uid_t user, gid_t group);
+extern void sLChown(StringView path, uid_t user, gid_t group);
+extern void sUtime(StringView path, time_t time);
+extern void sRemove(StringView path);
+extern void sRemoveRecursively(StringView path);
 
 extern char *sGetCwd(void);
 extern char *sReadLine(FILE *stream);
 extern bool sIsTTY(FILE *stream);
-extern size_t sStringToSize(String string);
+extern size_t sStringToSize(StringView string);
 extern time_t sTime(void);
 extern int sRand(void);
 
@@ -63,6 +63,6 @@ typedef struct
   size_t size;
 } FileContent;
 
-extern FileContent sGetFilesContent(CR_Region *region, String path);
+extern FileContent sGetFilesContent(CR_Region *region, StringView path);
 
 #endif

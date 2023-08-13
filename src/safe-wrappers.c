@@ -19,7 +19,7 @@ struct FileStream
 
   /** The full or relative path representing the open stream. Needed for
     simplified printing of error messages. */
-  String path;
+  StringView path;
 };
 
 /** Wraps the given arguments in a new FileStream struct.
@@ -30,7 +30,7 @@ struct FileStream
   @return A new FileStream, containing the arguments of this function. It
   must be freed by the caller using free().
 */
-static FileStream *newFileStream(FILE *file, String path)
+static FileStream *newFileStream(FILE *file, StringView path)
 {
   FileStream *stream = sMalloc(sizeof *stream);
   stream->file = file;
@@ -46,7 +46,7 @@ static FileStream *newFileStream(FILE *file, String path)
 
   @return Informations about the given file.
 */
-static struct stat safeStat(String path,
+static struct stat safeStat(StringView path,
                             int (*stat_fun)(const char *, struct stat *))
 {
   struct stat buffer;
@@ -127,7 +127,7 @@ void sAtexit(void (*function)(void))
   @return A file stream that can be used for reading. Must be closed by the
   caller.
 */
-FileStream *sFopenRead(String path)
+FileStream *sFopenRead(StringView path)
 {
   FILE *file = fopen(path.content, "rb");
   if(file == NULL)
@@ -140,7 +140,7 @@ FileStream *sFopenRead(String path)
 
 /** Almost identical to sFopenRead(), but with the difference that the file
   gets opened for writing. */
-FileStream *sFopenWrite(String path)
+FileStream *sFopenWrite(StringView path)
 {
   FILE *file = fopen(path.content, "wb");
   if(file == NULL)
@@ -217,7 +217,7 @@ bool Ftodisk(FileStream *stream)
 void sFclose(FileStream *stream)
 {
   FILE *file = stream->file;
-  String path = stream->path;
+  StringView path = stream->path;
   free(stream);
 
   if(fclose(file) != 0)
@@ -234,9 +234,9 @@ void sFclose(FileStream *stream)
 
   @return The path from the stream. Should not be freed by the caller.
 */
-String Fdestroy(FileStream *stream)
+StringView Fdestroy(FileStream *stream)
 {
-  String path = stream->path;
+  StringView path = stream->path;
 
   const int old_errno = errno;
   fclose(stream->file);
@@ -253,7 +253,7 @@ String Fdestroy(FileStream *stream)
 
   @return A pointer to a valid directory stream.
 */
-DIR *sOpenDir(String path)
+DIR *sOpenDir(StringView path)
 {
   DIR *dir = opendir(path.content);
   if(dir == NULL)
@@ -274,7 +274,7 @@ DIR *sOpenDir(String path)
   @return A pointer to the next entry in the given directory, or NULL if
   the stream reached its end.
 */
-struct dirent *sReadDir(DIR *dir, String path)
+struct dirent *sReadDir(DIR *dir, StringView path)
 {
   struct dirent *dir_entry;
   const int old_errno = errno;
@@ -331,7 +331,7 @@ bool sFbytesLeft(FileStream *stream)
   @param path The directory path of the given stream. Needed for printing
   useful error messages.
 */
-void sCloseDir(DIR *dir, String path)
+void sCloseDir(DIR *dir, StringView path)
 {
   if(closedir(dir) != 0)
   {
@@ -346,7 +346,7 @@ void sCloseDir(DIR *dir, String path)
 
   @return True if the path exists, false if not.
 */
-bool sPathExists(String path)
+bool sPathExists(StringView path)
 {
   const int old_errno = errno;
   bool exists = true;
@@ -368,19 +368,19 @@ bool sPathExists(String path)
 }
 
 /** Safe wrapper around stat(). */
-struct stat sStat(String path)
+struct stat sStat(StringView path)
 {
   return safeStat(path, stat);
 }
 
 /** Safe wrapper around lstat(). */
-struct stat sLStat(String path)
+struct stat sLStat(StringView path)
 {
   return safeStat(path, lstat);
 }
 
 /** Safe wrapper around mkdir(). */
-void sMkdir(String path)
+void sMkdir(StringView path)
 {
   if(mkdir(path.content, 0755) != 0)
   {
@@ -393,7 +393,7 @@ void sMkdir(String path)
   @param target The path to which the symlink should point.
   @param path The path to the symlink to create.
 */
-void sSymlink(String target, String path)
+void sSymlink(StringView target, StringView path)
 {
   if(symlink(target.content, path.content) != 0)
   {
@@ -402,7 +402,7 @@ void sSymlink(String target, String path)
 }
 
 /** Safe wrapper around rename(). */
-void sRename(String oldpath, String newpath)
+void sRename(StringView oldpath, StringView newpath)
 {
   if(rename(oldpath.content, newpath.content) != 0)
   {
@@ -412,7 +412,7 @@ void sRename(String oldpath, String newpath)
 }
 
 /** Safe wrapper around chmod(). */
-void sChmod(String path, const mode_t mode)
+void sChmod(StringView path, const mode_t mode)
 {
   if(chmod(path.content, mode) != 0)
   {
@@ -421,7 +421,7 @@ void sChmod(String path, const mode_t mode)
 }
 
 /** Safe wrapper around chown(). */
-void sChown(String path, const uid_t user, const gid_t group)
+void sChown(StringView path, const uid_t user, const gid_t group)
 {
   if(chown(path.content, user, group) != 0)
   {
@@ -430,7 +430,7 @@ void sChown(String path, const uid_t user, const gid_t group)
 }
 
 /** Safe wrapper around lchown(). */
-void sLChown(String path, const uid_t user, const gid_t group)
+void sLChown(StringView path, const uid_t user, const gid_t group)
 {
   if(lchown(path.content, user, group) != 0)
   {
@@ -439,7 +439,7 @@ void sLChown(String path, const uid_t user, const gid_t group)
 }
 
 /** Simplified safe wrapper around utime(). */
-void sUtime(String path, const time_t time)
+void sUtime(StringView path, const time_t time)
 {
   const struct utimbuf time_buffer = {
     .actime = time,
@@ -453,7 +453,7 @@ void sUtime(String path, const time_t time)
 }
 
 /** Safe wrapper around remove(). */
-void sRemove(String path)
+void sRemove(StringView path)
 {
   if(remove(path.content) != 0)
   {
@@ -492,7 +492,7 @@ static void removeRecursively(char **buffer, const size_t length)
 }
 
 /** Recursive version of sRemove(). */
-void sRemoveRecursively(String path)
+void sRemoveRecursively(StringView path)
 {
   static char *buffer = NULL;
   const size_t length = pathBuilderSet(&buffer, path.content);
@@ -609,7 +609,7 @@ bool sIsTTY(FILE *stream)
 
 /** Converts the given string to a size_t value and terminates the program
   on conversion errors. */
-size_t sStringToSize(String string)
+size_t sStringToSize(StringView string)
 {
   const int old_errno = errno;
   errno = 0;
@@ -674,7 +674,7 @@ int sRand(void)
   @return Contents of the requested file which should not be freed by the
   caller.
 */
-FileContent sGetFilesContent(CR_Region *region, String path)
+FileContent sGetFilesContent(CR_Region *region, StringView path)
 {
   const struct stat file_stats = sStat(path);
   if(!S_ISREG(file_stats.st_mode))

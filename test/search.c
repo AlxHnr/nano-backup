@@ -46,7 +46,7 @@ static void checkSearchResult(const SearchResult result)
   @return The recursion depth count for unwinding and leaving the
   directories which lead to the given cwd.
 */
-static size_t skipCwd(SearchIterator *iterator, String cwd, const SearchNode *root_node)
+static size_t skipCwd(SearchIterator *iterator, StringView cwd, const SearchNode *root_node)
 {
   size_t recursion_depth = 0;
   const SearchNode *node = root_node->subnodes;
@@ -92,7 +92,7 @@ static size_t skipCwd(SearchIterator *iterator, String cwd, const SearchNode *ro
   @return The copy of the trimmed string containing a null-terminated
   buffer.
 */
-static String trimCwd(String string, String cwd)
+static StringView trimCwd(StringView string, StringView cwd)
 {
   return strCopy(strWrap(&string.content[cwd.length + 1]));
 }
@@ -165,7 +165,7 @@ static void finishSearch(SearchIterator *iterator, const size_t recursion_depth)
 
   @return The amount of files found during search.
 */
-static size_t populateDirectoryTable(SearchIterator *iterator, StringTable *table, String cwd)
+static size_t populateDirectoryTable(SearchIterator *iterator, StringTable *table, StringView cwd)
 {
   size_t file_count = 0;
   size_t recursion_depth = 1;
@@ -183,7 +183,7 @@ static size_t populateDirectoryTable(SearchIterator *iterator, StringTable *tabl
     else
     {
       checkSearchResult(result);
-      String relative_path = trimCwd(result.path, cwd);
+      StringView relative_path = trimCwd(result.path, cwd);
       if(strTableGet(table, relative_path) != NULL)
       {
         die("path \"%s\" was found twice during search", relative_path.content);
@@ -253,7 +253,7 @@ static void checkHasIgnoredProperly(const StringTable *table)
 static const SearchNode *findSubnode(const SearchNode *parent_node, const char *name_str,
                                      const SearchResultType search_match)
 {
-  String name = strWrap(name_str);
+  StringView name = strWrap(name_str);
   for(const SearchNode *node = parent_node->subnodes; node != NULL; node = node->next)
   {
     if(strEqual(node->name, name) && node->search_match == search_match)
@@ -268,7 +268,7 @@ static const SearchNode *findSubnode(const SearchNode *parent_node, const char *
 
 static void checkIgnoreExpression(const SearchNode *node, const char *expression, const bool has_matched)
 {
-  String name = strWrap(expression);
+  StringView name = strWrap(expression);
   for(const RegexList *element = *node->ignore_expressions; element != NULL; element = element->next)
   {
     if(strEqual(element->expression, name) && element->has_matched == has_matched)
@@ -284,7 +284,7 @@ static void checkIgnoreExpression(const SearchNode *node, const char *expression
 
   @param cwd The path to the current working directory.
 */
-static void testSimpleSearch(String cwd)
+static void testSimpleSearch(StringView cwd)
 {
   SearchNode *root = searchTreeLoad(strWrap("generated-config-files/simple-search.txt"));
   SearchIterator *iterator = searchNew(root);
@@ -365,7 +365,7 @@ static void testSimpleSearch(String cwd)
 
   @param cwd The path to the current working directory.
 */
-static void testIgnoreExpressions(String cwd)
+static void testIgnoreExpressions(StringView cwd)
 {
   SearchNode *root = searchTreeLoad(strWrap("generated-config-files/ignore-expressions.txt"));
   SearchIterator *iterator = searchNew(root);
@@ -440,7 +440,7 @@ static void testIgnoreExpressions(String cwd)
 
   @param cwd The path to the current working directory.
 */
-static void testSymlinkFollowing(String cwd)
+static void testSymlinkFollowing(StringView cwd)
 {
   SearchNode *root = searchTreeLoad(strWrap("generated-config-files/symlink-following.txt"));
   SearchIterator *iterator = searchNew(root);
@@ -508,7 +508,7 @@ static void testSymlinkFollowing(String cwd)
 
   @param cwd The path to the current working directory.
 */
-static void testMismatchedPaths(String cwd)
+static void testMismatchedPaths(StringView cwd)
 {
   SearchNode *root = searchTreeLoad(strWrap("generated-config-files/mismatched-paths.txt"));
   SearchIterator *iterator = searchNew(root);
@@ -567,7 +567,7 @@ static void testMismatchedPaths(String cwd)
 
   @param cwd The full path to the current working directory.
 */
-static void testComplexSearch(String cwd)
+static void testComplexSearch(StringView cwd)
 {
   SearchNode *root = searchTreeLoad(strWrap("generated-config-files/complex-search.txt"));
   SearchIterator *iterator = searchNew(root);
@@ -645,7 +645,7 @@ static void testComplexSearch(String cwd)
 int main(void)
 {
   testGroupStart("simple file search");
-  String cwd = getCwd();
+  StringView cwd = getCwd();
   testSimpleSearch(cwd);
   testGroupEnd();
 

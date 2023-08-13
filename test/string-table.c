@@ -46,7 +46,7 @@ static void testStringTable(StringTable *table)
   /* Map the lorem-ipsum chunks to the zlib chunks. */
   for(size_t index = 0; index < zlib_count; index++)
   {
-    String string = strWrap(zlib_license_chunks[index]);
+    StringView string = strWrap(zlib_license_chunks[index]);
     if(strTableGet(table, string) != NULL)
     {
       die("string \"%s\" already exists in string table", zlib_license_chunks[index]);
@@ -63,7 +63,7 @@ static void testStringTable(StringTable *table)
   /* Assert that all the mappings above succeeded. */
   for(size_t index = 0; index < zlib_count; index++)
   {
-    String string = strWrap(zlib_license_chunks[index]);
+    StringView string = strWrap(zlib_license_chunks[index]);
 
     if(strTableGet(table, string) != &lorem_ipsum_chunks[index])
     {

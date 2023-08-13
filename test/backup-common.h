@@ -3,7 +3,7 @@
 
 #include "metadata.h"
 
-extern PathNode *findCwdNode(Metadata *metadata, String cwd, BackupHint hint);
+extern PathNode *findCwdNode(Metadata *metadata, StringView cwd, BackupHint hint);
 extern PathNode *findSubnode(PathNode *node, const char *subnode_name, BackupHint hint, BackupPolicy policy,
                              size_t requested_history_length, size_t requested_subnode_count);
 
@@ -26,7 +26,7 @@ extern void restoreRegularFile(const char *path, const RegularFileInfo *info);
 extern void restoreWithTimeRecursively(PathNode *node);
 
 extern void setStatCache(size_t index);
-extern struct stat cachedStat(String path, struct stat (*stat_fun)(String));
+extern struct stat cachedStat(StringView path, struct stat (*stat_fun)(StringView));
 extern void resetStatCache(void);
 
 extern void mustHaveRegularStats(const PathNode *node, const Backup *backup, struct stat stats, uint64_t size,

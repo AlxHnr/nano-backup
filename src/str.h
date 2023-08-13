@@ -12,28 +12,28 @@ typedef struct
   const char *const content;
   const size_t length;
   const bool is_terminated;
-} String;
+} StringView;
 
-extern String strWrap(const char *string);
-extern String strWrapLength(const char *string, size_t length);
-extern const char *strRaw(String string, char **buffer);
+extern StringView strWrap(const char *string);
+extern StringView strWrapLength(const char *string, size_t length);
+extern const char *strRaw(StringView string, char **buffer);
 
-extern String strCopy(String string);
-extern void strSet(String *string, String value);
-extern bool strEqual(String a, String b);
+extern StringView strCopy(StringView string);
+extern void strSet(StringView *string, StringView value);
+extern bool strEqual(StringView a, StringView b);
 
-extern String strRemoveTrailingSlashes(String string);
-extern String strAppendPath(String path, String filename);
-extern bool strWhitespaceOnly(String string);
-extern bool strIsDotElement(String string);
-extern bool strPathContainsDotElements(String path);
-extern bool strIsParentPath(String parent, String path);
+extern StringView strRemoveTrailingSlashes(StringView string);
+extern StringView strAppendPath(StringView path, StringView filename);
+extern bool strWhitespaceOnly(StringView string);
+extern bool strIsDotElement(StringView string);
+extern bool strPathContainsDotElements(StringView path);
+extern bool strIsParentPath(StringView parent, StringView path);
 
 typedef struct
 {
-  String head;
-  String tail;
+  StringView head;
+  StringView tail;
 } PathSplit;
-extern PathSplit strSplitPath(String path);
+extern PathSplit strSplitPath(StringView path);
 
 #endif

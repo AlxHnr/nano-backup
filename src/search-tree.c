@@ -11,27 +11,27 @@
 #include "safe-wrappers.h"
 #include "string-table.h"
 
-static String copy_token = {
+static StringView copy_token = {
   .content = "[copy]",
   .length = 6,
   .is_terminated = true,
 };
-static String mirror_token = {
+static StringView mirror_token = {
   .content = "[mirror]",
   .length = 8,
   .is_terminated = true,
 };
-static String track_token = {
+static StringView track_token = {
   .content = "[track]",
   .length = 7,
   .is_terminated = true,
 };
-static String ignore_token = {
+static StringView ignore_token = {
   .content = "[ignore]",
   .length = 8,
   .is_terminated = true,
 };
-static String summarize_token = {
+static StringView summarize_token = {
   .content = "[summarize]",
   .length = 11,
   .is_terminated = true,
@@ -48,7 +48,7 @@ static String summarize_token = {
   Don't modify or free the content of the config file, unless the returned
   string is no longer used.
 */
-static String getLine(String config, const size_t start)
+static StringView getLine(StringView config, const size_t start)
 {
   /* Find the index of the line ending. */
   size_t end = start;
@@ -74,7 +74,7 @@ static String getLine(String config, const size_t start)
   @return A new search node, which has inherited properties from its parent
   node.
 */
-static SearchNode *newNode(StringTable *existing_nodes, String path,
+static SearchNode *newNode(StringTable *existing_nodes, StringView path,
                            const size_t line_nr)
 {
   PathSplit paths = strSplitPath(path);
@@ -93,10 +93,10 @@ static SearchNode *newNode(StringTable *existing_nodes, String path,
   if(paths.tail.length >= 2 && paths.tail.content[0] == '/')
   {
     /* Slice out the part after the first slash. */
-    String expression =
+    StringView expression =
       strWrapLength(&paths.tail.content[1], paths.tail.length - 1);
 
-    String copy = strCopy(expression);
+    StringView copy = strCopy(expression);
     strSet(&node->name, copy);
 
     node->regex = rpCompile(node->name, strWrap("config"), line_nr);
@@ -159,7 +159,7 @@ static void inheritPolicyToSubnodes(SearchNode *parent_node)
   @return The root node of the search tree. All nodes are allocated inside
   the internal memory pool and should not be freed by the caller.
 */
-SearchNode *searchTreeParse(String config)
+SearchNode *searchTreeParse(StringView config)
 {
   if(memchr(config.content, '\0', config.length) != NULL)
   {
@@ -210,7 +210,7 @@ SearchNode *searchTreeParse(String config)
 
   while(parser_position < config.length)
   {
-    String line = getLine(config, parser_position);
+    StringView line = getLine(config, parser_position);
 
     if(strWhitespaceOnly(line) || line.content[0] == '#')
     {
@@ -239,14 +239,14 @@ SearchNode *searchTreeParse(String config)
     else if(line.content[0] == '[' && line.content[line.length - 1] == ']')
     {
       /* Slice out and copy the invalid policy name. */
-      String policy =
+      StringView policy =
         strCopy(strWrapLength(&line.content[1], line.length - 2));
       die("config: line %zu: invalid policy: \"%s\"", line_nr,
           policy.content);
     }
     else if(current_policy == BPOL_none)
     {
-      String pattern = strCopy(line);
+      StringView pattern = strCopy(line);
       die("config: line %zu: pattern without policy: \"%s\"", line_nr,
           pattern.content);
     }
@@ -277,7 +277,7 @@ SearchNode *searchTreeParse(String config)
             line_nr, strCopy(line).content);
       }
 
-      String path = strRemoveTrailingSlashes(line);
+      StringView path = strRemoveTrailingSlashes(line);
       SearchNode *previous_definition = strTableGet(existing_nodes, path);
 
       /* Terminate with an error if the path was already defined. */
@@ -285,7 +285,7 @@ SearchNode *searchTreeParse(String config)
          previous_definition->policy != BPOL_none &&
          !previous_definition->policy_inherited)
       {
-        String redefined_path = strCopy(line);
+        StringView redefined_path = strCopy(line);
         die("config: line %zu: redefining %sline %zu: \"%s\"", line_nr,
             previous_definition->policy != current_policy ? "policy of "
                                                           : "",
@@ -304,7 +304,7 @@ SearchNode *searchTreeParse(String config)
     }
     else
     {
-      String path = strCopy(line);
+      StringView path = strCopy(line);
       die("config: line %zu: invalid path: \"%s\"", line_nr, path.content);
     }
 
@@ -325,11 +325,11 @@ SearchNode *searchTreeParse(String config)
   @return The root node of the search tree. All nodes are allocated inside
   the internal memory pool and should not be freed by the caller.
 */
-SearchNode *searchTreeLoad(String path)
+SearchNode *searchTreeLoad(StringView path)
 {
   CR_Region *r = CR_RegionNew();
   const FileContent content = sGetFilesContent(r, path);
-  String config = strWrapLength(content.content, content.size);
+  StringView config = strWrapLength(content.content, content.size);
 
   SearchNode *root_node = searchTreeParse(config);
   CR_RegionRelease(r);

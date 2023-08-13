@@ -30,13 +30,13 @@ Strings are immutable slices which don't own the memory they point to:
 ```c
 #include "str.h"
 
-String path = strWrap("/etc/conf.d/boot.conf");
+StringView path = strWrap("/etc/conf.d/boot.conf");
 
-String dirname = strSplitPath(path).head;
+StringView dirname = strSplitPath(path).head;
 
 /* Strings are not always null-terminated. Use the function strRaw() to get
-   a terminated C string. It will copy and terminate the given String if
-   required. It takes a pointer to growable memory as the second
+   a terminated C string. It will copy and terminate the given StringView
+   if required. It takes a pointer to growable memory as the second
    argument. See the examples in `third-party/CRegion/README.md` for more
    informations. */
 char *reusable_buffer = NULL;

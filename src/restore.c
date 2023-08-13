@@ -188,7 +188,7 @@ static void checkAndHandleChangesRecursively(PathNode *node,
   checkAndHandleChanges() for more informations.
 */
 static void initiateRestoreRecursively(PathNode *node_list,
-                                       const size_t id, String path,
+                                       const size_t id, StringView path,
                                        const bool could_exist)
 {
   bool found_node = false;
@@ -238,7 +238,7 @@ static void initiateRestoreRecursively(PathNode *node_list,
   @param path The full, absolute path to restore. Should not end with a
   slash. An empty string represents the root directory "/".
 */
-void initiateRestore(Metadata *metadata, const size_t id, String path)
+void initiateRestore(Metadata *metadata, const size_t id, StringView path)
 {
   if(path.length == 0)
   {
@@ -265,8 +265,8 @@ void initiateRestore(Metadata *metadata, const size_t id, String path)
   @param info Informations about the file.
   @param repo_path The path to the repository containing the file.
 */
-void restoreFile(String path, const RegularFileInfo *info,
-                 String repo_path)
+void restoreFile(StringView path, const RegularFileInfo *info,
+                 StringView repo_path)
 {
   if(info->size > FILE_HASH_SIZE)
   {
@@ -304,7 +304,7 @@ void restoreFile(String path, const RegularFileInfo *info,
   @param repo_path The path to the repository.
 */
 static void restorePath(const PathNode *node, const PathState *state,
-                        String repo_path)
+                        StringView repo_path)
 {
   if(state->type == PST_regular_file)
   {
@@ -336,7 +336,7 @@ static void restorePath(const PathNode *node, const PathState *state,
   @return True if the restoring affected the parent directories timestamp.
 */
 static bool finishRestoreRecursively(const PathNode *node, const size_t id,
-                                     String repo_path)
+                                     StringView repo_path)
 {
   bool affects_parent_timestamp = false;
 
@@ -447,7 +447,7 @@ static bool finishRestoreRecursively(const PathNode *node, const size_t id,
   @param repo_path The path to the backup repository.
 */
 void finishRestore(const Metadata *metadata, const size_t id,
-                   String repo_path)
+                   StringView repo_path)
 {
   for(const PathNode *node = metadata->paths; node != NULL;
       node = node->next)

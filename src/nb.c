@@ -74,7 +74,7 @@ static void printStats(const char *summary, const TextColor color,
   printf(")");
 }
 
-static void runGC(const Metadata *metadata, String repo_path,
+static void runGC(const Metadata *metadata, StringView repo_path,
                   const bool prepend_newline)
 {
   const GCStatistics gc_stats = collectGarbage(metadata, repo_path);
@@ -90,7 +90,8 @@ static void runGC(const Metadata *metadata, String repo_path,
   }
 }
 
-static void runIntegrityCheck(const Metadata *metadata, String repo_path)
+static void runIntegrityCheck(const Metadata *metadata,
+                              StringView repo_path)
 {
   CR_Region *r = CR_RegionNew();
   const ListOfBrokenPathNodes *broken_nodes =
@@ -115,12 +116,12 @@ static void runIntegrityCheck(const Metadata *metadata, String repo_path)
   }
 }
 
-static void backup(String repo_arg)
+static void backup(StringView repo_arg)
 {
-  String repo_path = strRemoveTrailingSlashes(repo_arg);
-  String config_path = strAppendPath(repo_path, strWrap("config"));
-  String metadata_path = strAppendPath(repo_path, strWrap("metadata"));
-  String tmp_file_path = strAppendPath(repo_path, strWrap("tmp-file"));
+  StringView repo_path = strRemoveTrailingSlashes(repo_arg);
+  StringView config_path = strAppendPath(repo_path, strWrap("config"));
+  StringView metadata_path = strAppendPath(repo_path, strWrap("metadata"));
+  StringView tmp_file_path = strAppendPath(repo_path, strWrap("tmp-file"));
 
   if(!sPathExists(config_path))
   {
@@ -169,10 +170,10 @@ static void backup(String repo_arg)
   }
 }
 
-static Metadata *metadataLoadFromRepo(String repo_arg)
+static Metadata *metadataLoadFromRepo(StringView repo_arg)
 {
-  String repo_path = strRemoveTrailingSlashes(repo_arg);
-  String metadata_path = strAppendPath(repo_path, strWrap("metadata"));
+  StringView repo_path = strRemoveTrailingSlashes(repo_arg);
+  StringView metadata_path = strAppendPath(repo_path, strWrap("metadata"));
 
   if(!sPathExists(metadata_path))
   {
@@ -183,7 +184,7 @@ static Metadata *metadataLoadFromRepo(String repo_arg)
   return metadataLoad(metadata_path);
 }
 
-static String buildFullPath(String path)
+static StringView buildFullPath(StringView path)
 {
   if(path.content[0] == '/')
   {
@@ -192,7 +193,7 @@ static String buildFullPath(String path)
   else
   {
     char *cwd = sGetCwd();
-    String full_path =
+    StringView full_path =
       strAppendPath(strRemoveTrailingSlashes(strWrap(cwd)), path);
     free(cwd);
 
@@ -206,10 +207,10 @@ static String buildFullPath(String path)
   @param id The id to which the path should be restored.
   @param path The path to restore.
 */
-static void restore(String repo_arg, const size_t id, String path)
+static void restore(StringView repo_arg, const size_t id, StringView path)
 {
   Metadata *metadata = metadataLoadFromRepo(repo_arg);
-  String full_path = strRemoveTrailingSlashes(buildFullPath(path));
+  StringView full_path = strRemoveTrailingSlashes(buildFullPath(path));
   initiateRestore(metadata, id, strCopy(full_path));
 
   const ChangeSummary changes = printMetadataChanges(metadata, NULL);
@@ -227,7 +228,7 @@ int main(const int arg_count, const char **arg_list)
     die("no repository specified");
   }
 
-  String path_to_repo = strWrap(arg_list[1]);
+  StringView path_to_repo = strWrap(arg_list[1]);
   if(!sPathExists(path_to_repo))
   {
     die("repository doesn't exist: \"%s\"", arg_list[1]);

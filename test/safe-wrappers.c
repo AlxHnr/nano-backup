@@ -157,7 +157,7 @@ int main(void)
   assert_error_errno(sFopenRead(strWrap("non-existing-file.txt")),
                      "failed to open \"non-existing-file.txt\" for reading", ENOENT);
 
-  String example_path = strWrap("example.txt");
+  StringView example_path = strWrap("example.txt");
   FileStream *example_read = sFopenRead(example_path);
   assert_true(example_read != NULL);
 
@@ -262,7 +262,7 @@ int main(void)
   assert_true(memcmp(test_file_1_content.content, "hello world!", 12) == 0);
 
   /* Assert that the path gets captured properly. */
-  String test_file_path = strWrap("tmp/test-file-2");
+  StringView test_file_path = strWrap("tmp/test-file-2");
 
   assert_true(!sPathExists(test_file_path));
   test_file = sFopenWrite(test_file_path);

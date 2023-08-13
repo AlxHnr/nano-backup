@@ -11,7 +11,8 @@ struct ListOfBrokenPathNodes
   ListOfBrokenPathNodes *next;
 };
 
-extern ListOfBrokenPathNodes *
-checkIntegrity(CR_Region *r, const Metadata *metadata, String repo_path);
+extern ListOfBrokenPathNodes *checkIntegrity(CR_Region *r,
+                                             const Metadata *metadata,
+                                             StringView repo_path);
 
 #endif

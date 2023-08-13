@@ -98,7 +98,7 @@ static void reassignPointToCurrent(Metadata *metadata, PathHistory *point)
 
   @return True, if the given node matches the specified path tail.
 */
-static bool searchNodeMatches(SearchNode *node, String path_tail)
+static bool searchNodeMatches(SearchNode *node, StringView path_tail)
 {
   if(node->regex)
   {
@@ -119,12 +119,12 @@ static bool searchNodeMatches(SearchNode *node, String path_tail)
 
   @return The results subnode that has matched the given string, or NULL.
 */
-static SearchNode *matchesSearchSubnodes(String path,
+static SearchNode *matchesSearchSubnodes(StringView path,
                                          const SearchNode *result)
 {
   if(result != NULL)
   {
-    String path_tail = strSplitPath(path).tail;
+    StringView path_tail = strSplitPath(path).tail;
     for(SearchNode *node = result->subnodes; node != NULL;
         node = node->next)
     {
@@ -145,7 +145,8 @@ static SearchNode *matchesSearchSubnodes(String path,
 
   @return True, if one ignore expression matched the specified path.
 */
-static bool matchesIgnoreList(String path, const RegexList *ignore_list)
+static bool matchesIgnoreList(StringView path,
+                              const RegexList *ignore_list)
 {
   for(const RegexList *item = ignore_list; item != NULL; item = item->next)
   {
@@ -502,7 +503,7 @@ initiateMetadataRecursively(Metadata *metadata, PathNode **node_list,
   {
     node = mpAlloc(sizeof *node);
 
-    String path_copy = strCopy(result.path);
+    StringView path_copy = strCopy(result.path);
     memcpy(&node->path, &path_copy, sizeof(node->path));
 
     node->hint = BH_added;
@@ -601,8 +602,8 @@ initiateMetadataRecursively(Metadata *metadata, PathNode **node_list,
   @param stats The stats of the file represented by the node. Required to
   determine the ideal block size.
 */
-static void copyFileIntoRepo(PathNode *node, String repo_path,
-                             String repo_tmp_file_path,
+static void copyFileIntoRepo(PathNode *node, StringView repo_path,
+                             StringView repo_tmp_file_path,
                              const struct stat stats)
 {
   const RegularFileInfo *file_info =
@@ -651,7 +652,7 @@ static void copyFileIntoRepo(PathNode *node, String repo_path,
   @return True if the file represented by the node is equal to its stored
   counterpart.
 */
-static bool equalsToStoredFile(const PathNode *node, String repo_path,
+static bool equalsToStoredFile(const PathNode *node, StringView repo_path,
                                const struct stat stats)
 {
   const RegularFileInfo *file_info =
@@ -709,7 +710,7 @@ static bool equalsToStoredFile(const PathNode *node, String repo_path,
   number will be set to the already existing files slot number. If false is
   returned, the nodes slot number will contain the next free slot number.
 */
-static bool searchFileDuplicates(PathNode *node, String repo_path,
+static bool searchFileDuplicates(PathNode *node, StringView repo_path,
                                  const struct stat stats)
 {
   RegularFileInfo *file_info = &node->history->state.metadata.file_info;
@@ -741,8 +742,8 @@ static bool searchFileDuplicates(PathNode *node, String repo_path,
   @param repo_path The path to the repository.
   @param repo_tmp_file_path The path to the repositories temporary file.
 */
-static void addFileToRepo(PathNode *node, String repo_path,
-                          String repo_tmp_file_path)
+static void addFileToRepo(PathNode *node, StringView repo_path,
+                          StringView repo_tmp_file_path)
 {
   RegularFileInfo *file_info = &node->history->state.metadata.file_info;
 
@@ -791,8 +792,9 @@ static void addFileToRepo(PathNode *node, String repo_path,
   @param repo_tmp_file_path The path to the repositories temporary file.
 */
 static void finishBackupRecursively(Metadata *metadata,
-                                    PathNode *node_list, String repo_path,
-                                    String repo_tmp_file_path)
+                                    PathNode *node_list,
+                                    StringView repo_path,
+                                    StringView repo_tmp_file_path)
 {
   for(PathNode *node = node_list; node != NULL; node = node->next)
   {
@@ -850,8 +852,8 @@ void initiateBackup(Metadata *metadata, SearchNode *root_node)
   @param repo_path The path to the repository.
   @param repo_tmp_file_path The path to the repositories temporary file.
 */
-void finishBackup(Metadata *metadata, String repo_path,
-                  String repo_tmp_file_path)
+void finishBackup(Metadata *metadata, StringView repo_path,
+                  StringView repo_tmp_file_path)
 {
   finishBackupRecursively(metadata, metadata->paths, repo_path,
                           repo_tmp_file_path);

@@ -9,9 +9,9 @@
 #include "safe-math.h"
 
 /** Wrap the given C string. */
-String strWrap(const char *string)
+StringView strWrap(const char *string)
 {
-  return (String){
+  return (StringView){
     .content = string,
     .length = strlen(string),
     .is_terminated = true,
@@ -19,9 +19,9 @@ String strWrap(const char *string)
 }
 
 /** Return a slice containing the given string. */
-String strWrapLength(const char *string, const size_t length)
+StringView strWrapLength(const char *string, const size_t length)
 {
-  return (String){
+  return (StringView){
     .content = string,
     .length = length,
     .is_terminated = false,
@@ -34,14 +34,14 @@ String strWrapLength(const char *string, const size_t length)
 
   @return A new string which lifetime will be bound to the entire program.
 */
-String strCopy(String string)
+StringView strCopy(StringView string)
 {
   char *cstring = CR_RegionAllocUnaligned(CR_GetGlobalRegion(),
                                           sSizeAdd(string.length, 1));
   memcpy(cstring, string.content, string.length);
   cstring[string.length] = '\0';
 
-  return (String){
+  return (StringView){
     .content = cstring,
     .length = string.length,
     .is_terminated = true,
@@ -49,12 +49,12 @@ String strCopy(String string)
 }
 
 /** Set the content of the given string to the specified value. */
-void strSet(String *string, String value)
+void strSet(StringView *string, StringView value)
 {
-  memcpy(string, &value, sizeof(String));
+  memcpy(string, &value, sizeof(StringView));
 }
 
-bool strEqual(String a, String b)
+bool strEqual(StringView a, StringView b)
 {
   return a.length == b.length &&
     memcmp(a.content, b.content, a.length) == 0;
@@ -70,7 +70,7 @@ bool strEqual(String a, String b)
   @return A pointer to either the given strings content, or to the given
   buffer.
 */
-const char *strRaw(String string, char **buffer)
+const char *strRaw(StringView string, char **buffer)
 {
   if(string.is_terminated)
   {
@@ -93,7 +93,7 @@ const char *strRaw(String string, char **buffer)
   @return The same string with a shorter length. It points to the same
   content as the initial string.
 */
-String strRemoveTrailingSlashes(String string)
+StringView strRemoveTrailingSlashes(StringView string)
 {
   size_t new_length = string.length;
   while(new_length > 0 && string.content[new_length - 1] == '/')
@@ -101,7 +101,7 @@ String strRemoveTrailingSlashes(String string)
     new_length--;
   }
 
-  return (String){
+  return (StringView){
     .content = string.content,
     .length = new_length,
     .is_terminated = new_length == string.length && string.is_terminated,
@@ -116,7 +116,7 @@ String strRemoveTrailingSlashes(String string)
 
   @return A new string which lifetime will be bound to the entire program.
 */
-String strAppendPath(String path, String filename)
+StringView strAppendPath(StringView path, StringView filename)
 {
   const size_t buffer_size =
     sSizeAdd(sSizeAdd(path.length, filename.length), 2);
@@ -130,7 +130,7 @@ String strAppendPath(String path, String filename)
   memcpy(&cstring[path.length + 1], filename.content, filename.length);
   cstring[path_length] = '\0';
 
-  return (String){
+  return (StringView){
     .content = cstring,
     .length = path_length,
     .is_terminated = true,
@@ -150,7 +150,7 @@ String strAppendPath(String path, String filename)
   slash, the head will contain the entire string and the tail will be
   empty.
 */
-PathSplit strSplitPath(String path)
+PathSplit strSplitPath(StringView path)
 {
   size_t last_slash = path.length;
   while(last_slash > 0 && path.content[last_slash - 1] != '/')
@@ -166,12 +166,12 @@ PathSplit strSplitPath(String path)
   }
 
   return (PathSplit){
-    (String){
+    (StringView){
       .content = path.content,
       .length = last_slash > 0 ? last_slash - 1 : 0,
       .is_terminated = false,
     },
-    (String){
+    (StringView){
       .content = &path.content[last_slash],
       .length = path.length - last_slash,
       .is_terminated = path.is_terminated,
@@ -181,7 +181,7 @@ PathSplit strSplitPath(String path)
 
 /** Returns true if the given string is empty, or contains only
   whitespaces. */
-bool strWhitespaceOnly(String string)
+bool strWhitespaceOnly(StringView string)
 {
   for(size_t index = 0; index < string.length; index++)
   {
@@ -195,7 +195,7 @@ bool strWhitespaceOnly(String string)
 }
 
 /** Returns true if the given string is "." or "..". */
-bool strIsDotElement(String string)
+bool strIsDotElement(StringView string)
 {
   return (string.length == 1 && string.content[0] == '.') ||
     (string.length == 2 && string.content[0] == '.' &&
@@ -210,7 +210,7 @@ bool strIsDotElement(String string)
 
   @return True if the given path contains the elements "." or "..".
 */
-bool strPathContainsDotElements(String path)
+bool strPathContainsDotElements(StringView path)
 {
   PathSplit split = strSplitPath(path);
 
@@ -226,7 +226,7 @@ bool strPathContainsDotElements(String path)
 
   @return True if path starts with parent.
 */
-bool strIsParentPath(String parent, String path)
+bool strIsParentPath(StringView parent, StringView path)
 {
   return parent.length < strRemoveTrailingSlashes(path).length &&
     path.content[parent.length] == '/' &&

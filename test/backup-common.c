@@ -24,7 +24,7 @@
 
   @return The found node.
 */
-PathNode *findCwdNode(Metadata *metadata, String cwd, const BackupHint hint)
+PathNode *findCwdNode(Metadata *metadata, StringView cwd, const BackupHint hint)
 {
   for(PathNode *node = metadata->paths; node != NULL; node = node->subnodes)
   {
@@ -76,7 +76,7 @@ PathNode *findCwdNode(Metadata *metadata, String cwd, const BackupHint hint)
 PathNode *findSubnode(PathNode *node, const char *subnode_name, const BackupHint hint, const BackupPolicy policy,
                       const size_t requested_history_length, const size_t requested_subnode_count)
 {
-  String subnode_path = strAppendPath(node->path, strWrap(subnode_name));
+  StringView subnode_path = strAppendPath(node->path, strWrap(subnode_name));
   return findPathNode(node->subnodes, subnode_path.content, hint, policy, requested_history_length,
                       requested_subnode_count);
 }
@@ -88,7 +88,7 @@ time_t getParentTime(const char *path)
 
 void restoreParentTime(const char *path, const time_t time)
 {
-  String parent_path = strCopy(strSplitPath(strWrap(path)).head);
+  StringView parent_path = strCopy(strSplitPath(strWrap(path)).head);
   sUtime(parent_path, time);
 }
 
@@ -343,7 +343,7 @@ void setStatCache(const size_t index)
   @return The stats which the given path had on its first access trough
   this function.
 */
-struct stat cachedStat(String path, struct stat (*stat_fun)(String))
+struct stat cachedStat(StringView path, struct stat (*stat_fun)(StringView))
 {
   struct stat *cache = strTableGet(current_stat_cache, path);
   if(cache == NULL)
@@ -422,7 +422,7 @@ void mustHaveDirectoryCached(const PathNode *node, const Backup *backup)
 }
 
 /** Will be updated with a copy of PWD. */
-static String cwd_path;
+static StringView cwd_path;
 static size_t cwd_depth_count = 0;
 
 /** Finds the node "$PWD/tmp/files".
@@ -510,7 +510,7 @@ void initBackupCommon(size_t stat_cache_count)
   stat_cache_array = mpAlloc(sizeof *stat_cache_array * stat_cache_array_length);
   initStatCache();
 
-  String tmp_cwd_path = getCwd();
+  StringView tmp_cwd_path = getCwd();
   strSet(&cwd_path, tmp_cwd_path);
 
   cwd_depth_count = 0;

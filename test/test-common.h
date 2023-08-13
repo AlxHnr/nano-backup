@@ -4,7 +4,7 @@
 #include "metadata.h"
 #include "str.h"
 
-extern String getCwd(void);
+extern StringView getCwd(void);
 extern size_t countItemsInDir(const char *path);
 
 extern void checkMetadata(const Metadata *metadata, size_t config_history_length, bool check_path_table);

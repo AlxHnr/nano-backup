@@ -8,9 +8,9 @@
 #include "test-common.h"
 #include "test.h"
 
-static String repo_path = { .content = "tmp/repo", .length = 8, .is_terminated = true };
-static String metadata_path = { .content = "tmp/repo/metadata", .length = 17, .is_terminated = true };
-static String tmp_file_path = { .content = "tmp/repo/tmp-file", .length = 17, .is_terminated = true };
+static StringView repo_path = { .content = "tmp/repo", .length = 8, .is_terminated = true };
+static StringView metadata_path = { .content = "tmp/repo/metadata", .length = 17, .is_terminated = true };
+static StringView tmp_file_path = { .content = "tmp/repo/tmp-file", .length = 17, .is_terminated = true };
 
 static void writeToFile(const char *path, const char *content)
 {
@@ -62,7 +62,7 @@ int main(void)
   writeToFile("tmp/files/smaller file", "1234");
   makeBackup(metadataLoad(metadata_path));
 
-  String cwd = getCwd();
+  StringView cwd = getCwd();
   CR_Region *r = CR_RegionNew();
   const Metadata *metadata = metadataLoad(metadata_path);
   testGroupEnd();
@@ -94,7 +94,7 @@ int main(void)
   {
     assert_true(path_node->node->path.is_terminated);
     assert_true(strIsParentPath(cwd, path_node->node->path));
-    String unique_subpath = strWrap(&path_node->node->path.content[cwd.length + 1]);
+    StringView unique_subpath = strWrap(&path_node->node->path.content[cwd.length + 1]);
     assert_true(strTableGet(broken_path_nodes, unique_subpath) == NULL);
     strTableMap(broken_path_nodes, unique_subpath, (void *)0x1);
     broken_path_node_count++;

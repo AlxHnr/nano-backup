@@ -38,7 +38,7 @@ typedef struct
   union
   {
     RegularFileInfo file_info;
-    String symlink_target;
+    StringView symlink_target;
     DirectoryInfo directory_info;
   } metadata;
 } PathState;
@@ -149,7 +149,7 @@ struct PathNode
 {
   /** The full, absolute path inside the filesystem, containing a
     null-terminated buffer. */
-  String path;
+  StringView path;
 
   /** Contains temporary informations about this node. They will not be
     written to disk and are only used during a single backup. */
@@ -208,9 +208,9 @@ typedef struct
 } Metadata;
 
 extern Metadata *metadataNew(void);
-extern Metadata *metadataLoad(String path);
-extern void metadataWrite(Metadata *metadata, String repo_path,
-                          String repo_tmp_file_path,
-                          String repo_metadata_path);
+extern Metadata *metadataLoad(StringView path);
+extern void metadataWrite(Metadata *metadata, StringView repo_path,
+                          StringView repo_tmp_file_path,
+                          StringView repo_metadata_path);
 
 #endif

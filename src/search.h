@@ -15,7 +15,7 @@ typedef struct
   /** The full path to the found file, containing a null-terminated buffer.
     It shares memory with the SearchIterator to which it belongs and will
     be invalidated with the next call to searchGetNext(). */
-  String path;
+  StringView path;
 
   /** The SearchNode which has matched the found path. Will be NULL if the
     path wasn't matched by any node. This node belongs to the search tree

@@ -16,14 +16,14 @@ static void warnConfigLineNr(const size_t line_nr)
   fprintf(stderr, ": ");
 }
 
-static void warnPath(String path)
+static void warnPath(StringView path)
 {
   fprintf(stderr, "\"");
   colorPrintf(stderr, TC_red, "%s", path.content);
   fprintf(stderr, "\"");
 }
 
-static void warnPathNewline(String path)
+static void warnPathNewline(StringView path)
 {
   warnPath(path);
   fputc('\n', stderr);
@@ -655,7 +655,7 @@ bool containsChanges(const ChangeSummary *changes)
 }
 
 /** Prints a warning on how the specified node matches the given string. */
-void warnNodeMatches(const SearchNode *node, String string)
+void warnNodeMatches(const SearchNode *node, StringView string)
 {
   warnConfigLineNr(node->line_nr);
   fprintf(stderr, "%s ", typeOf(node));

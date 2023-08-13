@@ -209,10 +209,10 @@ static void checkPathState(const PathNode *node, const PathHistory *point, const
   }
 }
 
-String getCwd(void)
+StringView getCwd(void)
 {
   char *cwd = sGetCwd();
-  String cwd_string = strCopy(strWrap(cwd));
+  StringView cwd_string = strCopy(strWrap(cwd));
   free(cwd);
 
   return cwd_string;
@@ -324,7 +324,7 @@ void mustHaveConf(const Metadata *metadata, const Backup *backup, const uint64_t
 PathNode *findPathNode(PathNode *start_node, const char *path_str, BackupHint hint, BackupPolicy policy,
                        size_t history_length, size_t subnode_count)
 {
-  String path = strWrap(path_str);
+  StringView path = strWrap(path_str);
   PathNode *requested_node = NULL;
 
   for(PathNode *node = start_node; node != NULL && requested_node == NULL; node = node->next)

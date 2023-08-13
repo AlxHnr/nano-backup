@@ -4,7 +4,7 @@
 
 #include "test.h"
 
-static String check(String string)
+static StringView check(StringView string)
 {
   assert_true(string.content != NULL);
 
@@ -16,9 +16,9 @@ static String check(String string)
   return string;
 }
 
-static String checkedStrWrap(const char *cstring)
+static StringView checkedStrWrap(const char *cstring)
 {
-  String string = check(strWrap(cstring));
+  StringView string = check(strWrap(cstring));
 
   assert_true(string.length == strlen(cstring));
   assert_true(string.content == cstring);
@@ -27,9 +27,9 @@ static String checkedStrWrap(const char *cstring)
   return string;
 }
 
-static String checkedStrWrapLength(const char *string, const size_t length)
+static StringView checkedStrWrapLength(const char *string, const size_t length)
 {
-  String slice = check(strWrapLength(string, length));
+  StringView slice = check(strWrapLength(string, length));
   assert_true(slice.content == string);
   assert_true(slice.length == length);
   assert_true(!slice.is_terminated);
@@ -37,9 +37,9 @@ static String checkedStrWrapLength(const char *string, const size_t length)
   return slice;
 }
 
-static String checkedStrCopy(String string)
+static StringView checkedStrCopy(StringView string)
 {
-  String copy = check(strCopy(string));
+  StringView copy = check(strCopy(string));
 
   assert_true(copy.content != string.content);
   assert_true(copy.length == string.length);
@@ -50,9 +50,9 @@ static String checkedStrCopy(String string)
   return copy;
 }
 
-static String checkedStrAppendPath(String a, String b)
+static StringView checkedStrAppendPath(StringView a, StringView b)
 {
-  String string = check(strAppendPath(a, b));
+  StringView string = check(strAppendPath(a, b));
 
   assert_true(string.content != a.content);
   assert_true(string.content != b.content);
@@ -75,15 +75,15 @@ static String checkedStrAppendPath(String a, String b)
 */
 static void testStrAppendPath(const char *ca, const char *cb, const char *cexpected_result)
 {
-  String a = checkedStrWrap(ca);
-  String b = checkedStrWrap(cb);
-  String result = checkedStrAppendPath(a, b);
-  String expected_result = checkedStrWrap(cexpected_result);
+  StringView a = checkedStrWrap(ca);
+  StringView b = checkedStrWrap(cb);
+  StringView result = checkedStrAppendPath(a, b);
+  StringView expected_result = checkedStrWrap(cexpected_result);
 
   assert_true(strEqual(result, expected_result));
 }
 
-static void checkedStrSet(String *string, String value)
+static void checkedStrSet(StringView *string, StringView value)
 {
   strSet(string, value);
   check(*string);
@@ -92,7 +92,7 @@ static void checkedStrSet(String *string, String value)
   assert_true(string->is_terminated == value.is_terminated);
 }
 
-static const char *checkedStrRaw(String string, char **buffer)
+static const char *checkedStrRaw(StringView string, char **buffer)
 {
   if(string.is_terminated)
   {
@@ -118,9 +118,9 @@ static const char *checkedStrRaw(String string, char **buffer)
   }
 }
 
-static String checkedStrRemoveTrailingSlashes(String string)
+static StringView checkedStrRemoveTrailingSlashes(StringView string)
 {
-  String trimmed = check(strRemoveTrailingSlashes(string));
+  StringView trimmed = check(strRemoveTrailingSlashes(string));
   assert_true(trimmed.content == string.content);
   assert_true(trimmed.length <= string.length);
   assert_true(trimmed.is_terminated == (trimmed.length == string.length && string.is_terminated));
@@ -128,9 +128,9 @@ static String checkedStrRemoveTrailingSlashes(String string)
   return trimmed;
 }
 
-static void testStrRemoveTrailingSlashes(String original, String expected)
+static void testStrRemoveTrailingSlashes(StringView original, StringView expected)
 {
-  String trimmed = checkedStrRemoveTrailingSlashes(original);
+  StringView trimmed = checkedStrRemoveTrailingSlashes(original);
   assert_true(trimmed.length == expected.length);
   assert_true(strEqual(trimmed, expected));
 }
@@ -140,7 +140,7 @@ static bool isParentPath(const char *parent, const char *path)
   return strIsParentPath(checkedStrWrap(parent), checkedStrWrap(path));
 }
 
-static PathSplit checkedStrSplitPath(String path)
+static PathSplit checkedStrSplitPath(StringView path)
 {
   PathSplit split = strSplitPath(path);
   check(split.head);
@@ -160,9 +160,9 @@ static PathSplit checkedStrSplitPath(String path)
 
 static void testStrSplitPath(const char *cpath, const char *cexpected_head, const char *cexpected_tail)
 {
-  String path = checkedStrWrap(cpath);
-  String expected_head = checkedStrWrap(cexpected_head);
-  String expected_tail = checkedStrWrap(cexpected_tail);
+  StringView path = checkedStrWrap(cpath);
+  StringView expected_head = checkedStrWrap(cexpected_head);
+  StringView expected_tail = checkedStrWrap(cexpected_tail);
 
   PathSplit split = checkedStrSplitPath(path);
   assert_true(strEqual(split.head, expected_head));
@@ -183,26 +183,26 @@ int main(void)
   testGroupStart("StrWrapLength()");
   const char *cstring = "this is a test string";
 
-  String slice1 = checkedStrWrapLength(cstring, 4);
-  String slice2 = checkedStrWrapLength(&cstring[5], 9);
-  String slice3 = checkedStrWrapLength(&cstring[10], 11);
+  StringView slice1 = checkedStrWrapLength(cstring, 4);
+  StringView slice2 = checkedStrWrapLength(&cstring[5], 9);
+  StringView slice3 = checkedStrWrapLength(&cstring[10], 11);
   testGroupEnd();
 
   testGroupStart("strCopy()");
-  String zero_length = (String){
+  StringView zero_length = (StringView){
     .content = "some-data",
     .length = 0,
     .is_terminated = false,
   };
   {
-    String bar = checkedStrWrap("bar");
+    StringView bar = checkedStrWrap("bar");
     checkedStrCopy(bar);
 
-    String empty = checkedStrWrap("");
-    String empty_copy = checkedStrCopy(empty);
+    StringView empty = checkedStrWrap("");
+    StringView empty_copy = checkedStrCopy(empty);
     assert_true(empty_copy.length == 0);
 
-    String zero_length_copy = checkedStrCopy(zero_length);
+    StringView zero_length_copy = checkedStrCopy(zero_length);
     assert_true(zero_length_copy.length == 0);
 
     checkedStrCopy(slice1);
@@ -213,7 +213,7 @@ int main(void)
 
   testGroupStart("strSet()");
   {
-    String string = checkedStrWrap("");
+    StringView string = checkedStrWrap("");
     checkedStrSet(&string, checkedStrWrap("Dummy string"));
     checkedStrSet(&string, checkedStrWrap("ABC 123"));
     checkedStrSet(&string, checkedStrWrap("Nano backup"));
@@ -225,10 +225,10 @@ int main(void)
 
   testGroupStart("strEqual()");
   {
-    String foo = checkedStrWrap("foo");
-    String bar = checkedStrWrap("bar");
-    String empty = checkedStrWrap("");
-    String foo_bar = checkedStrWrap("foo-bar");
+    StringView foo = checkedStrWrap("foo");
+    StringView bar = checkedStrWrap("bar");
+    StringView empty = checkedStrWrap("");
+    StringView foo_bar = checkedStrWrap("foo-bar");
 
     assert_true(strEqual(foo, checkedStrWrap("foo")));
     assert_true(!strEqual(foo, bar));
@@ -251,7 +251,7 @@ int main(void)
   testGroupStart("strRaw()");
   {
     char *buffer = NULL;
-    String string = checkedStrWrap(cstring);
+    StringView string = checkedStrWrap(cstring);
 
     checkedStrRaw(string, &buffer);
     checkedStrRaw(slice1, &buffer);
@@ -311,7 +311,7 @@ int main(void)
     assert_true(strEqual(empty_split.head, empty_split2.head));
     assert_true(strEqual(empty_split.tail, empty_split2.tail));
 
-    String no_slash = checkedStrWrap("no-slash");
+    StringView no_slash = checkedStrWrap("no-slash");
     testStrSplitPath("no-slash", "", "no-slash");
     assert_true(checkedStrSplitPath(no_slash).tail.content == no_slash.content);
 
@@ -361,7 +361,7 @@ int main(void)
     assert_true(!strWhitespaceOnly(checkedStrWrap("foo")));
     assert_true(strWhitespaceOnly(zero_length));
 
-    String string = checkedStrWrapLength("         a string.", 9);
+    StringView string = checkedStrWrapLength("         a string.", 9);
     assert_true(strWhitespaceOnly(string));
   }
   testGroupEnd();
@@ -385,22 +385,22 @@ int main(void)
     assert_true(!strIsDotElement(checkedStrWrap("/./")));
     assert_true(!strIsDotElement(checkedStrWrap("/../")));
     assert_true(!strIsDotElement(checkedStrWrap("/.../")));
-    assert_true(!strIsDotElement((String){ .content = "...", .length = 0, .is_terminated = false }));
-    assert_true(strIsDotElement((String){ .content = "...", .length = 1, .is_terminated = false }));
-    assert_true(strIsDotElement((String){ .content = "...", .length = 2, .is_terminated = false }));
-    assert_true(!strIsDotElement((String){ .content = "...", .length = 3, .is_terminated = false }));
-    assert_true(strIsDotElement((String){ .content = ".xx", .length = 1, .is_terminated = false }));
-    assert_true(strIsDotElement((String){ .content = "..x", .length = 1, .is_terminated = false }));
-    assert_true(strIsDotElement((String){ .content = "..x", .length = 2, .is_terminated = false }));
-    assert_true(!strIsDotElement((String){ .content = "..x", .length = 3, .is_terminated = false }));
-    assert_true(strIsDotElement((String){ .content = ".,,", .length = 1, .is_terminated = false }));
-    assert_true(strIsDotElement((String){ .content = "..,", .length = 1, .is_terminated = false }));
-    assert_true(strIsDotElement((String){ .content = "..,", .length = 2, .is_terminated = false }));
-    assert_true(!strIsDotElement((String){ .content = "..,", .length = 3, .is_terminated = false }));
-    assert_true(strIsDotElement((String){ .content = ".qq", .length = 1, .is_terminated = false }));
-    assert_true(strIsDotElement((String){ .content = "..q", .length = 1, .is_terminated = false }));
-    assert_true(strIsDotElement((String){ .content = "..q", .length = 2, .is_terminated = false }));
-    assert_true(!strIsDotElement((String){ .content = "..q", .length = 3, .is_terminated = false }));
+    assert_true(!strIsDotElement((StringView){ .content = "...", .length = 0, .is_terminated = false }));
+    assert_true(strIsDotElement((StringView){ .content = "...", .length = 1, .is_terminated = false }));
+    assert_true(strIsDotElement((StringView){ .content = "...", .length = 2, .is_terminated = false }));
+    assert_true(!strIsDotElement((StringView){ .content = "...", .length = 3, .is_terminated = false }));
+    assert_true(strIsDotElement((StringView){ .content = ".xx", .length = 1, .is_terminated = false }));
+    assert_true(strIsDotElement((StringView){ .content = "..x", .length = 1, .is_terminated = false }));
+    assert_true(strIsDotElement((StringView){ .content = "..x", .length = 2, .is_terminated = false }));
+    assert_true(!strIsDotElement((StringView){ .content = "..x", .length = 3, .is_terminated = false }));
+    assert_true(strIsDotElement((StringView){ .content = ".,,", .length = 1, .is_terminated = false }));
+    assert_true(strIsDotElement((StringView){ .content = "..,", .length = 1, .is_terminated = false }));
+    assert_true(strIsDotElement((StringView){ .content = "..,", .length = 2, .is_terminated = false }));
+    assert_true(!strIsDotElement((StringView){ .content = "..,", .length = 3, .is_terminated = false }));
+    assert_true(strIsDotElement((StringView){ .content = ".qq", .length = 1, .is_terminated = false }));
+    assert_true(strIsDotElement((StringView){ .content = "..q", .length = 1, .is_terminated = false }));
+    assert_true(strIsDotElement((StringView){ .content = "..q", .length = 2, .is_terminated = false }));
+    assert_true(!strIsDotElement((StringView){ .content = "..q", .length = 3, .is_terminated = false }));
   }
   testGroupEnd();
 
