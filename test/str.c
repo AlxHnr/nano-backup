@@ -16,9 +16,9 @@ static StringView check(StringView string)
   return string;
 }
 
-static StringView checkedStrWrap(const char *cstring)
+static StringView checkedStr(const char *cstring)
 {
-  StringView string = check(strWrap(cstring));
+  StringView string = check(str(cstring));
 
   assert_true(string.length == strlen(cstring));
   assert_true(string.content == cstring);
@@ -75,10 +75,10 @@ static StringView checkedStrAppendPath(StringView a, StringView b)
 */
 static void testStrAppendPath(const char *ca, const char *cb, const char *cexpected_result)
 {
-  StringView a = checkedStrWrap(ca);
-  StringView b = checkedStrWrap(cb);
+  StringView a = checkedStr(ca);
+  StringView b = checkedStr(cb);
   StringView result = checkedStrAppendPath(a, b);
-  StringView expected_result = checkedStrWrap(cexpected_result);
+  StringView expected_result = checkedStr(cexpected_result);
 
   assert_true(strEqual(result, expected_result));
 }
@@ -137,7 +137,7 @@ static void testStrRemoveTrailingSlashes(StringView original, StringView expecte
 
 static bool isParentPath(const char *parent, const char *path)
 {
-  return strIsParentPath(checkedStrWrap(parent), checkedStrWrap(path));
+  return strIsParentPath(checkedStr(parent), checkedStr(path));
 }
 
 static PathSplit checkedStrSplitPath(StringView path)
@@ -160,9 +160,9 @@ static PathSplit checkedStrSplitPath(StringView path)
 
 static void testStrSplitPath(const char *cpath, const char *cexpected_head, const char *cexpected_tail)
 {
-  StringView path = checkedStrWrap(cpath);
-  StringView expected_head = checkedStrWrap(cexpected_head);
-  StringView expected_tail = checkedStrWrap(cexpected_tail);
+  StringView path = checkedStr(cpath);
+  StringView expected_head = checkedStr(cexpected_head);
+  StringView expected_tail = checkedStr(cexpected_tail);
 
   PathSplit split = checkedStrSplitPath(path);
   assert_true(strEqual(split.head, expected_head));
@@ -171,12 +171,12 @@ static void testStrSplitPath(const char *cpath, const char *cexpected_head, cons
 
 int main(void)
 {
-  testGroupStart("strWrap()");
+  testGroupStart("str()");
   {
-    checkedStrWrap("");
-    checkedStrWrap("foo");
-    checkedStrWrap("bar");
-    checkedStrWrap("foo bar");
+    checkedStr("");
+    checkedStr("foo");
+    checkedStr("bar");
+    checkedStr("foo bar");
   }
   testGroupEnd();
 
@@ -195,10 +195,10 @@ int main(void)
     .is_terminated = false,
   };
   {
-    StringView bar = checkedStrWrap("bar");
+    StringView bar = checkedStr("bar");
     checkedStrCopy(bar);
 
-    StringView empty = checkedStrWrap("");
+    StringView empty = checkedStr("");
     StringView empty_copy = checkedStrCopy(empty);
     assert_true(empty_copy.length == 0);
 
@@ -213,10 +213,10 @@ int main(void)
 
   testGroupStart("strSet()");
   {
-    StringView string = checkedStrWrap("");
-    checkedStrSet(&string, checkedStrWrap("Dummy string"));
-    checkedStrSet(&string, checkedStrWrap("ABC 123"));
-    checkedStrSet(&string, checkedStrWrap("Nano backup"));
+    StringView string = checkedStr("");
+    checkedStrSet(&string, checkedStr("Dummy string"));
+    checkedStrSet(&string, checkedStr("ABC 123"));
+    checkedStrSet(&string, checkedStr("Nano backup"));
     checkedStrSet(&string, slice1);
     checkedStrSet(&string, slice2);
     checkedStrSet(&string, slice3);
@@ -225,22 +225,22 @@ int main(void)
 
   testGroupStart("strEqual()");
   {
-    StringView foo = checkedStrWrap("foo");
-    StringView bar = checkedStrWrap("bar");
-    StringView empty = checkedStrWrap("");
-    StringView foo_bar = checkedStrWrap("foo-bar");
+    StringView foo = checkedStr("foo");
+    StringView bar = checkedStr("bar");
+    StringView empty = checkedStr("");
+    StringView foo_bar = checkedStr("foo-bar");
 
-    assert_true(strEqual(foo, checkedStrWrap("foo")));
+    assert_true(strEqual(foo, checkedStr("foo")));
     assert_true(!strEqual(foo, bar));
     assert_true(!strEqual(foo, foo_bar));
-    assert_true(strEqual(zero_length, checkedStrWrap("")));
-    assert_true(strEqual(empty, checkedStrWrap("")));
-    assert_true(strEqual(slice1, checkedStrWrap("this")));
-    assert_true(strEqual(slice2, checkedStrWrap("is a test")));
-    assert_true(strEqual(slice3, checkedStrWrap("test string")));
-    assert_true(!strEqual(slice1, checkedStrWrap("This")));
-    assert_true(!strEqual(slice2, checkedStrWrap("is a Test")));
-    assert_true(!strEqual(slice3, checkedStrWrap("test String")));
+    assert_true(strEqual(zero_length, checkedStr("")));
+    assert_true(strEqual(empty, checkedStr("")));
+    assert_true(strEqual(slice1, checkedStr("this")));
+    assert_true(strEqual(slice2, checkedStr("is a test")));
+    assert_true(strEqual(slice3, checkedStr("test string")));
+    assert_true(!strEqual(slice1, checkedStr("This")));
+    assert_true(!strEqual(slice2, checkedStr("is a Test")));
+    assert_true(!strEqual(slice3, checkedStr("test String")));
     assert_true(!strEqual(slice1, slice2));
     assert_true(!strEqual(slice1, slice3));
     assert_true(!strEqual(slice2, slice3));
@@ -251,7 +251,7 @@ int main(void)
   testGroupStart("strRaw()");
   {
     char *buffer = NULL;
-    StringView string = checkedStrWrap(cstring);
+    StringView string = checkedStr(cstring);
 
     checkedStrRaw(string, &buffer);
     checkedStrRaw(slice1, &buffer);
@@ -262,21 +262,21 @@ int main(void)
 
   testGroupStart("strRemoveTrailingSlashes()");
   {
-    testStrRemoveTrailingSlashes(checkedStrWrap(""), checkedStrWrap(""));
-    testStrRemoveTrailingSlashes(zero_length, checkedStrWrap(""));
-    testStrRemoveTrailingSlashes(checkedStrWrap("foo"), checkedStrWrap("foo"));
-    testStrRemoveTrailingSlashes(checkedStrWrap("/home/arch/foo-bar"), checkedStrWrap("/home/arch/foo-bar"));
-    testStrRemoveTrailingSlashes(checkedStrWrap("/home/arch/foo-bar/"), checkedStrWrap("/home/arch/foo-bar"));
-    testStrRemoveTrailingSlashes(checkedStrWrap("/home/arch/foo-bar//////"), checkedStrWrap("/home/arch/foo-bar"));
-    testStrRemoveTrailingSlashes(checkedStrWrap("///////////////"), zero_length);
-    testStrRemoveTrailingSlashes(checkedStrWrap("////////////"), checkedStrWrap(""));
-    assert_true(checkedStrRemoveTrailingSlashes(checkedStrWrap("/home/test")).is_terminated);
-    assert_true(!checkedStrRemoveTrailingSlashes(checkedStrWrap("/home/")).is_terminated);
-    assert_true(checkedStrRemoveTrailingSlashes(checkedStrWrap("/home")).is_terminated);
-    assert_true(checkedStrRemoveTrailingSlashes(checkedStrWrap("this is a test")).is_terminated);
-    assert_true(checkedStrRemoveTrailingSlashes(checkedStrWrap("this is a tes/t")).is_terminated);
-    assert_true(!checkedStrRemoveTrailingSlashes(checkedStrWrap("//////////")).is_terminated);
-    assert_true(checkedStrRemoveTrailingSlashes(checkedStrWrap("////////// ")).is_terminated);
+    testStrRemoveTrailingSlashes(checkedStr(""), checkedStr(""));
+    testStrRemoveTrailingSlashes(zero_length, checkedStr(""));
+    testStrRemoveTrailingSlashes(checkedStr("foo"), checkedStr("foo"));
+    testStrRemoveTrailingSlashes(checkedStr("/home/arch/foo-bar"), checkedStr("/home/arch/foo-bar"));
+    testStrRemoveTrailingSlashes(checkedStr("/home/arch/foo-bar/"), checkedStr("/home/arch/foo-bar"));
+    testStrRemoveTrailingSlashes(checkedStr("/home/arch/foo-bar//////"), checkedStr("/home/arch/foo-bar"));
+    testStrRemoveTrailingSlashes(checkedStr("///////////////"), zero_length);
+    testStrRemoveTrailingSlashes(checkedStr("////////////"), checkedStr(""));
+    assert_true(checkedStrRemoveTrailingSlashes(checkedStr("/home/test")).is_terminated);
+    assert_true(!checkedStrRemoveTrailingSlashes(checkedStr("/home/")).is_terminated);
+    assert_true(checkedStrRemoveTrailingSlashes(checkedStr("/home")).is_terminated);
+    assert_true(checkedStrRemoveTrailingSlashes(checkedStr("this is a test")).is_terminated);
+    assert_true(checkedStrRemoveTrailingSlashes(checkedStr("this is a tes/t")).is_terminated);
+    assert_true(!checkedStrRemoveTrailingSlashes(checkedStr("//////////")).is_terminated);
+    assert_true(checkedStrRemoveTrailingSlashes(checkedStr("////////// ")).is_terminated);
   }
   testGroupEnd();
 
@@ -295,23 +295,23 @@ int main(void)
     testStrAppendPath("etc/init.d", "start.sh", "etc/init.d/start.sh");
     testStrAppendPath("etc/init.d", "/start.sh", "etc/init.d//start.sh");
 
-    assert_true(strEqual(checkedStrAppendPath(slice1, slice2), checkedStrWrap("this/is a test")));
-    assert_true(strEqual(checkedStrAppendPath(slice2, slice3), checkedStrWrap("is a test/test string")));
-    assert_true(strEqual(checkedStrAppendPath(slice3, slice1), checkedStrWrap("test string/this")));
-    assert_true(strEqual(checkedStrAppendPath(slice2, zero_length), checkedStrWrap("is a test/")));
-    assert_true(strEqual(checkedStrAppendPath(zero_length, slice1), checkedStrWrap("/this")));
-    assert_true(strEqual(checkedStrAppendPath(zero_length, zero_length), checkedStrWrap("/")));
+    assert_true(strEqual(checkedStrAppendPath(slice1, slice2), checkedStr("this/is a test")));
+    assert_true(strEqual(checkedStrAppendPath(slice2, slice3), checkedStr("is a test/test string")));
+    assert_true(strEqual(checkedStrAppendPath(slice3, slice1), checkedStr("test string/this")));
+    assert_true(strEqual(checkedStrAppendPath(slice2, zero_length), checkedStr("is a test/")));
+    assert_true(strEqual(checkedStrAppendPath(zero_length, slice1), checkedStr("/this")));
+    assert_true(strEqual(checkedStrAppendPath(zero_length, zero_length), checkedStr("/")));
   }
   testGroupEnd();
 
   testGroupStart("strSplitPath()");
   {
-    PathSplit empty_split = checkedStrSplitPath(checkedStrWrap(""));
-    PathSplit empty_split2 = checkedStrSplitPath(checkedStrWrap("/"));
+    PathSplit empty_split = checkedStrSplitPath(checkedStr(""));
+    PathSplit empty_split2 = checkedStrSplitPath(checkedStr("/"));
     assert_true(strEqual(empty_split.head, empty_split2.head));
     assert_true(strEqual(empty_split.tail, empty_split2.tail));
 
-    StringView no_slash = checkedStrWrap("no-slash");
+    StringView no_slash = checkedStr("no-slash");
     testStrSplitPath("no-slash", "", "no-slash");
     assert_true(checkedStrSplitPath(no_slash).tail.content == no_slash.content);
 
@@ -330,7 +330,7 @@ int main(void)
     testStrSplitPath("/this", "", "this");
     testStrSplitPath("/", "", "");
 
-    PathSplit split1 = checkedStrSplitPath(checkedStrWrap("/this/is/a/path"));
+    PathSplit split1 = checkedStrSplitPath(checkedStr("/this/is/a/path"));
     assert_true(split1.tail.is_terminated);
 
     PathSplit split2 = checkedStrSplitPath(split1.head);
@@ -352,13 +352,13 @@ int main(void)
 
   testGroupStart("strWhitespaceOnly()");
   {
-    assert_true(strWhitespaceOnly(checkedStrWrap("")));
-    assert_true(strWhitespaceOnly(checkedStrWrap("   ")));
-    assert_true(strWhitespaceOnly(checkedStrWrap("	")));
-    assert_true(strWhitespaceOnly(checkedStrWrap(" 	  	 ")));
-    assert_true(!strWhitespaceOnly(checkedStrWrap("	o ")));
-    assert_true(!strWhitespaceOnly(checkedStrWrap(".   ")));
-    assert_true(!strWhitespaceOnly(checkedStrWrap("foo")));
+    assert_true(strWhitespaceOnly(checkedStr("")));
+    assert_true(strWhitespaceOnly(checkedStr("   ")));
+    assert_true(strWhitespaceOnly(checkedStr("	")));
+    assert_true(strWhitespaceOnly(checkedStr(" 	  	 ")));
+    assert_true(!strWhitespaceOnly(checkedStr("	o ")));
+    assert_true(!strWhitespaceOnly(checkedStr(".   ")));
+    assert_true(!strWhitespaceOnly(checkedStr("foo")));
     assert_true(strWhitespaceOnly(zero_length));
 
     StringView string = checkedStrWrapLength("         a string.", 9);
@@ -368,23 +368,23 @@ int main(void)
 
   testGroupStart("strIsDotElement()");
   {
-    assert_true(!strIsDotElement(checkedStrWrap("")));
-    assert_true(strIsDotElement(checkedStrWrap(".")));
-    assert_true(strIsDotElement(checkedStrWrap("..")));
-    assert_true(!strIsDotElement(checkedStrWrap(".hidden")));
-    assert_true(!strIsDotElement(checkedStrWrap("...")));
-    assert_true(!strIsDotElement(checkedStrWrap(",,")));
-    assert_true(!strIsDotElement(checkedStrWrap("aa")));
-    assert_true(!strIsDotElement(checkedStrWrap(".......")));
-    assert_true(!strIsDotElement(checkedStrWrap("./")));
-    assert_true(!strIsDotElement(checkedStrWrap("../")));
-    assert_true(!strIsDotElement(checkedStrWrap(".../")));
-    assert_true(!strIsDotElement(checkedStrWrap("/.")));
-    assert_true(!strIsDotElement(checkedStrWrap("/..")));
-    assert_true(!strIsDotElement(checkedStrWrap("/...")));
-    assert_true(!strIsDotElement(checkedStrWrap("/./")));
-    assert_true(!strIsDotElement(checkedStrWrap("/../")));
-    assert_true(!strIsDotElement(checkedStrWrap("/.../")));
+    assert_true(!strIsDotElement(checkedStr("")));
+    assert_true(strIsDotElement(checkedStr(".")));
+    assert_true(strIsDotElement(checkedStr("..")));
+    assert_true(!strIsDotElement(checkedStr(".hidden")));
+    assert_true(!strIsDotElement(checkedStr("...")));
+    assert_true(!strIsDotElement(checkedStr(",,")));
+    assert_true(!strIsDotElement(checkedStr("aa")));
+    assert_true(!strIsDotElement(checkedStr(".......")));
+    assert_true(!strIsDotElement(checkedStr("./")));
+    assert_true(!strIsDotElement(checkedStr("../")));
+    assert_true(!strIsDotElement(checkedStr(".../")));
+    assert_true(!strIsDotElement(checkedStr("/.")));
+    assert_true(!strIsDotElement(checkedStr("/..")));
+    assert_true(!strIsDotElement(checkedStr("/...")));
+    assert_true(!strIsDotElement(checkedStr("/./")));
+    assert_true(!strIsDotElement(checkedStr("/../")));
+    assert_true(!strIsDotElement(checkedStr("/.../")));
     assert_true(!strIsDotElement((StringView){ .content = "...", .length = 0, .is_terminated = false }));
     assert_true(strIsDotElement((StringView){ .content = "...", .length = 1, .is_terminated = false }));
     assert_true(strIsDotElement((StringView){ .content = "...", .length = 2, .is_terminated = false }));
@@ -406,110 +406,110 @@ int main(void)
 
   testGroupStart("strPathContainsDotElements()");
   {
-    assert_true(!strPathContainsDotElements(checkedStrWrap("")));
-    assert_true(strPathContainsDotElements(checkedStrWrap(".")));
-    assert_true(strPathContainsDotElements(checkedStrWrap("..")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("...")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("....")));
-    assert_true(strPathContainsDotElements(checkedStrWrap("/.")));
-    assert_true(strPathContainsDotElements(checkedStrWrap("/..")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("/...")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("/....")));
-    assert_true(strPathContainsDotElements(checkedStrWrap("./")));
-    assert_true(strPathContainsDotElements(checkedStrWrap("../")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap(".../")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("..../")));
-    assert_true(strPathContainsDotElements(checkedStrWrap("/./")));
-    assert_true(strPathContainsDotElements(checkedStrWrap("/../")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("/.../")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("/..../")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("//.")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("//..")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("//...")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("//....")));
-    assert_true(strPathContainsDotElements(checkedStrWrap(".//")));
-    assert_true(strPathContainsDotElements(checkedStrWrap("..//")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("...//")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("....//")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("//.//")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("//..//")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("//...//")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("//....//")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("///.")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("///..")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("///...")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("///....")));
-    assert_true(strPathContainsDotElements(checkedStrWrap(".///")));
-    assert_true(strPathContainsDotElements(checkedStrWrap("..///")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("...///")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("....///")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("///.///")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("///..///")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("///...///")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("///....///")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("/home/foo/hidden/bar")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("/home/foo/.hidden/bar")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("/home/foo/..hidden/bar")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("/home/foo/...hidden/bar")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("/home/foo/hidden./bar")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("/home/foo/hidden../bar")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("/home/foo/hidden.../bar")));
-    assert_true(strPathContainsDotElements(checkedStrWrap("./home/foo/")));
-    assert_true(strPathContainsDotElements(checkedStrWrap("../home/foo/")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap(".../home/foo/")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("..../home/foo/")));
-    assert_true(strPathContainsDotElements(checkedStrWrap("/home/foo/.")));
-    assert_true(strPathContainsDotElements(checkedStrWrap("/home/foo/..")));
-    assert_true(strPathContainsDotElements(checkedStrWrap("home/foo/.")));
-    assert_true(strPathContainsDotElements(checkedStrWrap("home/foo/..")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("/home/foo.")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("/home/foo..")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("home/foo.")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("home/foo..")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("home/foo...")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("/home/.foo")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("/home/..foo")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("home/.foo")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("home/..foo")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("home/...foo")));
-    assert_true(strPathContainsDotElements(checkedStrWrap("home/./foo")));
-    assert_true(strPathContainsDotElements(checkedStrWrap("home/../foo")));
-    assert_true(strPathContainsDotElements(checkedStrWrap("/home/./foo")));
-    assert_true(strPathContainsDotElements(checkedStrWrap("/home/../foo")));
-    assert_true(strPathContainsDotElements(checkedStrWrap("home/./foo/")));
-    assert_true(strPathContainsDotElements(checkedStrWrap("home/../foo/")));
-    assert_true(strPathContainsDotElements(checkedStrWrap("/home/./foo/")));
-    assert_true(strPathContainsDotElements(checkedStrWrap("/home/../foo/")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("home//./foo/")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("/home///./foo/")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("/home////./foo/")));
-    assert_true(strPathContainsDotElements(checkedStrWrap("/home////./foo/.")));
-    assert_true(strPathContainsDotElements(checkedStrWrap("/home/.///./foo/")));
-    assert_true(strPathContainsDotElements(checkedStrWrap("/home/..//foo/")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap(".home/foo/bar")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("..home/foo/bar")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("...home/foo/bar")));
-    assert_true(strPathContainsDotElements(checkedStrWrap("/home/foo////////bar/.")));
-    assert_true(strPathContainsDotElements(checkedStrWrap("/home/foo////////bar/..")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("/home/foo////.////bar////")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("/home/foo////..////bar////")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("/home/foo////...////bar////")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("/home/foo////////bar")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("/home/foo////////bar/")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("/home/f/o//////bar////")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("/home/foo////////bar////")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("/home/foo////......////bar////")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("///////////")));
-    assert_true(strPathContainsDotElements(checkedStrWrap(".///////////")));
-    assert_true(strPathContainsDotElements(checkedStrWrap("..///////////")));
-    assert_true(!strPathContainsDotElements(checkedStrWrap("...///////////")));
-    assert_true(strPathContainsDotElements(checkedStrWrap(".../////./../////")));
-    assert_true(strPathContainsDotElements(checkedStrWrap(".../////x/../////")));
-    assert_true(strPathContainsDotElements(checkedStrWrap(".//////./////")));
-    assert_true(strPathContainsDotElements(checkedStrWrap(".//////../////")));
-    assert_true(strPathContainsDotElements(checkedStrWrap("../////.//////")));
-    assert_true(strPathContainsDotElements(checkedStrWrap(".//////../////..")));
-    assert_true(strPathContainsDotElements(checkedStrWrap("../////..//////.")));
+    assert_true(!strPathContainsDotElements(checkedStr("")));
+    assert_true(strPathContainsDotElements(checkedStr(".")));
+    assert_true(strPathContainsDotElements(checkedStr("..")));
+    assert_true(!strPathContainsDotElements(checkedStr("...")));
+    assert_true(!strPathContainsDotElements(checkedStr("....")));
+    assert_true(strPathContainsDotElements(checkedStr("/.")));
+    assert_true(strPathContainsDotElements(checkedStr("/..")));
+    assert_true(!strPathContainsDotElements(checkedStr("/...")));
+    assert_true(!strPathContainsDotElements(checkedStr("/....")));
+    assert_true(strPathContainsDotElements(checkedStr("./")));
+    assert_true(strPathContainsDotElements(checkedStr("../")));
+    assert_true(!strPathContainsDotElements(checkedStr(".../")));
+    assert_true(!strPathContainsDotElements(checkedStr("..../")));
+    assert_true(strPathContainsDotElements(checkedStr("/./")));
+    assert_true(strPathContainsDotElements(checkedStr("/../")));
+    assert_true(!strPathContainsDotElements(checkedStr("/.../")));
+    assert_true(!strPathContainsDotElements(checkedStr("/..../")));
+    assert_true(!strPathContainsDotElements(checkedStr("//.")));
+    assert_true(!strPathContainsDotElements(checkedStr("//..")));
+    assert_true(!strPathContainsDotElements(checkedStr("//...")));
+    assert_true(!strPathContainsDotElements(checkedStr("//....")));
+    assert_true(strPathContainsDotElements(checkedStr(".//")));
+    assert_true(strPathContainsDotElements(checkedStr("..//")));
+    assert_true(!strPathContainsDotElements(checkedStr("...//")));
+    assert_true(!strPathContainsDotElements(checkedStr("....//")));
+    assert_true(!strPathContainsDotElements(checkedStr("//.//")));
+    assert_true(!strPathContainsDotElements(checkedStr("//..//")));
+    assert_true(!strPathContainsDotElements(checkedStr("//...//")));
+    assert_true(!strPathContainsDotElements(checkedStr("//....//")));
+    assert_true(!strPathContainsDotElements(checkedStr("///.")));
+    assert_true(!strPathContainsDotElements(checkedStr("///..")));
+    assert_true(!strPathContainsDotElements(checkedStr("///...")));
+    assert_true(!strPathContainsDotElements(checkedStr("///....")));
+    assert_true(strPathContainsDotElements(checkedStr(".///")));
+    assert_true(strPathContainsDotElements(checkedStr("..///")));
+    assert_true(!strPathContainsDotElements(checkedStr("...///")));
+    assert_true(!strPathContainsDotElements(checkedStr("....///")));
+    assert_true(!strPathContainsDotElements(checkedStr("///.///")));
+    assert_true(!strPathContainsDotElements(checkedStr("///..///")));
+    assert_true(!strPathContainsDotElements(checkedStr("///...///")));
+    assert_true(!strPathContainsDotElements(checkedStr("///....///")));
+    assert_true(!strPathContainsDotElements(checkedStr("/home/foo/hidden/bar")));
+    assert_true(!strPathContainsDotElements(checkedStr("/home/foo/.hidden/bar")));
+    assert_true(!strPathContainsDotElements(checkedStr("/home/foo/..hidden/bar")));
+    assert_true(!strPathContainsDotElements(checkedStr("/home/foo/...hidden/bar")));
+    assert_true(!strPathContainsDotElements(checkedStr("/home/foo/hidden./bar")));
+    assert_true(!strPathContainsDotElements(checkedStr("/home/foo/hidden../bar")));
+    assert_true(!strPathContainsDotElements(checkedStr("/home/foo/hidden.../bar")));
+    assert_true(strPathContainsDotElements(checkedStr("./home/foo/")));
+    assert_true(strPathContainsDotElements(checkedStr("../home/foo/")));
+    assert_true(!strPathContainsDotElements(checkedStr(".../home/foo/")));
+    assert_true(!strPathContainsDotElements(checkedStr("..../home/foo/")));
+    assert_true(strPathContainsDotElements(checkedStr("/home/foo/.")));
+    assert_true(strPathContainsDotElements(checkedStr("/home/foo/..")));
+    assert_true(strPathContainsDotElements(checkedStr("home/foo/.")));
+    assert_true(strPathContainsDotElements(checkedStr("home/foo/..")));
+    assert_true(!strPathContainsDotElements(checkedStr("/home/foo.")));
+    assert_true(!strPathContainsDotElements(checkedStr("/home/foo..")));
+    assert_true(!strPathContainsDotElements(checkedStr("home/foo.")));
+    assert_true(!strPathContainsDotElements(checkedStr("home/foo..")));
+    assert_true(!strPathContainsDotElements(checkedStr("home/foo...")));
+    assert_true(!strPathContainsDotElements(checkedStr("/home/.foo")));
+    assert_true(!strPathContainsDotElements(checkedStr("/home/..foo")));
+    assert_true(!strPathContainsDotElements(checkedStr("home/.foo")));
+    assert_true(!strPathContainsDotElements(checkedStr("home/..foo")));
+    assert_true(!strPathContainsDotElements(checkedStr("home/...foo")));
+    assert_true(strPathContainsDotElements(checkedStr("home/./foo")));
+    assert_true(strPathContainsDotElements(checkedStr("home/../foo")));
+    assert_true(strPathContainsDotElements(checkedStr("/home/./foo")));
+    assert_true(strPathContainsDotElements(checkedStr("/home/../foo")));
+    assert_true(strPathContainsDotElements(checkedStr("home/./foo/")));
+    assert_true(strPathContainsDotElements(checkedStr("home/../foo/")));
+    assert_true(strPathContainsDotElements(checkedStr("/home/./foo/")));
+    assert_true(strPathContainsDotElements(checkedStr("/home/../foo/")));
+    assert_true(!strPathContainsDotElements(checkedStr("home//./foo/")));
+    assert_true(!strPathContainsDotElements(checkedStr("/home///./foo/")));
+    assert_true(!strPathContainsDotElements(checkedStr("/home////./foo/")));
+    assert_true(strPathContainsDotElements(checkedStr("/home////./foo/.")));
+    assert_true(strPathContainsDotElements(checkedStr("/home/.///./foo/")));
+    assert_true(strPathContainsDotElements(checkedStr("/home/..//foo/")));
+    assert_true(!strPathContainsDotElements(checkedStr(".home/foo/bar")));
+    assert_true(!strPathContainsDotElements(checkedStr("..home/foo/bar")));
+    assert_true(!strPathContainsDotElements(checkedStr("...home/foo/bar")));
+    assert_true(strPathContainsDotElements(checkedStr("/home/foo////////bar/.")));
+    assert_true(strPathContainsDotElements(checkedStr("/home/foo////////bar/..")));
+    assert_true(!strPathContainsDotElements(checkedStr("/home/foo////.////bar////")));
+    assert_true(!strPathContainsDotElements(checkedStr("/home/foo////..////bar////")));
+    assert_true(!strPathContainsDotElements(checkedStr("/home/foo////...////bar////")));
+    assert_true(!strPathContainsDotElements(checkedStr("/home/foo////////bar")));
+    assert_true(!strPathContainsDotElements(checkedStr("/home/foo////////bar/")));
+    assert_true(!strPathContainsDotElements(checkedStr("/home/f/o//////bar////")));
+    assert_true(!strPathContainsDotElements(checkedStr("/home/foo////////bar////")));
+    assert_true(!strPathContainsDotElements(checkedStr("/home/foo////......////bar////")));
+    assert_true(!strPathContainsDotElements(checkedStr("///////////")));
+    assert_true(strPathContainsDotElements(checkedStr(".///////////")));
+    assert_true(strPathContainsDotElements(checkedStr("..///////////")));
+    assert_true(!strPathContainsDotElements(checkedStr("...///////////")));
+    assert_true(strPathContainsDotElements(checkedStr(".../////./../////")));
+    assert_true(strPathContainsDotElements(checkedStr(".../////x/../////")));
+    assert_true(strPathContainsDotElements(checkedStr(".//////./////")));
+    assert_true(strPathContainsDotElements(checkedStr(".//////../////")));
+    assert_true(strPathContainsDotElements(checkedStr("../////.//////")));
+    assert_true(strPathContainsDotElements(checkedStr(".//////../////..")));
+    assert_true(strPathContainsDotElements(checkedStr("../////..//////.")));
   }
   testGroupEnd();
 

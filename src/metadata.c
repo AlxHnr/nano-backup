@@ -267,7 +267,7 @@ static PathHistory *readPathHistory(const FileContent content,
 
     buffer[target_length] = '\0';
 
-    strSet(&point->state.metadata.symlink_target, strWrap(buffer));
+    strSet(&point->state.metadata.symlink_target, str(buffer));
   }
   else if(point->state.type == PST_directory)
   {
@@ -451,7 +451,7 @@ static PathNode *readPathSubnodes(const FileContent content,
     }
 
     StringView full_path = strLegacyAppendPath(
-      parent_node == NULL ? strWrap("") : parent_node->path, name);
+      parent_node == NULL ? str("") : parent_node->path, name);
 
     strSet(&node->path, full_path);
 
@@ -601,7 +601,7 @@ void metadataWrite(Metadata *metadata, StringView repo_path,
                    StringView repo_metadata_path)
 {
   RepoWriter *writer =
-    repoWriterOpenRaw(repo_path, repo_tmp_file_path, strWrap("metadata"),
+    repoWriterOpenRaw(repo_path, repo_tmp_file_path, str("metadata"),
                       repo_metadata_path);
 
   /* Count referenced history points and update IDs. */

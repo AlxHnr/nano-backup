@@ -99,7 +99,7 @@ static SearchNode *newNode(StringTable *existing_nodes, StringView path,
     StringView copy = strLegacyCopy(expression);
     strSet(&node->name, copy);
 
-    node->regex = rpCompile(node->name, strWrap("config"), line_nr);
+    node->regex = rpCompile(node->name, str("config"), line_nr);
 
     parent_node->subnodes_contain_regex = true;
   }
@@ -168,7 +168,7 @@ SearchNode *searchTreeParse(StringView config)
 
   /* Initialize the root node of this tree. */
   SearchNode *root_node = mpAlloc(sizeof *root_node);
-  strSet(&root_node->name, strWrap("/"));
+  strSet(&root_node->name, str("/"));
 
   root_node->line_nr = 0;
   root_node->regex = NULL;
@@ -194,7 +194,7 @@ SearchNode *searchTreeParse(StringView config)
   StringTable *existing_nodes = strTableNew(existing_nodes_region);
 
   /* Associate an empty string with the root node. */
-  strTableMap(existing_nodes, strWrap(""), root_node);
+  strTableMap(existing_nodes, str(""), root_node);
 
   /* Parse the specified config file. */
   size_t line_nr = 1;
@@ -258,7 +258,7 @@ SearchNode *searchTreeParse(StringView config)
       strSet(&expression->expression, strLegacyCopy(line));
       expression->line_nr = line_nr;
       expression->regex =
-        rpCompile(expression->expression, strWrap("config"), line_nr);
+        rpCompile(expression->expression, str("config"), line_nr);
       expression->has_matched = false;
 
       RegexList **shared_expression_list = current_policy == BPOL_summarize

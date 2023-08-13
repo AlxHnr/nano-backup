@@ -14,14 +14,14 @@ static StringView tmp_file_path = { .content = "tmp/repo/tmp-file", .length = 17
 
 static void writeToFile(const char *path, const char *content)
 {
-  FileStream *writer = sFopenWrite(strWrap(path));
+  FileStream *writer = sFopenWrite(str(path));
   sFwrite(content, strlen(content), writer);
   sFclose(writer);
 }
 
 static void makeBackup(Metadata *metadata)
 {
-  SearchNode *search_tree = searchTreeLoad(strWrap("generated-config-files/integrity-test.txt"));
+  SearchNode *search_tree = searchTreeLoad(str("generated-config-files/integrity-test.txt"));
   initiateBackup(metadata, search_tree);
   finishBackup(metadata, repo_path, tmp_file_path);
   metadataWrite(metadata, repo_path, tmp_file_path, metadata_path);
@@ -31,7 +31,7 @@ int main(void)
 {
   testGroupStart("prepare backup repository");
   sMkdir(repo_path);
-  sMkdir(strWrap("tmp/files"));
+  sMkdir(str("tmp/files"));
   writeToFile("tmp/files/empty-file.txt", "");
   writeToFile("tmp/files/Another File.txt", "content of another file");
   writeToFile("tmp/files/extra-file.txt", "this is just an extra file created for testing");
@@ -50,7 +50,7 @@ int main(void)
 
   writeToFile("tmp/files/empty-file.txt", "xyz test test test test test 1234567890");
   writeToFile("tmp/files/Another File.txt", "");
-  sRemove(strWrap("tmp/files/smaller file"));
+  sRemove(str("tmp/files/smaller file"));
   writeToFile("tmp/files/newly-created-file.txt", "This is some test content of a new file.");
   writeToFile("tmp/files/additional-file-01", "a b c d e f g h i j 01213131231");
   writeToFile("tmp/files/additional-file-02", "This is some test content of a new file.");
@@ -77,15 +77,15 @@ int main(void)
   /* tmp/files/unchanged extra file: overwrite content with different size. */
   writeToFile("tmp/repo/d/b2/4bcdd36e05535b459499592289600e8baf013x32x0", "content with different size here");
   /* tmp/files/empty-file.txt: delete history state. */
-  sRemove(strWrap("tmp/repo/8/d1/1e56f239ac968dfa0f587bb357cde360c7137x27x0"));
+  sRemove(str("tmp/repo/8/d1/1e56f239ac968dfa0f587bb357cde360c7137x27x0"));
   /* tmp/files/smaller file: modify history state. */
   writeToFile("tmp/repo/3/62/c96d3be9b03223ed9507e4fabee4a424bc7bbx24x0", "string modified and is the same size");
   /* tmp/files/Another File.txt: modify deduplicated history state. */
   writeToFile("tmp/repo/3/9a/fc73eccf34f7cf5ff3fd564910f294610bdb3x17x0", "broken content 123412341234");
   /* tmp/files/additional-file-03: replace with non-file (symlink with same st_size). */
-  sRemove(strWrap("tmp/repo/8/4b/6afb97314b5c2f7b8eefede7f7f9c1db0c84fx23x0"));
-  sSymlink(strWrap("nano-backup nano-backup nano-backup"),
-           strWrap("tmp/repo/8/4b/6afb97314b5c2f7b8eefede7f7f9c1db0c84fx23x0"));
+  sRemove(str("tmp/repo/8/4b/6afb97314b5c2f7b8eefede7f7f9c1db0c84fx23x0"));
+  sSymlink(str("nano-backup nano-backup nano-backup"),
+           str("tmp/repo/8/4b/6afb97314b5c2f7b8eefede7f7f9c1db0c84fx23x0"));
 
   size_t broken_path_node_count = 0;
   StringTable *broken_path_nodes = strTableNew(r);
@@ -94,18 +94,18 @@ int main(void)
   {
     assert_true(path_node->node->path.is_terminated);
     assert_true(strIsParentPath(cwd, path_node->node->path));
-    StringView unique_subpath = strWrap(&path_node->node->path.content[cwd.length + 1]);
+    StringView unique_subpath = str(&path_node->node->path.content[cwd.length + 1]);
     assert_true(strTableGet(broken_path_nodes, unique_subpath) == NULL);
     strTableMap(broken_path_nodes, unique_subpath, (void *)0x1);
     broken_path_node_count++;
   }
-  assert_true(strTableGet(broken_path_nodes, strWrap("tmp/files/empty-file.txt")) != NULL);
-  assert_true(strTableGet(broken_path_nodes, strWrap("tmp/files/Another File.txt")) != NULL);
-  assert_true(strTableGet(broken_path_nodes, strWrap("tmp/files/smaller file")) != NULL);
-  assert_true(strTableGet(broken_path_nodes, strWrap("tmp/files/unchanged extra file")) != NULL);
-  assert_true(strTableGet(broken_path_nodes, strWrap("tmp/files/21-bytes.txt")) != NULL);
-  assert_true(strTableGet(broken_path_nodes, strWrap("tmp/files/additional-file-03")) != NULL);
-  assert_true(strTableGet(broken_path_nodes, strWrap("tmp/files/breaks-via-deduplication.txt")) != NULL);
+  assert_true(strTableGet(broken_path_nodes, str("tmp/files/empty-file.txt")) != NULL);
+  assert_true(strTableGet(broken_path_nodes, str("tmp/files/Another File.txt")) != NULL);
+  assert_true(strTableGet(broken_path_nodes, str("tmp/files/smaller file")) != NULL);
+  assert_true(strTableGet(broken_path_nodes, str("tmp/files/unchanged extra file")) != NULL);
+  assert_true(strTableGet(broken_path_nodes, str("tmp/files/21-bytes.txt")) != NULL);
+  assert_true(strTableGet(broken_path_nodes, str("tmp/files/additional-file-03")) != NULL);
+  assert_true(strTableGet(broken_path_nodes, str("tmp/files/breaks-via-deduplication.txt")) != NULL);
   assert_true(broken_path_node_count == 7);
   testGroupEnd();
 }

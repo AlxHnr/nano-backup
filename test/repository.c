@@ -8,7 +8,7 @@
 #include "safe-wrappers.h"
 #include "test.h"
 
-#define TMP_FILE_PATH strWrap("tmp/tmp-file")
+#define TMP_FILE_PATH str("tmp/tmp-file")
 
 /** Tests repoRegularFileExists() by creating the specific file.
 
@@ -18,7 +18,7 @@
 static void testFileExists(StringView file_path, StringView subdir_path, StringView subsubdir_path,
                            const RegularFileInfo *info)
 {
-  StringView repo_path = strWrap("tmp");
+  StringView repo_path = str("tmp");
 
   assert_true(!sPathExists(subdir_path));
   assert_true(!repoRegularFileExists(repo_path, info));
@@ -136,7 +136,7 @@ static void testRegularFilePathBuilding(StringView path, const RegularFileInfo *
 
 int main(void)
 {
-  StringView info_1_path = strWrap("tmp/0/70/a0d101316191c1f2225282b2e3134373a3d40x8bx18");
+  StringView info_1_path = str("tmp/0/70/a0d101316191c1f2225282b2e3134373a3d40x8bx18");
   const RegularFileInfo info_1 =
   {
     .size = 139, .slot = 24,
@@ -147,7 +147,7 @@ int main(void)
     },
   };
 
-  StringView info_2_path = strWrap("tmp/2/15/14d1d49151941393d2d251109552931350d45x21e98xff");
+  StringView info_2_path = str("tmp/2/15/14d1d49151941393d2d251109552931350d45x21e98xff");
   const RegularFileInfo info_2 =
   {
     .size = 138904, .slot = 255,
@@ -158,7 +158,7 @@ int main(void)
     },
   };
 
-  StringView info_3_path = strWrap("tmp/4/b5/f2b134f473b1f2757333f17531b23372f435bxffffffffffffffffx0");
+  StringView info_3_path = str("tmp/4/b5/f2b134f473b1f2757333f17531b23372f435bxffffffffffffffffx0");
   const RegularFileInfo info_3 =
   {
     .size = 18446744073709551615UL, .slot = 0,
@@ -169,7 +169,7 @@ int main(void)
     },
   };
 
-  StringView info_4_path = strWrap("tmp/0/00/000000000112233445566778899aabbccddeex0x27");
+  StringView info_4_path = str("tmp/0/00/000000000112233445566778899aabbccddeex0x27");
   const RegularFileInfo info_4 =
   {
     .size = 0, .slot = 39,
@@ -180,7 +180,7 @@ int main(void)
     },
   };
 
-  StringView info_5_path = strWrap("tmp/0/fb/a0d101316191c1f2225282b2e3134373a3d40x46x0");
+  StringView info_5_path = str("tmp/0/fb/a0d101316191c1f2225282b2e3134373a3d40x46x0");
   const RegularFileInfo info_5 =
   {
     .size = 70, .slot = 0,
@@ -191,7 +191,7 @@ int main(void)
     },
   };
 
-  StringView info_6_path = strWrap("tmp/0/fb/d28fb2948efac8b2c25282b2e3134373a3d40x9fc4x11");
+  StringView info_6_path = str("tmp/0/fb/d28fb2948efac8b2c25282b2e3134373a3d40x9fc4x11");
   const RegularFileInfo info_6 =
   {
     .size = 40900, .slot = 17,
@@ -203,11 +203,11 @@ int main(void)
   };
 
   testGroupStart("repoRegularFileExists()");
-  assert_true(!repoRegularFileExists(strWrap("non-existing-path"), &info_1));
-  testFileExists(info_1_path, strWrap("tmp/0"), strWrap("tmp/0/70"), &info_1);
-  testFileExists(info_2_path, strWrap("tmp/2"), strWrap("tmp/2/15"), &info_2);
-  testFileExists(info_3_path, strWrap("tmp/4"), strWrap("tmp/4/b5"), &info_3);
-  testFileExists(info_4_path, strWrap("tmp/0"), strWrap("tmp/0/00"), &info_4);
+  assert_true(!repoRegularFileExists(str("non-existing-path"), &info_1));
+  testFileExists(info_1_path, str("tmp/0"), str("tmp/0/70"), &info_1);
+  testFileExists(info_2_path, str("tmp/2"), str("tmp/2/15"), &info_2);
+  testFileExists(info_3_path, str("tmp/4"), str("tmp/4/b5"), &info_3);
+  testFileExists(info_4_path, str("tmp/0"), str("tmp/0/00"), &info_4);
   testGroupEnd();
 
   testGroupStart("repoBuildRegularFilePath()");
@@ -220,26 +220,25 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("write regular files to repository");
-  assert_error_errno(repoWriterOpenFile(strWrap("non-existing-directory"),
-                                        strWrap("non-existing-directory/tmp-file"), strWrap("foo"), &info_1),
-                     "failed to open \"non-existing-directory/tmp-file\" for writing", ENOENT);
   assert_error_errno(
-    repoWriterOpenFile(strWrap("example.txt"), strWrap("example.txt/tmp-file"), strWrap("foo"), &info_2),
-    "failed to open \"example.txt/tmp-file\" for writing", ENOTDIR);
+    repoWriterOpenFile(str("non-existing-directory"), str("non-existing-directory/tmp-file"), str("foo"), &info_1),
+    "failed to open \"non-existing-directory/tmp-file\" for writing", ENOENT);
+  assert_error_errno(repoWriterOpenFile(str("example.txt"), str("example.txt/tmp-file"), str("foo"), &info_2),
+                     "failed to open \"example.txt/tmp-file\" for writing", ENOTDIR);
 
   /* Write a new file without existing parent directories. */
-  assert_true(!sPathExists(strWrap("tmp/0")));
+  assert_true(!sPathExists(str("tmp/0")));
   assert_true(!sPathExists(TMP_FILE_PATH));
 
-  RepoWriter *writer = repoWriterOpenFile(strWrap("tmp"), TMP_FILE_PATH, strWrap("info_1"), &info_1);
+  RepoWriter *writer = repoWriterOpenFile(str("tmp"), TMP_FILE_PATH, str("info_1"), &info_1);
 
   assert_true(writer != NULL);
-  assert_true(!sPathExists(strWrap("tmp/0")));
+  assert_true(!sPathExists(str("tmp/0")));
   assert_true(sPathExists(TMP_FILE_PATH));
 
   writeTestFile(writer);
 
-  assert_true(!sPathExists(strWrap("tmp/0")));
+  assert_true(!sPathExists(str("tmp/0")));
   assert_true(sPathExists(TMP_FILE_PATH));
 
   repoWriterClose(writer);
@@ -249,21 +248,21 @@ int main(void)
   checkTestFile(info_1_path);
 
   /* Write a new file without the existing subdirectory. */
-  assert_true(sPathExists(strWrap("tmp/0")));
-  assert_true(!sPathExists(strWrap("tmp/0/fb")));
+  assert_true(sPathExists(str("tmp/0")));
+  assert_true(!sPathExists(str("tmp/0/fb")));
   assert_true(!sPathExists(TMP_FILE_PATH));
 
-  writer = repoWriterOpenFile(strWrap("tmp"), TMP_FILE_PATH, strWrap("info_5"), &info_5);
+  writer = repoWriterOpenFile(str("tmp"), TMP_FILE_PATH, str("info_5"), &info_5);
 
   assert_true(writer != NULL);
-  assert_true(sPathExists(strWrap("tmp/0")));
-  assert_true(!sPathExists(strWrap("tmp/0/fb")));
+  assert_true(sPathExists(str("tmp/0")));
+  assert_true(!sPathExists(str("tmp/0/fb")));
   assert_true(sPathExists(TMP_FILE_PATH));
 
   writeTestFile(writer);
 
-  assert_true(sPathExists(strWrap("tmp/0")));
-  assert_true(!sPathExists(strWrap("tmp/0/fb")));
+  assert_true(sPathExists(str("tmp/0")));
+  assert_true(!sPathExists(str("tmp/0/fb")));
   assert_true(sPathExists(TMP_FILE_PATH));
 
   repoWriterClose(writer);
@@ -273,20 +272,20 @@ int main(void)
   checkTestFile(info_5_path);
 
   /* Write a new file with existing parent directories. */
-  assert_true(sPathExists(strWrap("tmp/0/fb")));
+  assert_true(sPathExists(str("tmp/0/fb")));
   assert_true(!sPathExists(info_6_path));
   assert_true(!sPathExists(TMP_FILE_PATH));
 
-  writer = repoWriterOpenFile(strWrap("tmp"), TMP_FILE_PATH, strWrap("info_6"), &info_6);
+  writer = repoWriterOpenFile(str("tmp"), TMP_FILE_PATH, str("info_6"), &info_6);
 
   assert_true(writer != NULL);
-  assert_true(sPathExists(strWrap("tmp/0/fb")));
+  assert_true(sPathExists(str("tmp/0/fb")));
   assert_true(!sPathExists(info_6_path));
   assert_true(sPathExists(TMP_FILE_PATH));
 
   writeTestFile(writer);
 
-  assert_true(sPathExists(strWrap("tmp/0/fb")));
+  assert_true(sPathExists(str("tmp/0/fb")));
   assert_true(!sPathExists(info_6_path));
   assert_true(sPathExists(TMP_FILE_PATH));
 
@@ -298,59 +297,56 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("write to repository in raw mode");
-  assert_error_errno(repoWriterOpenRaw(strWrap("non-existing-directory"),
-                                       strWrap("non-existing-directory/tmp-file"), strWrap("foo"),
-                                       strWrap("tmp/foo")),
+  assert_error_errno(repoWriterOpenRaw(str("non-existing-directory"), str("non-existing-directory/tmp-file"),
+                                       str("foo"), str("tmp/foo")),
                      "failed to open \"non-existing-directory/tmp-file\" for writing", ENOENT);
   assert_error_errno(
-    repoWriterOpenRaw(strWrap("example.txt"), strWrap("example.txt/tmp-file"), strWrap("bar"), strWrap("tmp/bar")),
+    repoWriterOpenRaw(str("example.txt"), str("example.txt/tmp-file"), str("bar"), str("tmp/bar")),
     "failed to open \"example.txt/tmp-file\" for writing", ENOTDIR);
 
-  assert_true(!sPathExists(strWrap("some-file")));
+  assert_true(!sPathExists(str("some-file")));
   assert_true(!sPathExists(TMP_FILE_PATH));
 
-  writer = repoWriterOpenRaw(strWrap("tmp"), TMP_FILE_PATH, strWrap("some-file"), strWrap("tmp/some-file"));
+  writer = repoWriterOpenRaw(str("tmp"), TMP_FILE_PATH, str("some-file"), str("tmp/some-file"));
 
   assert_true(writer != NULL);
-  assert_true(!sPathExists(strWrap("tmp/some-file")));
+  assert_true(!sPathExists(str("tmp/some-file")));
   assert_true(sPathExists(TMP_FILE_PATH));
 
   writeTestFile(writer);
 
-  assert_true(!sPathExists(strWrap("tmp/some-file")));
+  assert_true(!sPathExists(str("tmp/some-file")));
   assert_true(sPathExists(TMP_FILE_PATH));
 
   repoWriterClose(writer);
 
-  assert_true(sPathExists(strWrap("tmp/some-file")));
+  assert_true(sPathExists(str("tmp/some-file")));
   assert_true(!sPathExists(TMP_FILE_PATH));
-  checkTestFile(strWrap("tmp/some-file"));
+  checkTestFile(str("tmp/some-file"));
   testGroupEnd();
 
   testGroupStart("safe overwriting");
   assert_true(!sPathExists(TMP_FILE_PATH));
   assert_true(sPathExists(info_1_path));
-  testSafeOverwriting(repoWriterOpenFile(strWrap("tmp"), TMP_FILE_PATH, strWrap("info_1"), &info_1), info_1_path);
+  testSafeOverwriting(repoWriterOpenFile(str("tmp"), TMP_FILE_PATH, str("info_1"), &info_1), info_1_path);
 
   assert_true(!sPathExists(TMP_FILE_PATH));
-  assert_true(sPathExists(strWrap("tmp/some-file")));
-  testSafeOverwriting(
-    repoWriterOpenRaw(strWrap("tmp"), TMP_FILE_PATH, strWrap("some-file"), strWrap("tmp/some-file")),
-    strWrap("tmp/some-file"));
+  assert_true(sPathExists(str("tmp/some-file")));
+  testSafeOverwriting(repoWriterOpenRaw(str("tmp"), TMP_FILE_PATH, str("some-file"), str("tmp/some-file")),
+                      str("tmp/some-file"));
   testGroupEnd();
 
   testGroupStart("behaviour with existing tmp-file");
   sRename(info_1_path, TMP_FILE_PATH);
   assert_true(sStat(TMP_FILE_PATH).st_size == 15);
-  assert_true(!sPathExists(strWrap("tmp/2")));
-  testWithExistingTmpFile(repoWriterOpenFile(strWrap("tmp"), TMP_FILE_PATH, strWrap("info_2"), &info_2),
-                          info_2_path);
+  assert_true(!sPathExists(str("tmp/2")));
+  testWithExistingTmpFile(repoWriterOpenFile(str("tmp"), TMP_FILE_PATH, str("info_2"), &info_2), info_2_path);
 
-  sRename(strWrap("tmp/some-file"), TMP_FILE_PATH);
+  sRename(str("tmp/some-file"), TMP_FILE_PATH);
   assert_true(sStat(TMP_FILE_PATH).st_size == 15);
   testWithExistingTmpFile(
-    repoWriterOpenRaw(strWrap("tmp"), TMP_FILE_PATH, strWrap("another-file"), strWrap("tmp/another-file")),
-    strWrap("tmp/another-file"));
+    repoWriterOpenRaw(str("tmp"), TMP_FILE_PATH, str("another-file"), str("tmp/another-file")),
+    str("tmp/another-file"));
   testGroupEnd();
 
   testGroupStart("overwriting tmp-file with itself");
@@ -360,14 +356,14 @@ int main(void)
 
   checkFilesContent(TMP_FILE_PATH, "-include build/dependencies.makefile\n");
 
-  writer = repoWriterOpenRaw(strWrap("tmp"), TMP_FILE_PATH, TMP_FILE_PATH, TMP_FILE_PATH);
+  writer = repoWriterOpenRaw(str("tmp"), TMP_FILE_PATH, TMP_FILE_PATH, TMP_FILE_PATH);
   assert_true(writer != NULL);
   repoWriterWrite("nano-backup backups files", 25, writer);
   repoWriterClose(writer);
 
   checkFilesContent(TMP_FILE_PATH, "nano-backup backups files");
 
-  writer = repoWriterOpenRaw(strWrap("tmp"), TMP_FILE_PATH, TMP_FILE_PATH, TMP_FILE_PATH);
+  writer = repoWriterOpenRaw(str("tmp"), TMP_FILE_PATH, TMP_FILE_PATH, TMP_FILE_PATH);
   assert_true(writer != NULL);
   repoWriterWrite("FOO BAR 321", 11, writer);
   repoWriterClose(writer);
@@ -376,21 +372,20 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("overwrite with empty file");
-  repoWriterClose(repoWriterOpenFile(strWrap("tmp"), TMP_FILE_PATH, strWrap("info_2"), &info_2));
+  repoWriterClose(repoWriterOpenFile(str("tmp"), TMP_FILE_PATH, str("info_2"), &info_2));
   assert_true(!sPathExists(TMP_FILE_PATH));
   assert_true(sStat(info_2_path).st_size == 0);
 
-  repoWriterClose(
-    repoWriterOpenRaw(strWrap("tmp"), TMP_FILE_PATH, strWrap("another-file"), strWrap("tmp/another-file")));
+  repoWriterClose(repoWriterOpenRaw(str("tmp"), TMP_FILE_PATH, str("another-file"), str("tmp/another-file")));
   assert_true(!sPathExists(TMP_FILE_PATH));
-  assert_true(sStat(strWrap("tmp/another-file")).st_size == 0);
+  assert_true(sStat(str("tmp/another-file")).st_size == 0);
   testGroupEnd();
 
   testGroupStart("reading from repository");
-  assert_error_errno(repoReaderOpenFile(strWrap("tmp"), strWrap("info_1"), &info_1),
+  assert_error_errno(repoReaderOpenFile(str("tmp"), str("info_1"), &info_1),
                      "failed to open \"info_1\" in \"tmp\"", ENOENT);
   assert_true(mkdir(info_1_path.content, 0) == 0);
-  assert_error_errno(repoReaderOpenFile(strWrap("tmp"), strWrap("info_1"), &info_1),
+  assert_error_errno(repoReaderOpenFile(str("tmp"), str("info_1"), &info_1),
                      "failed to open \"info_1\" in \"tmp\"", EACCES);
   assert_true(rmdir(info_1_path.content) == 0);
 
@@ -398,7 +393,7 @@ int main(void)
   sFwrite("This is an example text.", 24, stream);
   sFclose(stream);
 
-  RepoReader *reader = repoReaderOpenFile(strWrap("tmp"), strWrap("info_1"), &info_1);
+  RepoReader *reader = repoReaderOpenFile(str("tmp"), str("info_1"), &info_1);
   assert_true(reader != NULL);
 
   char buffer[25] = { 0 };
@@ -410,13 +405,13 @@ int main(void)
   assert_true(strcmp(buffer, "mple text.") == 0);
   repoReaderClose(reader);
 
-  reader = repoReaderOpenFile(strWrap("tmp"), strWrap("info_1"), &info_1);
+  reader = repoReaderOpenFile(str("tmp"), str("info_1"), &info_1);
   assert_true(reader != NULL);
 
   assert_error(repoReaderRead(buffer, 25, reader),
                "reading \"info_1\" from \"tmp\": reached end of file unexpectedly");
 
-  reader = repoReaderOpenFile(strWrap("tmp"), strWrap("info_1"), &info_1);
+  reader = repoReaderOpenFile(str("tmp"), str("info_1"), &info_1);
   assert_true(reader != NULL);
 
   memset(buffer, 0, sizeof(buffer));
@@ -432,10 +427,10 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("Locking repository");
-  assert_error_errno(repoLockUntilExit(strWrap("tmp/non/existing/path")),
+  assert_error_errno(repoLockUntilExit(str("tmp/non/existing/path")),
                      "failed to create lockfile: \"tmp/non/existing/path/lockfile\"", ENOENT);
 
-  repoLockUntilExit(strWrap("tmp"));
-  assert_true(sPathExists(strWrap("tmp/lockfile")));
+  repoLockUntilExit(str("tmp"));
+  assert_true(sPathExists(str("tmp/lockfile")));
   testGroupEnd();
 }

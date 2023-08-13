@@ -151,8 +151,8 @@ static SearchResult buildSearchResult(const SearchIterator *iterator,
                                       const BackupPolicy policy)
 {
   const struct stat stats = node != NULL && node->subnodes != NULL
-    ? sStat(strWrap(iterator->buffer.str))
-    : sLStat(strWrap(iterator->buffer.str));
+    ? sStat(str(iterator->buffer.str))
+    : sLStat(str(iterator->buffer.str));
 
   return (SearchResult){
     .type = S_ISREG(stats.st_mode) ? SRT_regular_file
@@ -193,7 +193,7 @@ static void recursionStepRaw(SearchIterator *iterator, SearchNode *node,
   {
     iterator->state.is_dir_search = true;
     iterator->state.access.search.dir =
-      sOpenDir(strWrap(iterator->buffer.str));
+      sOpenDir(str(iterator->buffer.str));
     iterator->state.access.search.subnodes = node ? node->subnodes : NULL;
     iterator->state.access.search.fallback_policy = policy;
   }
@@ -293,18 +293,18 @@ static bool nodeMatches(const SearchNode *node, StringView string)
 */
 static SearchResult finishSearchStep(SearchIterator *iterator)
 {
-  const struct dirent *dir_entry = sReadDir(
-    iterator->state.access.search.dir, strWrap(iterator->buffer.str));
+  const struct dirent *dir_entry =
+    sReadDir(iterator->state.access.search.dir, str(iterator->buffer.str));
 
   if(dir_entry == NULL)
   {
     sCloseDir(iterator->state.access.search.dir,
-              strWrap(iterator->buffer.str));
+              str(iterator->buffer.str));
     return finishDirectory(iterator);
   }
 
   /* Create new path for matching. */
-  StringView dir_entry_name = strWrap(dir_entry->d_name);
+  StringView dir_entry_name = str(dir_entry->d_name);
   setPathToFile(iterator, dir_entry_name);
 
   /* Match subnodes against dir_entry. */
@@ -375,7 +375,7 @@ static SearchResult finishCurrentNode(SearchIterator *iterator)
 
   setPathToFile(iterator, node->name);
 
-  if(sPathExists(strWrap(iterator->buffer.str)))
+  if(sPathExists(str(iterator->buffer.str)))
   {
     return finishNodeStep(iterator, node, node->policy);
   }

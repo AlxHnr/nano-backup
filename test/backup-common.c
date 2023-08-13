@@ -76,33 +76,33 @@ PathNode *findCwdNode(Metadata *metadata, StringView cwd, const BackupHint hint)
 PathNode *findSubnode(PathNode *node, const char *subnode_name, const BackupHint hint, const BackupPolicy policy,
                       const size_t requested_history_length, const size_t requested_subnode_count)
 {
-  StringView subnode_path = strLegacyAppendPath(node->path, strWrap(subnode_name));
+  StringView subnode_path = strLegacyAppendPath(node->path, str(subnode_name));
   return findPathNode(node->subnodes, subnode_path.content, hint, policy, requested_history_length,
                       requested_subnode_count);
 }
 
 time_t getParentTime(const char *path)
 {
-  return sStat(strLegacyCopy(strSplitPath(strWrap(path)).head)).st_mtime;
+  return sStat(strLegacyCopy(strSplitPath(str(path)).head)).st_mtime;
 }
 
 void restoreParentTime(const char *path, const time_t time)
 {
-  StringView parent_path = strLegacyCopy(strSplitPath(strWrap(path)).head);
+  StringView parent_path = strLegacyCopy(strSplitPath(str(path)).head);
   sUtime(parent_path, time);
 }
 
 void makeDir(const char *path)
 {
   const time_t parent_time = getParentTime(path);
-  sMkdir(strWrap(path));
+  sMkdir(str(path));
   restoreParentTime(path, parent_time);
 }
 
 void makeSymlink(const char *target, const char *linkpath)
 {
   const time_t parent_time = getParentTime(linkpath);
-  sSymlink(strWrap(target), strWrap(linkpath));
+  sSymlink(str(target), str(linkpath));
   restoreParentTime(linkpath, parent_time);
 }
 
@@ -115,13 +115,13 @@ void makeSymlink(const char *target, const char *linkpath)
 */
 void generateFile(const char *path, const char *content, const size_t repetitions)
 {
-  if(sPathExists(strWrap(path)))
+  if(sPathExists(str(path)))
   {
     die("failed to generate file: Already existing: \"%s\"", path);
   }
 
   const time_t parent_time = getParentTime(path);
-  FileStream *stream = sFopenWrite(strWrap(path));
+  FileStream *stream = sFopenWrite(str(path));
   const size_t content_length = strlen(content);
 
   for(size_t index = 0; index < repetitions; index++)
@@ -158,16 +158,16 @@ void generateCollidingFiles(const uint8_t *hash, const size_t size, const size_t
   pathBuilderAppend(&path_buffer, 8, path_in_repo);
 
   path_buffer[13] = '\0';
-  if(!sPathExists(strWrap(path_buffer)))
+  if(!sPathExists(str(path_buffer)))
   {
     path_buffer[10] = '\0';
-    if(!sPathExists(strWrap(path_buffer)))
+    if(!sPathExists(str(path_buffer)))
     {
-      sMkdir(strWrap(path_buffer));
+      sMkdir(str(path_buffer));
     }
     path_buffer[10] = '/';
 
-    sMkdir(strWrap(path_buffer));
+    sMkdir(str(path_buffer));
   }
   path_buffer[13] = '/';
 
@@ -176,7 +176,7 @@ void generateCollidingFiles(const uint8_t *hash, const size_t size, const size_t
     info.slot = (uint8_t)slot;
     repoBuildRegularFilePath(&path_in_repo, &info);
     pathBuilderAppend(&path_buffer, 8, path_in_repo);
-    FileStream *stream = sFopenWrite(strWrap(path_buffer));
+    FileStream *stream = sFopenWrite(str(path_buffer));
 
     const uint8_t bytes_to_write[] = { info.slot, 0 };
     size_t bytes_left = size;
@@ -197,7 +197,7 @@ void generateCollidingFiles(const uint8_t *hash, const size_t size, const size_t
 void removePath(const char *path)
 {
   const time_t parent_time = getParentTime(path);
-  sRemove(strWrap(path));
+  sRemove(str(path));
   restoreParentTime(path, parent_time);
 }
 
@@ -232,10 +232,10 @@ void remakeSymlink(const char *new_target, const char *linkpath)
 
 void assertTmpIsCleared(void)
 {
-  sRemoveRecursively(strWrap("tmp"));
-  sMkdir(strWrap("tmp"));
-  sMkdir(strWrap("tmp/repo"));
-  sMkdir(strWrap("tmp/files"));
+  sRemoveRecursively(str("tmp"));
+  sMkdir(str("tmp"));
+  sMkdir(str("tmp/repo"));
+  sMkdir(str("tmp/files"));
 }
 
 /** Finds the first point in the nodes history, which is not
@@ -264,8 +264,8 @@ void restoreRegularFile(const char *path, const RegularFileInfo *info)
 {
   const time_t parent_time = getParentTime(path);
 
-  restoreFile(strWrap(path), info, strWrap("tmp/repo"));
-  sUtime(strWrap(path), info->modification_time);
+  restoreFile(str(path), info, str("tmp/repo"));
+  sUtime(str(path), info->modification_time);
 
   restoreParentTime(path, parent_time);
 }
@@ -469,14 +469,14 @@ void completeBackup(Metadata *metadata)
   phase_timestamp_array = sRealloc(phase_timestamp_array, sizeof *phase_timestamp_array * phases_completed);
 
   const time_t before_finishing = sTime();
-  finishBackup(metadata, strWrap("tmp/repo"), strWrap("tmp/repo/tmp-file"));
+  finishBackup(metadata, str("tmp/repo"), str("tmp/repo/tmp-file"));
   const time_t after_finishing = sTime();
 
   assert_true(metadata->current_backup.completion_time >= before_finishing);
   assert_true(metadata->current_backup.completion_time <= after_finishing);
   phase_timestamp_array[phase] = metadata->current_backup.completion_time;
 
-  metadataWrite(metadata, strWrap("tmp/repo"), strWrap("tmp/repo/tmp-file"), strWrap("tmp/repo/metadata"));
+  metadataWrite(metadata, str("tmp/repo"), str("tmp/repo/tmp-file"), str("tmp/repo/metadata"));
 }
 
 /** Returns the timestamp of the backup `index`. */

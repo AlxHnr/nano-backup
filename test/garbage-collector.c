@@ -7,37 +7,37 @@
 
 static void populateRepoWithDummyFiles(void)
 {
-  sMkdir(strWrap("tmp/repo/a"));
-  sMkdir(strWrap("tmp/repo/a/b"));
-  sMkdir(strWrap("tmp/repo/a/c"));
-  sMkdir(strWrap("tmp/repo/a/c/d"));
-  sMkdir(strWrap("tmp/repo/a/1"));
-  sMkdir(strWrap("tmp/repo/a/2"));
-  sMkdir(strWrap("tmp/repo/a/3"));
-  sMkdir(strWrap("tmp/repo/a/3/4"));
-  sMkdir(strWrap("tmp/repo/a/3/5"));
-  sMkdir(strWrap("tmp/repo/a/3/6"));
-  sFclose(sFopenWrite(strWrap("tmp/repo/a/b/foo")));
-  sFclose(sFopenWrite(strWrap("tmp/repo/a/c/bar")));
-  sFclose(sFopenWrite(strWrap("tmp/repo/a/c/d/backup")));
-  sFclose(sFopenWrite(strWrap("tmp/repo/a/3/nano")));
-  sFclose(sFopenWrite(strWrap("tmp/repo/a/3/5/this")));
-  sFclose(sFopenWrite(strWrap("tmp/repo/a/3/5/is")));
-  sFclose(sFopenWrite(strWrap("tmp/repo/a/3/5/a")));
-  sFclose(sFopenWrite(strWrap("tmp/repo/a/3/5/test")));
-  sSymlink(strWrap("../file.txt"), strWrap("tmp/repo/file.txt"));
-  sSymlink(strWrap("foo"), strWrap("tmp/repo/a/b/bar"));
-  sSymlink(strWrap("bar"), strWrap("tmp/repo/a/c/q"));
-  sSymlink(strWrap("../../../a"), strWrap("tmp/repo/a/3/6/link-1"));
-  sSymlink(strWrap("../../../../repo"), strWrap("tmp/repo/a/3/6/link-2"));
-  sSymlink(strWrap("../../../../file.txt"), strWrap("tmp/repo/a/3/6/link-3"));
-  sSymlink(strWrap("non-existing"), strWrap("tmp/repo/a/2/broken"));
+  sMkdir(str("tmp/repo/a"));
+  sMkdir(str("tmp/repo/a/b"));
+  sMkdir(str("tmp/repo/a/c"));
+  sMkdir(str("tmp/repo/a/c/d"));
+  sMkdir(str("tmp/repo/a/1"));
+  sMkdir(str("tmp/repo/a/2"));
+  sMkdir(str("tmp/repo/a/3"));
+  sMkdir(str("tmp/repo/a/3/4"));
+  sMkdir(str("tmp/repo/a/3/5"));
+  sMkdir(str("tmp/repo/a/3/6"));
+  sFclose(sFopenWrite(str("tmp/repo/a/b/foo")));
+  sFclose(sFopenWrite(str("tmp/repo/a/c/bar")));
+  sFclose(sFopenWrite(str("tmp/repo/a/c/d/backup")));
+  sFclose(sFopenWrite(str("tmp/repo/a/3/nano")));
+  sFclose(sFopenWrite(str("tmp/repo/a/3/5/this")));
+  sFclose(sFopenWrite(str("tmp/repo/a/3/5/is")));
+  sFclose(sFopenWrite(str("tmp/repo/a/3/5/a")));
+  sFclose(sFopenWrite(str("tmp/repo/a/3/5/test")));
+  sSymlink(str("../file.txt"), str("tmp/repo/file.txt"));
+  sSymlink(str("foo"), str("tmp/repo/a/b/bar"));
+  sSymlink(str("bar"), str("tmp/repo/a/c/q"));
+  sSymlink(str("../../../a"), str("tmp/repo/a/3/6/link-1"));
+  sSymlink(str("../../../../repo"), str("tmp/repo/a/3/6/link-2"));
+  sSymlink(str("../../../../file.txt"), str("tmp/repo/a/3/6/link-3"));
+  sSymlink(str("non-existing"), str("tmp/repo/a/2/broken"));
 }
 
 static void testCollectGarbage(const Metadata *metadata, const char *repo_path, const size_t count,
                                const uint64_t size)
 {
-  const GCStatistics stats = collectGarbage(metadata, strWrap(repo_path));
+  const GCStatistics stats = collectGarbage(metadata, str(repo_path));
 
   assert_true(stats.deleted_items_count == count);
   assert_true(stats.deleted_items_total_size == size);
@@ -46,54 +46,54 @@ static void testCollectGarbage(const Metadata *metadata, const char *repo_path, 
 int main(void)
 {
   testGroupStart("symlink handling");
-  sMkdir(strWrap("tmp/repo"));
-  sFclose(sFopenWrite(strWrap("tmp/file.txt")));
+  sMkdir(str("tmp/repo"));
+  sFclose(sFopenWrite(str("tmp/file.txt")));
   const Metadata *empty_metadata = metadataNew();
 
   /* Repository is simple directory. */
   populateRepoWithDummyFiles();
   testCollectGarbage(empty_metadata, "tmp/repo", 25, 0);
   assert_true(countItemsInDir("tmp/repo") == 0);
-  assert_true(sPathExists(strWrap("tmp/file.txt")));
+  assert_true(sPathExists(str("tmp/file.txt")));
 
   /* Repository is symlink to directory. */
   populateRepoWithDummyFiles();
-  sSymlink(strWrap("repo"), strWrap("tmp/link-to-repo"));
+  sSymlink(str("repo"), str("tmp/link-to-repo"));
   testCollectGarbage(empty_metadata, "tmp/link-to-repo", 25, 0);
   assert_true(countItemsInDir("tmp/repo") == 0);
-  assert_true(sPathExists(strWrap("tmp/link-to-repo")));
-  assert_true(sPathExists(strWrap("tmp/file.txt")));
+  assert_true(sPathExists(str("tmp/link-to-repo")));
+  assert_true(sPathExists(str("tmp/file.txt")));
 
   /* Repository is symlink to file. */
-  sRemove(strWrap("tmp/link-to-repo"));
-  sSymlink(strWrap("file.txt"), strWrap("tmp/link-to-repo"));
+  sRemove(str("tmp/link-to-repo"));
+  sSymlink(str("file.txt"), str("tmp/link-to-repo"));
   populateRepoWithDummyFiles();
   testCollectGarbage(empty_metadata, "tmp/link-to-repo", 0, 0);
   assert_true(countItemsInDir("tmp/repo") == 25);
-  assert_true(sPathExists(strWrap("tmp/link-to-repo")));
-  assert_true(sPathExists(strWrap("tmp/file.txt")));
+  assert_true(sPathExists(str("tmp/link-to-repo")));
+  assert_true(sPathExists(str("tmp/file.txt")));
 
   /* Repository is broken symlink. */
-  sRemove(strWrap("tmp/link-to-repo"));
-  sSymlink(strWrap("non-existing"), strWrap("tmp/link-to-repo"));
+  sRemove(str("tmp/link-to-repo"));
+  sSymlink(str("non-existing"), str("tmp/link-to-repo"));
 
-  assert_error_errno(collectGarbage(empty_metadata, strWrap("tmp/link-to-repo")),
+  assert_error_errno(collectGarbage(empty_metadata, str("tmp/link-to-repo")),
                      "failed to access \"tmp/link-to-repo\"", ENOENT);
 
   assert_true(countItemsInDir("tmp/repo") == 25);
-  assert_true(sPathExists(strWrap("tmp/link-to-repo")));
-  assert_true(sPathExists(strWrap("tmp/file.txt")));
-  sRemoveRecursively(strWrap("tmp/repo"));
+  assert_true(sPathExists(str("tmp/link-to-repo")));
+  assert_true(sPathExists(str("tmp/file.txt")));
+  sRemoveRecursively(str("tmp/repo"));
   testGroupEnd();
 
   testGroupStart("excluding internal files from deletion");
-  sMkdir(strWrap("tmp/repo"));
-  sFclose(sFopenWrite(strWrap("tmp/repo/config")));
-  sFclose(sFopenWrite(strWrap("tmp/repo/metadata")));
-  sFclose(sFopenWrite(strWrap("tmp/repo/lockfile")));
+  sMkdir(str("tmp/repo"));
+  sFclose(sFopenWrite(str("tmp/repo/config")));
+  sFclose(sFopenWrite(str("tmp/repo/metadata")));
+  sFclose(sFopenWrite(str("tmp/repo/lockfile")));
   testCollectGarbage(empty_metadata, "tmp/repo", 0, 0);
-  assert_true(sPathExists(strWrap("tmp/repo/config")));
-  assert_true(sPathExists(strWrap("tmp/repo/metadata")));
-  assert_true(sPathExists(strWrap("tmp/repo/lockfile")));
+  assert_true(sPathExists(str("tmp/repo/config")));
+  assert_true(sPathExists(str("tmp/repo/metadata")));
+  assert_true(sPathExists(str("tmp/repo/lockfile")));
   testGroupEnd();
 }

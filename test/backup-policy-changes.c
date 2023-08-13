@@ -90,7 +90,7 @@ static void policyChangeFromNoneInit(SearchNode *change_from_none_init)
   removePath("tmp/files/h");
 
   /* Initiate another backup. */
-  metadata = metadataLoad(strWrap("tmp/repo/metadata"));
+  metadata = metadataLoad(str("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 21);
   checkHistPoint(metadata, 0, 0, phase_timestamps(backup_counter() - 1), cwd_depth() + 21);
   initiateBackup(metadata, change_from_none_init);
@@ -111,7 +111,7 @@ static void policyChangeFromNoneInit(SearchNode *change_from_none_init)
 static void policyChangeFromNoneChange(SearchNode *change_from_none_final)
 {
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad(strWrap("tmp/repo/metadata"));
+  Metadata *metadata = metadataLoad(str("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 21);
   checkHistPoint(metadata, 0, 0, phase_timestamps(backup_counter() - 1), cwd_depth() + 5);
   checkHistPoint(metadata, 1, 1, phase_timestamps(backup_counter() - 2), 16);
@@ -186,7 +186,7 @@ static void policyChangeFromNoneChange(SearchNode *change_from_none_final)
 static void policyChangeFromNonePost(SearchNode *change_from_none_final)
 {
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad(strWrap("tmp/repo/metadata"));
+  Metadata *metadata = metadataLoad(str("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 19);
   checkHistPoint(metadata, 0, 0, phase_timestamps(backup_counter() - 1), cwd_depth() + 6);
   checkHistPoint(metadata, 1, 1, phase_timestamps(backup_counter() - 2), 3);
@@ -378,7 +378,7 @@ static void policyChangeFromCopyInit(SearchNode *change_from_copy_init)
   removePath("tmp/files/r");
 
   /* Initiate another backup. */
-  metadata = metadataLoad(strWrap("tmp/repo/metadata"));
+  metadata = metadataLoad(str("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 42);
   checkHistPoint(metadata, 0, 0, phase_timestamps(backup_counter() - 1), cwd_depth() + 42);
   initiateBackup(metadata, change_from_copy_init);
@@ -407,7 +407,7 @@ static void policyChangeFromCopyChange(SearchNode *change_from_copy_final)
   removePath("tmp/files/s");
 
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad(strWrap("tmp/repo/metadata"));
+  Metadata *metadata = metadataLoad(str("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 42);
   checkHistPoint(metadata, 0, 0, phase_timestamps(backup_counter() - 1), cwd_depth() + 2);
   checkHistPoint(metadata, 1, 1, phase_timestamps(backup_counter() - 2), 40);
@@ -542,7 +542,7 @@ static void policyChangeFromCopyChange(SearchNode *change_from_copy_final)
 static void policyChangeFromCopyPost(SearchNode *change_from_copy_final)
 {
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad(strWrap("tmp/repo/metadata"));
+  Metadata *metadata = metadataLoad(str("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 31);
   checkHistPoint(metadata, 0, 0, phase_timestamps(backup_counter() - 1), cwd_depth() + 9);
   checkHistPoint(metadata, 1, 1, phase_timestamps(backup_counter() - 3), 28);
@@ -736,7 +736,7 @@ static void policyChangeFromMirrorChange(SearchNode *change_from_mirror_final)
   removePath("tmp/files/j");
 
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad(strWrap("tmp/repo/metadata"));
+  Metadata *metadata = metadataLoad(str("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 26);
   checkHistPoint(metadata, 0, 0, phase_timestamps(backup_counter() - 1), cwd_depth() + 26);
   initiateBackup(metadata, change_from_mirror_final);
@@ -827,7 +827,7 @@ static void policyChangeFromMirrorChange(SearchNode *change_from_mirror_final)
 static void policyChangeFromMirrorPost(SearchNode *change_from_mirror_final)
 {
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad(strWrap("tmp/repo/metadata"));
+  Metadata *metadata = metadataLoad(str("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 23);
   checkHistPoint(metadata, 0, 0, phase_timestamps(backup_counter() - 1), cwd_depth() + 7);
   checkHistPoint(metadata, 1, 1, phase_timestamps(backup_counter() - 2), 21);
@@ -915,10 +915,10 @@ static void policyChangeFromTrackInit0(SearchNode *change_from_track_init)
   makeDir("tmp/files/d");
   makeDir("tmp/files/d/1");
   makeDir("tmp/files/f");
-  sUtime(strWrap("tmp/files/f"), 12);
+  sUtime(str("tmp/files/f"), 12);
   makeDir("tmp/files/g");
   makeDir("tmp/files/h");
-  sUtime(strWrap("tmp/files/h"), 9912);
+  sUtime(str("tmp/files/h"), 9912);
   makeDir("tmp/files/h/1");
   makeDir("tmp/files/h/5");
   makeDir("tmp/files/i");
@@ -937,7 +937,7 @@ static void policyChangeFromTrackInit0(SearchNode *change_from_track_init)
   generateFile("tmp/files/d/1/2", "NanoBackup", 1);
   generateFile("tmp/files/e", "nb repo/ gc", 1);
   generateFile("tmp/files/f/1", "nb backup/", 1);
-  sUtime(strWrap("tmp/files/f/1"), 19);
+  sUtime(str("tmp/files/f/1"), 19);
   generateFile("tmp/files/g/1", "", 0);
   generateFile("tmp/files/h/1/2", "__REMOVED__", 1);
   generateFile("tmp/files/i/1", "-file-", 1);
@@ -1064,20 +1064,20 @@ static void policyChangeFromTrackInit1(SearchNode *change_from_track_init)
   makeDir("tmp/files/h/1/2");
   makeDir("tmp/files/l/1");
   makeDir("tmp/files/p");
-  sUtime(strWrap("tmp/files/p"), 139);
+  sUtime(str("tmp/files/p"), 139);
   makeDir("tmp/files/p/1");
   generateFile("tmp/files/d", "?", 17);
   generateFile("tmp/files/e/1", "backup tool", 1);
   generateFile("tmp/files/e/2", "__BACKUP__TOOL__", 1);
   generateFile("tmp/files/h/1/2/3", "This is a file\n", 1);
   generateFile("tmp/files/o", "file content", 1);
-  sUtime(strWrap("tmp/files/o"), 567123);
+  sUtime(str("tmp/files/o"), 567123);
   makeSymlink("non-existing.txt", "tmp/files/p/1/2");
-  sUtime(strWrap("tmp/files/f"), 17288);
-  sUtime(strWrap("tmp/files/h"), 491212);
+  sUtime(str("tmp/files/f"), 17288);
+  sUtime(str("tmp/files/h"), 491212);
 
   /* Initiate backup. */
-  Metadata *metadata = metadataLoad(strWrap("tmp/repo/metadata"));
+  Metadata *metadata = metadataLoad(str("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 40);
   checkHistPoint(metadata, 0, 0, phase_timestamps(backup_counter() - 1), cwd_depth() + 40);
   initiateBackup(metadata, change_from_track_init);
@@ -1149,12 +1149,12 @@ static void policyChangeFromTrackInit2(SearchNode *change_from_track_init)
   generateFile("tmp/files/c", "generated file c", 1);
   generateFile("tmp/files/h", "_GENERATED_FILE_H_", 1);
   generateFile("tmp/files/o", "foo bar 123.", 1);
-  sUtime(strWrap("tmp/files/o"), 791);
+  sUtime(str("tmp/files/o"), 791);
   makeSymlink("../../tmp", "tmp/files/n");
-  sUtime(strWrap("tmp/files/p"), 140);
+  sUtime(str("tmp/files/p"), 140);
 
   /* Initiate backup. */
-  Metadata *metadata = metadataLoad(strWrap("tmp/repo/metadata"));
+  Metadata *metadata = metadataLoad(str("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 45);
   checkHistPoint(metadata, 0, 0, phase_timestamps(backup_counter() - 1), cwd_depth() + 31);
   checkHistPoint(metadata, 1, 1, phase_timestamps(backup_counter() - 2), 38);
@@ -1183,9 +1183,9 @@ static void policyChangeFromTrackInit3(SearchNode *change_from_track_init)
   removePath("tmp/files/h");
   makeDir("tmp/files/f");
   generateFile("tmp/files/f/1", "nb backup/", 1);
-  sUtime(strWrap("tmp/files/f/1"), 19);
+  sUtime(str("tmp/files/f/1"), 19);
 
-  Metadata *metadata = metadataLoad(strWrap("tmp/repo/metadata"));
+  Metadata *metadata = metadataLoad(str("tmp/repo/metadata"));
   initiateBackup(metadata, change_from_track_init);
   checkMetadata(metadata, 0, true);
   completeBackup(metadata);
@@ -1195,7 +1195,7 @@ static void policyChangeFromTrackInit3(SearchNode *change_from_track_init)
 /** Checks the metadata generated by the previous phases. */
 static void policyChangeFromTrackInitCheck(SearchNode *change_from_track_init)
 {
-  Metadata *metadata = metadataLoad(strWrap("tmp/repo/metadata"));
+  Metadata *metadata = metadataLoad(str("tmp/repo/metadata"));
   initiateBackup(metadata, change_from_track_init);
 
   checkMetadata(metadata, 0, true);
@@ -1386,7 +1386,7 @@ static void policyChangeFromTrackChange(SearchNode *change_from_track_final)
   removePath("tmp/files/m");
 
   /* Initialize and check backup. */
-  Metadata *metadata = metadataLoad(strWrap("tmp/repo/metadata"));
+  Metadata *metadata = metadataLoad(str("tmp/repo/metadata"));
   initiateBackup(metadata, change_from_track_final);
 
   checkMetadata(metadata, 0, true);
@@ -1547,7 +1547,7 @@ static void policyChangeFromTrackChange(SearchNode *change_from_track_final)
 static void policyChangeFromTrackPost(SearchNode *change_from_track_final)
 {
   /* Initialize and check backup. */
-  Metadata *metadata = metadataLoad(strWrap("tmp/repo/metadata"));
+  Metadata *metadata = metadataLoad(str("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 24);
   checkHistPoint(metadata, 0, 0, phase_timestamps(backup_counter() - 1), cwd_depth() + 3);
   checkHistPoint(metadata, 1, 1, phase_timestamps(backup_counter() - 3), 6);
@@ -1640,9 +1640,9 @@ int main(void)
 
   testGroupStart("policy change from none");
   SearchNode *change_from_none_init =
-    searchTreeLoad(strWrap("generated-config-files/policy-change-from-none-init.txt"));
+    searchTreeLoad(str("generated-config-files/policy-change-from-none-init.txt"));
   SearchNode *change_from_none_final =
-    searchTreeLoad(strWrap("generated-config-files/policy-change-from-none-final.txt"));
+    searchTreeLoad(str("generated-config-files/policy-change-from-none-final.txt"));
 
   policyChangeFromNoneInit(change_from_none_init);
   policyChangeFromNoneChange(change_from_none_final);
@@ -1651,9 +1651,9 @@ int main(void)
 
   testGroupStart("policy change from copy");
   SearchNode *change_from_copy_init =
-    searchTreeLoad(strWrap("generated-config-files/policy-change-from-copy-init.txt"));
+    searchTreeLoad(str("generated-config-files/policy-change-from-copy-init.txt"));
   SearchNode *change_from_copy_final =
-    searchTreeLoad(strWrap("generated-config-files/policy-change-from-copy-final.txt"));
+    searchTreeLoad(str("generated-config-files/policy-change-from-copy-final.txt"));
 
   policyChangeFromCopyInit(change_from_copy_init);
   policyChangeFromCopyChange(change_from_copy_final);
@@ -1662,9 +1662,9 @@ int main(void)
 
   testGroupStart("policy change from mirror");
   SearchNode *change_from_mirror_init =
-    searchTreeLoad(strWrap("generated-config-files/policy-change-from-mirror-init.txt"));
+    searchTreeLoad(str("generated-config-files/policy-change-from-mirror-init.txt"));
   SearchNode *change_from_mirror_final =
-    searchTreeLoad(strWrap("generated-config-files/policy-change-from-mirror-final.txt"));
+    searchTreeLoad(str("generated-config-files/policy-change-from-mirror-final.txt"));
 
   policyChangeFromMirrorInit(change_from_mirror_init);
   policyChangeFromMirrorChange(change_from_mirror_final);
@@ -1673,9 +1673,9 @@ int main(void)
 
   testGroupStart("policy change from track");
   SearchNode *change_from_track_init =
-    searchTreeLoad(strWrap("generated-config-files/policy-change-from-track-init.txt"));
+    searchTreeLoad(str("generated-config-files/policy-change-from-track-init.txt"));
   SearchNode *change_from_track_final =
-    searchTreeLoad(strWrap("generated-config-files/policy-change-from-track-final.txt"));
+    searchTreeLoad(str("generated-config-files/policy-change-from-track-final.txt"));
 
   policyChangeFromTrackInit0(change_from_track_init);
   policyChangeFromTrackInit1(change_from_track_init);

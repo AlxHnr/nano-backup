@@ -458,14 +458,14 @@ void sRemove(StringView path)
 */
 static void removeRecursively(char **buffer, const size_t length)
 {
-  const struct stat stats = sLStat(strWrap(*buffer));
+  const struct stat stats = sLStat(str(*buffer));
 
   if(S_ISDIR(stats.st_mode))
   {
-    DIR *dir = sOpenDir(strWrap(*buffer));
+    DIR *dir = sOpenDir(str(*buffer));
 
-    for(const struct dirent *dir_entry = sReadDir(dir, strWrap(*buffer));
-        dir_entry != NULL; dir_entry = sReadDir(dir, strWrap(*buffer)))
+    for(const struct dirent *dir_entry = sReadDir(dir, str(*buffer));
+        dir_entry != NULL; dir_entry = sReadDir(dir, str(*buffer)))
     {
       const size_t sub_path_length =
         pathBuilderAppend(buffer, length, dir_entry->d_name);
@@ -475,10 +475,10 @@ static void removeRecursively(char **buffer, const size_t length)
       (*buffer)[length] = '\0';
     }
 
-    sCloseDir(dir, strWrap(*buffer));
+    sCloseDir(dir, str(*buffer));
   }
 
-  sRemove(strWrap(*buffer));
+  sRemove(str(*buffer));
 }
 
 /** Recursive version of sRemove(). */

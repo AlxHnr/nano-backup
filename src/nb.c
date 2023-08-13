@@ -120,11 +120,11 @@ static void backup(StringView repo_arg)
 {
   StringView repo_path = strRemoveTrailingSlashes(repo_arg);
   StringView config_path =
-    strLegacyAppendPath(repo_path, strWrap("config"));
+    strLegacyAppendPath(repo_path, str("config"));
   StringView metadata_path =
-    strLegacyAppendPath(repo_path, strWrap("metadata"));
+    strLegacyAppendPath(repo_path, str("metadata"));
   StringView tmp_file_path =
-    strLegacyAppendPath(repo_path, strWrap("tmp-file"));
+    strLegacyAppendPath(repo_path, str("tmp-file"));
 
   if(!sPathExists(config_path))
   {
@@ -177,7 +177,7 @@ static Metadata *metadataLoadFromRepo(StringView repo_arg)
 {
   StringView repo_path = strRemoveTrailingSlashes(repo_arg);
   StringView metadata_path =
-    strLegacyAppendPath(repo_path, strWrap("metadata"));
+    strLegacyAppendPath(repo_path, str("metadata"));
 
   if(!sPathExists(metadata_path))
   {
@@ -198,7 +198,7 @@ static StringView buildFullPath(StringView path)
   {
     char *cwd = sGetCwd();
     StringView full_path =
-      strLegacyAppendPath(strRemoveTrailingSlashes(strWrap(cwd)), path);
+      strLegacyAppendPath(strRemoveTrailingSlashes(str(cwd)), path);
     free(cwd);
 
     return full_path;
@@ -232,7 +232,7 @@ int main(const int arg_count, const char **arg_list)
     die("no repository specified");
   }
 
-  StringView path_to_repo = strWrap(arg_list[1]);
+  StringView path_to_repo = str(arg_list[1]);
   if(!sPathExists(path_to_repo))
   {
     die("repository doesn't exist: \"%s\"", arg_list[1]);
@@ -265,7 +265,7 @@ int main(const int arg_count, const char **arg_list)
     runIntegrityCheck(metadataLoadFromRepo(path_to_repo), path_to_repo);
   }
   else if(regexec(
-            rpCompile(strWrap("^[0-9]+$"), strWrap(__FILE__), __LINE__),
+            rpCompile(str("^[0-9]+$"), str(__FILE__), __LINE__),
             arg_list[2], 0, NULL, 0) == 0)
   {
     if(arg_count > 4)
@@ -273,8 +273,8 @@ int main(const int arg_count, const char **arg_list)
       die("too many paths to restore");
     }
 
-    restore(path_to_repo, sStringToSize(strWrap(arg_list[2])),
-            arg_count == 4 ? strWrap(arg_list[3]) : strWrap("/"));
+    restore(path_to_repo, sStringToSize(str(arg_list[2])),
+            arg_count == 4 ? str(arg_list[3]) : str("/"));
   }
   else
   {

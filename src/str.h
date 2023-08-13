@@ -14,7 +14,7 @@ typedef struct
   const bool is_terminated;
 } StringView;
 
-extern StringView strWrap(const char *string);
+extern StringView str(const char *string);
 extern StringView strWrapLength(const char *string, size_t length);
 extern const char *strRaw(StringView string, char **buffer);
 

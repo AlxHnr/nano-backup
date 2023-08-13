@@ -9,7 +9,7 @@
 #include "safe-math.h"
 
 /** Wrap the given C string. */
-StringView strWrap(const char *string)
+StringView str(const char *string)
 {
   return (StringView){
     .content = string,

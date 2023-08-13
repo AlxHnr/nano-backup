@@ -36,7 +36,7 @@ static void populateTableRecursively(StringTable *table,
 
     static char *buffer = NULL;
     repoBuildRegularFilePath(&buffer, &point->state.metadata.file_info);
-    StringView path = strWrap(buffer);
+    StringView path = str(buffer);
 
     if(strTableGet(table, path) == NULL)
     {
@@ -69,15 +69,15 @@ static bool recurseIntoDirectory(const StringTable *table,
 {
   bool item_required = length == repo_path_length;
   const struct stat stats = length == repo_path_length
-    ? sStat(strWrap(path_buffer))
-    : sLStat(strWrap(path_buffer));
+    ? sStat(str(path_buffer))
+    : sLStat(str(path_buffer));
 
   if(S_ISDIR(stats.st_mode))
   {
-    DIR *dir = sOpenDir(strWrap(path_buffer));
+    DIR *dir = sOpenDir(str(path_buffer));
 
-    for(struct dirent *dir_entry = sReadDir(dir, strWrap(path_buffer));
-        dir_entry != NULL; dir_entry = sReadDir(dir, strWrap(path_buffer)))
+    for(struct dirent *dir_entry = sReadDir(dir, str(path_buffer));
+        dir_entry != NULL; dir_entry = sReadDir(dir, str(path_buffer)))
     {
       const size_t sub_path_length =
         pathBuilderAppend(&path_buffer, length, dir_entry->d_name);
@@ -88,7 +88,7 @@ static bool recurseIntoDirectory(const StringTable *table,
       path_buffer[length] = '\0';
     }
 
-    sCloseDir(dir, strWrap(path_buffer));
+    sCloseDir(dir, str(path_buffer));
   }
   else if(length != repo_path_length)
   {
@@ -100,7 +100,7 @@ static bool recurseIntoDirectory(const StringTable *table,
 
   if(!item_required)
   {
-    sRemove(strWrap(path_buffer));
+    sRemove(str(path_buffer));
     gc_stats->deleted_items_count =
       sSizeAdd(gc_stats->deleted_items_count, 1);
 
@@ -125,9 +125,9 @@ GCStatistics collectGarbage(const Metadata *metadata, StringView repo_path)
 {
   CR_Region *table_region = CR_RegionNew();
   StringTable *table = strTableNew(table_region);
-  strTableMap(table, strWrap("config"), (void *)0x1);
-  strTableMap(table, strWrap("metadata"), (void *)0x1);
-  strTableMap(table, strWrap("lockfile"), (void *)0x1);
+  strTableMap(table, str("config"), (void *)0x1);
+  strTableMap(table, str("metadata"), (void *)0x1);
+  strTableMap(table, str("lockfile"), (void *)0x1);
 
   for(const PathNode *node = metadata->paths; node != NULL;
       node = node->next)

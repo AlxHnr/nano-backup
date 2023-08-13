@@ -145,7 +145,7 @@ bool repoRegularFileExists(StringView repo_path,
                            const RegularFileInfo *info)
 {
   fillPathBufferWithInfo(repo_path, info);
-  return sPathExists(strWrap(path_buffer));
+  return sPathExists(str(path_buffer));
 }
 
 /** Builds the unique path of the file represented by the given info.
@@ -374,27 +374,27 @@ void repoWriterClose(RepoWriter *writer_to_close)
 
     /* Ensure that the final paths parent directories exists. */
     path_buffer[repo_path.length + 5] = '\0';
-    if(!sPathExists(strWrap(path_buffer)))
+    if(!sPathExists(str(path_buffer)))
     {
       path_buffer[repo_path.length + 2] = '\0';
-      if(!sPathExists(strWrap(path_buffer)))
+      if(!sPathExists(str(path_buffer)))
       {
-        sMkdir(strWrap(path_buffer));
+        sMkdir(str(path_buffer));
         fdatasyncDirectory(writer.repo_path);
       }
       path_buffer[repo_path.length + 2] = '/';
 
-      sMkdir(strWrap(path_buffer));
+      sMkdir(str(path_buffer));
 
       path_buffer[repo_path.length + 2] = '\0';
-      fdatasyncDirectory(strWrap(path_buffer));
+      fdatasyncDirectory(str(path_buffer));
       path_buffer[repo_path.length + 2] = '/';
     }
     path_buffer[repo_path.length + 5] = '/';
 
-    sRename(writer.repo_tmp_file_path, strWrap(path_buffer));
+    sRename(writer.repo_tmp_file_path, str(path_buffer));
     path_buffer[repo_path.length + 5] = '\0';
-    fdatasyncDirectory(strWrap(path_buffer));
+    fdatasyncDirectory(str(path_buffer));
   }
 
   fdatasyncDirectory(writer.repo_path);
@@ -438,7 +438,7 @@ void repoLockUntilExit(StringView repo_path)
 {
   /* Must be allocated before the region to outlive it. */
   StringView lockfile_path =
-    strLegacyAppendPath(repo_path, strWrap("lockfile"));
+    strLegacyAppendPath(repo_path, str("lockfile"));
 
   CR_Region *r = CR_RegionNew();
   LockfileInfo *lockfile_info = CR_RegionAlloc(r, sizeof *lockfile_info);

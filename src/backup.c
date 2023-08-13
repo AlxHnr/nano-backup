@@ -43,7 +43,7 @@ static void setPathHistoryState(PathState *state,
     static char *buffer = NULL;
     readSymlink(result.path, result.stats, &buffer);
     strSet(&state->metadata.symlink_target,
-           strLegacyCopy(strWrap(buffer)));
+           strLegacyCopy(str(buffer)));
   }
   else if(result.type == SRT_directory)
   {

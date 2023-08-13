@@ -30,7 +30,7 @@ Strings are immutable slices which don't own the memory they point to:
 ```c
 #include "str.h"
 
-StringView path = strWrap("/etc/conf.d/boot.conf");
+StringView path = str("/etc/conf.d/boot.conf");
 
 StringView dirname = strSplitPath(path).head;
 

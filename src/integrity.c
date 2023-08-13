@@ -84,7 +84,7 @@ static bool historyPointIsHealthy(IntegrityCheckContext *context,
   }
 
   repoBuildRegularFilePath(&context->unique_subpath_buffer, file_info);
-  StringView unique_subpath = strWrap(context->unique_subpath_buffer);
+  StringView unique_subpath = str(context->unique_subpath_buffer);
 
   const void *cached_result =
     strTableGet(context->unique_subpath_cache, unique_subpath);

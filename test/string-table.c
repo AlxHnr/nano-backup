@@ -41,12 +41,12 @@ static const size_t lorem_count = sizeof(lorem_ipsum_chunks)/sizeof(void*);
 
 static void testStringTable(StringTable *table)
 {
-  assert_true(strTableGet(table, strWrap("")) == NULL);
+  assert_true(strTableGet(table, str("")) == NULL);
 
   /* Map the lorem-ipsum chunks to the zlib chunks. */
   for(size_t index = 0; index < zlib_count; index++)
   {
-    StringView string = strWrap(zlib_license_chunks[index]);
+    StringView string = str(zlib_license_chunks[index]);
     if(strTableGet(table, string) != NULL)
     {
       die("string \"%s\" already exists in string table", zlib_license_chunks[index]);
@@ -63,7 +63,7 @@ static void testStringTable(StringTable *table)
   /* Assert that all the mappings above succeeded. */
   for(size_t index = 0; index < zlib_count; index++)
   {
-    StringView string = strWrap(zlib_license_chunks[index]);
+    StringView string = str(zlib_license_chunks[index]);
 
     if(strTableGet(table, string) != &lorem_ipsum_chunks[index])
     {
@@ -71,9 +71,9 @@ static void testStringTable(StringTable *table)
     }
   }
 
-  assert_true(strTableGet(table, strWrap("lingula")) == NULL);
-  assert_true(strTableGet(table, strWrap("origina")) == NULL);
-  assert_true(strTableGet(table, strWrap("originall")) == NULL);
+  assert_true(strTableGet(table, str("lingula")) == NULL);
+  assert_true(strTableGet(table, str("origina")) == NULL);
+  assert_true(strTableGet(table, str("originall")) == NULL);
 }
 
 int main(void)

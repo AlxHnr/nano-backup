@@ -5,7 +5,7 @@
 
 static void fileHashWrapper(const char *path, uint8_t *hash)
 {
-  fileHash(strWrap(path), sStat(strWrap(path)), hash);
+  fileHash(str(path), sStat(str(path)), hash);
 }
 
 int main(void)
@@ -14,12 +14,12 @@ int main(void)
   uint8_t hash[FILE_HASH_SIZE];
 
   testGroupStart("fileHash()");
-  stats = sStat(strWrap("example.txt"));
-  assert_error_errno(fileHash(strWrap("non-existing.txt"), stats, hash),
+  stats = sStat(str("example.txt"));
+  assert_error_errno(fileHash(str("non-existing.txt"), stats, hash),
                      "failed to open \"non-existing.txt\" for reading", ENOENT);
-  assert_error_errno(fileHash(strWrap("test directory"), stats, hash), "IO error while reading \"test directory\"",
+  assert_error_errno(fileHash(str("test directory"), stats, hash), "IO error while reading \"test directory\"",
                      EISDIR);
-  assert_error_errno(fileHash(strWrap("test directory"), sStat(strWrap("empty.txt")), hash),
+  assert_error_errno(fileHash(str("test directory"), sStat(str("empty.txt")), hash),
                      "failed to check for remaining bytes in \"test directory\"", EISDIR);
 
   const uint8_t empty_hash[FILE_HASH_SIZE] = {
@@ -60,18 +60,18 @@ int main(void)
   fileHashWrapper("valid-config-files/inheritance-1.txt", hash);
   assert_true(memcmp(hash, inheritance_1, FILE_HASH_SIZE) == 0);
 
-  stats = sStat(strWrap("valid-config-files/inheritance-1.txt"));
+  stats = sStat(str("valid-config-files/inheritance-1.txt"));
   stats.st_size += 1;
-  assert_error(fileHash(strWrap("valid-config-files/inheritance-1.txt"), stats, hash),
+  assert_error(fileHash(str("valid-config-files/inheritance-1.txt"), stats, hash),
                "reading \"valid-config-files/inheritance-1.txt\": reached end of file unexpectedly");
 
   stats.st_size -= 2;
-  assert_error(fileHash(strWrap("valid-config-files/inheritance-1.txt"), stats, hash),
+  assert_error(fileHash(str("valid-config-files/inheritance-1.txt"), stats, hash),
                "file changed while calculating hash: \"valid-config-files/inheritance-1.txt\"");
 
   stats.st_size += 1;
   stats.st_blksize = 1;
-  fileHash(strWrap("valid-config-files/inheritance-1.txt"), stats, hash);
+  fileHash(str("valid-config-files/inheritance-1.txt"), stats, hash);
   assert_true(memcmp(hash, inheritance_1, FILE_HASH_SIZE) == 0);
 
   testGroupEnd();

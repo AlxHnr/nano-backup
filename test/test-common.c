@@ -212,7 +212,7 @@ static void checkPathState(const PathNode *node, const PathHistory *point, const
 StringView getCwd(void)
 {
   char *cwd = sGetCwd();
-  StringView cwd_string = strLegacyCopy(strWrap(cwd));
+  StringView cwd_string = strLegacyCopy(str(cwd));
   free(cwd);
 
   return cwd_string;
@@ -324,7 +324,7 @@ void mustHaveConf(const Metadata *metadata, const Backup *backup, const uint64_t
 PathNode *findPathNode(PathNode *start_node, const char *path_str, BackupHint hint, BackupPolicy policy,
                        size_t history_length, size_t subnode_count)
 {
-  StringView path = strWrap(path_str);
+  StringView path = str(path_str);
   PathNode *requested_node = NULL;
 
   for(PathNode *node = start_node; node != NULL && requested_node == NULL; node = node->next)
@@ -407,7 +407,7 @@ void mustHaveSymlink(const PathNode *node, const Backup *backup, const uid_t uid
   {
     die("backup point %zu in node \"%s\" doesn't have the state PST_symlink", backup->id, node->path.content);
   }
-  else if(!strEqual(point->state.metadata.symlink_target, strWrap(symlink_target)))
+  else if(!strEqual(point->state.metadata.symlink_target, str(symlink_target)))
   {
     die("backup point %zu in node \"%s\" doesn't contain the symlink target \"%s\"", backup->id,
         node->path.content, symlink_target);
