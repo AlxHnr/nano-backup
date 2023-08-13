@@ -4,11 +4,13 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#include "allocator.h"
+
 /** Immutable string slice which doesn't own the memory it points to. */
 typedef struct
 {
-  /** May not be null terminated. Use strLegacyRaw() for interacting with C
-    functions. */
+  /** May not be null terminated. Use strGetContent() for interacting with
+    C functions. */
   const char *const content;
   const size_t length;
   const bool is_terminated;
@@ -16,6 +18,7 @@ typedef struct
 
 extern StringView str(const char *string);
 extern StringView strUnterminated(const char *string, size_t length);
+extern const char *strGetContent(StringView string, Allocator *a);
 
 extern void strSet(StringView *string, StringView value);
 extern bool strEqual(StringView a, StringView b);

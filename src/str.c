@@ -28,6 +28,28 @@ StringView strUnterminated(const char *string, const size_t length)
   };
 }
 
+/** Retrieve a null-terminated raw C string from the given string view.
+
+  @param a Allocator which will be used for copying if the given string is
+  not null-terminated.
+
+  @return Points either into the given string view or into newly allocated
+  memory.
+*/
+const char *strGetContent(StringView string, Allocator *a)
+{
+  if(string.is_terminated)
+  {
+    return string.content;
+  }
+
+  char *content = allocate(a, sSizeAdd(string.length, 1));
+  memcpy(content, string.content, string.length);
+  content[string.length] = '\0';
+
+  return content;
+}
+
 /** Creates a copy of the given string.
 
   @param string The string to copy.
@@ -58,32 +80,6 @@ bool strEqual(StringView a, StringView b)
 {
   return a.length == b.length &&
     memcmp(a.content, b.content, a.length) == 0;
-}
-
-/** Returns a null terminated version of the given string.
-
-  @param string The string to terminate.
-  @param buffer A buffer to use in case the given string is not terminated
-  and needs to be copied. This pointer to a buffer will be updated on
-  allocations.
-
-  @return A pointer to either the given strings content, or to the given
-  buffer.
-*/
-const char *strLegacyRaw(StringView string, char **buffer)
-{
-  if(string.is_terminated)
-  {
-    return string.content;
-  }
-  else
-  {
-    *buffer = CR_EnsureCapacity(*buffer, sSizeAdd(string.length, 1));
-    memcpy(*buffer, string.content, string.length);
-    (*buffer)[string.length] = '\0';
-
-    return *buffer;
-  }
 }
 
 /** Removes trailing slashes from a string.
@@ -231,4 +227,20 @@ bool strIsParentPath(StringView parent, StringView path)
   return parent.length < strRemoveTrailingSlashes(path).length &&
     path.content[parent.length] == '/' &&
     memcmp(path.content, parent.content, parent.length) == 0;
+}
+
+const char *strLegacyRaw(StringView string, char **buffer)
+{
+  if(string.is_terminated)
+  {
+    return string.content;
+  }
+  else
+  {
+    *buffer = CR_EnsureCapacity(*buffer, sSizeAdd(string.length, 1));
+    memcpy(*buffer, string.content, string.length);
+    (*buffer)[string.length] = '\0';
+
+    return *buffer;
+  }
 }

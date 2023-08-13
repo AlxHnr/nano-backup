@@ -2,6 +2,7 @@
 
 #include <string.h>
 
+#include "CRegion/region.h"
 #include "test.h"
 
 static StringView check(StringView string)
@@ -90,32 +91,6 @@ static void checkedStrSet(StringView *string, StringView value)
   assert_true(string->content == value.content);
   assert_true(string->length == value.length);
   assert_true(string->is_terminated == value.is_terminated);
-}
-
-static const char *checkedStrLegacyRaw(StringView string, char **buffer)
-{
-  if(string.is_terminated)
-  {
-    const char *old_buffer = *buffer;
-
-    const char *cstring = strLegacyRaw(string, buffer);
-    assert_true(cstring == string.content);
-
-    assert_true(*buffer == old_buffer);
-
-    return cstring;
-  }
-  else
-  {
-    const char *cstring = strLegacyRaw(string, buffer);
-    assert_true(cstring != NULL);
-    assert_true(cstring != string.content);
-    assert_true(cstring == *buffer);
-    assert_true(cstring[string.length] == '\0');
-    assert_true(memcmp(cstring, string.content, string.length) == 0);
-
-    return cstring;
-  }
 }
 
 static StringView checkedStrRemoveTrailingSlashes(StringView string)
@@ -248,15 +223,26 @@ int main(void)
   }
   testGroupEnd();
 
-  testGroupStart("strLegacyRaw()");
+  testGroupStart("strGetContent(): don't allocate if not needed");
   {
-    char *buffer = NULL;
-    StringView string = checkedStr(cstring);
+    StringView string = checkedStr("A terminated C string");
+    const char *raw_string = strGetContent(string, allocatorWrapAlwaysFailing());
+    assert_true(raw_string == string.content);
+  }
+  testGroupEnd();
 
-    checkedStrLegacyRaw(string, &buffer);
-    checkedStrLegacyRaw(slice1, &buffer);
-    checkedStrLegacyRaw(slice2, &buffer);
-    checkedStrLegacyRaw(slice3, &buffer);
+  testGroupStart("strGetContent(): allocate if required");
+  {
+    CR_Region *r = CR_RegionNew();
+    StringView string = checkedStrUnterminated("This string will be cut off", 11);
+
+    const char *raw_string = strGetContent(string, allocatorWrapRegion(r));
+    assert_true(raw_string != NULL);
+    assert_true(raw_string != string.content);
+    assert_true(raw_string[string.length] == '\0');
+    assert_true(memcmp(raw_string, string.content, string.length) == 0);
+
+    CR_RegionRelease(r);
   }
   testGroupEnd();
 
