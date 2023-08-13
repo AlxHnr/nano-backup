@@ -9,10 +9,40 @@
 #include <unistd.h>
 #include <utime.h>
 
+#include "CRegion/global-region.h"
 #include "allocator.h"
 #include "error-handling.h"
 #include "path-builder.h"
 #include "safe-math.h"
+
+/** Return a _temporary_ null-terminated version of the given string.
+
+  @param secondary True if the second allocator slot should be used.
+
+  @return Terminated string which will be invalidated by the following
+  events:
+    * Another call to this function with the same `secondary` value
+    * Deletion or reallocation of the specified string
+*/
+static const char *internalNullTerminate(StringView string,
+                                         const bool secondary)
+{
+  static Allocator *same_buffer_allocators[2] = { NULL, NULL };
+  if(same_buffer_allocators[secondary] == NULL)
+  {
+    same_buffer_allocators[secondary] =
+      allocatorWrapOneSingleGrowableBuffer(CR_GetGlobalRegion());
+  }
+  return strGetContent(string, same_buffer_allocators[secondary]);
+}
+static const char *nullTerminate(StringView string)
+{
+  return internalNullTerminate(string, false);
+}
+static const char *nullTerminateSecondary(StringView string)
+{
+  return internalNullTerminate(string, true);
+}
 
 struct FileStream
 {
@@ -51,9 +81,9 @@ static struct stat safeStat(StringView path,
                             int (*stat_fun)(const char *, struct stat *))
 {
   struct stat buffer;
-  if(stat_fun(path.content, &buffer) == -1)
+  if(stat_fun(nullTerminate(path), &buffer) == -1)
   {
-    dieErrno("failed to access \"%s\"", path.content);
+    dieErrno("failed to access \"%s\"", nullTerminate(path));
   }
 
   return buffer;
@@ -119,10 +149,10 @@ void sAtexit(void (*function)(void))
 */
 FileStream *sFopenRead(StringView path)
 {
-  FILE *file = fopen(path.content, "rb");
+  FILE *file = fopen(nullTerminate(path), "rb");
   if(file == NULL)
   {
-    dieErrno("failed to open \"%s\" for reading", path.content);
+    dieErrno("failed to open \"%s\" for reading", nullTerminate(path));
   }
 
   return newFileStream(file, path);
@@ -132,10 +162,10 @@ FileStream *sFopenRead(StringView path)
   gets opened for writing. */
 FileStream *sFopenWrite(StringView path)
 {
-  FILE *file = fopen(path.content, "wb");
+  FILE *file = fopen(nullTerminate(path), "wb");
   if(file == NULL)
   {
-    dieErrno("failed to open \"%s\" for writing", path.content);
+    dieErrno("failed to open \"%s\" for writing", nullTerminate(path));
   }
 
   return newFileStream(file, path);
@@ -156,11 +186,12 @@ void sFread(void *ptr, const size_t size, FileStream *stream)
     if(feof(stream->file))
     {
       die("reading \"%s\": reached end of file unexpectedly",
-          Fdestroy(stream).content);
+          nullTerminate(Fdestroy(stream)));
     }
     else
     {
-      dieErrno("IO error while reading \"%s\"", Fdestroy(stream).content);
+      dieErrno("IO error while reading \"%s\"",
+               nullTerminate(Fdestroy(stream)));
     }
   }
 }
@@ -170,7 +201,7 @@ void sFwrite(const void *ptr, const size_t size, FileStream *stream)
 {
   if(fwrite(ptr, 1, size, stream->file) != size)
   {
-    dieErrno("failed to write to \"%s\"", Fdestroy(stream).content);
+    dieErrno("failed to write to \"%s\"", nullTerminate(Fdestroy(stream)));
   }
 }
 
@@ -212,7 +243,7 @@ void sFclose(FileStream *stream)
 
   if(fclose(file) != 0)
   {
-    dieErrno("failed to close \"%s\"", path.content);
+    dieErrno("failed to close \"%s\"", nullTerminate(path));
   }
 }
 
@@ -245,10 +276,10 @@ StringView Fdestroy(FileStream *stream)
 */
 DIR *sOpenDir(StringView path)
 {
-  DIR *dir = opendir(path.content);
+  DIR *dir = opendir(nullTerminate(path));
   if(dir == NULL)
   {
-    dieErrno("failed to open directory \"%s\"", path.content);
+    dieErrno("failed to open directory \"%s\"", nullTerminate(path));
   }
 
   return dir;
@@ -276,7 +307,7 @@ struct dirent *sReadDir(DIR *dir, StringView path)
 
     if(dir_entry == NULL && errno != 0)
     {
-      dieErrno("failed to read directory \"%s\"", path.content);
+      dieErrno("failed to read directory \"%s\"", nullTerminate(path));
     }
   } while(dir_entry != NULL && dir_entry->d_name[0] == '.' &&
           (dir_entry->d_name[1] == '\0' ||
@@ -302,14 +333,14 @@ bool sFbytesLeft(FileStream *stream)
   if(character == EOF && errno != 0 && errno != EBADF)
   {
     dieErrno("failed to check for remaining bytes in \"%s\"",
-             Fdestroy(stream).content);
+             nullTerminate(Fdestroy(stream)));
   }
   errno = old_errno;
 
   if(ungetc(character, stream->file) != character)
   {
     die("failed to check for remaining bytes in \"%s\"",
-        Fdestroy(stream).content);
+        nullTerminate(Fdestroy(stream)));
   }
 
   return character != EOF;
@@ -325,7 +356,7 @@ void sCloseDir(DIR *dir, StringView path)
 {
   if(closedir(dir) != 0)
   {
-    dieErrno("failed to close directory \"%s\"", path.content);
+    dieErrno("failed to close directory \"%s\"", nullTerminate(path));
   }
 }
 
@@ -343,11 +374,11 @@ bool sPathExists(StringView path)
   struct stat stats;
   errno = 0;
 
-  if(lstat(path.content, &stats) != 0)
+  if(lstat(nullTerminate(path), &stats) != 0)
   {
     if(errno != 0 && errno != ENOENT)
     {
-      dieErrno("failed to check existence of \"%s\"", path.content);
+      dieErrno("failed to check existence of \"%s\"", nullTerminate(path));
     }
 
     exists = false;
@@ -372,9 +403,9 @@ struct stat sLStat(StringView path)
 /** Safe wrapper around mkdir(). */
 void sMkdir(StringView path)
 {
-  if(mkdir(path.content, 0755) != 0)
+  if(mkdir(nullTerminate(path), 0755) != 0)
   {
-    dieErrno("failed to create directory: \"%s\"", path.content);
+    dieErrno("failed to create directory: \"%s\"", nullTerminate(path));
   }
 }
 
@@ -385,46 +416,47 @@ void sMkdir(StringView path)
 */
 void sSymlink(StringView target, StringView path)
 {
-  if(symlink(target.content, path.content) != 0)
+  if(symlink(nullTerminate(target), nullTerminateSecondary(path)) != 0)
   {
-    dieErrno("failed to create symlink: \"%s\"", path.content);
+    dieErrno("failed to create symlink: \"%s\"", nullTerminate(path));
   }
 }
 
 /** Safe wrapper around rename(). */
 void sRename(StringView oldpath, StringView newpath)
 {
-  if(rename(oldpath.content, newpath.content) != 0)
+  if(rename(nullTerminate(oldpath), nullTerminateSecondary(newpath)) != 0)
   {
-    dieErrno("failed to rename \"%s\" to \"%s\"", oldpath.content,
-             newpath.content);
+    dieErrno("failed to rename \"%s\" to \"%s\"", nullTerminate(oldpath),
+             nullTerminateSecondary(newpath));
   }
 }
 
 /** Safe wrapper around chmod(). */
 void sChmod(StringView path, const mode_t mode)
 {
-  if(chmod(path.content, mode) != 0)
+  if(chmod(nullTerminate(path), mode) != 0)
   {
-    dieErrno("failed to change permissions of \"%s\"", path.content);
+    dieErrno("failed to change permissions of \"%s\"",
+             nullTerminate(path));
   }
 }
 
 /** Safe wrapper around chown(). */
 void sChown(StringView path, const uid_t user, const gid_t group)
 {
-  if(chown(path.content, user, group) != 0)
+  if(chown(nullTerminate(path), user, group) != 0)
   {
-    dieErrno("failed to change owner of \"%s\"", path.content);
+    dieErrno("failed to change owner of \"%s\"", nullTerminate(path));
   }
 }
 
 /** Safe wrapper around lchown(). */
 void sLChown(StringView path, const uid_t user, const gid_t group)
 {
-  if(lchown(path.content, user, group) != 0)
+  if(lchown(nullTerminate(path), user, group) != 0)
   {
-    dieErrno("failed to change owner of \"%s\"", path.content);
+    dieErrno("failed to change owner of \"%s\"", nullTerminate(path));
   }
 }
 
@@ -436,18 +468,18 @@ void sUtime(StringView path, const time_t time)
     .modtime = time,
   };
 
-  if(utime(path.content, &time_buffer) != 0)
+  if(utime(nullTerminate(path), &time_buffer) != 0)
   {
-    dieErrno("failed to set timestamp of \"%s\"", path.content);
+    dieErrno("failed to set timestamp of \"%s\"", nullTerminate(path));
   }
 }
 
 /** Safe wrapper around remove(). */
 void sRemove(StringView path)
 {
-  if(remove(path.content) != 0)
+  if(remove(nullTerminate(path)) != 0)
   {
-    dieErrno("failed to remove \"%s\"", path.content);
+    dieErrno("failed to remove \"%s\"", nullTerminate(path));
   }
 }
 
@@ -485,7 +517,7 @@ static void removeRecursively(char **buffer, const size_t length)
 void sRemoveRecursively(StringView path)
 {
   static char *buffer = NULL;
-  const size_t length = pathBuilderSet(&buffer, path.content);
+  const size_t length = pathBuilderSet(&buffer, nullTerminate(path));
 
   removeRecursively(&buffer, length);
 }
@@ -605,21 +637,22 @@ size_t sStringToSize(StringView string)
   errno = 0;
 
   char *endptr;
-  const long long int value = strtoll(string.content, &endptr, 10);
+  const long long int value = strtoll(nullTerminate(string), &endptr, 10);
 
-  if(endptr == string.content)
+  if(endptr == nullTerminate(string))
   {
-    die("unable to convert to size: \"%s\"", string.content);
+    die("unable to convert to size: \"%s\"", nullTerminate(string));
   }
   else if(value < 0)
   {
     die("unable to convert negative value to size: \"%s\"",
-        string.content);
+        nullTerminate(string));
   }
   else if((value == LLONG_MAX && errno == ERANGE) ||
           (unsigned long long int)value > SIZE_MAX)
   {
-    die("value too large to convert to size: \"%s\"", string.content);
+    die("value too large to convert to size: \"%s\"",
+        nullTerminate(string));
   }
 
   errno = old_errno;
@@ -669,14 +702,14 @@ FileContent sGetFilesContent(CR_Region *region, StringView path)
   const struct stat file_stats = sStat(path);
   if(!S_ISREG(file_stats.st_mode))
   {
-    die("\"%s\" is not a regular file", path.content);
+    die("\"%s\" is not a regular file", nullTerminate(path));
   }
 
   /* On 32-bit systems off_t is often larger than size_t. */
   if((uint64_t)file_stats.st_size > SIZE_MAX)
   {
     die("unable to load file into mem due to its size: \"%s\"",
-        path.content);
+        nullTerminate(path));
   }
 
   if(file_stats.st_size > 0)
@@ -689,7 +722,7 @@ FileContent sGetFilesContent(CR_Region *region, StringView path)
 
     if(stream_not_at_end)
     {
-      die("file changed while reading: \"%s\"", path.content);
+      die("file changed while reading: \"%s\"", nullTerminate(path));
     }
 
     return (FileContent){ .content = content, .size = file_stats.st_size };
