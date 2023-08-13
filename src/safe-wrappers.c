@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <utime.h>
 
+#include "allocator.h"
 #include "error-handling.h"
 #include "path-builder.h"
 #include "safe-math.h"
@@ -68,18 +69,7 @@ static struct stat safeStat(StringView path,
 */
 void *sMalloc(const size_t size)
 {
-  if(size == 0)
-  {
-    die("unable to allocate 0 bytes");
-  }
-
-  void *data = malloc(size);
-  if(data == NULL)
-  {
-    die("out of memory: failed to allocate %zu bytes", size);
-  }
-
-  return data;
+  return allocate(allocatorWrapMalloc(), size);
 }
 
 /** A safe wrapper around realloc().
