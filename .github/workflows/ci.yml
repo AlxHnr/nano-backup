@@ -24,7 +24,7 @@ jobs:
             ldflags: "-O2 -static"
           - configuration: clang-sanitize
             compiler: clang
-            cflags: "-Wall -Wextra -Werror -pedantic -O0 -ggdb -fsanitize=address,undefined -fno-sanitize-recover=all"
+            cflags: "-Wall -Wextra -Werror -pedantic -O0 -ggdb -fsanitize=address,undefined -fno-sanitize-recover=all -DCREGION_ALWAYS_FRESH_MALLOC"
             ldflags: "-O0 -ggdb -fsanitize=address,undefined -fno-sanitize-recover=all"
     runs-on: ubuntu-latest
     env:
