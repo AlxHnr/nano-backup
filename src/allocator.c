@@ -90,7 +90,8 @@ Allocator *allocatorWrapOneSingleGrowableBuffer(CR_Region *r)
   return a;
 }
 
-/** @return Static allocator which always returns NULL for testing. */
+/** @return Static allocator which always terminates the program with an
+  error message. */
 Allocator *allocatorWrapAlwaysFailing(void)
 {
   static Allocator a = { .type = ALT_always_failing };
