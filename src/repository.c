@@ -315,12 +315,12 @@ RepoWriter *repoWriterOpenRaw(StringView repo_path,
 void repoWriterWrite(const void *data, const size_t size,
                      RepoWriter *writer)
 {
-  if(!Fwrite(data, size, writer->stream))
+  if(!fWrite(data, size, writer->stream))
   {
     StringView repo_path = writer->repo_path;
     StringView source_file_path = writer->source_file_path;
 
-    Fdestroy(writer->stream);
+    fDestroy(writer->stream);
     free(writer);
 
     dieErrno("IO error while writing \"%s\" to \"%s\"",
@@ -354,9 +354,9 @@ void repoWriterClose(RepoWriter *writer_to_close)
   RepoWriter writer = *writer_to_close;
   free(writer_to_close);
 
-  if(!Ftodisk(writer.stream))
+  if(!fTodisk(writer.stream))
   {
-    Fdestroy(writer.stream);
+    fDestroy(writer.stream);
     dieErrno("failed to flush/sync \"%s\" to \"%s\"",
              writer.source_file_path.content, writer.repo_path.content);
   }

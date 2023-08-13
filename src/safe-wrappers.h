@@ -27,11 +27,11 @@ extern FileStream *sFopenRead(StringView path);
 extern FileStream *sFopenWrite(StringView path);
 extern void sFread(void *ptr, size_t size, FileStream *stream);
 extern void sFwrite(const void *ptr, size_t size, FileStream *stream);
-extern bool Fwrite(const void *ptr, size_t size, FileStream *stream);
-extern bool Ftodisk(FileStream *stream);
+extern bool fWrite(const void *ptr, size_t size, FileStream *stream);
+extern bool fTodisk(FileStream *stream);
 extern bool sFbytesLeft(FileStream *stream);
 extern void sFclose(FileStream *stream);
-extern StringView Fdestroy(FileStream *stream);
+extern StringView fDestroy(FileStream *stream);
 
 extern DIR *sOpenDir(StringView path);
 extern struct dirent *sReadDir(DIR *dir, StringView path);

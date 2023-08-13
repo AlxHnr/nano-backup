@@ -169,7 +169,7 @@ int main(void)
 
   assert_true(strcmp(buffer, "This is an example file.\n") == 0);
 
-  assert_true(strEqual(Fdestroy(example_read), example_path));
+  assert_true(strEqual(fDestroy(example_read), example_path));
   assert_true(errno == 0);
 
   /* Try reading 50 bytes from a 25 byte long file. */
@@ -246,12 +246,12 @@ int main(void)
   assert_true(test_file != NULL);
 
   sFwrite("hello", 5, test_file);
-  assert_true(Fwrite(" ", 1, test_file));
-  assert_true(Ftodisk(test_file));
-  assert_true(Fwrite("world", 5, test_file));
+  assert_true(fWrite(" ", 1, test_file));
+  assert_true(fTodisk(test_file));
+  assert_true(fWrite("world", 5, test_file));
   sFwrite("!", 1, test_file);
-  assert_true(Ftodisk(test_file));
-  assert_true(Ftodisk(test_file));
+  assert_true(fTodisk(test_file));
+  assert_true(fTodisk(test_file));
   sFclose(test_file);
 
   const FileContent test_file_1_content = sGetFilesContent(r, str("tmp/test-file-1"));
@@ -266,7 +266,7 @@ int main(void)
   assert_true(sPathExists(test_file_path));
   assert_true(test_file != NULL);
 
-  assert_true(strEqual(Fdestroy(test_file), test_file_path));
+  assert_true(strEqual(fDestroy(test_file), test_file_path));
   assert_true(errno == 0);
 
   const FileContent test_file_2_content = sGetFilesContent(r, str("tmp/test-file-2"));
@@ -288,7 +288,7 @@ int main(void)
   assert_error(sFwrite("hello", 5, sFopenRead(str("example.txt"))), "failed to write to \"example.txt\"");
 
   test_file = sFopenRead(str("example.txt"));
-  assert_true(!Fwrite("hello", 5, test_file));
+  assert_true(!fWrite("hello", 5, test_file));
   sFclose(test_file);
   testGroupEnd();
 

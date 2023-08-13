@@ -186,12 +186,12 @@ void sFread(void *ptr, const size_t size, FileStream *stream)
     if(feof(stream->file))
     {
       die("reading \"%s\": reached end of file unexpectedly",
-          nullTerminate(Fdestroy(stream)));
+          nullTerminate(fDestroy(stream)));
     }
     else
     {
       dieErrno("IO error while reading \"%s\"",
-               nullTerminate(Fdestroy(stream)));
+               nullTerminate(fDestroy(stream)));
     }
   }
 }
@@ -201,7 +201,7 @@ void sFwrite(const void *ptr, const size_t size, FileStream *stream)
 {
   if(fwrite(ptr, 1, size, stream->file) != size)
   {
-    dieErrno("failed to write to \"%s\"", nullTerminate(Fdestroy(stream)));
+    dieErrno("failed to write to \"%s\"", nullTerminate(fDestroy(stream)));
   }
 }
 
@@ -209,7 +209,7 @@ void sFwrite(const void *ptr, const size_t size, FileStream *stream)
 
   @return True on success, otherwise false.
 */
-bool Fwrite(const void *ptr, const size_t size, FileStream *stream)
+bool fWrite(const void *ptr, const size_t size, FileStream *stream)
 {
   return fwrite(ptr, 1, size, stream->file) == size;
 }
@@ -223,7 +223,7 @@ bool Fwrite(const void *ptr, const size_t size, FileStream *stream)
   @return True on success and false on failure, in which case errno will be
   set by either fileno(), fflush() or fdatasync().
 */
-bool Ftodisk(FileStream *stream)
+bool fTodisk(FileStream *stream)
 {
   const int descriptor = fileno(stream->file);
 
@@ -255,7 +255,7 @@ void sFclose(FileStream *stream)
 
   @return The path from the stream. Should not be freed by the caller.
 */
-StringView Fdestroy(FileStream *stream)
+StringView fDestroy(FileStream *stream)
 {
   StringView path = stream->path;
 
@@ -333,14 +333,14 @@ bool sFbytesLeft(FileStream *stream)
   if(character == EOF && errno != 0 && errno != EBADF)
   {
     dieErrno("failed to check for remaining bytes in \"%s\"",
-             nullTerminate(Fdestroy(stream)));
+             nullTerminate(fDestroy(stream)));
   }
   errno = old_errno;
 
   if(ungetc(character, stream->file) != character)
   {
     die("failed to check for remaining bytes in \"%s\"",
-        nullTerminate(Fdestroy(stream)));
+        nullTerminate(fDestroy(stream)));
   }
 
   return character != EOF;
