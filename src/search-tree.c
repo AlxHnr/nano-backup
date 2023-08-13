@@ -97,7 +97,7 @@ static SearchNode *newNode(StringTable *existing_nodes, String path,
       strWrapLength(&paths.tail.content[1], paths.tail.length - 1);
 
     String copy = strCopy(expression);
-    memcpy(&node->name, &copy, sizeof(node->name));
+    strSet(&node->name, copy);
 
     node->regex = rpCompile(node->name, strWrap("config"), line_nr);
 
@@ -105,8 +105,7 @@ static SearchNode *newNode(StringTable *existing_nodes, String path,
   }
   else
   {
-    String copy = strCopy(paths.tail);
-    memcpy(&node->name, &copy, sizeof(node->name));
+    strSet(&node->name, strCopy(paths.tail));
 
     node->regex = NULL;
   }
@@ -169,9 +168,7 @@ SearchNode *searchTreeParse(String config)
 
   /* Initialize the root node of this tree. */
   SearchNode *root_node = mpAlloc(sizeof *root_node);
-
-  String copy = strWrap("/");
-  memcpy(&root_node->name, &copy, sizeof(root_node->name));
+  strSet(&root_node->name, strWrap("/"));
 
   root_node->line_nr = 0;
   root_node->regex = NULL;

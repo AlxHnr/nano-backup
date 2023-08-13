@@ -511,7 +511,7 @@ void initBackupCommon(size_t stat_cache_count)
   initStatCache();
 
   String tmp_cwd_path = getCwd();
-  memcpy(&cwd_path, &tmp_cwd_path, sizeof(cwd_path));
+  strSet(&cwd_path, tmp_cwd_path);
 
   cwd_depth_count = 0;
   for(size_t index = 0; index < cwd_path.length; index++)

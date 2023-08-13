@@ -453,7 +453,7 @@ static PathNode *readPathSubnodes(const FileContent content,
     String full_path = strAppendPath(
       parent_node == NULL ? strWrap("") : parent_node->path, name);
 
-    memcpy(&node->path, &full_path, sizeof(node->path));
+    strSet(&node->path, full_path);
 
     /* Read other node variables. */
     strTableMap(metadata->path_table, node->path, node);

@@ -57,14 +57,14 @@ static PathNode *createPathNode(const char *path_str, const BackupPolicy policy,
   if(parent_node == NULL)
   {
     String path = strAppendPath(strWrap(""), strWrap(path_str));
-    memcpy(&node->path, &path, sizeof(node->path));
+    strSet(&node->path, path);
 
     node->next = NULL;
   }
   else
   {
     String path = strAppendPath(parent_node->path, strWrap(path_str));
-    memcpy(&node->path, &path, sizeof(node->path));
+    strSet(&node->path, path);
 
     node->next = parent_node->subnodes;
     parent_node->subnodes = node;
