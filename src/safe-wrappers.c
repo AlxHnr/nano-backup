@@ -14,57 +14,51 @@
 #include "error-handling.h"
 #include "safe-math.h"
 
-/** Return a _temporary_ null-terminated version of the given string.
+/** Returns a single reusable buffer allocator. Each allocation trough this
+  allocator will invalidate all previously allocated memory from it.
 
-  @param secondary True if the second allocator slot should be used.
+  @param secondary True if the second slot should be used. Needed for
+  allocating two temporary helper buffers.
+*/
+static Allocator *getTemporaryBuffer(const bool secondary)
+{
+  static Allocator *buffer[2] = { NULL, NULL };
+  if(buffer[secondary] == NULL)
+  {
+    buffer[secondary] =
+      allocatorWrapOneSingleGrowableBuffer(CR_GetGlobalRegion());
+  }
+  return buffer[secondary];
+}
+
+/** Return a _temporary_ null-terminated version of the given string.
 
   @return Terminated string which will be invalidated by the following
   events:
-    * Another call to this function with the same `secondary` value
+    * Another call to this function
     * Deletion or reallocation of the specified string
 */
-static const char *internalNullTerminate(StringView string,
-                                         const bool secondary)
-{
-  static Allocator *same_buffer_allocators[2] = { NULL, NULL };
-  if(same_buffer_allocators[secondary] == NULL)
-  {
-    same_buffer_allocators[secondary] =
-      allocatorWrapOneSingleGrowableBuffer(CR_GetGlobalRegion());
-  }
-  return strGetContent(string, same_buffer_allocators[secondary]);
-}
 static const char *nullTerminate(StringView string)
 {
-  return internalNullTerminate(string, false);
+  return strGetContent(string, getTemporaryBuffer(false));
 }
+/** Like above, but uses a different reusable buffer. */
 static const char *nullTerminateSecondary(StringView string)
 {
-  return internalNullTerminate(string, true);
+  return strGetContent(string, getTemporaryBuffer(true));
 }
 
 struct FileStream
 {
   FILE *file;
-
-  /** The full or relative path representing the open stream. Needed for
-    simplified printing of error messages. */
-  StringView path;
+  char *path; /**< Used for error printing. */
 };
 
-/** Wraps the given arguments in a new FileStream struct.
-
-  @param file The FILE stream which should be wrapped.
-  @param path The path which should be wrapped.
-
-  @return A new FileStream, containing the arguments of this function. It
-  must be freed by the caller using free().
-*/
 static FileStream *newFileStream(FILE *file, StringView path)
 {
   FileStream *stream = sMalloc(sizeof *stream);
   stream->file = file;
-  strSet(&stream->path, path);
+  stream->path = strCopyRaw(path, allocatorWrapMalloc());
   return stream;
 }
 
@@ -139,9 +133,7 @@ void sAtexit(void (*function)(void))
 
 /** Safe wrapper around fopen().
 
-  @param path The path to the file which should be opened for reading. The
-  returned FileStream will keep a reference to this path, so make sure not
-  to free or to modify it unless the stream gets closed.
+  @param path The path to the file which should be opened for reading.
 
   @return A file stream that can be used for reading. Must be closed by the
   caller.
@@ -170,6 +162,21 @@ FileStream *sFopenWrite(StringView path)
   return newFileStream(file, path);
 }
 
+/** Returns a temporary, single-use copy of its internal string. */
+static const char *internalFDestroy(FileStream *stream)
+{
+  char *result = strCopyRaw(str(stream->path), getTemporaryBuffer(false));
+
+  const int old_errno = errno;
+  fclose(stream->file);
+  errno = old_errno;
+
+  free(stream->path);
+  free(stream);
+
+  return result;
+}
+
 /** Safe wrapper around fread(). This function will terminate the program
   on failure. If the given size is larger than the remaining bytes in the
   file stream, it will also terminate the program.
@@ -185,12 +192,11 @@ void sFread(void *ptr, const size_t size, FileStream *stream)
     if(feof(stream->file))
     {
       die("reading \"%s\": reached end of file unexpectedly",
-          nullTerminate(fDestroy(stream)));
+          internalFDestroy(stream));
     }
     else
     {
-      dieErrno("IO error while reading \"%s\"",
-               nullTerminate(fDestroy(stream)));
+      dieErrno("IO error while reading \"%s\"", internalFDestroy(stream));
     }
   }
 }
@@ -200,7 +206,7 @@ void sFwrite(const void *ptr, const size_t size, FileStream *stream)
 {
   if(fwrite(ptr, 1, size, stream->file) != size)
   {
-    dieErrno("failed to write to \"%s\"", nullTerminate(fDestroy(stream)));
+    dieErrno("failed to write to \"%s\"", internalFDestroy(stream));
   }
 }
 
@@ -237,34 +243,21 @@ bool fTodisk(FileStream *stream)
 void sFclose(FileStream *stream)
 {
   FILE *file = stream->file;
-  StringView path = stream->path;
+  char *path = strCopyRaw(str(stream->path), getTemporaryBuffer(false));
+  free(stream->path);
   free(stream);
 
   if(fclose(file) != 0)
   {
-    dieErrno("failed to close \"%s\"", nullTerminate(path));
+    dieErrno("failed to close \"%s\"", path);
   }
 }
 
 /** Destroys the given file stream without checking for errors. It does not
-  modify errno.
-
-  @param stream The stream to be destroyed. It should not be used once this
-  function returns.
-
-  @return The path from the stream. Should not be freed by the caller.
-*/
-StringView fDestroy(FileStream *stream)
+  modify errno. */
+void fDestroy(FileStream *stream)
 {
-  StringView path = stream->path;
-
-  const int old_errno = errno;
-  fclose(stream->file);
-  errno = old_errno;
-
-  free(stream);
-
-  return path;
+  internalFDestroy(stream);
 }
 
 /** Safe wrapper around opendir().
@@ -332,14 +325,14 @@ bool sFbytesLeft(FileStream *stream)
   if(character == EOF && errno != 0 && errno != EBADF)
   {
     dieErrno("failed to check for remaining bytes in \"%s\"",
-             nullTerminate(fDestroy(stream)));
+             internalFDestroy(stream));
   }
   errno = old_errno;
 
   if(ungetc(character, stream->file) != character)
   {
     die("failed to check for remaining bytes in \"%s\"",
-        nullTerminate(fDestroy(stream)));
+        internalFDestroy(stream));
   }
 
   return character != EOF;

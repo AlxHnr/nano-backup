@@ -298,7 +298,8 @@ int main(void)
 
   assert_true(strcmp(buffer, "This is an example file.\n") == 0);
 
-  assert_true(strEqual(fDestroy(example_read), example_path));
+  assert_true(errno == 0);
+  fDestroy(example_read);
   assert_true(errno == 0);
 
   /* Try reading 50 bytes from a 25 byte long file. */
@@ -395,7 +396,8 @@ int main(void)
   assert_true(sPathExists(test_file_path));
   assert_true(test_file != NULL);
 
-  assert_true(strEqual(fDestroy(test_file), test_file_path));
+  assert_true(errno == 0);
+  fDestroy(test_file);
   assert_true(errno == 0);
 
   const FileContent test_file_2_content = sGetFilesContent(r, wrap("tmp/test-file-2"));

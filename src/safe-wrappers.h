@@ -31,7 +31,7 @@ extern bool fWrite(const void *ptr, size_t size, FileStream *stream);
 extern bool fTodisk(FileStream *stream);
 extern bool sFbytesLeft(FileStream *stream);
 extern void sFclose(FileStream *stream);
-extern StringView fDestroy(FileStream *stream);
+extern void fDestroy(FileStream *stream);
 
 extern DIR *sOpenDir(StringView path);
 extern struct dirent *sReadDir(DIR *dir, StringView path);
