@@ -525,19 +525,7 @@ static ChangeSummary recursePrintOverTree(const Metadata *metadata,
                                           RegexList *summarize_expressions,
                                           const bool print)
 {
-  ChangeSummary changes = {
-    .new_items = { .affected_items_count = 0,
-                   .affected_items_total_size = 0 },
-    .removed_items = { .affected_items_count = 0,
-                       .affected_items_total_size = 0 },
-    .lost_items = { .affected_items_count = 0,
-                    .affected_items_total_size = 0 },
-    .changed_items = { .affected_items_count = 0,
-                       .affected_items_total_size = 0 },
-    .affects_parent_timestamp = false,
-    .changed_attributes = 0,
-    .other_changes_exist = false,
-  };
+  ChangeSummary changes = { 0 };
 
   for(const PathNode *node = path_list; node != NULL; node = node->next)
   {
