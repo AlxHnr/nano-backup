@@ -68,8 +68,7 @@ static bool checkExpressionList(const RegexList *expression_list, const char *pa
   for(const RegexList *expression = expression_list; expression != NULL; expression = expression->next)
   {
     if(expression->has_matched == false && expression->line_nr == line_nr &&
-       strEqual(expression->expression, expression_string) &&
-       expression->expression.content[expression->expression.length] == '\0')
+       strEqual(expression->expression, expression_string))
     {
       return true;
     }
@@ -125,7 +124,6 @@ static void checkBasicNode(const SearchNode *node, const char *name, const size_
   assert_true(node != NULL);
 
   assert_true(strEqual(node->name, str(name)));
-  assert_true(node->name.content[node->name.length] == '\0');
   assert_true(node->line_nr == line_nr);
 
   if(has_regex)

@@ -23,5 +23,6 @@ extern void mustHaveSymlink(const PathNode *node, const Backup *backup, uid_t ui
                             const char *symlink_target);
 extern void mustHaveDirectory(const PathNode *node, const Backup *backup, uid_t uid, gid_t gid,
                               time_t modification_time, mode_t permission_bits);
+extern const char *nullTerminate(StringView string);
 
 #endif

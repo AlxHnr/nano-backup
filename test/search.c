@@ -30,8 +30,6 @@ static void checkSearchResult(const SearchResult result)
     case SRT_other: break;
     default: die("unexpected search result type: %u", result.type);
   }
-
-  assert_true(result.path.content[result.path.length] == '\0');
 }
 
 /** Skips all search results in the given iterator, which belong to the
@@ -57,11 +55,11 @@ static size_t skipCwd(SearchIterator *iterator, StringView cwd, const SearchNode
 
     if(result.type != SRT_directory)
     {
-      die("failed to find \"%s\" in the given iterator", cwd.content);
+      die("failed to find \"%s\" in the given iterator", nullTerminate(cwd));
     }
     else if(result.node == NULL || result.node != node)
     {
-      die("search result contains invalid node for path \"%s\"", result.path.content);
+      die("search result contains invalid node for path \"%s\"", nullTerminate(result.path));
     }
 
     checkSearchResult(result);
@@ -71,7 +69,7 @@ static size_t skipCwd(SearchIterator *iterator, StringView cwd, const SearchNode
     }
     if(result.policy != BPOL_none)
     {
-      die("unexpected policy in \"%s\"", result.path.content);
+      die("unexpected policy in \"%s\"", nullTerminate(result.path));
     }
     else
     {
@@ -94,7 +92,7 @@ static size_t skipCwd(SearchIterator *iterator, StringView cwd, const SearchNode
 */
 static StringView trimCwd(StringView string, StringView cwd)
 {
-  return strLegacyCopy(str(&string.content[cwd.length + 1]));
+  return strLegacyCopy(strUnterminated(&string.content[cwd.length + 1], string.length - 1 - cwd.length));
 }
 
 /** Asserts that all nodes in the given search tree got correctly set and
@@ -117,15 +115,15 @@ static const SearchNode *checkCwdTree(const SearchNode *root_node, const size_t 
   {
     if(node->subnodes == NULL)
     {
-      die("node doesn't have subnodes: \"%s\"", node->name.content);
+      die("node doesn't have subnodes: \"%s\"", nullTerminate(node->name));
     }
     else if(node->subnodes->next != NULL)
     {
-      die("node has too many subnodes: \"%s\"", node->name.content);
+      die("node has too many subnodes: \"%s\"", nullTerminate(node->name));
     }
     else if(node->search_match != SRT_directory)
     {
-      die("node has not matched a directory: \"%s\"", node->name.content);
+      die("node has not matched a directory: \"%s\"", nullTerminate(node->name));
     }
 
     node = node->subnodes;
@@ -186,7 +184,7 @@ static size_t populateDirectoryTable(SearchIterator *iterator, StringTable *tabl
       StringView relative_path = trimCwd(result.path, cwd);
       if(strTableGet(table, relative_path) != NULL)
       {
-        die("path \"%s\" was found twice during search", relative_path.content);
+        die("path \"%s\" was found twice during search", nullTerminate(relative_path));
       }
 
       file_count += (result.type == SRT_regular_file || result.type == SRT_symlink);

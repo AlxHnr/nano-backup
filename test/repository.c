@@ -6,6 +6,7 @@
 
 #include "error-handling.h"
 #include "safe-wrappers.h"
+#include "test-common.h"
 #include "test.h"
 
 #define TMP_FILE_PATH str("tmp/tmp-file")
@@ -55,11 +56,11 @@ static void checkFilesContent(StringView file_path, const char *expected_content
 
   if(content.size != expected_size)
   {
-    die("content size: %zu != %zu: \"%s\"", content.size, expected_size, file_path.content);
+    die("content size: %zu != %zu: \"%s\"", content.size, expected_size, nullTerminate(file_path));
   }
   else if(memcmp(content.content, expected_content, expected_size) != 0)
   {
-    die("file has invalid content: \"%s\"", file_path.content);
+    die("file has invalid content: \"%s\"", nullTerminate(file_path));
   }
 
   CR_RegionRelease(r);
@@ -131,7 +132,7 @@ static void testRegularFilePathBuilding(StringView path, const RegularFileInfo *
   static char *buffer = NULL;
 
   repoBuildRegularFilePath(&buffer, info);
-  assert_true(strcmp(buffer, &path.content[4]) == 0);
+  assert_true(strcmp(buffer, &nullTerminate(path)[4]) == 0);
 }
 
 int main(void)
@@ -384,10 +385,10 @@ int main(void)
   testGroupStart("reading from repository");
   assert_error_errno(repoReaderOpenFile(str("tmp"), str("info_1"), &info_1),
                      "failed to open \"info_1\" in \"tmp\"", ENOENT);
-  assert_true(mkdir(info_1_path.content, 0) == 0);
+  assert_true(mkdir(nullTerminate(info_1_path), 0) == 0);
   assert_error_errno(repoReaderOpenFile(str("tmp"), str("info_1"), &info_1),
                      "failed to open \"info_1\" in \"tmp\"", EACCES);
-  assert_true(rmdir(info_1_path.content) == 0);
+  assert_true(rmdir(nullTerminate(info_1_path)) == 0);
 
   stream = sFopenWrite(info_1_path);
   sFwrite("This is an example text.", 24, stream);

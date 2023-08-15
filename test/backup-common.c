@@ -29,23 +29,23 @@ PathNode *findCwdNode(Metadata *metadata, StringView cwd, const BackupHint hint)
   {
     if((node->hint & ~BH_timestamp_changed) != hint)
     {
-      die("path has wrong backup hint: \"%s\"", node->path.content);
+      die("path has wrong backup hint: \"%s\"", nullTerminate(node->path));
     }
     else if(node->policy != BPOL_none)
     {
-      die("path shouldn't have a policy: \"%s\"", node->path.content);
+      die("path shouldn't have a policy: \"%s\"", nullTerminate(node->path));
     }
     else if(node->history->next != NULL)
     {
-      die("path has too many history points: \"%s\"", node->path.content);
+      die("path has too many history points: \"%s\"", nullTerminate(node->path));
     }
     else if(node->next != NULL)
     {
-      die("item is not the last in list: \"%s\"", node->path.content);
+      die("item is not the last in list: \"%s\"", nullTerminate(node->path));
     }
     else if(node->history->state.type != PST_directory)
     {
-      die("not a directory: \"%s\"", node->path.content);
+      die("not a directory: \"%s\"", nullTerminate(node->path));
     }
     else if(strEqual(node->path, cwd))
     {
@@ -53,7 +53,7 @@ PathNode *findCwdNode(Metadata *metadata, StringView cwd, const BackupHint hint)
     }
   }
 
-  die("path does not exist in metadata: \"%s\"", cwd.content);
+  die("path does not exist in metadata: \"%s\"", nullTerminate(cwd));
   return NULL;
 }
 
@@ -76,7 +76,7 @@ PathNode *findSubnode(PathNode *node, const char *subnode_name, const BackupHint
                       const size_t requested_history_length, const size_t requested_subnode_count)
 {
   StringView subnode_path = strLegacyAppendPath(node->path, str(subnode_name));
-  return findPathNode(node->subnodes, subnode_path.content, hint, policy, requested_history_length,
+  return findPathNode(node->subnodes, nullTerminate(subnode_path), hint, policy, requested_history_length,
                       requested_subnode_count);
 }
 
@@ -207,8 +207,8 @@ void regenerateFile(PathNode *node, const char *content, const size_t repetition
 {
   assert_true(node->history->state.type == PST_regular_file);
 
-  removePath(node->path.content);
-  generateFile(node->path.content, content, repetitions);
+  removePath(nullTerminate(node->path));
+  generateFile(nullTerminate(node->path), content, repetitions);
   sUtime(node->path, node->history->state.metadata.file_info.modification_time);
 }
 
@@ -243,7 +243,7 @@ PathHistory *findExistingHistPoint(PathNode *node)
     }
   }
 
-  die("failed to find existing path state type for \"%s\"", node->path.content);
+  die("failed to find existing path state type for \"%s\"", nullTerminate(node->path));
   return NULL;
 }
 
@@ -270,18 +270,25 @@ void restoreRegularFile(const char *path, const RegularFileInfo *info)
 */
 void restoreWithTimeRecursively(PathNode *node)
 {
+  CR_Region *r = CR_RegionNew();
+  Allocator *a = allocatorWrapOneSingleGrowableBuffer(r);
+
   if(!sPathExists(node->path))
   {
     PathHistory *point = findExistingHistPoint(node);
     switch(point->state.type)
     {
-      case PST_regular_file: restoreRegularFile(node->path.content, &point->state.metadata.file_info); break;
-      case PST_symlink: makeSymlink(point->state.metadata.symlink_target.content, node->path.content); break;
+      case PST_regular_file:
+        restoreRegularFile(nullTerminate(node->path), &point->state.metadata.file_info);
+        break;
+      case PST_symlink:
+        makeSymlink(strGetContent(point->state.metadata.symlink_target, a), nullTerminate(node->path));
+        break;
       case PST_directory:
-        makeDir(node->path.content);
+        makeDir(nullTerminate(node->path));
         sUtime(node->path, point->state.metadata.directory_info.modification_time);
         break;
-      default: die("unable to restore \"%s\"", node->path.content);
+      default: die("unable to restore \"%s\"", nullTerminate(node->path));
     }
   }
 
@@ -292,6 +299,8 @@ void restoreWithTimeRecursively(PathNode *node)
       restoreWithTimeRecursively(subnode);
     }
   }
+
+  CR_RegionRelease(r);
 }
 
 /* Associates a file path with its stats. */

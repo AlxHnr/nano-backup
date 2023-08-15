@@ -94,7 +94,8 @@ int main(void)
   {
     assert_true(path_node->node->path.is_terminated);
     assert_true(strIsParentPath(cwd, path_node->node->path));
-    StringView unique_subpath = str(&path_node->node->path.content[cwd.length + 1]);
+    StringView unique_subpath = strUnterminated(&path_node->node->path.content[cwd.length + 1],
+                                                path_node->node->path.length - cwd.length - 1);
     assert_true(strTableGet(broken_path_nodes, unique_subpath) == NULL);
     strTableMap(broken_path_nodes, unique_subpath, (void *)0x1);
     broken_path_node_count++;

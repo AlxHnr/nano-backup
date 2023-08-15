@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include "CRegion/global-region.h"
 #include "error-handling.h"
 #include "safe-wrappers.h"
 #include "test.h"
@@ -121,28 +122,24 @@ static size_t checkPathTree(const PathNode *parent_node, const Metadata *metadat
     {
       continue;
     }
-    if(node->path.content[node->path.length] != '\0')
+    if(check_path_table && strTableGet(metadata->path_table, node->path) == NULL)
     {
-      die("unterminated path string in metadata: \"%s\"", strLegacyCopy(node->path).content);
-    }
-    else if(check_path_table && strTableGet(metadata->path_table, node->path) == NULL)
-    {
-      die("path was not mapped in metadata: \"%s\"", node->path.content);
+      die("path was not mapped in metadata: \"%s\"", nullTerminate(node->path));
     }
     else if(node->history == NULL)
     {
-      die("path has no history: \"%s\"", node->path.content);
+      die("path has no history: \"%s\"", nullTerminate(node->path));
     }
     else
       for(PathHistory *point = node->history; point != NULL; point = point->next)
       {
         if(!nextNodeGreater(metadata, point))
         {
-          die("path node history has an invalid order: \"%s\"", node->path.content);
+          die("path node history has an invalid order: \"%s\"", nullTerminate(node->path));
         }
         else if(point->state.type > PST_directory)
         {
-          die("node history point has an invalid state type: \"%s\"", node->path.content);
+          die("node history point has an invalid state type: \"%s\"", nullTerminate(node->path));
         }
       }
 
@@ -187,7 +184,7 @@ static const PathHistory *findHistoryPoint(const PathNode *node, const Backup *b
 
   if(point == NULL)
   {
-    die("node \"%s\" doesn't have a backup with id %zu in its history", node->path.content, backup->id);
+    die("node \"%s\" doesn't have a backup with id %zu in its history", nullTerminate(node->path), backup->id);
   }
 
   return point;
@@ -199,11 +196,11 @@ static void checkPathState(const PathNode *node, const PathHistory *point, const
 {
   if(point->state.uid != uid)
   {
-    die("backup point %zu in node \"%s\" contains invalid uid", point->backup->id, node->path.content);
+    die("backup point %zu in node \"%s\" contains invalid uid", point->backup->id, nullTerminate(node->path));
   }
   else if(point->state.gid != gid)
   {
-    die("backup point %zu in node \"%s\" contains invalid gid", point->backup->id, node->path.content);
+    die("backup point %zu in node \"%s\" contains invalid gid", point->backup->id, nullTerminate(node->path));
   }
 }
 
@@ -322,12 +319,11 @@ void mustHaveConf(const Metadata *metadata, const Backup *backup, const uint64_t
 PathNode *findPathNode(PathNode *start_node, const char *path_str, BackupHint hint, BackupPolicy policy,
                        size_t history_length, size_t subnode_count)
 {
-  StringView path = str(path_str);
   PathNode *requested_node = NULL;
 
   for(PathNode *node = start_node; node != NULL && requested_node == NULL; node = node->next)
   {
-    if(strEqual(node->path, path))
+    if(strEqual(node->path, str(path_str)))
     {
       requested_node = node;
     }
@@ -364,7 +360,8 @@ void mustHaveNonExisting(const PathNode *node, const Backup *backup)
   const PathHistory *point = findHistoryPoint(node, backup);
   if(point->state.type != PST_non_existing)
   {
-    die("backup point %zu in node \"%s\" doesn't have the state PST_non_existing", backup->id, node->path.content);
+    die("backup point %zu in node \"%s\" doesn't have the state PST_non_existing", backup->id,
+        nullTerminate(node->path));
   }
 }
 
@@ -377,19 +374,21 @@ void mustHaveRegular(const PathNode *node, const Backup *backup, const uid_t uid
   const PathHistory *point = findHistoryPoint(node, backup);
   if(point->state.type != PST_regular_file)
   {
-    die("backup point %zu in node \"%s\" doesn't have the state PST_regular", backup->id, node->path.content);
+    die("backup point %zu in node \"%s\" doesn't have the state PST_regular", backup->id,
+        nullTerminate(node->path));
   }
   else if(point->state.metadata.file_info.permission_bits != permission_bits)
   {
-    die("backup point %zu in node \"%s\" contains invalid permission bits", backup->id, node->path.content);
+    die("backup point %zu in node \"%s\" contains invalid permission bits", backup->id, nullTerminate(node->path));
   }
   else if(point->state.metadata.file_info.modification_time != modification_time)
   {
-    die("backup point %zu in node \"%s\" contains invalid modification_time", backup->id, node->path.content);
+    die("backup point %zu in node \"%s\" contains invalid modification_time", backup->id,
+        nullTerminate(node->path));
   }
   else if(!checkRegularValues(&point->state, size, hash, slot))
   {
-    die("backup point %zu in node \"%s\" contains invalid values", backup->id, node->path.content);
+    die("backup point %zu in node \"%s\" contains invalid values", backup->id, nullTerminate(node->path));
   }
 
   checkPathState(node, point, uid, gid);
@@ -403,12 +402,13 @@ void mustHaveSymlink(const PathNode *node, const Backup *backup, const uid_t uid
   const PathHistory *point = findHistoryPoint(node, backup);
   if(point->state.type != PST_symlink)
   {
-    die("backup point %zu in node \"%s\" doesn't have the state PST_symlink", backup->id, node->path.content);
+    die("backup point %zu in node \"%s\" doesn't have the state PST_symlink", backup->id,
+        nullTerminate(node->path));
   }
   else if(!strEqual(point->state.metadata.symlink_target, str(symlink_target)))
   {
     die("backup point %zu in node \"%s\" doesn't contain the symlink target \"%s\"", backup->id,
-        node->path.content, symlink_target);
+        nullTerminate(node->path), symlink_target);
   }
 
   checkPathState(node, point, uid, gid);
@@ -422,16 +422,29 @@ void mustHaveDirectory(const PathNode *node, const Backup *backup, const uid_t u
   const PathHistory *point = findHistoryPoint(node, backup);
   if(point->state.type != PST_directory)
   {
-    die("backup point %zu in node \"%s\" doesn't have the state PST_directory", backup->id, node->path.content);
+    die("backup point %zu in node \"%s\" doesn't have the state PST_directory", backup->id,
+        nullTerminate(node->path));
   }
   else if(point->state.metadata.directory_info.permission_bits != permission_bits)
   {
-    die("backup point %zu in node \"%s\" contains invalid permission bits", backup->id, node->path.content);
+    die("backup point %zu in node \"%s\" contains invalid permission bits", backup->id, nullTerminate(node->path));
   }
   else if(point->state.metadata.directory_info.modification_time != modification_time)
   {
-    die("backup point %zu in node \"%s\" contains invalid modification_time", backup->id, node->path.content);
+    die("backup point %zu in node \"%s\" contains invalid modification_time", backup->id,
+        nullTerminate(node->path));
   }
 
   checkPathState(node, point, uid, gid);
+}
+
+/** Returns a temporary, single-use copy of the given string which is null-terminated. */
+const char *nullTerminate(StringView string)
+{
+  static Allocator *buffer = NULL;
+  if(buffer == NULL)
+  {
+    buffer = allocatorWrapOneSingleGrowableBuffer(CR_GetGlobalRegion());
+  }
+  return strGetContent(string, buffer);
 }
