@@ -686,23 +686,22 @@ size_t sStringToSize(StringView string)
   const int old_errno = errno;
   errno = 0;
 
+  const char *raw_string = nullTerminate(string);
   char *endptr;
-  const long long int value = strtoll(nullTerminate(string), &endptr, 10);
+  const long long int value = strtoll(raw_string, &endptr, 10);
 
-  if(endptr == nullTerminate(string))
+  if(endptr == raw_string)
   {
-    die("unable to convert to size: \"%s\"", nullTerminate(string));
+    die("unable to convert to size: \"%s\"", raw_string);
   }
   else if(value < 0)
   {
-    die("unable to convert negative value to size: \"%s\"",
-        nullTerminate(string));
+    die("unable to convert negative value to size: \"%s\"", raw_string);
   }
   else if((value == LLONG_MAX && errno == ERANGE) ||
           (unsigned long long int)value > SIZE_MAX)
   {
-    die("value too large to convert to size: \"%s\"",
-        nullTerminate(string));
+    die("value too large to convert to size: \"%s\"", raw_string);
   }
 
   errno = old_errno;
