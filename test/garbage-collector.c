@@ -68,7 +68,8 @@ int main(void)
   sRemove(str("tmp/link-to-repo"));
   sSymlink(str("file.txt"), str("tmp/link-to-repo"));
   populateRepoWithDummyFiles();
-  testCollectGarbage(empty_metadata, "tmp/link-to-repo", 0, 0);
+  assert_error_errno(collectGarbage(empty_metadata, str("tmp/link-to-repo")),
+                     "failed to open directory \"tmp/link-to-repo\"", ENOTDIR);
   assert_true(countItemsInDir("tmp/repo") == 25);
   assert_true(sPathExists(str("tmp/link-to-repo")));
   assert_true(sPathExists(str("tmp/file.txt")));
@@ -78,7 +79,7 @@ int main(void)
   sSymlink(str("non-existing"), str("tmp/link-to-repo"));
 
   assert_error_errno(collectGarbage(empty_metadata, str("tmp/link-to-repo")),
-                     "failed to access \"tmp/link-to-repo\"", ENOENT);
+                     "failed to open directory \"tmp/link-to-repo\"", ENOENT);
 
   assert_true(countItemsInDir("tmp/repo") == 25);
   assert_true(sPathExists(str("tmp/link-to-repo")));

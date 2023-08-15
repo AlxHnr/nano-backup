@@ -2,14 +2,13 @@
 
 #include <string.h>
 
+#include "CRegion/alloc-growable.h"
 #include "CRegion/region.h"
-
+#include "allocator.h"
 #include "path-builder.h"
 #include "safe-math.h"
 #include "safe-wrappers.h"
 #include "string-table.h"
-
-static char *path_buffer = NULL;
 
 /** Populates the given StringTable with referenced unique filepaths
   relative to their repository.
@@ -51,67 +50,43 @@ static void populateTableRecursively(StringTable *table,
   }
 }
 
-/** Recurses into the directory stored in path_buffer and removes
-  everything not mapped in the given table.
-
-  @param table The table containing referenced file paths.
-  @param length The length of the path in path_buffer.
-  @param repo_path_length The length of the path to the repository.
-  @param gc_stats GC statistics which will be incremented by this function.
-
-  @return True if the directory specified in path_buffer contains
-  referenced files.
-*/
-static bool recurseIntoDirectory(const StringTable *table,
-                                 const size_t length,
-                                 const size_t repo_path_length,
-                                 GCStatistics *gc_stats)
+/** Used during a garbage collection run. */
+typedef struct
 {
-  bool item_required = length == repo_path_length;
-  const struct stat stats = length == repo_path_length
-    ? sStat(str(path_buffer))
-    : sLStat(str(path_buffer));
+  StringView repo_path;
 
-  if(S_ISDIR(stats.st_mode))
+  /** All file paths inside this table are relative to repo_path. */
+  StringTable *paths_to_preserve;
+
+  /** Populated with informations during garbage collection. */
+  GCStatistics statistics;
+} GCContext;
+
+static bool shouldBeRemoved(StringView path, const struct stat *stats,
+                            void *user_data)
+{
+  GCContext *ctx = user_data;
+
+  if(strEqual(path, ctx->repo_path))
   {
-    DIR *dir = sOpenDir(str(path_buffer));
-
-    for(struct dirent *dir_entry = sReadDir(dir, str(path_buffer));
-        dir_entry != NULL; dir_entry = sReadDir(dir, str(path_buffer)))
-    {
-      const size_t sub_path_length =
-        pathBuilderAppend(&path_buffer, length, dir_entry->d_name);
-
-      item_required |= recurseIntoDirectory(table, sub_path_length,
-                                            repo_path_length, gc_stats);
-
-      path_buffer[length] = '\0';
-    }
-
-    sCloseDir(dir, str(path_buffer));
+    return false;
   }
-  else if(length != repo_path_length)
+  StringView path_relative_to_repo =
+    strUnterminated(&path.content[ctx->repo_path.length + 1],
+                    path.length - ctx->repo_path.length - 1);
+  if(strTableGet(ctx->paths_to_preserve, path_relative_to_repo) != NULL)
   {
-    StringView path_in_repo = strUnterminated(
-      &path_buffer[repo_path_length + 1], length - repo_path_length - 1);
-
-    item_required |= (strTableGet(table, path_in_repo) != NULL);
+    return false;
   }
 
-  if(!item_required)
+  ctx->statistics.deleted_items_count =
+    sSizeAdd(ctx->statistics.deleted_items_count, 1);
+  if(S_ISREG(stats->st_mode))
   {
-    sRemove(str(path_buffer));
-    gc_stats->deleted_items_count =
-      sSizeAdd(gc_stats->deleted_items_count, 1);
-
-    if(S_ISREG(stats.st_mode))
-    {
-      gc_stats->deleted_items_total_size =
-        sUint64Add(gc_stats->deleted_items_total_size, stats.st_size);
-    }
+    ctx->statistics.deleted_items_total_size =
+      sSizeAdd(ctx->statistics.deleted_items_total_size, stats->st_size);
   }
-
-  return item_required;
+  return true;
 }
 
 /** Removes unreferenced files and directories from the given repository.
@@ -123,27 +98,33 @@ static bool recurseIntoDirectory(const StringTable *table,
 */
 GCStatistics collectGarbage(const Metadata *metadata, StringView repo_path)
 {
-  CR_Region *table_region = CR_RegionNew();
-  StringTable *table = strTableNew(table_region);
-  strTableMap(table, str("config"), (void *)0x1);
-  strTableMap(table, str("metadata"), (void *)0x1);
-  strTableMap(table, str("lockfile"), (void *)0x1);
+  CR_Region *r = CR_RegionNew();
+
+  GCContext ctx = {
+    .repo_path = repo_path,
+    .paths_to_preserve = strTableNew(r),
+  };
+  strTableMap(ctx.paths_to_preserve, str("config"), (void *)0x1);
+  strTableMap(ctx.paths_to_preserve, str("metadata"), (void *)0x1);
+  strTableMap(ctx.paths_to_preserve, str("lockfile"), (void *)0x1);
 
   for(const PathNode *node = metadata->paths; node != NULL;
       node = node->next)
   {
-    populateTableRecursively(table, node);
+    populateTableRecursively(ctx.paths_to_preserve, node);
   }
 
-  GCStatistics gc_stats = {
-    .deleted_items_count = 0,
-    .deleted_items_total_size = 0,
-  };
+  DIR *dir = sOpenDir(repo_path);
+  Allocator *buffer = allocatorWrapOneSingleGrowableBuffer(r);
+  for(const struct dirent *dir_entry = sReadDir(dir, repo_path);
+      dir_entry != NULL; dir_entry = sReadDir(dir, repo_path))
+  {
+    StringView subpath =
+      strAppendPath(repo_path, str(dir_entry->d_name), buffer);
+    sRemoveRecursivelyIf(subpath, shouldBeRemoved, &ctx);
+  }
+  sCloseDir(dir, repo_path);
 
-  const size_t length = pathBuilderSet(&path_buffer, repo_path.content);
-  recurseIntoDirectory(table, length, length, &gc_stats);
-
-  CR_RegionRelease(table_region);
-
-  return gc_stats;
+  CR_RegionRelease(r);
+  return ctx.statistics;
 }
