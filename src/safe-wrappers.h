@@ -50,6 +50,13 @@ extern void sUtime(StringView path, time_t time);
 extern void sRemove(StringView path);
 extern void sRemoveRecursively(StringView path);
 
+typedef bool ShouldRemoveCallback(StringView path,
+                                  const struct stat *stats,
+                                  void *user_data);
+extern void sRemoveRecursivelyIf(StringView path,
+                                 ShouldRemoveCallback should_remove,
+                                 void *user_data);
+
 extern char *sGetCwd(void);
 extern char *sReadLine(FILE *stream);
 extern bool sIsTTY(FILE *stream);

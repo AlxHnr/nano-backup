@@ -90,6 +90,128 @@ static void checkReadSimpleTxt(FILE *stream)
   checkReadLine(stream, "/home/user/.config");
 }
 
+static bool alwaysReturnFalse(StringView path, const struct stat *stats, void *user_data)
+{
+  (void)path;
+  (void)stats;
+  (void)user_data;
+
+  return false;
+}
+static bool checkStats(StringView path, const struct stat *stats, void *user_data)
+{
+  (void)stats;
+  (void)user_data;
+
+  if(strEqual(path, str("tmp/file")))
+  {
+    assert_true(S_ISREG(stats->st_mode));
+  }
+  if(strEqual(path, str("tmp/test1")))
+  {
+    assert_true(S_ISDIR(stats->st_mode));
+  }
+  return false;
+}
+static bool dontPassNeededDirectories(StringView path, const struct stat *stats, void *user_data)
+{
+  (void)path;
+  (void)stats;
+  (void)user_data;
+
+  assert_true(!strEqual(path, str("tmp/test1")));
+  assert_true(!strEqual(path, str("tmp/test1/test2")));
+  return false;
+}
+static bool countCalls(StringView path, const struct stat *stats, void *user_data)
+{
+  (void)path;
+  (void)stats;
+  size_t *value = user_data;
+  *value += 1;
+  return false;
+}
+static bool deleteSpecificFiles(StringView path, const struct stat *stats, void *user_data)
+{
+  (void)stats;
+  (void)user_data;
+
+  return strEqual(path, str("tmp/test1/test3")) || strEqual(path, str("tmp/test1/foo")) ||
+    strEqual(path, str("tmp/test1/test2/file"));
+}
+static bool checkIfTest1DirWasProvided(StringView path, const struct stat *stats, void *user_data)
+{
+  (void)path;
+  (void)stats;
+
+  if(strEqual(path, str("tmp/test1")))
+  {
+    bool *value = user_data;
+    assert_true(*value == false);
+    *value = true;
+  }
+
+  return strEqual(path, str("tmp/test1/test2"));
+}
+
+static void testRemoveRecursivelyIf(void)
+{
+  testGroupStart("sRemoveRecursivelyIf(): dry run mode");
+  sMkdir(str("tmp/test1"));
+  sMkdir(str("tmp/test1/test2"));
+  sMkdir(str("tmp/test1/test3"));
+  sSymlink(wrap("/dev/null"), wrap("tmp/test1/foo"));
+  sFclose(sFopenWrite(wrap("tmp/file")));
+  sFclose(sFopenWrite(wrap("tmp/test1/test2/file")));
+
+  sRemoveRecursivelyIf(str("tmp"), alwaysReturnFalse, NULL);
+
+  assert_true(checkPathExists("tmp/file"));
+  assert_true(checkPathExists("tmp/test1"));
+  assert_true(checkPathExists("tmp/test1/foo"));
+  assert_true(checkPathExists("tmp/test1/test2"));
+  assert_true(checkPathExists("tmp/test1/test2/file"));
+  assert_true(checkPathExists("tmp/test1/test3"));
+  testGroupEnd();
+
+  testGroupStart("sRemoveRecursivelyIf(): pass valid stats to callback");
+  sRemoveRecursivelyIf(str("tmp"), checkStats, NULL);
+  testGroupEnd();
+
+  testGroupStart("sRemoveRecursivelyIf(): skip still needed directories");
+  sRemoveRecursivelyIf(str("tmp"), dontPassNeededDirectories, NULL);
+  testGroupEnd();
+
+  testGroupStart("sRemoveRecursivelyIf(): pass user data to callback");
+  size_t value = 0;
+  sRemoveRecursivelyIf(str("tmp"), countCalls, &value);
+  assert_true(value == 4);
+  testGroupEnd();
+
+  testGroupStart("sRemoveRecursivelyIf(): selective deletion");
+  sRemoveRecursivelyIf(str("tmp"), deleteSpecificFiles, NULL);
+  assert_true(checkPathExists("tmp/file"));
+  assert_true(checkPathExists("tmp/test1"));
+  assert_true(!checkPathExists("tmp/test1/foo"));
+  assert_true(checkPathExists("tmp/test1/test2"));
+  assert_true(!checkPathExists("tmp/test1/test2/file"));
+  assert_true(!checkPathExists("tmp/test1/test3"));
+  testGroupEnd();
+
+  testGroupStart("sRemoveRecursivelyIf(): pass unneeded dirs to callback");
+  bool test1_dir_was_provided = false;
+  sRemoveRecursivelyIf(str("tmp"), checkIfTest1DirWasProvided, &test1_dir_was_provided);
+  assert_true(test1_dir_was_provided);
+
+  assert_true(checkPathExists("tmp/file"));
+  assert_true(checkPathExists("tmp/test1"));
+  assert_true(!checkPathExists("tmp/test1/foo"));
+  assert_true(!checkPathExists("tmp/test1/test2"));
+  assert_true(!checkPathExists("tmp/test1/test2/file"));
+  assert_true(!checkPathExists("tmp/test1/test3"));
+  testGroupEnd();
+}
+
 int main(void)
 {
   testGroupStart("sMalloc()");
@@ -476,7 +598,12 @@ int main(void)
   assert_true(!sPathExists(wrap("tmp/bar")));
 
   assert_error_errno(sRemoveRecursively(wrap("")), "failed to access \"\"", ENOENT);
+
+  sRemoveRecursively(str("tmp"));
+  sMkdir(str("tmp")); /* Asserts that the previous line worked. */
   testGroupEnd();
+
+  testRemoveRecursivelyIf();
 
   testGroupStart("sGetCwd()");
   errno = 22;

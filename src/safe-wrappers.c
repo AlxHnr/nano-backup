@@ -12,7 +12,6 @@
 #include "CRegion/global-region.h"
 #include "allocator.h"
 #include "error-handling.h"
-#include "path-builder.h"
 #include "safe-math.h"
 
 /** Return a _temporary_ null-terminated version of the given string.
@@ -483,43 +482,94 @@ void sRemove(StringView path)
   }
 }
 
-/** Removes the given path recursively.
-
-  @param buffer The buffer containing the null-terminated path to remove.
-  @param length The length of the given path.
-*/
-static void removeRecursively(char **buffer, const size_t length)
+bool alwaysReturnTrue(StringView path, const struct stat *stats,
+                      void *user_data)
 {
-  const struct stat stats = sLStat(str(*buffer));
+  (void)path;
+  (void)stats;
+  (void)user_data;
 
-  if(S_ISDIR(stats.st_mode))
-  {
-    DIR *dir = sOpenDir(str(*buffer));
-
-    for(const struct dirent *dir_entry = sReadDir(dir, str(*buffer));
-        dir_entry != NULL; dir_entry = sReadDir(dir, str(*buffer)))
-    {
-      const size_t sub_path_length =
-        pathBuilderAppend(buffer, length, dir_entry->d_name);
-
-      removeRecursively(buffer, sub_path_length);
-
-      (*buffer)[length] = '\0';
-    }
-
-    sCloseDir(dir, str(*buffer));
-  }
-
-  sRemove(str(*buffer));
+  return true;
 }
 
-/** Recursive version of sRemove(). */
 void sRemoveRecursively(StringView path)
 {
-  static char *buffer = NULL;
-  const size_t length = pathBuilderSet(&buffer, nullTerminate(path));
+  sRemoveRecursivelyIf(path, alwaysReturnTrue, NULL);
+}
 
-  removeRecursively(&buffer, length);
+typedef struct
+{
+  StringView current_path;
+  ShouldRemoveCallback *should_remove;
+  void *callback_user_data;
+
+  /* Wrappers around single reusable buffers. See
+     allocatorWrapOneSingleGrowableBuffer(). */
+  Allocator *current_path_buffer;
+  Allocator *tmp_buffer;
+} RemoveRecursiveContext;
+
+static bool removeRecursively(RemoveRecursiveContext *ctx)
+{
+  bool current_path_is_needed = false;
+
+  const struct stat stats = sLStat(ctx->current_path);
+  if(S_ISDIR(stats.st_mode))
+  {
+    DIR *dir = sOpenDir(ctx->current_path);
+    for(const struct dirent *dir_entry = sReadDir(dir, ctx->current_path);
+        dir_entry != NULL; dir_entry = sReadDir(dir, ctx->current_path))
+    {
+      StringView subpath = strAppendPath(
+        ctx->current_path, str(dir_entry->d_name), ctx->tmp_buffer);
+
+      strSet(&ctx->current_path,
+             strCopy(subpath, ctx->current_path_buffer));
+      if(!removeRecursively(ctx))
+      {
+        current_path_is_needed = true;
+      }
+      strSet(&ctx->current_path, strSplitPath(ctx->current_path).head);
+    }
+    sCloseDir(dir, ctx->current_path);
+  }
+
+  if(!current_path_is_needed &&
+     ctx->should_remove(ctx->current_path, &stats,
+                        ctx->callback_user_data))
+  {
+    sRemove(ctx->current_path);
+    return true;
+  }
+  return false;
+}
+
+/** Recursively delete everything which doesn't pass the given check. Does
+  not follow symlinks.
+
+  @param path Item to be removed. Can also be a file or symlink.
+  @param should_remove Will be called for the following items to check if
+  they should be removed:
+    * Regular files and symlinks
+    * Empty directories
+    * Directories which became empty after deletion
+  Will never be called on non-empty directories.
+  @param user_data Will be passed to each call of `should_remove`.
+*/
+void sRemoveRecursivelyIf(StringView path,
+                          ShouldRemoveCallback should_remove,
+                          void *user_data)
+{
+  CR_Region *r = CR_RegionNew();
+  RemoveRecursiveContext ctx = {
+    .current_path = path,
+    .should_remove = should_remove,
+    .callback_user_data = user_data,
+    .current_path_buffer = allocatorWrapOneSingleGrowableBuffer(r),
+    .tmp_buffer = allocatorWrapOneSingleGrowableBuffer(r),
+  };
+  removeRecursively(&ctx);
+  CR_RegionRelease(r);
 }
 
 /** Safe and simplified wrapper around getcwd().
