@@ -104,10 +104,8 @@ static bool searchNodeMatches(SearchNode *node, StringView path_tail)
   {
     return regexec(node->regex, path_tail.content, 0, NULL, 0) == 0;
   }
-  else
-  {
-    return strEqual(node->name, path_tail);
-  }
+
+  return strEqual(node->name, path_tail);
 }
 
 /** Checks if a subnode of the given result node matches the specified
@@ -216,7 +214,7 @@ static void markAsRemovedRecursively(Metadata *metadata, PathNode *node,
   {
     return;
   }
-  else if(node->history->state.type == PST_non_existing)
+  if(node->history->state.type == PST_non_existing)
   {
     backupHintSet(node->hint, BH_unchanged);
   }
@@ -722,7 +720,7 @@ static bool searchFileDuplicates(PathNode *node, StringView repo_path,
     {
       return true;
     }
-    else if(file_info->slot == UINT8_MAX)
+    if(file_info->slot == UINT8_MAX)
     {
       die("overflow calculating slot number");
     }

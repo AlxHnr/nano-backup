@@ -47,18 +47,12 @@ static uint32_t convertEndian32(uint32_t value)
   {
     return value;
   }
-  else if(endian_test.array[3] == 1)
+  if(endian_test.array[3] == 1)
   {
     value = ((value << 8) & 0xFF00FF00) | ((value >> 8) & 0xFF00FF);
     return (value << 16) | (value >> 16);
   }
-  else
-  {
-    die("failed to convert value: Unsupported endianness");
-#ifndef __GNUC__
-    return 0;
-#endif
-  }
+  die("failed to convert value: Unsupported endianness");
 }
 
 /** Flips the endianness of the given value on big-endian systems. */
@@ -68,7 +62,7 @@ static uint64_t convertEndian64(uint64_t value)
   {
     return value;
   }
-  else if(endian_test.array[3] == 1)
+  if(endian_test.array[3] == 1)
   {
     value = ((value << 8) & 0xFF00FF00FF00FF00ULL) |
       ((value >> 8) & 0x00FF00FF00FF00FFULL);
@@ -76,13 +70,7 @@ static uint64_t convertEndian64(uint64_t value)
       ((value >> 16) & 0x0000FFFF0000FFFFULL);
     return (value << 32) | (value >> 32);
   }
-  else
-  {
-    die("failed to convert value: Unsupported endianness");
-#ifndef __GNUC__
-    return 0;
-#endif
-  }
+  die("failed to convert value: Unsupported endianness");
 }
 
 static uint8_t read8(const FileContent content, size_t *reader_position,

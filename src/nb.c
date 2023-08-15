@@ -193,15 +193,13 @@ static StringView buildFullPath(StringView path)
   {
     return path;
   }
-  else
-  {
-    char *cwd = sGetCwd();
-    StringView full_path =
-      strLegacyAppendPath(strStripTrailingSlashes(str(cwd)), path);
-    free(cwd);
 
-    return full_path;
-  }
+  char *cwd = sGetCwd();
+  StringView full_path =
+    strLegacyAppendPath(strStripTrailingSlashes(str(cwd)), path);
+  free(cwd);
+
+  return full_path;
 }
 
 /** Restores a path.

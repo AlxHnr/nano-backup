@@ -50,10 +50,8 @@ static const char *typeOf(const SearchNode *node)
   {
     return "regex";
   }
-  else
-  {
-    return "string";
-  }
+
+  return "string";
 }
 
 /** Recursively prints informations about all nodes in the given search
@@ -131,10 +129,8 @@ static const PathState *getExistingState(const PathNode *node)
   {
     return &node->history->next->state;
   }
-  else
-  {
-    return &node->history->state;
-  }
+
+  return &node->history->state;
 }
 
 /** Increment the attribute counter in the given change struct based on the

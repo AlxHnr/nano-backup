@@ -258,14 +258,12 @@ static SearchResult finishDirectory(SearchIterator *iterator)
 
     return (SearchResult){ .type = SRT_end_of_directory };
   }
-  else
-  {
-    free(iterator->state_stack.state_array);
-    free(iterator->buffer.str);
-    free(iterator);
 
-    return (SearchResult){ .type = SRT_end_of_search };
-  }
+  free(iterator->state_stack.state_array);
+  free(iterator->buffer.str);
+  free(iterator);
+
+  return (SearchResult){ .type = SRT_end_of_search };
 }
 
 static bool nodeMatches(const SearchNode *node, StringView string)
@@ -274,10 +272,8 @@ static bool nodeMatches(const SearchNode *node, StringView string)
   {
     return regexec(node->regex, string.content, 0, NULL, 0) == 0;
   }
-  else
-  {
-    return strEqual(node->name, string);
-  }
+
+  return strEqual(node->name, string);
 }
 
 /** Completes a search step by querying the next file from the currently
@@ -379,10 +375,8 @@ static SearchResult finishCurrentNode(SearchIterator *iterator)
   {
     return finishNodeStep(iterator, node, node->policy);
   }
-  else
-  {
-    return finishCurrentNode(iterator);
-  }
+
+  return finishCurrentNode(iterator);
 }
 
 /** Creates a new SearchIterator for searching the filesystem.
@@ -442,8 +436,6 @@ SearchResult searchGetNext(SearchIterator *iterator)
   {
     return finishSearchStep(iterator);
   }
-  else
-  {
-    return finishCurrentNode(iterator);
-  }
+
+  return finishCurrentNode(iterator);
 }

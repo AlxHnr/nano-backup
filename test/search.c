@@ -69,7 +69,7 @@ static size_t skipCwd(SearchIterator *iterator, StringView cwd, const SearchNode
     {
       break;
     }
-    else if(result.policy != BPOL_none)
+    if(result.policy != BPOL_none)
     {
       die("unexpected policy in \"%s\"", result.path.content);
     }

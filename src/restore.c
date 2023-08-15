@@ -161,8 +161,8 @@ static void checkAndHandleChangesRecursively(PathNode *node,
   {
     return;
   }
-  else if(backupHintNoPol(node->hint) >= BH_added &&
-          backupHintNoPol(node->hint) <= BH_other_to_directory)
+  if(backupHintNoPol(node->hint) >= BH_added &&
+     backupHintNoPol(node->hint) <= BH_other_to_directory)
   {
     could_exist = false;
   }

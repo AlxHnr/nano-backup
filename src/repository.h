@@ -42,7 +42,7 @@ extern RepoReader *repoReaderOpenFile(StringView repo_path,
                                       StringView source_file_path,
                                       const RegularFileInfo *info);
 extern void repoReaderRead(void *data, size_t size, RepoReader *reader);
-extern void repoReaderClose(RepoReader *reader);
+extern void repoReaderClose(RepoReader *reader_to_close);
 
 extern RepoWriter *repoWriterOpenFile(StringView repo_path,
                                       StringView repo_tmp_file_path,
@@ -54,7 +54,7 @@ extern RepoWriter *repoWriterOpenRaw(StringView repo_path,
                                      StringView final_path);
 extern void repoWriterWrite(const void *data, size_t size,
                             RepoWriter *writer);
-extern void repoWriterClose(RepoWriter *writer);
+extern void repoWriterClose(RepoWriter *writer_to_close);
 
 extern void repoLockUntilExit(StringView repo_path);
 

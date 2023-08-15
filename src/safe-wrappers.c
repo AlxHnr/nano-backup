@@ -727,11 +727,9 @@ FileContent sGetFilesContent(CR_Region *region, StringView path)
 
     return (FileContent){ .content = content, .size = file_stats.st_size };
   }
-  else
-  {
-    char *content = CR_RegionAllocUnaligned(region, 1);
-    content[0] = '\0';
 
-    return (FileContent){ .content = content, .size = 0 };
-  }
+  char *content = CR_RegionAllocUnaligned(region, 1);
+  content[0] = '\0';
+
+  return (FileContent){ .content = content, .size = 0 };
 }

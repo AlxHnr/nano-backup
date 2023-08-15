@@ -30,11 +30,11 @@ static bool checkRegularValues(const PathState *state, const uint64_t size, cons
   {
     return false;
   }
-  else if(hash == NULL)
+  if(hash == NULL)
   {
     return true;
   }
-  else if(size > FILE_HASH_SIZE)
+  if(size > FILE_HASH_SIZE)
   {
     return (memcmp(state->metadata.file_info.hash, hash, FILE_HASH_SIZE) == 0) &&
       state->metadata.file_info.slot == slot;
@@ -58,10 +58,8 @@ static bool nextNodeGreater(const Metadata *metadata, const PathHistory *point)
   {
     return true;
   }
-  else
-  {
-    return point->backup->id < point->next->backup->id;
-  }
+
+  return point->backup->id < point->next->backup->id;
 }
 
 /** Performs some basic checks on the given metadatas config history.
@@ -123,7 +121,7 @@ static size_t checkPathTree(const PathNode *parent_node, const Metadata *metadat
     {
       continue;
     }
-    else if(node->path.content[node->path.length] != '\0')
+    if(node->path.content[node->path.length] != '\0')
     {
       die("unterminated path string in metadata: \"%s\"", strLegacyCopy(node->path).content);
     }
