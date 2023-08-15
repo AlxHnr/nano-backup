@@ -5,7 +5,6 @@
 #include "CRegion/alloc-growable.h"
 #include "CRegion/region.h"
 #include "allocator.h"
-#include "path-builder.h"
 #include "safe-math.h"
 #include "safe-wrappers.h"
 #include "string-table.h"

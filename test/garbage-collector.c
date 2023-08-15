@@ -1,6 +1,5 @@
 #include "garbage-collector.h"
 
-#include "path-builder.h"
 #include "safe-wrappers.h"
 #include "test-common.h"
 #include "test.h"

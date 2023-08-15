@@ -3,7 +3,6 @@
 #include <stdlib.h>
 
 #include "error-handling.h"
-#include "path-builder.h"
 #include "safe-wrappers.h"
 #include "str.h"
 #include "test.h"
@@ -498,10 +497,10 @@ static void testBrokenConfigFiles(void)
 
   @param path The path to the config file.
 */
-static void testInsertNullBytes(const char *path)
+static void testInsertNullBytes(StringView path)
 {
   CR_Region *r = CR_RegionNew();
-  const FileContent content = sGetFilesContent(r, str(path));
+  const FileContent content = sGetFilesContent(r, path);
   if(content.size == 0)
   {
     return;
@@ -526,7 +525,6 @@ static void testInsertNullBytes(const char *path)
   testInsertNullBytes(). */
 static void testNullBytesConfigFiles(void)
 {
-  static char *buffer = NULL;
   const char *config_paths[] = {
     "broken-config-files",
     "generated-config-files",
@@ -534,21 +532,25 @@ static void testNullBytesConfigFiles(void)
     "valid-config-files",
   };
 
+  CR_Region *r = CR_RegionNew();
+  Allocator *a = allocatorWrapOneSingleGrowableBuffer(r);
+
   for(size_t dir_index = 0; dir_index < sizeof(config_paths) / sizeof(config_paths[0]); dir_index++)
   {
     StringView dir_path = str(config_paths[dir_index]);
-    const size_t path_length = pathBuilderSet(&buffer, dir_path.content);
     DIR *dir = sOpenDir(dir_path);
 
     for(const struct dirent *dir_entry = sReadDir(dir, dir_path); dir_entry != NULL;
         dir_entry = sReadDir(dir, dir_path))
     {
-      pathBuilderAppend(&buffer, path_length, dir_entry->d_name);
-      testInsertNullBytes(buffer);
+      StringView filepath = strAppendPath(dir_path, str(dir_entry->d_name), a);
+      testInsertNullBytes(filepath);
     }
 
     sCloseDir(dir, dir_path);
   }
+
+  CR_RegionRelease(r);
 }
 
 int main(void)

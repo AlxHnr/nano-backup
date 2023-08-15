@@ -6,7 +6,6 @@
 #include "backup.h"
 #include "error-handling.h"
 #include "memory-pool.h"
-#include "path-builder.h"
 #include "restore.h"
 #include "safe-wrappers.h"
 #include "test-common.h"
@@ -150,33 +149,25 @@ void generateCollidingFiles(const uint8_t *hash, const size_t size, const size_t
   info.size = size;
   info.slot = 0;
 
-  static char *path_buffer = NULL;
-  pathBuilderSet(&path_buffer, "tmp/repo");
+  StringView repo_path = str("tmp/repo");
+  CR_Region *r = CR_RegionNew();
+  Allocator *a = allocatorWrapOneSingleGrowableBuffer(r);
 
   static char *path_in_repo = NULL;
   repoBuildRegularFilePath(&path_in_repo, &info);
-  pathBuilderAppend(&path_buffer, 8, path_in_repo);
 
-  path_buffer[13] = '\0';
-  if(!sPathExists(str(path_buffer)))
-  {
-    path_buffer[10] = '\0';
-    if(!sPathExists(str(path_buffer)))
-    {
-      sMkdir(str(path_buffer));
-    }
-    path_buffer[10] = '/';
-
-    sMkdir(str(path_buffer));
-  }
-  path_buffer[13] = '/';
+  StringView filepath = strAppendPath(repo_path, str(path_in_repo), a);
+  StringView parent_path = strSplitPath(filepath).head;
+  StringView parent_parent_path = strSplitPath(parent_path).head;
+  if(!sPathExists(parent_parent_path)) sMkdir(parent_parent_path);
+  if(!sPathExists(parent_path)) sMkdir(parent_path);
 
   for(size_t slot = 0; slot < files_to_create; slot++)
   {
     info.slot = (uint8_t)slot;
     repoBuildRegularFilePath(&path_in_repo, &info);
-    pathBuilderAppend(&path_buffer, 8, path_in_repo);
-    FileStream *stream = sFopenWrite(str(path_buffer));
+    StringView colliding_filepath = strAppendPath(repo_path, str(path_in_repo), a);
+    FileStream *stream = sFopenWrite(colliding_filepath);
 
     const uint8_t bytes_to_write[] = { info.slot, 0 };
     size_t bytes_left = size;
@@ -192,6 +183,8 @@ void generateCollidingFiles(const uint8_t *hash, const size_t size, const size_t
 
     sFclose(stream);
   }
+
+  CR_RegionRelease(r);
 }
 
 void removePath(const char *path)
