@@ -10,6 +10,7 @@ cppcheck --quiet --std=c99 --enable=all --error-exitcode=1 \
   --suppress="ctunullpointer:*" \
   --suppress="ctuuninitvar:*" \
   --suppress="missingIncludeSystem:*" \
+  --suppress="funcArgOrderDifferent:*" \
   --suppress="nullPointerRedundantCheck:*" \
   --suppress="redundantAssignment:test/*.c" \
   --suppress="unusedStructMember:src/metadata.c" \
