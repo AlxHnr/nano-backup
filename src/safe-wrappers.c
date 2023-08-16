@@ -510,13 +510,9 @@ void sRemoveRecursively(StringView path)
   sRemoveRecursivelyIf(path, alwaysReturnTrue, NULL);
 }
 
-typedef struct
-{
-  ShouldRemoveCallback *should_remove;
-  void *callback_user_data;
-} RemoveRecursiveContext;
-
-static bool removeRecursively(RemoveRecursiveContext *ctx, StringView path)
+static bool removeRecursivelyIf(StringView path,
+                                ShouldRemoveCallback should_remove,
+                                void *user_data)
 {
   bool current_path_is_needed = false;
 
@@ -527,7 +523,7 @@ static bool removeRecursively(RemoveRecursiveContext *ctx, StringView path)
     for(StringView subpath = sDirGetNext(dir); subpath.length > 0;
         strSet(&subpath, sDirGetNext(dir)))
     {
-      if(!removeRecursively(ctx, subpath))
+      if(!removeRecursivelyIf(subpath, should_remove, user_data))
       {
         current_path_is_needed = true;
       }
@@ -535,8 +531,7 @@ static bool removeRecursively(RemoveRecursiveContext *ctx, StringView path)
     sDirClose(dir);
   }
 
-  if(!current_path_is_needed &&
-     ctx->should_remove(path, &stats, ctx->callback_user_data))
+  if(!current_path_is_needed && should_remove(path, &stats, user_data))
   {
     sRemove(path);
     return true;
@@ -560,13 +555,7 @@ void sRemoveRecursivelyIf(StringView path,
                           ShouldRemoveCallback should_remove,
                           void *user_data)
 {
-  CR_Region *r = CR_RegionNew();
-  RemoveRecursiveContext ctx = {
-    .should_remove = should_remove,
-    .callback_user_data = user_data,
-  };
-  removeRecursively(&ctx, path);
-  CR_RegionRelease(r);
+  removeRecursivelyIf(path, should_remove, user_data);
 }
 
 /** Safe and simplified wrapper around getcwd().
