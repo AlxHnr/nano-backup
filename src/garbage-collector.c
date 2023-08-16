@@ -15,36 +15,35 @@
   @param a Allocator to use for constructing table keys.
 */
 static void populateTableRecursively(Allocator *a, StringTable *table,
-                                     const PathNode *node)
+                                     const PathNode *nodes)
 {
-  if(backupHintNoPol(node->hint) == BH_not_part_of_repository)
+  for(const PathNode *node = nodes; node != NULL; node = node->next)
   {
-    return;
-  }
-
-  for(const PathHistory *point = node->history; point != NULL;
-      point = point->next)
-  {
-    if(point->state.type != PST_regular_file ||
-       point->state.metadata.file_info.size <= FILE_HASH_SIZE)
+    if(backupHintNoPol(node->hint) == BH_not_part_of_repository)
     {
       continue;
     }
 
-    static char *buffer = NULL;
-    repoBuildRegularFilePath(&buffer, &point->state.metadata.file_info);
-    StringView path = str(buffer);
-
-    if(strTableGet(table, path) == NULL)
+    for(const PathHistory *point = node->history; point != NULL;
+        point = point->next)
     {
-      strTableMap(table, strCopy(path, a), (void *)0x1);
-    }
-  }
+      if(point->state.type != PST_regular_file ||
+         point->state.metadata.file_info.size <= FILE_HASH_SIZE)
+      {
+        continue;
+      }
 
-  for(const PathNode *subnode = node->subnodes; subnode != NULL;
-      subnode = subnode->next)
-  {
-    populateTableRecursively(a, table, subnode);
+      static char *buffer = NULL;
+      repoBuildRegularFilePath(&buffer, &point->state.metadata.file_info);
+      StringView path = str(buffer);
+
+      if(strTableGet(table, path) == NULL)
+      {
+        strTableMap(table, strCopy(path, a), (void *)0x1);
+      }
+    }
+
+    populateTableRecursively(a, table, node->subnodes);
   }
 }
 
@@ -105,13 +104,8 @@ GCStatistics collectGarbage(const Metadata *metadata, StringView repo_path)
   strTableMap(ctx.paths_to_preserve, str("config"), (void *)0x1);
   strTableMap(ctx.paths_to_preserve, str("metadata"), (void *)0x1);
   strTableMap(ctx.paths_to_preserve, str("lockfile"), (void *)0x1);
-
-  Allocator *region_wrapper = allocatorWrapRegion(r);
-  for(const PathNode *node = metadata->paths; node != NULL;
-      node = node->next)
-  {
-    populateTableRecursively(region_wrapper, ctx.paths_to_preserve, node);
-  }
+  populateTableRecursively(allocatorWrapRegion(r), ctx.paths_to_preserve,
+                           metadata->paths);
 
   DirIterator *dir = sDirOpen(repo_path);
   for(StringView subpath = sDirGetNext(dir); subpath.length > 0;
