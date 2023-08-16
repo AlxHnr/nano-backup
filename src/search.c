@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "CRegion/region.h"
 #include "error-handling.h"
 #include "informations.h"
 #include "safe-math.h"
@@ -97,6 +98,13 @@ static void pushCurrentState(SearchIterator *iterator)
   iterator->state_stack.state_array[iterator->state_stack.used] =
     iterator->state;
   iterator->state_stack.used++;
+}
+
+static bool regexMatches(const regex_t *pattern, StringView string,
+                         Allocator *tmp_buffer)
+{
+  const char *raw_string = strGetContent(string, tmp_buffer);
+  return regexec(pattern, raw_string, 0, NULL, 0) == 0;
 }
 
 /** Appends the given filename to the currently traversed path. */
@@ -230,11 +238,12 @@ static SearchResult finishDirectory(SearchIterator *iterator)
   return (SearchResult){ .type = SRT_end_of_search };
 }
 
-static bool nodeMatches(const SearchNode *node, StringView string)
+static bool nodeMatches(const SearchNode *node, StringView string,
+                        Allocator *tmp_buffer)
 {
   if(node->regex)
   {
-    return regexec(node->regex, string.content, 0, NULL, 0) == 0;
+    return regexMatches(node->regex, string, tmp_buffer);
   }
 
   return strIsEqual(node->name, string);
@@ -267,7 +276,7 @@ static SearchResult finishSearchStep(SearchIterator *iterator)
   for(SearchNode *node = iterator->state.access.search.subnodes;
       node != NULL; node = node->next)
   {
-    if(nodeMatches(node, dir_entry_name))
+    if(nodeMatches(node, dir_entry_name, iterator->tmp_buffer))
     {
       if(matched_node == NULL)
       {
@@ -298,8 +307,8 @@ static SearchResult finishSearchStep(SearchIterator *iterator)
   for(RegexList *element = iterator->ignore_expressions; element != NULL;
       element = element->next)
   {
-    if(regexec(element->regex, iterator->current_path.content, 0, NULL,
-               0) == 0)
+    if(regexMatches(element->regex, iterator->current_path,
+                    iterator->tmp_buffer))
     {
       element->has_matched = true;
       return finishSearchStep(iterator);
