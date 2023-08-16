@@ -14,8 +14,7 @@ struct RegexList
   /** The expression in compiled form. */
   const regex_t *regex;
 
-  /** The uncompiled regular expression as a string. The buffer inside this
-    string is guaranteed to be null-terminated. */
+  /** The uncompiled regular expression as a string. */
   StringView expression;
 
   /** The number of the line in the config file on which this expression
@@ -31,8 +30,7 @@ struct RegexList
 typedef struct SearchNode SearchNode;
 struct SearchNode
 {
-  /** The name or expression of the node. The buffer inside this string is
-    guaranteed to be null-terminated. */
+  /** The name or expression of the node. */
   StringView name;
 
   /** The number of the line in the config file on which this node appeared

@@ -87,8 +87,7 @@ static size_t skipCwd(SearchIterator *iterator, StringView cwd, const SearchNode
   @param string The string that starts with the given cwd.
   @param cwd The cwd path.
 
-  @return The copy of the trimmed string containing a null-terminated
-  buffer.
+  @return The copy of the trimmed string.
 */
 static StringView trimCwd(StringView string, StringView cwd)
 {

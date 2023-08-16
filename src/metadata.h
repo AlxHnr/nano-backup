@@ -147,8 +147,7 @@ typedef enum
 typedef struct PathNode PathNode;
 struct PathNode
 {
-  /** The full, absolute path inside the filesystem, containing a
-    null-terminated buffer. */
+  /** The full, absolute path inside the filesystem. */
   StringView path;
 
   /** Contains temporary informations about this node. They will not be

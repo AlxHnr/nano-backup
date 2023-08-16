@@ -181,11 +181,7 @@ static void checkNode(const SearchNode *node, const SearchNode *root_node, const
   assert_true(node->ignore_expressions == root_node->ignore_expressions);
 }
 
-/** Loads a search tree from a simple config file and checks it.
-
-  @param path A null-terminated string, containing a path to a valid config
-  file.
-*/
+/** Loads a search tree from a simple config file and checks it. */
 static void testSimpleConfigFile(StringView path)
 {
   const SearchNode *root = searchTreeLoad(path);

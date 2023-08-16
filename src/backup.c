@@ -94,7 +94,7 @@ static void reassignPointToCurrent(Metadata *metadata, PathHistory *point)
 
   @param node The node containing the data used for matching.
   @param path_tail The last element of a path. This string should not
-  contain any slashes and must be null-terminated.
+  contain any slashes.
 
   @return True, if the given node matches the specified path tail.
 */
@@ -111,7 +111,7 @@ static bool searchNodeMatches(SearchNode *node, StringView path_tail)
 /** Checks if a subnode of the given result node matches the specified
   path.
 
-  @param path The path to match. Must be null-terminated.
+  @param path The path to match.
   @param result The node containing the subnodes used for matching. Can be
   NULL.
 
@@ -138,7 +138,6 @@ static SearchNode *matchesSearchSubnodes(StringView path,
 
 /** Matches the given ignore expression list against the specified path.
 
-  @param path A null-terminated path which should be matched.
   @param ignore_list A list of ignore expressions or NULL.
 
   @return True, if one ignore expression matched the specified path.

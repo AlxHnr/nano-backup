@@ -338,8 +338,7 @@ void setStatCache(const size_t index)
 
 /** Stats a file and caches the result for subsequent runs.
 
-  @param path The path to the file to stat. Must contain a null-terminated
-  buffer.
+  @param path The path to the file to stat.
   @param stat_fun The stat function to use.
 
   @return The stats which the given path had on its first access trough
