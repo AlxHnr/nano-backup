@@ -17,7 +17,7 @@ static void mustHaveDummy(PathNode *node, const BackupHint hint, const BackupPol
 
 /** Creates various dummy files for testing change detection in nodes
   without a policy. */
-static void initNoneChangeTest(SearchNode *change_detection_node)
+static void initNoneChangeTest(CR_Region *r, SearchNode *change_detection_node)
 {
   /* Generate various files. */
   assertTmpIsCleared();
@@ -37,7 +37,7 @@ static void initNoneChangeTest(SearchNode *change_detection_node)
   generateFile("tmp/files/h/dummy", "dummy", 1);
 
   /* Initiate the backup. */
-  Metadata *metadata = metadataNew();
+  Metadata *metadata = metadataNew(r);
   initiateBackup(metadata, change_detection_node);
 
   /* Check the initiated backup. */
@@ -87,10 +87,10 @@ static void initNoneChangeTest(SearchNode *change_detection_node)
 
 /** Modifies the current metadata in such a way, that a subsequent
   initiation will find changes in nodes without a policy. */
-static void modifyNoneChangeTest(SearchNode *change_detection_node)
+static void modifyNoneChangeTest(CR_Region *r, SearchNode *change_detection_node)
 {
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad(str("tmp/repo/metadata"));
+  Metadata *metadata = metadataLoad(r, str("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 16);
   checkHistPoint(metadata, 0, 0, phase_timestamps(0), cwd_depth() + 16);
   initiateBackup(metadata, change_detection_node);
@@ -155,10 +155,10 @@ static void modifyNoneChangeTest(SearchNode *change_detection_node)
 }
 
 /** Tests detection of changes in nodes without a policy. */
-static void changeNoneChangeTest(SearchNode *change_detection_node)
+static void changeNoneChangeTest(CR_Region *r, SearchNode *change_detection_node)
 {
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad(str("tmp/repo/metadata"));
+  Metadata *metadata = metadataLoad(r, str("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 16);
   checkHistPoint(metadata, 0, 0, phase_timestamps(1), cwd_depth() + 10);
   checkHistPoint(metadata, 1, 1, phase_timestamps(0), 6);
@@ -207,10 +207,10 @@ static void changeNoneChangeTest(SearchNode *change_detection_node)
 }
 
 /** Tests metadata written by the previous phase. */
-static void postNoneChangeTest(SearchNode *change_detection_node)
+static void postNoneChangeTest(CR_Region *r, SearchNode *change_detection_node)
 {
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad(str("tmp/repo/metadata"));
+  Metadata *metadata = metadataLoad(r, str("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 16);
   checkHistPoint(metadata, 0, 0, phase_timestamps(2), cwd_depth() + 10);
   checkHistPoint(metadata, 1, 1, phase_timestamps(0), 6);
@@ -263,7 +263,7 @@ static void postNoneChangeTest(SearchNode *change_detection_node)
   test.
   @param policy The policy to test.
 */
-static void initChangeDetectionTest(SearchNode *change_detection_node, const BackupPolicy policy)
+static void initChangeDetectionTest(CR_Region *r, SearchNode *change_detection_node, const BackupPolicy policy)
 {
   /* Prepare test and create various files. */
   assertTmpIsCleared();
@@ -316,7 +316,7 @@ static void initChangeDetectionTest(SearchNode *change_detection_node, const Bac
   generateFile("tmp/files/46", "Test file", 1);
 
   /* Initiate the backup. */
-  Metadata *metadata = metadataNew();
+  Metadata *metadata = metadataNew(r);
   initiateBackup(metadata, change_detection_node);
 
   /* Check the initiated backup. */
@@ -460,10 +460,10 @@ static void initChangeDetectionTest(SearchNode *change_detection_node, const Bac
 
 /** Modifies the current metadata in such a way, that a subsequent
   initiation will find changes in nodes. */
-static void modifyChangeDetectionTest(SearchNode *change_detection_node, const BackupPolicy policy)
+static void modifyChangeDetectionTest(CR_Region *r, SearchNode *change_detection_node, const BackupPolicy policy)
 {
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad(str("tmp/repo/metadata"));
+  Metadata *metadata = metadataLoad(r, str("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 49);
   checkHistPoint(metadata, 0, 0, phase_timestamps(backup_counter() - 1), cwd_depth() + 49);
   initiateBackup(metadata, change_detection_node);
@@ -680,10 +680,10 @@ static void modifyChangeDetectionTest(SearchNode *change_detection_node, const B
 }
 
 /** Tests the changes injected by modifyChangeDetectionTest(). */
-static void changeDetectionTest(SearchNode *change_detection_node, const BackupPolicy policy)
+static void changeDetectionTest(CR_Region *r, SearchNode *change_detection_node, const BackupPolicy policy)
 {
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad(str("tmp/repo/metadata"));
+  Metadata *metadata = metadataLoad(r, str("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 49);
   checkHistPoint(metadata, 0, 0, phase_timestamps(backup_counter() - 1), cwd_depth() + 2);
   checkHistPoint(metadata, 1, 1, phase_timestamps(backup_counter() - 2), 47);
@@ -845,10 +845,10 @@ static void changeDetectionTest(SearchNode *change_detection_node, const BackupP
 
 /** Tests the metadata written by changeDetectionTest() and cleans up the
   test directory. */
-static void postDetectionTest(SearchNode *change_detection_node, const BackupPolicy policy)
+static void postDetectionTest(CR_Region *r, SearchNode *change_detection_node, const BackupPolicy policy)
 {
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad(str("tmp/repo/metadata"));
+  Metadata *metadata = metadataLoad(r, str("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 49);
   checkHistPoint(metadata, 0, 0, phase_timestamps(backup_counter() - 1), cwd_depth() + 47);
   checkHistPoint(metadata, 1, 1, phase_timestamps(backup_counter() - 3), 2);
@@ -965,10 +965,10 @@ static void postDetectionTest(SearchNode *change_detection_node, const BackupPol
 }
 
 /** Tests change detection in tracked nodes. */
-static void trackChangeDetectionTest(SearchNode *track_detection_node)
+static void trackChangeDetectionTest(CR_Region *r, SearchNode *track_detection_node)
 {
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad(str("tmp/repo/metadata"));
+  Metadata *metadata = metadataLoad(r, str("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 49);
   checkHistPoint(metadata, 0, 0, phase_timestamps(13), cwd_depth() + 2);
   checkHistPoint(metadata, 1, 1, phase_timestamps(12), 47);
@@ -1339,10 +1339,10 @@ static void trackChangeDetectionTest(SearchNode *track_detection_node)
 }
 
 /** Tests the metadata written by the previous phase and cleans up. */
-static void trackPostDetectionTest(SearchNode *track_detection_node)
+static void trackPostDetectionTest(CR_Region *r, SearchNode *track_detection_node)
 {
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad(str("tmp/repo/metadata"));
+  Metadata *metadata = metadataLoad(r, str("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 49);
   checkHistPoint(metadata, 0, 0, phase_timestamps(14), cwd_depth() + 47);
   checkHistPoint(metadata, 1, 1, phase_timestamps(12), 47);
@@ -1640,40 +1640,43 @@ static void trackPostDetectionTest(SearchNode *track_detection_node)
 int main(void)
 {
   initBackupCommon(1);
+  CR_Region *r = CR_RegionNew();
 
   testGroupStart("detecting changes in nodes with no policy");
   SearchNode *none_detection_node = searchTreeLoad(str("generated-config-files/backup-phase-17.txt"));
 
-  initNoneChangeTest(none_detection_node);
-  modifyNoneChangeTest(none_detection_node);
-  changeNoneChangeTest(none_detection_node);
-  postNoneChangeTest(none_detection_node);
+  initNoneChangeTest(r, none_detection_node);
+  modifyNoneChangeTest(r, none_detection_node);
+  changeNoneChangeTest(r, none_detection_node);
+  postNoneChangeTest(r, none_detection_node);
   testGroupEnd();
 
   testGroupStart("detecting changes in copied nodes");
   SearchNode *copy_detection_node = searchTreeLoad(str("generated-config-files/change-detection-copy.txt"));
 
-  initChangeDetectionTest(copy_detection_node, BPOL_copy);
-  modifyChangeDetectionTest(copy_detection_node, BPOL_copy);
-  changeDetectionTest(copy_detection_node, BPOL_copy);
-  postDetectionTest(copy_detection_node, BPOL_copy);
+  initChangeDetectionTest(r, copy_detection_node, BPOL_copy);
+  modifyChangeDetectionTest(r, copy_detection_node, BPOL_copy);
+  changeDetectionTest(r, copy_detection_node, BPOL_copy);
+  postDetectionTest(r, copy_detection_node, BPOL_copy);
   testGroupEnd();
 
   testGroupStart("detecting changes in mirrored nodes");
   SearchNode *mirror_detection_node = searchTreeLoad(str("generated-config-files/change-detection-mirror.txt"));
 
-  initChangeDetectionTest(mirror_detection_node, BPOL_mirror);
-  modifyChangeDetectionTest(mirror_detection_node, BPOL_mirror);
-  changeDetectionTest(mirror_detection_node, BPOL_mirror);
-  postDetectionTest(mirror_detection_node, BPOL_mirror);
+  initChangeDetectionTest(r, mirror_detection_node, BPOL_mirror);
+  modifyChangeDetectionTest(r, mirror_detection_node, BPOL_mirror);
+  changeDetectionTest(r, mirror_detection_node, BPOL_mirror);
+  postDetectionTest(r, mirror_detection_node, BPOL_mirror);
   testGroupEnd();
 
   testGroupStart("detecting changes in tracked nodes");
   SearchNode *track_detection_node = searchTreeLoad(str("generated-config-files/change-detection-track.txt"));
 
-  initChangeDetectionTest(track_detection_node, BPOL_track);
-  modifyChangeDetectionTest(track_detection_node, BPOL_track);
-  trackChangeDetectionTest(track_detection_node);
-  trackPostDetectionTest(track_detection_node);
+  initChangeDetectionTest(r, track_detection_node, BPOL_track);
+  modifyChangeDetectionTest(r, track_detection_node, BPOL_track);
+  trackChangeDetectionTest(r, track_detection_node);
+  trackPostDetectionTest(r, track_detection_node);
   testGroupEnd();
+
+  CR_RegionRelease(r);
 }

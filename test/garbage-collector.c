@@ -44,10 +44,12 @@ static void testCollectGarbage(const Metadata *metadata, const char *repo_path, 
 
 int main(void)
 {
+  CR_Region *r = CR_RegionNew();
+
   testGroupStart("symlink handling");
   sMkdir(str("tmp/repo"));
   sFclose(sFopenWrite(str("tmp/file.txt")));
-  const Metadata *empty_metadata = metadataNew();
+  const Metadata *empty_metadata = metadataNew(r);
 
   /* Repository is simple directory. */
   populateRepoWithDummyFiles();
@@ -96,4 +98,6 @@ int main(void)
   assert_true(sPathExists(str("tmp/repo/metadata")));
   assert_true(sPathExists(str("tmp/repo/lockfile")));
   testGroupEnd();
+
+  CR_RegionRelease(r);
 }

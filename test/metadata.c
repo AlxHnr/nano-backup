@@ -903,7 +903,7 @@ static void generateBrokenMetadata(void)
   CR_Region *r = CR_RegionNew();
   char *test_data = sGetFilesContent(r, str("tmp/test-data-1")).content;
 
-  Metadata *metadata = metadataLoad(str("tmp/test-data-1"));
+  Metadata *metadata = metadataLoad(r, str("tmp/test-data-1"));
   checkMetadata(metadata, 2, true);
   PathNode *portage = strTableGet(metadata->path_table, str("/etc/portage"));
   assert_true(portage != NULL);
@@ -1062,7 +1062,7 @@ static void generateBrokenMetadata(void)
   checkTestData1(metadata);
 
   writeBytesToFile(700, test_data, "tmp/test-data-1");
-  checkTestData1(metadataLoad(str("tmp/test-data-1")));
+  checkTestData1(metadataLoad(r, str("tmp/test-data-1")));
 
   CR_RegionRelease(r);
 }
@@ -1071,103 +1071,109 @@ static void generateBrokenMetadata(void)
 static void testRejectingCorruptedMetadata(void)
 {
   generateBrokenMetadata();
-  assert_error_errno(metadataLoad(str("non-existing.txt")), "failed to access \"non-existing.txt\"", ENOENT);
-  assert_error(metadataLoad(str("tmp/missing-byte")),
+  CR_Region *r = CR_RegionNew();
+  assert_error_errno(metadataLoad(r, str("non-existing.txt")), "failed to access \"non-existing.txt\"", ENOENT);
+  assert_error(metadataLoad(r, str("tmp/missing-byte")),
                "corrupted metadata: expected 1 byte, got 0: \"tmp/missing-byte\"");
-  assert_error(metadataLoad(str("tmp/missing-slot")),
+  assert_error(metadataLoad(r, str("tmp/missing-slot")),
                "corrupted metadata: expected 1 byte, got 0: \"tmp/missing-slot\"");
-  assert_error(metadataLoad(str("tmp/invalid-path-state-type")),
+  assert_error(metadataLoad(r, str("tmp/invalid-path-state-type")),
                "invalid PathStateType in \"tmp/invalid-path-state-type\"");
-  assert_error(metadataLoad(str("tmp/missing-path-state-type")),
+  assert_error(metadataLoad(r, str("tmp/missing-path-state-type")),
                "corrupted metadata: expected 1 byte, got 0: \"tmp/missing-path-state-type\"");
-  assert_error(metadataLoad(str("tmp/incomplete-32-bit-value")),
+  assert_error(metadataLoad(r, str("tmp/incomplete-32-bit-value")),
                "corrupted metadata: expected 4 bytes, got 3: \"tmp/incomplete-32-bit-value\"");
-  assert_error(metadataLoad(str("tmp/missing-32-bit-value")),
+  assert_error(metadataLoad(r, str("tmp/missing-32-bit-value")),
                "corrupted metadata: expected 4 bytes, got 0: \"tmp/missing-32-bit-value\"");
-  assert_error(metadataLoad(str("tmp/incomplete-size")),
+  assert_error(metadataLoad(r, str("tmp/incomplete-size")),
                "corrupted metadata: expected 8 bytes, got 3: \"tmp/incomplete-size\"");
-  assert_error(metadataLoad(str("tmp/missing-size")),
+  assert_error(metadataLoad(r, str("tmp/missing-size")),
                "corrupted metadata: expected 8 bytes, got 0: \"tmp/missing-size\"");
-  assert_error(metadataLoad(str("tmp/backup-id-out-of-range-1")),
+  assert_error(metadataLoad(r, str("tmp/backup-id-out-of-range-1")),
                "backup id is out of range in \"tmp/backup-id-out-of-range-1\"");
-  assert_error(metadataLoad(str("tmp/backup-id-out-of-range-2")),
+  assert_error(metadataLoad(r, str("tmp/backup-id-out-of-range-2")),
                "backup id is out of range in \"tmp/backup-id-out-of-range-2\"");
-  assert_error(metadataLoad(str("tmp/backup-id-out-of-range-3")),
+  assert_error(metadataLoad(r, str("tmp/backup-id-out-of-range-3")),
                "backup id is out of range in \"tmp/backup-id-out-of-range-3\"");
-  assert_error(metadataLoad(str("tmp/incomplete-time")),
+  assert_error(metadataLoad(r, str("tmp/incomplete-time")),
                "corrupted metadata: expected 8 bytes, got 7: \"tmp/incomplete-time\"");
-  assert_error(metadataLoad(str("tmp/missing-time")),
+  assert_error(metadataLoad(r, str("tmp/missing-time")),
                "corrupted metadata: expected 8 bytes, got 0: \"tmp/missing-time\"");
-  assert_error(metadataLoad(str("tmp/incomplete-hash")),
+  assert_error(metadataLoad(r, str("tmp/incomplete-hash")),
                "corrupted metadata: expected 20 bytes, got 5: \"tmp/incomplete-hash\"");
-  assert_error(metadataLoad(str("tmp/missing-hash")),
+  assert_error(metadataLoad(r, str("tmp/missing-hash")),
                "corrupted metadata: expected 20 bytes, got 0: \"tmp/missing-hash\"");
-  assert_error(metadataLoad(str("tmp/incomplete-path")),
+  assert_error(metadataLoad(r, str("tmp/incomplete-path")),
                "corrupted metadata: expected 7 bytes, got 4: \"tmp/incomplete-path\"");
-  assert_error(metadataLoad(str("tmp/missing-path")),
+  assert_error(metadataLoad(r, str("tmp/missing-path")),
                "corrupted metadata: expected 3 bytes, got 0: \"tmp/missing-path\"");
-  assert_error(metadataLoad(str("tmp/incomplete-symlink-target-path")),
+  assert_error(metadataLoad(r, str("tmp/incomplete-symlink-target-path")),
                "corrupted metadata: expected 16 bytes, got 6: \"tmp/incomplete-symlink-target-path\"");
-  assert_error(metadataLoad(str("tmp/missing-symlink-target-path")),
+  assert_error(metadataLoad(r, str("tmp/missing-symlink-target-path")),
                "corrupted metadata: expected 16 bytes, got 0: \"tmp/missing-symlink-target-path\"");
-  assert_error(metadataLoad(str("tmp/last-byte-missing")),
+  assert_error(metadataLoad(r, str("tmp/last-byte-missing")),
                "corrupted metadata: expected 8 bytes, got 7: \"tmp/last-byte-missing\"");
-  assert_error(metadataLoad(str("tmp/unneeded-trailing-bytes")),
+  assert_error(metadataLoad(r, str("tmp/unneeded-trailing-bytes")),
                "unneeded trailing bytes in \"tmp/unneeded-trailing-bytes\"");
-  assert_error(metadataLoad(str("tmp/path-count-zero")), "unneeded trailing bytes in \"tmp/path-count-zero\"");
+  assert_error(metadataLoad(r, str("tmp/path-count-zero")), "unneeded trailing bytes in \"tmp/path-count-zero\"");
 
-  assert_error(metadataLoad(str("tmp/filename-with-length-zero-1")),
+  assert_error(metadataLoad(r, str("tmp/filename-with-length-zero-1")),
                "contains filename with length zero: \"tmp/filename-with-length-zero-1\"");
-  assert_error(metadataLoad(str("tmp/filename-with-length-zero-2")),
+  assert_error(metadataLoad(r, str("tmp/filename-with-length-zero-2")),
                "contains filename with length zero: \"tmp/filename-with-length-zero-2\"");
 
-  assert_error(metadataLoad(str("tmp/dot-filename-1")), "contains invalid filename \".\": \"tmp/dot-filename-1\"");
-  assert_error(metadataLoad(str("tmp/dot-filename-2")),
+  assert_error(metadataLoad(r, str("tmp/dot-filename-1")),
+               "contains invalid filename \".\": \"tmp/dot-filename-1\"");
+  assert_error(metadataLoad(r, str("tmp/dot-filename-2")),
                "contains invalid filename \"..\": \"tmp/dot-filename-2\"");
-  assert_error(metadataLoad(str("tmp/dot-filename-3")), "contains invalid filename \".\": \"tmp/dot-filename-3\"");
+  assert_error(metadataLoad(r, str("tmp/dot-filename-3")),
+               "contains invalid filename \".\": \"tmp/dot-filename-3\"");
 
-  assert_error(metadataLoad(str("tmp/slash-filename-1")),
+  assert_error(metadataLoad(r, str("tmp/slash-filename-1")),
                "contains invalid filename \"/\": \"tmp/slash-filename-1\"");
-  assert_error(metadataLoad(str("tmp/slash-filename-2")),
+  assert_error(metadataLoad(r, str("tmp/slash-filename-2")),
                "contains invalid filename \"/onf.d\": \"tmp/slash-filename-2\"");
-  assert_error(metadataLoad(str("tmp/slash-filename-3")),
+  assert_error(metadataLoad(r, str("tmp/slash-filename-3")),
                "contains invalid filename \"po/tage\": \"tmp/slash-filename-3\"");
-  assert_error(metadataLoad(str("tmp/slash-filename-4")),
+  assert_error(metadataLoad(r, str("tmp/slash-filename-4")),
                "contains invalid filename \"po/t/ge\": \"tmp/slash-filename-4\"");
-  assert_error(metadataLoad(str("tmp/slash-filename-5")),
+  assert_error(metadataLoad(r, str("tmp/slash-filename-5")),
                "contains invalid filename \"po/t/g/\": \"tmp/slash-filename-5\"");
-  assert_error(metadataLoad(str("tmp/slash-filename-6")),
+  assert_error(metadataLoad(r, str("tmp/slash-filename-6")),
                "contains invalid filename \"po///g/\": \"tmp/slash-filename-6\"");
-  assert_error(metadataLoad(str("tmp/slash-filename-7")),
+  assert_error(metadataLoad(r, str("tmp/slash-filename-7")),
                "contains invalid filename \"make.con/\": \"tmp/slash-filename-7\"");
 
-  assert_error(metadataLoad(str("tmp/null-byte-filename-1")),
+  assert_error(metadataLoad(r, str("tmp/null-byte-filename-1")),
                "contains filename with null-bytes: \"tmp/null-byte-filename-1\"");
-  assert_error(metadataLoad(str("tmp/null-byte-filename-2")),
+  assert_error(metadataLoad(r, str("tmp/null-byte-filename-2")),
                "contains filename with null-bytes: \"tmp/null-byte-filename-2\"");
-  assert_error(metadataLoad(str("tmp/null-byte-filename-3")),
+  assert_error(metadataLoad(r, str("tmp/null-byte-filename-3")),
                "contains filename with null-bytes: \"tmp/null-byte-filename-3\"");
-  assert_error(metadataLoad(str("tmp/null-byte-filename-4")),
+  assert_error(metadataLoad(r, str("tmp/null-byte-filename-4")),
                "contains filename with null-bytes: \"tmp/null-byte-filename-4\"");
-  assert_error(metadataLoad(str("tmp/null-byte-filename-5")),
+  assert_error(metadataLoad(r, str("tmp/null-byte-filename-5")),
                "contains filename with null-bytes: \"tmp/null-byte-filename-5\"");
-  assert_error(metadataLoad(str("tmp/null-byte-filename-6")),
+  assert_error(metadataLoad(r, str("tmp/null-byte-filename-6")),
                "contains filename with null-bytes: \"tmp/null-byte-filename-6\"");
-  assert_error(metadataLoad(str("tmp/null-byte-filename-7")),
+  assert_error(metadataLoad(r, str("tmp/null-byte-filename-7")),
                "contains filename with null-bytes: \"tmp/null-byte-filename-7\"");
 
-  assert_error(metadataLoad(str("tmp/slash-and-null-byte-filename-1")),
+  assert_error(metadataLoad(r, str("tmp/slash-and-null-byte-filename-1")),
                "contains filename with null-bytes: \"tmp/slash-and-null-byte-filename-1\"");
-  assert_error(metadataLoad(str("tmp/slash-and-null-byte-filename-2")),
+  assert_error(metadataLoad(r, str("tmp/slash-and-null-byte-filename-2")),
                "contains filename with null-bytes: \"tmp/slash-and-null-byte-filename-2\"");
-  assert_error(metadataLoad(str("tmp/slash-and-null-byte-filename-3")),
+  assert_error(metadataLoad(r, str("tmp/slash-and-null-byte-filename-3")),
                "contains filename with null-bytes: \"tmp/slash-and-null-byte-filename-3\"");
+  CR_RegionRelease(r);
 }
 
 int main(void)
 {
+  CR_Region *r = CR_RegionNew();
+
   testGroupStart("metadataNew()");
-  checkEmptyMetadata(metadataNew());
+  checkEmptyMetadata(metadataNew(r));
   testGroupEnd();
 
   testGroupStart("reading and writing of metadata");
@@ -1176,26 +1182,26 @@ int main(void)
   checkTestData1(test_data_1);
 
   writeMetadataToTmpDir(test_data_1);
-  checkTestData1(metadataLoad(str("tmp/metadata")));
+  checkTestData1(metadataLoad(r, str("tmp/metadata")));
 
   /* Write and read TestData2. */
   Metadata *test_data_2 = genTestData2();
   checkTestData2(test_data_2);
 
   writeMetadataToTmpDir(test_data_2);
-  checkTestData2(metadataLoad(str("tmp/metadata")));
+  checkTestData2(metadataLoad(r, str("tmp/metadata")));
   testGroupEnd();
 
   testGroupStart("writing only referenced backup points");
   Metadata *unused_backup_points = genUnusedBackupPoints();
   writeMetadataToTmpDir(unused_backup_points);
-  checkLoadedUnusedBackupPoints(metadataLoad(str("tmp/metadata")));
+  checkLoadedUnusedBackupPoints(metadataLoad(r, str("tmp/metadata")));
   testGroupEnd();
 
   testGroupStart("merging current backup point while writing");
   Metadata *current_backup_data = genCurrentBackupData();
   writeMetadataToTmpDir(current_backup_data);
-  checkLoadedCurrentBackupData(metadataLoad(str("tmp/metadata")));
+  checkLoadedCurrentBackupData(metadataLoad(r, str("tmp/metadata")));
   testGroupEnd();
 
   testGroupStart("adjust backup ID order");
@@ -1204,20 +1210,20 @@ int main(void)
   test_data_1->backup_history[2].id = 1;
   test_data_1->backup_history[3].id = 0;
   writeMetadataToTmpDir(test_data_1);
-  checkTestData1(metadataLoad(str("tmp/metadata")));
+  checkTestData1(metadataLoad(r, str("tmp/metadata")));
 
   test_data_1->backup_history[0].id = 12;
   test_data_1->backup_history[1].id = 8;
   test_data_1->backup_history[2].id = 12983948;
   test_data_1->backup_history[3].id = 0;
   writeMetadataToTmpDir(test_data_1);
-  checkTestData1(metadataLoad(str("tmp/metadata")));
+  checkTestData1(metadataLoad(r, str("tmp/metadata")));
 
   test_data_2->backup_history[0].id = 0;
   test_data_2->backup_history[1].id = 0;
   test_data_2->backup_history[2].id = 0;
   writeMetadataToTmpDir(test_data_2);
-  checkTestData2(metadataLoad(str("tmp/metadata")));
+  checkTestData2(metadataLoad(r, str("tmp/metadata")));
 
   unused_backup_points->backup_history[0].id = 0;
   unused_backup_points->backup_history[1].id = 35;
@@ -1226,57 +1232,59 @@ int main(void)
   unused_backup_points->backup_history[4].id = 5;
   unused_backup_points->backup_history[5].id = 0;
   writeMetadataToTmpDir(unused_backup_points);
-  checkLoadedUnusedBackupPoints(metadataLoad(str("tmp/metadata")));
+  checkLoadedUnusedBackupPoints(metadataLoad(r, str("tmp/metadata")));
 
   current_backup_data->backup_history[0].id = 70;
   current_backup_data->backup_history[1].id = 70;
   writeMetadataToTmpDir(current_backup_data);
-  checkLoadedCurrentBackupData(metadataLoad(str("tmp/metadata")));
+  checkLoadedCurrentBackupData(metadataLoad(r, str("tmp/metadata")));
   testGroupEnd();
 
   testGroupStart("no config history");
   Metadata *no_conf_hist = genNoConfHist();
   checkNoConfHist(no_conf_hist);
   writeMetadataToTmpDir(no_conf_hist);
-  checkNoConfHist(metadataLoad(str("tmp/metadata")));
+  checkNoConfHist(metadataLoad(r, str("tmp/metadata")));
   testGroupEnd();
 
   testGroupStart("no path tree");
   Metadata *no_path_tree = genNoPathTree();
   checkNoPathTree(no_path_tree);
   writeMetadataToTmpDir(no_path_tree);
-  checkNoPathTree(metadataLoad(str("tmp/metadata")));
+  checkNoPathTree(metadataLoad(r, str("tmp/metadata")));
   testGroupEnd();
 
   testGroupStart("no config history and no path tree");
   Metadata *no_conf_no_paths = genWithOnlyBackupPoints();
   writeMetadataToTmpDir(no_conf_no_paths);
-  checkEmptyMetadata(metadataLoad(str("tmp/metadata")));
+  checkEmptyMetadata(metadataLoad(r, str("tmp/metadata")));
   testGroupEnd();
 
   testGroupStart("empty metadata");
   Metadata *empty_metadata = createEmptyMetadata(0);
   checkEmptyMetadata(empty_metadata);
   writeMetadataToTmpDir(empty_metadata);
-  checkEmptyMetadata(metadataLoad(str("tmp/metadata")));
+  checkEmptyMetadata(metadataLoad(r, str("tmp/metadata")));
   testGroupEnd();
 
   testGroupStart("merging current backup into empty metadata");
   writeMetadataToTmpDir(initOnlyCurrentBackupData(createEmptyMetadata(0)));
-  checkOnlyCurrentBackupData(metadataLoad(str("tmp/metadata")));
+  checkOnlyCurrentBackupData(metadataLoad(r, str("tmp/metadata")));
 
   /* The same test as above, but with unreferenced backup points, which
      should be discarded while writing. */
   writeMetadataToTmpDir(initOnlyCurrentBackupData(genWithOnlyBackupPoints()));
-  checkOnlyCurrentBackupData(metadataLoad(str("tmp/metadata")));
+  checkOnlyCurrentBackupData(metadataLoad(r, str("tmp/metadata")));
   testGroupEnd();
 
   testGroupStart("wiping orphaned nodes");
   writeMetadataToTmpDir(genNodesToWipe());
-  checkWipedNodes(metadataLoad(str("tmp/metadata")));
+  checkWipedNodes(metadataLoad(r, str("tmp/metadata")));
   testGroupEnd();
 
   testGroupStart("reject corrupted metadata");
   testRejectingCorruptedMetadata();
   testGroupEnd();
+
+  CR_RegionRelease(r);
 }

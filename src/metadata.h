@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <sys/types.h>
 
+#include "CRegion/region.h"
 #include "backup-policies.h"
 #include "repository.h"
 #include "str.h"
@@ -206,8 +207,8 @@ typedef struct
   PathNode *paths;
 } Metadata;
 
-extern Metadata *metadataNew(void);
-extern Metadata *metadataLoad(StringView path);
+extern Metadata *metadataNew(CR_Region *r);
+extern Metadata *metadataLoad(CR_Region *r, StringView path);
 extern void metadataWrite(Metadata *metadata, StringView repo_path,
                           StringView repo_tmp_file_path,
                           StringView repo_metadata_path);

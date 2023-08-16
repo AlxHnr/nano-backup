@@ -7,7 +7,7 @@
 #include "test.h"
 
 /** Prepares replacing a directory with a file/symlink. */
-static void initNoneFiletypeChange(SearchNode *none_filetype_node)
+static void initNoneFiletypeChange(CR_Region *r, SearchNode *none_filetype_node)
 {
   /* Generate various dummy files. */
   resetStatCache();
@@ -27,7 +27,7 @@ static void initNoneFiletypeChange(SearchNode *none_filetype_node)
   makeSymlink("non-existing.txt", "tmp/files/e/f/i");
 
   /* Initiate the backup. */
-  Metadata *metadata = metadataNew();
+  Metadata *metadata = metadataNew(r);
   initiateBackup(metadata, none_filetype_node);
 
   /* Check the initiated backup. */
@@ -91,7 +91,7 @@ static void removeNoneFiletypeA(void)
 
 /** Replaces a directory with a regular file and modifies the current
   metadata. */
-static void change1NoneFiletypeChange(SearchNode *none_filetype_node)
+static void change1NoneFiletypeChange(CR_Region *r, SearchNode *none_filetype_node)
 {
   /* Replace directory with regular file. */
   removeNoneFiletypeA();
@@ -99,7 +99,7 @@ static void change1NoneFiletypeChange(SearchNode *none_filetype_node)
   removePath("tmp/files/e/f/g");
 
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad(str("tmp/repo/metadata"));
+  Metadata *metadata = metadataLoad(r, str("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 15);
   checkHistPoint(metadata, 0, 0, phase_timestamps(backup_counter() - 1), cwd_depth() + 15);
   initiateBackup(metadata, none_filetype_node);
@@ -153,7 +153,7 @@ static void change1NoneFiletypeChange(SearchNode *none_filetype_node)
 
 /** Like change1NoneFiletypeChange(), but replaces a directory with a
   symlink to a regular file. */
-static void change2NoneFiletypeChange(SearchNode *none_filetype_node)
+static void change2NoneFiletypeChange(CR_Region *r, SearchNode *none_filetype_node)
 {
   /* Replace directory with symlink to regular file. */
   removePath("tmp/files/e/f/h");
@@ -163,7 +163,7 @@ static void change2NoneFiletypeChange(SearchNode *none_filetype_node)
   makeSymlink("a", "tmp/files/e");
 
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad(str("tmp/repo/metadata"));
+  Metadata *metadata = metadataLoad(r, str("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 15);
   checkHistPoint(metadata, 0, 0, phase_timestamps(backup_counter() - 1), cwd_depth() + 6);
   checkHistPoint(metadata, 1, 1, phase_timestamps(backup_counter() - 2), 10);
@@ -217,10 +217,10 @@ static void change2NoneFiletypeChange(SearchNode *none_filetype_node)
 }
 
 /** Tests the metadata written by change2NoneFiletypeChange(). */
-static void postNoneFiletypeChange(SearchNode *none_filetype_node)
+static void postNoneFiletypeChange(CR_Region *r, SearchNode *none_filetype_node)
 {
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad(str("tmp/repo/metadata"));
+  Metadata *metadata = metadataLoad(r, str("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 15);
   checkHistPoint(metadata, 0, 0, phase_timestamps(backup_counter() - 1), cwd_depth() + 4);
   checkHistPoint(metadata, 1, 1, phase_timestamps(backup_counter() - 2), 2);
@@ -280,10 +280,10 @@ static void postNoneFiletypeChange(SearchNode *none_filetype_node)
 }
 
 /** Restores test files to their initial state and cleans up. */
-static void restoreNoneFiletypeChange(SearchNode *none_filetype_node)
+static void restoreNoneFiletypeChange(CR_Region *r, SearchNode *none_filetype_node)
 {
   /* Load the metadata. */
-  Metadata *metadata = metadataLoad(str("tmp/repo/metadata"));
+  Metadata *metadata = metadataLoad(r, str("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 15);
   checkHistPoint(metadata, 0, 0, phase_timestamps(backup_counter() - 1), cwd_depth() + 4);
   checkHistPoint(metadata, 1, 1, phase_timestamps(backup_counter() - 3), 2);
@@ -342,7 +342,7 @@ static void restoreNoneFiletypeChange(SearchNode *none_filetype_node)
 }
 
 /** Prepares the testing of filetype changes. */
-static void initFiletypeChange(SearchNode *filetype_node, const BackupPolicy policy)
+static void initFiletypeChange(CR_Region *r, SearchNode *filetype_node, const BackupPolicy policy)
 {
   /* Prepare the test files. */
   resetStatCache();
@@ -384,7 +384,7 @@ static void initFiletypeChange(SearchNode *filetype_node, const BackupPolicy pol
   makeSymlink("1", "tmp/files/7/d/2");
 
   /* Initiate the backup. */
-  Metadata *metadata = metadataNew();
+  Metadata *metadata = metadataNew(r);
   initiateBackup(metadata, filetype_node);
 
   /* Check the initiated backup. */
@@ -491,14 +491,14 @@ static void initFiletypeChange(SearchNode *filetype_node, const BackupPolicy pol
 
 /** Modifies the test files and metadata in such a way that subsequent
   backups will detect filetype changes. */
-static void modifyFiletypeChange(SearchNode *filetype_node, const BackupPolicy policy)
+static void modifyFiletypeChange(CR_Region *r, SearchNode *filetype_node, const BackupPolicy policy)
 {
   /* Remove some files. */
   removePath("tmp/files/7/a/1");
   removePath("tmp/files/7/a");
 
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad(str("tmp/repo/metadata"));
+  Metadata *metadata = metadataLoad(r, str("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 37);
   checkHistPoint(metadata, 0, 0, phase_timestamps(backup_counter() - 1), cwd_depth() + 37);
   initiateBackup(metadata, filetype_node);
@@ -660,10 +660,10 @@ static void modifyFiletypeChange(SearchNode *filetype_node, const BackupPolicy p
 }
 
 /** Checks the changes injected by modifyFiletypeChange(). */
-static void changeFiletypeChange(SearchNode *filetype_node, const BackupPolicy policy)
+static void changeFiletypeChange(CR_Region *r, SearchNode *filetype_node, const BackupPolicy policy)
 {
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad(str("tmp/repo/metadata"));
+  Metadata *metadata = metadataLoad(r, str("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 37);
   checkHistPoint(metadata, 0, 0, phase_timestamps(backup_counter() - 1), cwd_depth() + 4);
   checkHistPoint(metadata, 1, 1, phase_timestamps(backup_counter() - 2), 35);
@@ -792,10 +792,10 @@ static void changeFiletypeChange(SearchNode *filetype_node, const BackupPolicy p
 }
 
 /** Tests the metadata written by changeFiletypeChange() and cleans up. */
-static void postFiletypeChange(SearchNode *filetype_node, const BackupPolicy policy)
+static void postFiletypeChange(CR_Region *r, SearchNode *filetype_node, const BackupPolicy policy)
 {
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad(str("tmp/repo/metadata"));
+  Metadata *metadata = metadataLoad(r, str("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 21);
   checkHistPoint(metadata, 0, 0, phase_timestamps(backup_counter() - 1), cwd_depth() + 21);
   initiateBackup(metadata, filetype_node);
@@ -858,10 +858,10 @@ static void postFiletypeChange(SearchNode *filetype_node, const BackupPolicy pol
 
 /** Checks the changes injected by modifyFiletypeChange() for the track
   policy. */
-static void trackFiletypeChange(SearchNode *filetype_node)
+static void trackFiletypeChange(CR_Region *r, SearchNode *filetype_node)
 {
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad(str("tmp/repo/metadata"));
+  Metadata *metadata = metadataLoad(r, str("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 37);
   checkHistPoint(metadata, 0, 0, phase_timestamps(backup_counter() - 1), cwd_depth() + 4);
   checkHistPoint(metadata, 1, 1, phase_timestamps(backup_counter() - 2), 35);
@@ -1024,10 +1024,10 @@ static void trackFiletypeChange(SearchNode *filetype_node)
   @param completed_runs The count of subsequent runs this function has
   completed.
 */
-static void trackFiletypeChangePost(SearchNode *filetype_node, const size_t completed_runs)
+static void trackFiletypeChangePost(CR_Region *r, SearchNode *filetype_node, const size_t completed_runs)
 {
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad(str("tmp/repo/metadata"));
+  Metadata *metadata = metadataLoad(r, str("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 47);
   size_t off = completed_runs > 0;
 
@@ -1195,45 +1195,48 @@ static void trackFiletypeChangePost(SearchNode *filetype_node, const size_t comp
 int main(void)
 {
   initBackupCommon(1);
+  CR_Region *r = CR_RegionNew();
 
   testGroupStart("filetype changes in nodes with no policy");
   SearchNode *none_filetype_node = searchTreeLoad(str("generated-config-files/filetype-changes-none.txt"));
 
-  initNoneFiletypeChange(none_filetype_node);
-  change1NoneFiletypeChange(none_filetype_node);
-  change2NoneFiletypeChange(none_filetype_node);
-  postNoneFiletypeChange(none_filetype_node);
-  restoreNoneFiletypeChange(none_filetype_node);
+  initNoneFiletypeChange(r, none_filetype_node);
+  change1NoneFiletypeChange(r, none_filetype_node);
+  change2NoneFiletypeChange(r, none_filetype_node);
+  postNoneFiletypeChange(r, none_filetype_node);
+  restoreNoneFiletypeChange(r, none_filetype_node);
   testGroupEnd();
 
   testGroupStart("filetype changes in copied nodes");
   SearchNode *copy_filetype_node = searchTreeLoad(str("generated-config-files/filetype-changes-copy.txt"));
 
-  initFiletypeChange(copy_filetype_node, BPOL_copy);
-  modifyFiletypeChange(copy_filetype_node, BPOL_copy);
-  changeFiletypeChange(copy_filetype_node, BPOL_copy);
-  postFiletypeChange(copy_filetype_node, BPOL_copy);
+  initFiletypeChange(r, copy_filetype_node, BPOL_copy);
+  modifyFiletypeChange(r, copy_filetype_node, BPOL_copy);
+  changeFiletypeChange(r, copy_filetype_node, BPOL_copy);
+  postFiletypeChange(r, copy_filetype_node, BPOL_copy);
   testGroupEnd();
 
   testGroupStart("filetype changes in mirrored nodes");
   SearchNode *mirror_filetype_node = searchTreeLoad(str("generated-config-files/filetype-changes-mirror.txt"));
 
-  initFiletypeChange(mirror_filetype_node, BPOL_mirror);
-  modifyFiletypeChange(mirror_filetype_node, BPOL_mirror);
-  changeFiletypeChange(mirror_filetype_node, BPOL_mirror);
-  postFiletypeChange(mirror_filetype_node, BPOL_mirror);
+  initFiletypeChange(r, mirror_filetype_node, BPOL_mirror);
+  modifyFiletypeChange(r, mirror_filetype_node, BPOL_mirror);
+  changeFiletypeChange(r, mirror_filetype_node, BPOL_mirror);
+  postFiletypeChange(r, mirror_filetype_node, BPOL_mirror);
   testGroupEnd();
 
   testGroupStart("filetype changes in tracked nodes");
   SearchNode *track_filetype_node = searchTreeLoad(str("generated-config-files/filetype-changes-track.txt"));
 
-  initFiletypeChange(track_filetype_node, BPOL_track);
-  modifyFiletypeChange(track_filetype_node, BPOL_track);
-  trackFiletypeChange(track_filetype_node);
-  trackFiletypeChangePost(track_filetype_node, 0);
-  trackFiletypeChangePost(track_filetype_node, 1);
-  trackFiletypeChangePost(track_filetype_node, 2);
-  trackFiletypeChangePost(track_filetype_node, 3);
-  trackFiletypeChangePost(track_filetype_node, 4);
+  initFiletypeChange(r, track_filetype_node, BPOL_track);
+  modifyFiletypeChange(r, track_filetype_node, BPOL_track);
+  trackFiletypeChange(r, track_filetype_node);
+  trackFiletypeChangePost(r, track_filetype_node, 0);
+  trackFiletypeChangePost(r, track_filetype_node, 1);
+  trackFiletypeChangePost(r, track_filetype_node, 2);
+  trackFiletypeChangePost(r, track_filetype_node, 3);
+  trackFiletypeChangePost(r, track_filetype_node, 4);
   testGroupEnd();
+
+  CR_RegionRelease(r);
 }

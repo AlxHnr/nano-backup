@@ -490,13 +490,9 @@ static void writePathList(const PathNode *node_list, RepoWriter *writer)
   }
 }
 
-/** Creates an empty metadata struct.
-
-  @return A metadata struct which should not be freed by the caller.
-*/
-Metadata *metadataNew(void)
+Metadata *metadataNew(CR_Region *r)
 {
-  Metadata *metadata = mpAlloc(sizeof *metadata);
+  Metadata *metadata = CR_RegionAlloc(r, sizeof *metadata);
 
   metadata->current_backup.id = 0;
   metadata->current_backup.completion_time = 0;
@@ -514,20 +510,14 @@ Metadata *metadataNew(void)
   return metadata;
 }
 
-/** Loads the metadata of a repository.
-
-  @param path The full or relative path to the metadata file.
-
-  @return The metadata, allocated inside the internal memory pool, which
-  should not be freed by the caller.
-*/
-Metadata *metadataLoad(StringView path)
+/** @param path The full or relative path to the metadata file. */
+Metadata *metadataLoad(CR_Region *r, StringView path)
 {
-  CR_Region *content_region = CR_RegionNew();
-  const FileContent content = sGetFilesContent(content_region, path);
+  CR_Region *disposable_r = CR_RegionNew();
+  const FileContent content = sGetFilesContent(disposable_r, path);
 
   /* Allocate and initialize metadata. */
-  Metadata *metadata = mpAlloc(sizeof *metadata);
+  Metadata *metadata = CR_RegionAlloc(r, sizeof *metadata);
 
   metadata->current_backup.id = 0;
   metadata->current_backup.completion_time = 0;
@@ -567,7 +557,7 @@ Metadata *metadataLoad(StringView path)
 
   metadata->paths =
     readPathSubnodes(content, &reader_position, path, NULL, metadata);
-  CR_RegionRelease(content_region);
+  CR_RegionRelease(disposable_r);
 
   if(reader_position != content.size)
   {

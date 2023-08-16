@@ -29,6 +29,8 @@ static void makeBackup(Metadata *metadata)
 
 int main(void)
 {
+  CR_Region *r = CR_RegionNew();
+
   testGroupStart("prepare backup repository");
   sMkdir(repo_path);
   sMkdir(str("tmp/files"));
@@ -41,12 +43,12 @@ int main(void)
   writeToFile("tmp/files/20-bytes.txt", "20 byte large file!!");
   writeToFile("tmp/files/21-bytes.txt", "21 byte large file!!!");
   writeToFile("tmp/files/extra-file-for-deduplication.txt", "a b c d e f g h i j 01213131231");
-  makeBackup(metadataNew());
+  makeBackup(metadataNew(r));
 
   writeToFile("tmp/files/Another File.txt", "a b c d e f g h i j 01213131231");
   writeToFile("tmp/files/smaller file", "string slightly larger than 20 bytes");
-  makeBackup(metadataLoad(metadata_path));
-  makeBackup(metadataLoad(metadata_path)); /* Extra backup to enlarge history. */
+  makeBackup(metadataLoad(r, metadata_path));
+  makeBackup(metadataLoad(r, metadata_path)); /* Extra backup to enlarge history. */
 
   writeToFile("tmp/files/empty-file.txt", "xyz test test test test test 1234567890");
   writeToFile("tmp/files/Another File.txt", "");
@@ -56,15 +58,14 @@ int main(void)
   writeToFile("tmp/files/additional-file-02", "This is some test content of a new file.");
   writeToFile("tmp/files/additional-file-03", "nano-backup nano-backup nano-backup");
   writeToFile("tmp/files/breaks-via-deduplication.txt", "content of another file");
-  makeBackup(metadataLoad(metadata_path));
+  makeBackup(metadataLoad(r, metadata_path));
 
   writeToFile("tmp/files/Another File.txt", "content of another file");
   writeToFile("tmp/files/smaller file", "1234");
-  makeBackup(metadataLoad(metadata_path));
+  makeBackup(metadataLoad(r, metadata_path));
 
   StringView cwd = getCwd();
-  CR_Region *r = CR_RegionNew();
-  const Metadata *metadata = metadataLoad(metadata_path);
+  const Metadata *metadata = metadataLoad(r, metadata_path);
   testGroupEnd();
 
   testGroupStart("checkIntegrity() on healthy repository");
@@ -109,4 +110,6 @@ int main(void)
   assert_true(strTableGet(broken_path_nodes, str("tmp/files/breaks-via-deduplication.txt")) != NULL);
   assert_true(broken_path_node_count == 7);
   testGroupEnd();
+
+  CR_RegionRelease(r);
 }

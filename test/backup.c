@@ -11,7 +11,7 @@
 #include "test-common.h"
 #include "test.h"
 
-static void runPhase1(SearchNode *phase_1_node)
+static void runPhase1(CR_Region *r, SearchNode *phase_1_node)
 {
   /* Generate dummy files. */
   assertTmpIsCleared();
@@ -27,7 +27,7 @@ static void runPhase1(SearchNode *phase_1_node)
   makeSymlink("../some file", "tmp/files/foo/dir/link");
 
   /* Initiate the backup. */
-  Metadata *metadata = metadataNew();
+  Metadata *metadata = metadataNew(r);
   initiateBackup(metadata, phase_1_node);
 
   /* Check the initiated backup. */
@@ -72,7 +72,7 @@ static void runPhase1(SearchNode *phase_1_node)
 }
 
 /** Tests a second backup by creating new files. */
-static void runPhase2(SearchNode *phase_1_node)
+static void runPhase2(CR_Region *r, SearchNode *phase_1_node)
 {
   /* Generate dummy files. */
   makeDir("tmp/files/foo/dummy");
@@ -80,7 +80,7 @@ static void runPhase2(SearchNode *phase_1_node)
   generateFile("tmp/files/foo/dummy/file", "dummy file", 1);
 
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad(str("tmp/repo/metadata"));
+  Metadata *metadata = metadataLoad(r, str("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 12);
   checkHistPoint(metadata, 0, 0, phase_timestamps(0), cwd_depth() + 12);
   initiateBackup(metadata, phase_1_node);
@@ -133,7 +133,7 @@ static void runPhase2(SearchNode *phase_1_node)
 }
 
 /** Performs a third backup by removing files. */
-static void runPhase3(SearchNode *phase_3_node)
+static void runPhase3(CR_Region *r, SearchNode *phase_3_node)
 {
   /* Remove various files. */
   removePath("tmp/files/foo/bar/2.txt");
@@ -141,7 +141,7 @@ static void runPhase3(SearchNode *phase_3_node)
   removePath("tmp/files/foo/super.txt");
 
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad(str("tmp/repo/metadata"));
+  Metadata *metadata = metadataLoad(r, str("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 15);
   checkHistPoint(metadata, 0, 0, phase_timestamps(1), cwd_depth() + 7);
   checkHistPoint(metadata, 1, 1, phase_timestamps(0), 8);
@@ -195,10 +195,10 @@ static void runPhase3(SearchNode *phase_3_node)
 }
 
 /** Performs a fourth backup, which doesn't do anything. */
-static void runPhase4(SearchNode *phase_4_node)
+static void runPhase4(CR_Region *r, SearchNode *phase_4_node)
 {
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad(str("tmp/repo/metadata"));
+  Metadata *metadata = metadataLoad(r, str("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 10);
   checkHistPoint(metadata, 0, 0, phase_timestamps(2), cwd_depth() + 5);
   checkHistPoint(metadata, 1, 1, phase_timestamps(0), 6);
@@ -247,7 +247,7 @@ static void runPhase4(SearchNode *phase_4_node)
 
 /** Performs a fifth backup by creating various deeply nested files and
   directories. */
-static void runPhase5(SearchNode *phase_5_node)
+static void runPhase5(CR_Region *r, SearchNode *phase_5_node)
 {
   /* Generate dummy files. */
   makeDir("tmp/files/foo/bar/subdir");
@@ -283,7 +283,7 @@ static void runPhase5(SearchNode *phase_5_node)
   generateFile("tmp/files/test/a/b/d/f", "CONTENT", 1);
 
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad(str("tmp/repo/metadata"));
+  Metadata *metadata = metadataLoad(r, str("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 10);
   checkHistPoint(metadata, 0, 0, phase_timestamps(3), cwd_depth() + 4);
   checkHistPoint(metadata, 1, 1, phase_timestamps(2), 1);
@@ -403,7 +403,7 @@ static void runPhase5(SearchNode *phase_5_node)
 }
 
 /** Performs a backup after removing various deeply nested files. */
-static void runPhase6(SearchNode *phase_6_node)
+static void runPhase6(CR_Region *r, SearchNode *phase_6_node)
 {
   /* Remove various files. */
   removePath("tmp/files/data/a/b/c/d");
@@ -421,7 +421,7 @@ static void runPhase6(SearchNode *phase_6_node)
   removePath("tmp/files/test/a/b");
 
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad(str("tmp/repo/metadata"));
+  Metadata *metadata = metadataLoad(r, str("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 41);
   checkHistPoint(metadata, 0, 0, phase_timestamps(4), cwd_depth() + 35);
   checkHistPoint(metadata, 1, 1, phase_timestamps(2), 1);
@@ -549,7 +549,7 @@ static void runPhase6(SearchNode *phase_6_node)
 }
 
 /** Creates more nested files. */
-static void runPhase7(SearchNode *phase_7_node)
+static void runPhase7(CR_Region *r, SearchNode *phase_7_node)
 {
   /* Generate dummy files. */
   makeDir("tmp/files/unneeded");
@@ -564,7 +564,7 @@ static void runPhase7(SearchNode *phase_7_node)
   makeSymlink("../../b/c", "tmp/files/unneeded/directory/a/g/h/i");
 
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad(str("tmp/repo/metadata"));
+  Metadata *metadata = metadataLoad(r, str("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 12);
   checkHistPoint(metadata, 0, 0, phase_timestamps(5), cwd_depth() + 4);
   checkHistPoint(metadata, 1, 1, phase_timestamps(4), 2);
@@ -638,7 +638,7 @@ static void runPhase7(SearchNode *phase_7_node)
 }
 
 /** Tests how unneeded nodes get wiped. */
-static void runPhase8(SearchNode *phase_8_node)
+static void runPhase8(CR_Region *r, SearchNode *phase_8_node)
 {
   /* Remove various files. */
   removePath("tmp/files/unneeded/directory/a/b/c");
@@ -654,7 +654,7 @@ static void runPhase8(SearchNode *phase_8_node)
   generateFile("tmp/files/home/user/text.txt", "0xff\n", 500);
 
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad(str("tmp/repo/metadata"));
+  Metadata *metadata = metadataLoad(r, str("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 22);
   checkHistPoint(metadata, 0, 0, phase_timestamps(6), cwd_depth() + 14);
   checkHistPoint(metadata, 1, 1, phase_timestamps(4), 2);
@@ -748,7 +748,7 @@ static void runPhase8(SearchNode *phase_8_node)
 }
 
 /** Generates deeply nested files with varying policies. */
-static void runPhase9(SearchNode *phase_9_node)
+static void runPhase9(CR_Region *r, SearchNode *phase_9_node)
 {
   /* Generate various files. */
   makeDir("tmp/files/foo/bar/test");
@@ -827,7 +827,7 @@ static void runPhase9(SearchNode *phase_9_node)
   makeSymlink("/root/.vimrc", "tmp/files/bin/two/three");
 
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad(str("tmp/repo/metadata"));
+  Metadata *metadata = metadataLoad(r, str("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 10);
   checkHistPoint(metadata, 0, 0, phase_timestamps(7), cwd_depth() + 4);
   checkHistPoint(metadata, 1, 1, phase_timestamps(2), 1);
@@ -1120,7 +1120,7 @@ static void phase10RemoveExtraFiles(void)
 }
 
 /** Tests recursive removing of nested files with varying policies. */
-static void runPhase10(SearchNode *phase_9_node)
+static void runPhase10(CR_Region *r, SearchNode *phase_9_node)
 {
   /* Remove various files. */
   phase10RemoveFiles();
@@ -1140,7 +1140,7 @@ static void runPhase10(SearchNode *phase_9_node)
   removePath("tmp/files/nb");
 
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad(str("tmp/repo/metadata"));
+  Metadata *metadata = metadataLoad(r, str("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 84);
   checkHistPoint(metadata, 0, 0, phase_timestamps(8), cwd_depth() + 78);
   checkHistPoint(metadata, 1, 1, phase_timestamps(2), 1);
@@ -1348,10 +1348,10 @@ static void runPhase10(SearchNode *phase_9_node)
 }
 
 /** Performs a backup with no changes. */
-static void runPhase11(SearchNode *phase_9_node)
+static void runPhase11(CR_Region *r, SearchNode *phase_9_node)
 {
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad(str("tmp/repo/metadata"));
+  Metadata *metadata = metadataLoad(r, str("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 71);
   checkHistPoint(metadata, 0, 0, phase_timestamps(9), cwd_depth() + 14);
   checkHistPoint(metadata, 1, 1, phase_timestamps(8), 62);
@@ -1534,10 +1534,10 @@ static void runPhase11(SearchNode *phase_9_node)
 }
 
 /** Performs a backup after restoring files removed in phase 10. */
-static void runPhase12(SearchNode *phase_9_node)
+static void runPhase12(CR_Region *r, SearchNode *phase_9_node)
 {
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad(str("tmp/repo/metadata"));
+  Metadata *metadata = metadataLoad(r, str("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 71);
   checkHistPoint(metadata, 0, 0, phase_timestamps(10), cwd_depth() + 3);
   checkHistPoint(metadata, 1, 1, phase_timestamps(9), 11);
@@ -1738,7 +1738,7 @@ static void runPhase12(SearchNode *phase_9_node)
 
 /** Like phase 12, but restores only a few files and uses a different
   search tree. */
-static void runPhase13(SearchNode *phase_13_node)
+static void runPhase13(CR_Region *r, SearchNode *phase_13_node)
 {
   /* Remove various files. */
   removePath("tmp/files/foo/dir/link");
@@ -1749,7 +1749,7 @@ static void runPhase13(SearchNode *phase_13_node)
   generateFile("tmp/files/bin", "0", 2123);
 
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad(str("tmp/repo/metadata"));
+  Metadata *metadata = metadataLoad(r, str("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 71);
   checkHistPoint(metadata, 0, 0, phase_timestamps(9), cwd_depth() + 14);
   checkHistPoint(metadata, 1, 1, phase_timestamps(8), 62);
@@ -1934,7 +1934,7 @@ static void runPhase13(SearchNode *phase_13_node)
 }
 
 /** Creates and backups various simple files with the copy policy. */
-static void runPhase14(SearchNode *phase_14_node)
+static void runPhase14(CR_Region *r, SearchNode *phase_14_node)
 {
   /* Generate various files. */
   resetStatCache();
@@ -1948,7 +1948,7 @@ static void runPhase14(SearchNode *phase_14_node)
   makeSymlink("invalid target", "tmp/files/d/2");
 
   /* Initiate the backup. */
-  Metadata *metadata = metadataNew();
+  Metadata *metadata = metadataNew(r);
   initiateBackup(metadata, phase_14_node);
 
   /* Check the initiated backup. */
@@ -1992,13 +1992,13 @@ static void phase15RemoveFiles(void)
 }
 
 /** Removes some files generated in phase 14 and performs a backup. */
-static void runPhase15(SearchNode *phase_14_node)
+static void runPhase15(CR_Region *r, SearchNode *phase_14_node)
 {
   /* Remove various files. */
   phase15RemoveFiles();
 
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad(str("tmp/repo/metadata"));
+  Metadata *metadata = metadataLoad(r, str("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 9);
   checkHistPoint(metadata, 0, 0, phase_timestamps(13), cwd_depth() + 9);
   initiateBackup(metadata, phase_14_node);
@@ -2032,10 +2032,10 @@ static void runPhase15(SearchNode *phase_14_node)
 }
 
 /** Restores all files previously deleted and checks the result. */
-static void runPhase16(SearchNode *phase_14_node)
+static void runPhase16(CR_Region *r, SearchNode *phase_14_node)
 {
   /* Initiate the backup. */
-  Metadata *metadata = metadataLoad(str("tmp/repo/metadata"));
+  Metadata *metadata = metadataLoad(r, str("tmp/repo/metadata"));
   assert_true(metadata->total_path_count == cwd_depth() + 9);
   checkHistPoint(metadata, 0, 0, phase_timestamps(14), cwd_depth() + 2);
   checkHistPoint(metadata, 1, 1, phase_timestamps(13), 7);
@@ -2073,7 +2073,7 @@ static void runPhase16(SearchNode *phase_14_node)
 }
 
 /** Tests the handling of hash collisions. */
-static void runPhaseCollision(SearchNode *phase_collision_node)
+static void runPhaseCollision(CR_Region *r, SearchNode *phase_collision_node)
 {
   /* Generate various dummy files. */
   assertTmpIsCleared();
@@ -2115,7 +2115,7 @@ static void runPhaseCollision(SearchNode *phase_collision_node)
   generateCollidingFiles(hash_255, 1572, 255);
 
   /* Initiate the backup. */
-  Metadata *metadata = metadataNew();
+  Metadata *metadata = metadataNew(r);
   initiateBackup(metadata, phase_collision_node);
 
   /* Check the initiated backup. */
@@ -2161,7 +2161,7 @@ static void runPhaseCollision(SearchNode *phase_collision_node)
 }
 
 /** Tests the handling of a hash collision slot overflow. */
-static void runPhaseSlotOverflow(SearchNode *phase_collision_node)
+static void runPhaseSlotOverflow(CR_Region *r, SearchNode *phase_collision_node)
 {
   /* Generate various files. */
   assertTmpIsCleared();
@@ -2178,7 +2178,7 @@ static void runPhaseSlotOverflow(SearchNode *phase_collision_node)
   generateCollidingFiles(hash_256, 214, 256);
 
   /* Initiate the backup. */
-  Metadata *metadata = metadataNew();
+  Metadata *metadata = metadataNew(r);
   initiateBackup(metadata, phase_collision_node);
 
   /* Check the initiated backup. */
@@ -2209,10 +2209,12 @@ static void runPhaseSlotOverflow(SearchNode *phase_collision_node)
   @param search_tree The search tree which should be passed to the test
   function.
 */
-static void phase(const char *test_name, void (*phase_fun)(SearchNode *), SearchNode *search_tree)
+static void phase(const char *test_name, void (*phase_fun)(CR_Region *r, SearchNode *), SearchNode *search_tree)
 {
   testGroupStart(test_name);
-  phase_fun(search_tree);
+  CR_Region *r = CR_RegionNew();
+  phase_fun(r, search_tree);
+  CR_RegionRelease(r);
   testGroupEnd();
 }
 
@@ -2248,9 +2250,13 @@ int main(void)
 
   /* Create a backup of the current metadata. */
   time_t tmp_timestamp = sStat(str("tmp")).st_mtime;
-  metadataWrite(metadataLoad(str("tmp/repo/metadata")), str("tmp"), str("tmp/tmp-file"),
-                str("tmp/metadata-backup"));
-  sUtime(str("tmp"), tmp_timestamp);
+  {
+    CR_Region *r = CR_RegionNew();
+    metadataWrite(metadataLoad(r, str("tmp/repo/metadata")), str("tmp"), str("tmp/tmp-file"),
+                  str("tmp/metadata-backup"));
+    sUtime(str("tmp"), tmp_timestamp);
+    CR_RegionRelease(r);
+  }
 
   /* Run some backup phases. */
   phase("backup with no changes", runPhase11, phase_9_node);
@@ -2265,9 +2271,13 @@ int main(void)
   phase("a variation of the previous backup", runPhase13, phase_13_node);
 
   testGroupStart("non-recursive re-adding of copied files");
-  runPhase14(phase_14_node);
-  runPhase15(phase_14_node);
-  runPhase16(phase_14_node);
+  {
+    CR_Region *r = CR_RegionNew();
+    runPhase14(r, phase_14_node);
+    runPhase15(r, phase_14_node);
+    runPhase16(r, phase_14_node);
+    CR_RegionRelease(r);
+  }
   testGroupEnd();
 
   /* Run special backup phases. */

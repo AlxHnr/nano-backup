@@ -117,7 +117,7 @@ static void runIntegrityCheck(const Metadata *metadata,
   }
 }
 
-static void backup(StringView repo_arg)
+static void backup(CR_Region *r, StringView repo_arg)
 {
   StringView repo_path = strStripTrailingSlashes(repo_arg);
   StringView config_path = strLegacyAppendPath(repo_path, str("config"));
@@ -135,8 +135,8 @@ static void backup(StringView repo_arg)
   SearchNode *root_node = searchTreeLoad(config_path);
 
   Metadata *metadata = sPathExists(metadata_path)
-    ? metadataLoad(metadata_path)
-    : metadataNew();
+    ? metadataLoad(r, metadata_path)
+    : metadataNew(r);
 
   initiateBackup(metadata, root_node);
   ChangeSummary changes =
@@ -174,7 +174,7 @@ static void backup(StringView repo_arg)
   }
 }
 
-static Metadata *metadataLoadFromRepo(StringView repo_arg)
+static Metadata *metadataLoadFromRepo(CR_Region *r, StringView repo_arg)
 {
   StringView repo_path = strStripTrailingSlashes(repo_arg);
   StringView metadata_path =
@@ -186,7 +186,7 @@ static Metadata *metadataLoadFromRepo(StringView repo_arg)
   }
 
   repoLockUntilExit(repo_path);
-  return metadataLoad(metadata_path);
+  return metadataLoad(r, metadata_path);
 }
 
 static StringView buildFullPath(StringView path)
@@ -210,9 +210,10 @@ static StringView buildFullPath(StringView path)
   @param id The id to which the path should be restored.
   @param path The path to restore.
 */
-static void restore(StringView repo_arg, const size_t id, StringView path)
+static void restore(CR_Region *r, StringView repo_arg, const size_t id,
+                    StringView path)
 {
-  Metadata *metadata = metadataLoadFromRepo(repo_arg);
+  Metadata *metadata = metadataLoadFromRepo(r, repo_arg);
   StringView full_path = strStripTrailingSlashes(buildFullPath(path));
   initiateRestore(metadata, id, strLegacyCopy(full_path));
 
@@ -226,6 +227,8 @@ static void restore(StringView repo_arg, const size_t id, StringView path)
 
 int main(const int arg_count, const char **arg_list)
 {
+  CR_Region *r = CR_RegionNew();
+
   if(arg_count < 2)
   {
     die("no repository specified");
@@ -243,7 +246,7 @@ int main(const int arg_count, const char **arg_list)
 
   if(arg_count == 2)
   {
-    backup(path_to_repo);
+    backup(r, path_to_repo);
   }
   else if(strcmp(arg_list[2], "gc") == 0)
   {
@@ -252,7 +255,7 @@ int main(const int arg_count, const char **arg_list)
       die("too many arguments for gc command");
     }
 
-    runGC(metadataLoadFromRepo(path_to_repo), path_to_repo, false);
+    runGC(metadataLoadFromRepo(r, path_to_repo), path_to_repo, false);
   }
   else if(strcmp(arg_list[2], "integrity") == 0)
   {
@@ -261,7 +264,7 @@ int main(const int arg_count, const char **arg_list)
       die("too many arguments for integrity command");
     }
 
-    runIntegrityCheck(metadataLoadFromRepo(path_to_repo), path_to_repo);
+    runIntegrityCheck(metadataLoadFromRepo(r, path_to_repo), path_to_repo);
   }
   else if(regexec(rpCompile(str("^[0-9]+$"), str(__FILE__), __LINE__),
                   arg_list[2], 0, NULL, 0) == 0)
@@ -271,7 +274,7 @@ int main(const int arg_count, const char **arg_list)
       die("too many paths to restore");
     }
 
-    restore(path_to_repo, sStringToSize(str(arg_list[2])),
+    restore(r, path_to_repo, sStringToSize(str(arg_list[2])),
             arg_count == 4 ? str(arg_list[3]) : str("/"));
   }
   else
