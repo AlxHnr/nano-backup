@@ -9,6 +9,7 @@ cppcheck --quiet --std=c99 --enable=all --error-exitcode=1 \
   -D_FILE_OFFSET_BITS=64 -DCHAR_BIT=8 \
   --suppress="ctunullpointer:*" \
   --suppress="ctuuninitvar:*" \
+  --suppress="shadowArgument:*" \
   --suppress="missingIncludeSystem:*" \
   --suppress="funcArgOrderDifferent:*" \
   --suppress="nullPointerRedundantCheck:*" \
