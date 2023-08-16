@@ -260,34 +260,48 @@ void fDestroy(FileStream *stream)
   internalFDestroy(stream);
 }
 
-/** Safe wrapper around opendir().
-
-  @param path The directories filepath.
-
-  @return A pointer to a valid directory stream.
-*/
-DIR *sOpenDir(StringView path)
+struct DirIterator
 {
-  DIR *dir = opendir(nullTerminate(path));
-  if(dir == NULL)
+  CR_Region *r;
+  StringView directory_path;
+  Allocator *returned_result_buffer;
+  DIR *handle;
+};
+void closeDirHandle(void *pointer)
+{
+  DirIterator *dir = pointer;
+  if(dir->handle == NULL) return;
+
+  const int old_errno = errno;
+  (void)closedir(dir->handle);
+  errno = old_errno;
+}
+
+/** @return Must be freed with sDirClose(). */
+DirIterator *sDirOpen(StringView path)
+{
+  CR_Region *r = CR_RegionNew();
+  DirIterator *dir = CR_RegionAlloc(r, sizeof *dir);
+
+  dir->r = r;
+  strSet(&dir->directory_path, strCopy(path, allocatorWrapRegion(r)));
+  dir->returned_result_buffer = allocatorWrapOneSingleGrowableBuffer(r);
+  dir->handle = opendir(nullTerminate(path));
+
+  if(dir->handle == NULL)
   {
+    CR_RegionRelease(r);
     dieErrno("failed to open directory \"%s\"", nullTerminate(path));
   }
+  CR_RegionAttach(r, closeDirHandle, dir);
 
   return dir;
 }
 
-/** A safe and simplified wrapper around readdir(). It will skip "." and
-  "..".
-
-  @param dir A valid directory stream.
-  @param path The directory streams filepath. Needed for printing useful
-  error messages.
-
-  @return A pointer to the next entry in the given directory, or NULL if
-  the stream reached its end.
-*/
-struct dirent *sReadDir(DIR *dir, StringView path)
+/** @return Empty string if the directory has reached its end. Otherwise it
+  will return a full, absolute filepath which will be invalidated on the
+  next call to sDirGetNext() or sDirClose(). */
+StringView sDirGetNext(DirIterator *dir)
 {
   struct dirent *dir_entry;
   const int old_errno = errno;
@@ -295,18 +309,38 @@ struct dirent *sReadDir(DIR *dir, StringView path)
 
   do
   {
-    dir_entry = readdir(dir);
+    dir_entry = readdir(dir->handle);
 
     if(dir_entry == NULL && errno != 0)
     {
-      dieErrno("failed to read directory \"%s\"", nullTerminate(path));
+      dieErrno("failed to read directory \"%s\"",
+               nullTerminate(dir->directory_path));
     }
   } while(dir_entry != NULL && dir_entry->d_name[0] == '.' &&
           (dir_entry->d_name[1] == '\0' ||
            (dir_entry->d_name[1] == '.' && dir_entry->d_name[2] == '\0')));
 
   errno = old_errno;
-  return dir_entry;
+  if(dir_entry == NULL)
+  {
+    return str("");
+  }
+
+  return strAppendPath(dir->directory_path, str(dir_entry->d_name),
+                       dir->returned_result_buffer);
+}
+
+void sDirClose(DirIterator *dir)
+{
+  DIR *handle = dir->handle;
+  dir->handle = NULL;
+
+  if(closedir(handle) != 0)
+  {
+    dieErrno("failed to close directory \"%s\"",
+             nullTerminate(dir->directory_path));
+  }
+  CR_RegionRelease(dir->r);
 }
 
 /** Checks if there are unread bytes left in the given stream.
@@ -336,20 +370,6 @@ bool sFbytesLeft(FileStream *stream)
   }
 
   return character != EOF;
-}
-
-/** Safe wrapper around closedir().
-
-  @param dir The directory stream that should be closed.
-  @param path The directory path of the given stream. Needed for printing
-  useful error messages.
-*/
-void sCloseDir(DIR *dir, StringView path)
-{
-  if(closedir(dir) != 0)
-  {
-    dieErrno("failed to close directory \"%s\"", nullTerminate(path));
-  }
 }
 
 /** Returns true if the given filepath exists and terminates the program
@@ -492,46 +512,33 @@ void sRemoveRecursively(StringView path)
 
 typedef struct
 {
-  StringView current_path;
   ShouldRemoveCallback *should_remove;
   void *callback_user_data;
-
-  /* Wrappers around single reusable buffers. See
-     allocatorWrapOneSingleGrowableBuffer(). */
-  Allocator *current_path_buffer;
-  Allocator *tmp_buffer;
 } RemoveRecursiveContext;
 
-static bool removeRecursively(RemoveRecursiveContext *ctx)
+static bool removeRecursively(RemoveRecursiveContext *ctx, StringView path)
 {
   bool current_path_is_needed = false;
 
-  const struct stat stats = sLStat(ctx->current_path);
+  const struct stat stats = sLStat(path);
   if(S_ISDIR(stats.st_mode))
   {
-    DIR *dir = sOpenDir(ctx->current_path);
-    for(const struct dirent *dir_entry = sReadDir(dir, ctx->current_path);
-        dir_entry != NULL; dir_entry = sReadDir(dir, ctx->current_path))
+    DirIterator *dir = sDirOpen(path);
+    for(StringView subpath = sDirGetNext(dir); subpath.length > 0;
+        strSet(&subpath, sDirGetNext(dir)))
     {
-      StringView subpath = strAppendPath(
-        ctx->current_path, str(dir_entry->d_name), ctx->tmp_buffer);
-
-      strSet(&ctx->current_path,
-             strCopy(subpath, ctx->current_path_buffer));
-      if(!removeRecursively(ctx))
+      if(!removeRecursively(ctx, subpath))
       {
         current_path_is_needed = true;
       }
-      strSet(&ctx->current_path, strSplitPath(ctx->current_path).head);
     }
-    sCloseDir(dir, ctx->current_path);
+    sDirClose(dir);
   }
 
   if(!current_path_is_needed &&
-     ctx->should_remove(ctx->current_path, &stats,
-                        ctx->callback_user_data))
+     ctx->should_remove(path, &stats, ctx->callback_user_data))
   {
-    sRemove(ctx->current_path);
+    sRemove(path);
     return true;
   }
   return false;
@@ -555,13 +562,10 @@ void sRemoveRecursivelyIf(StringView path,
 {
   CR_Region *r = CR_RegionNew();
   RemoveRecursiveContext ctx = {
-    .current_path = path,
     .should_remove = should_remove,
     .callback_user_data = user_data,
-    .current_path_buffer = allocatorWrapOneSingleGrowableBuffer(r),
-    .tmp_buffer = allocatorWrapOneSingleGrowableBuffer(r),
   };
-  removeRecursively(&ctx);
+  removeRecursively(&ctx, path);
   CR_RegionRelease(r);
 }
 

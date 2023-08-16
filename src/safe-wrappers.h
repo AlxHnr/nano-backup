@@ -33,9 +33,10 @@ extern bool sFbytesLeft(FileStream *stream);
 extern void sFclose(FileStream *stream);
 extern void fDestroy(FileStream *stream);
 
-extern DIR *sOpenDir(StringView path);
-extern struct dirent *sReadDir(DIR *dir, StringView path);
-extern void sCloseDir(DIR *dir, StringView path);
+typedef struct DirIterator DirIterator;
+extern DirIterator *sDirOpen(StringView path);
+extern StringView sDirGetNext(DirIterator *dir);
+extern void sDirClose(DirIterator *dir);
 
 extern bool sPathExists(StringView path);
 extern struct stat sStat(StringView path);

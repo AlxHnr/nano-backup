@@ -113,16 +113,13 @@ GCStatistics collectGarbage(const Metadata *metadata, StringView repo_path)
     populateTableRecursively(ctx.paths_to_preserve, node);
   }
 
-  DIR *dir = sOpenDir(repo_path);
-  Allocator *buffer = allocatorWrapOneSingleGrowableBuffer(r);
-  for(const struct dirent *dir_entry = sReadDir(dir, repo_path);
-      dir_entry != NULL; dir_entry = sReadDir(dir, repo_path))
+  DirIterator *dir = sDirOpen(repo_path);
+  for(StringView subpath = sDirGetNext(dir); subpath.length > 0;
+      strSet(&subpath, sDirGetNext(dir)))
   {
-    StringView subpath =
-      strAppendPath(repo_path, str(dir_entry->d_name), buffer);
     sRemoveRecursivelyIf(subpath, shouldBeRemoved, &ctx);
   }
-  sCloseDir(dir, repo_path);
+  sDirClose(dir);
 
   CR_RegionRelease(r);
   return ctx.statistics;

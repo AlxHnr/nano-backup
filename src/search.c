@@ -18,7 +18,7 @@ typedef struct
 
 typedef struct
 {
-  DIR *dir;
+  DirIterator *dir;
 
   /** The subnodes of the current directories node. Can be NULL. */
   SearchNode *subnodes;
@@ -193,7 +193,7 @@ static void recursionStepRaw(SearchIterator *iterator, SearchNode *node,
   {
     iterator->state.is_dir_search = true;
     iterator->state.access.search.dir =
-      sOpenDir(str(iterator->buffer.str));
+      sDirOpen(str(iterator->buffer.str));
     iterator->state.access.search.subnodes = node ? node->subnodes : NULL;
     iterator->state.access.search.fallback_policy = policy;
   }
@@ -289,18 +289,15 @@ static bool nodeMatches(const SearchNode *node, StringView string)
 */
 static SearchResult finishSearchStep(SearchIterator *iterator)
 {
-  const struct dirent *dir_entry =
-    sReadDir(iterator->state.access.search.dir, str(iterator->buffer.str));
-
-  if(dir_entry == NULL)
+  StringView entry = sDirGetNext(iterator->state.access.search.dir);
+  if(entry.length == 0)
   {
-    sCloseDir(iterator->state.access.search.dir,
-              str(iterator->buffer.str));
+    sDirClose(iterator->state.access.search.dir);
     return finishDirectory(iterator);
   }
 
   /* Create new path for matching. */
-  StringView dir_entry_name = str(dir_entry->d_name);
+  StringView dir_entry_name = strSplitPath(entry).tail;
   setPathToFile(iterator, dir_entry_name);
 
   /* Match subnodes against dir_entry. */

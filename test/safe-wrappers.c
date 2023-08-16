@@ -31,18 +31,18 @@ static StringView wrap(const char *string)
   return strUnterminated(string, strlen(string));
 }
 
-/** Calls sReadDir() with the given arguments and checks its result. This
+/** Calls sDirGetNext() with the given arguments and checks its result. This
   function asserts that errno doesn't get modified. Errno must be set to 0
   before this function can be called. */
-static void checkReadDir(DIR *dir, const char *dir_path)
+static void checkReadDir(DirIterator *dir)
 {
   assert_true(errno == 0);
-  struct dirent *dir_entry = sReadDir(dir, wrap(dir_path));
+  StringView path = sDirGetNext(dir);
   assert_true(errno == 0);
 
-  assert_true(dir_entry != NULL);
-  assert_true(strcmp(dir_entry->d_name, ".") != 0);
-  assert_true(strcmp(dir_entry->d_name, "..") != 0);
+  assert_true(path.length > 0);
+  assert_true(!strEqual(path, str(".")));
+  assert_true(!strEqual(path, str("..")));
 }
 
 static bool checkPathExists(const char *path)
@@ -715,41 +715,41 @@ int main(void)
   assert_true(sTime() != (time_t)-1);
   testGroupEnd();
 
-  testGroupStart("sOpenDir()");
-  DIR *test_directory = sOpenDir(wrap("test directory"));
+  testGroupStart("sDirOpen()");
+  DirIterator *test_directory = sDirOpen(wrap("test directory"));
   assert_true(test_directory != NULL);
 
-  DIR *test_foo_1 = sOpenDir(wrap("./test directory/foo 1/"));
+  DirIterator *test_foo_1 = sDirOpen(wrap("./test directory/foo 1/"));
   assert_true(test_foo_1 != NULL);
 
-  assert_error_errno(sOpenDir(wrap("non-existing-directory")),
+  assert_error_errno(sDirOpen(wrap("non-existing-directory")),
                      "failed to open directory \"non-existing-directory\"", ENOENT);
   testGroupEnd();
 
-  testGroupStart("sReadDir()");
+  testGroupStart("sDirGetNext()");
   /* Count example files in "test directory". */
   for(size_t counter = 0; counter < 17; counter++)
   {
-    checkReadDir(test_directory, "test directory");
+    checkReadDir(test_directory);
   }
 
   assert_true(errno == 0);
-  assert_true(sReadDir(test_directory, wrap("test directory")) == NULL);
+  assert_true(sDirGetNext(test_directory).length == 0);
   assert_true(errno == 0);
 
   /* Count example files in "test directory/foo 1". */
   for(size_t counter = 0; counter < 5; counter++)
   {
-    checkReadDir(test_foo_1, "test directory/foo 1");
+    checkReadDir(test_foo_1);
   }
 
   assert_true(errno == 0);
-  assert_true(sReadDir(test_foo_1, wrap("test directory/foo 1")) == NULL);
+  assert_true(sDirGetNext(test_foo_1).length == 0);
   assert_true(errno == 0);
   testGroupEnd();
 
-  testGroupStart("sCloseDir()");
-  sCloseDir(test_directory, wrap("test directory"));
-  sCloseDir(test_foo_1, wrap("test directory/foo 1"));
+  testGroupStart("sDirClose()");
+  sDirClose(test_directory);
+  sDirClose(test_foo_1);
   testGroupEnd();
 }

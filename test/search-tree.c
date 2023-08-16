@@ -530,25 +530,18 @@ static void testNullBytesConfigFiles(void)
     "valid-config-files",
   };
 
-  CR_Region *r = CR_RegionNew();
-  Allocator *a = allocatorWrapOneSingleGrowableBuffer(r);
-
   for(size_t dir_index = 0; dir_index < sizeof(config_paths) / sizeof(config_paths[0]); dir_index++)
   {
     StringView dir_path = str(config_paths[dir_index]);
-    DIR *dir = sOpenDir(dir_path);
+    DirIterator *dir = sDirOpen(dir_path);
 
-    for(const struct dirent *dir_entry = sReadDir(dir, dir_path); dir_entry != NULL;
-        dir_entry = sReadDir(dir, dir_path))
+    for(StringView filepath = sDirGetNext(dir); filepath.length > 0; strSet(&filepath, sDirGetNext(dir)))
     {
-      StringView filepath = strAppendPath(dir_path, str(dir_entry->d_name), a);
       testInsertNullBytes(filepath);
     }
 
-    sCloseDir(dir, dir_path);
+    sDirClose(dir);
   }
-
-  CR_RegionRelease(r);
 }
 
 int main(void)
