@@ -40,7 +40,7 @@ static void checkReadDir(DirIterator *dir)
   StringView path = sDirGetNext(dir);
   assert_true(errno == 0);
 
-  assert_true(path.length > 0);
+  assert_true(!strIsEmpty(path));
   assert_true(!strEqual(path, str(".")));
   assert_true(!strEqual(path, str("..")));
 }
@@ -734,7 +734,7 @@ int main(void)
   }
 
   assert_true(errno == 0);
-  assert_true(sDirGetNext(test_directory).length == 0);
+  assert_true(strIsEmpty(sDirGetNext(test_directory)));
   assert_true(errno == 0);
 
   /* Count example files in "test directory/foo 1". */
@@ -744,7 +744,7 @@ int main(void)
   }
 
   assert_true(errno == 0);
-  assert_true(sDirGetNext(test_foo_1).length == 0);
+  assert_true(strIsEmpty(sDirGetNext(test_foo_1)));
   assert_true(errno == 0);
   testGroupEnd();
 

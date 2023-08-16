@@ -531,7 +531,7 @@ static bool removeRecursivelyIf(StringView path,
   if(S_ISDIR(stats.st_mode))
   {
     DirIterator *dir = sDirOpen(path);
-    for(StringView subpath = sDirGetNext(dir); subpath.length > 0;
+    for(StringView subpath = sDirGetNext(dir); !strIsEmpty(subpath);
         strSet(&subpath, sDirGetNext(dir)))
     {
       if(!removeRecursivelyIf(subpath, should_remove, user_data))

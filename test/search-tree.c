@@ -531,7 +531,7 @@ static void testNullBytesConfigFiles(void)
     StringView dir_path = str(config_paths[dir_index]);
     DirIterator *dir = sDirOpen(dir_path);
 
-    for(StringView filepath = sDirGetNext(dir); filepath.length > 0; strSet(&filepath, sDirGetNext(dir)))
+    for(StringView filepath = sDirGetNext(dir); !strIsEmpty(filepath); strSet(&filepath, sDirGetNext(dir)))
     {
       testInsertNullBytes(filepath);
     }

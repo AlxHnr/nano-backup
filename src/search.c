@@ -278,7 +278,7 @@ static bool nodeMatches(const SearchNode *node, StringView string)
 static SearchResult finishSearchStep(SearchIterator *iterator)
 {
   StringView entry = sDirGetNext(iterator->state.access.search.dir);
-  if(entry.length == 0)
+  if(strIsEmpty(entry))
   {
     sDirClose(iterator->state.access.search.dir);
     return finishDirectory(iterator);

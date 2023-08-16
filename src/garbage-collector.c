@@ -108,7 +108,7 @@ GCStatistics collectGarbage(const Metadata *metadata, StringView repo_path)
                            metadata->paths);
 
   DirIterator *dir = sDirOpen(repo_path);
-  for(StringView subpath = sDirGetNext(dir); subpath.length > 0;
+  for(StringView subpath = sDirGetNext(dir); !strIsEmpty(subpath);
       strSet(&subpath, sDirGetNext(dir)))
   {
     sRemoveRecursivelyIf(subpath, shouldBeRemoved, &ctx);

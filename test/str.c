@@ -375,6 +375,16 @@ int main(void)
   }
   testGroupEnd();
 
+  testGroupStart("strIsEmpty()");
+  {
+    assert_true(strIsEmpty(checkedStr("")));
+    assert_true(strIsEmpty(zero_length));
+    assert_true(strIsEmpty(strUnterminated("Test 123", 0)));
+    assert_true(!strIsEmpty(str("Test 123")));
+    assert_true(!strIsEmpty(str(" ")));
+  }
+  testGroupEnd();
+
   testGroupStart("strIsDotElement()");
   {
     assert_true(!strIsDotElement(checkedStr("")));

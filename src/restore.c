@@ -242,7 +242,7 @@ static void initiateRestoreRecursively(PathNode *node_list,
 */
 void initiateRestore(Metadata *metadata, const size_t id, StringView path)
 {
-  if(path.length == 0)
+  if(strIsEmpty(path))
   {
     for(PathNode *node = metadata->paths; node != NULL; node = node->next)
     {

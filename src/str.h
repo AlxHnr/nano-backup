@@ -32,6 +32,7 @@ extern StringView strCopy(StringView string, Allocator *a);
 extern char *strCopyRaw(StringView string, Allocator *a);
 
 extern StringView strStripTrailingSlashes(StringView string);
+extern bool strIsEmpty(StringView string);
 extern bool strIsWhitespaceOnly(StringView string);
 extern bool strIsDotElement(StringView string);
 extern bool strPathContainsDotElements(StringView path);
