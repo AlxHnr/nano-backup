@@ -12,9 +12,9 @@ typedef struct
 {
   SearchResultType type;
 
-  /** The full path to the found file, containing a null-terminated buffer.
-    It shares memory with the SearchIterator to which it belongs and will
-    be invalidated with the next call to searchGetNext(). */
+  /** The full path to the found file. It shares memory with the
+    SearchIterator to which it belongs and will be invalidated with the
+    next call to searchGetNext(). */
   StringView path;
 
   /** The SearchNode which has matched the found path. Will be NULL if the

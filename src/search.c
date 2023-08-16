@@ -58,14 +58,10 @@ typedef struct
   recursing into directories. */
 typedef struct
 {
-  /** The state array. */
   DirSearchState *state_array;
-
-  /** The amount of used elements in the state array. */
+  size_t capacity;
   size_t used;
 
-  /** The total count of allocated states. */
-  size_t capacity;
 } DirSearchStateStack;
 
 struct SearchIterator
@@ -77,7 +73,6 @@ struct SearchIterator
      belongs to. Can be NULL. */
   RegexList *ignore_expressions;
 
-  /** The current search state. */
   DirSearchState state;
 
   /** The search states of all parent directories during recursion. */
@@ -137,14 +132,11 @@ static void setPathToFile(SearchIterator *iterator, StringView filename)
   iterator->buffer.length = new_length;
 }
 
-/** Constructs a SearchResult with informations from its arguments.
-
+/**
   @param iterator A valid SearchIterator with a filepath in its buffer.
   @param node The node associated with the path in the iterators buffer.
   Can be NULL.
   @param policy The policy of the file in the iterators buffer.
-
-  @return A SearchResult.
 */
 static SearchResult buildSearchResult(const SearchIterator *iterator,
                                       const SearchNode *node,
@@ -216,8 +208,6 @@ static void recursionStep(SearchIterator *iterator, SearchNode *node,
   @param node The node corresponding to the file in the iterator buffers
   filepath. Can be NULL.
   @param policy The policy for the iterator buffers filepath.
-
-  @return A SearchResult.
 */
 static SearchResult finishNodeStep(SearchIterator *iterator,
                                    SearchNode *node,
@@ -284,8 +274,6 @@ static bool nodeMatches(const SearchNode *node, StringView string)
   directory search. It will be destroyed if the search reaches its end
   trough this search step. In this case the returned SearchResult will have
   the type SRT_end_of_search.
-
-  @return A SearchResult.
 */
 static SearchResult finishSearchStep(SearchIterator *iterator)
 {
@@ -347,13 +335,11 @@ static SearchResult finishSearchStep(SearchIterator *iterator)
 }
 
 /** Completes a search step by directly accessing next node available in
-  the search iterator. Counterpart to finishSearchStep().
+  the search iterator.
 
   @param iterator A valid iterator which current state represents direct
   access. It will be destroyed, if this search step is the last step. In
   this case the returned SearchResult will have the type SRT_end_of_search.
-
-  @return A SearchResult.
 */
 static SearchResult finishCurrentNode(SearchIterator *iterator)
 {
@@ -362,7 +348,6 @@ static SearchResult finishCurrentNode(SearchIterator *iterator)
     return finishDirectory(iterator);
   }
 
-  /* Save node and move current_node one by step. */
   SearchNode *node = iterator->state.access.current_node;
   iterator->state.access.current_node = node->next;
 
