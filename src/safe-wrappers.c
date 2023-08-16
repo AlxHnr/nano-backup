@@ -48,20 +48,6 @@ static const char *nullTerminateSecondary(StringView string)
   return strGetContent(string, getTemporaryBuffer(true));
 }
 
-struct FileStream
-{
-  FILE *file;
-  char *path; /**< Used for error printing. */
-};
-
-static FileStream *newFileStream(FILE *file, StringView path)
-{
-  FileStream *stream = sMalloc(sizeof *stream);
-  stream->file = file;
-  stream->path = strCopyRaw(path, allocatorWrapMalloc());
-  return stream;
-}
-
 /** Applies the given stat function on the specified path and terminates
   the program on errors.
 
@@ -131,6 +117,32 @@ void sAtexit(void (*function)(void))
   }
 }
 
+struct FileStream
+{
+  CR_Region *r;
+  StringView path; /**< Used for error printing. */
+  FILE *handle;
+};
+
+static FileStream *newFileStream(StringView path)
+{
+  CR_Region *r = CR_RegionNew();
+
+  FileStream *stream = CR_RegionAlloc(r, sizeof *stream);
+  stream->r = r;
+  strSet(&stream->path, strCopy(path, allocatorWrapRegion(r)));
+  return stream;
+}
+static void closeFileHandle(void *data)
+{
+  FileStream *stream = data;
+  if(stream->handle == NULL) return;
+
+  const int old_errno = errno;
+  (void)fclose(stream->handle);
+  errno = old_errno;
+}
+
 /** Safe wrapper around fopen().
 
   @param path The path to the file which should be opened for reading.
@@ -140,40 +152,39 @@ void sAtexit(void (*function)(void))
 */
 FileStream *sFopenRead(StringView path)
 {
-  FILE *file = fopen(nullTerminate(path), "rb");
-  if(file == NULL)
+  FileStream *result = newFileStream(path);
+  result->handle = fopen(nullTerminate(path), "rb");
+  if(result->handle == NULL)
   {
+    CR_RegionRelease(result->r);
     dieErrno("failed to open \"%s\" for reading", nullTerminate(path));
   }
+  CR_RegionAttach(result->r, closeFileHandle, result);
 
-  return newFileStream(file, path);
+  return result;
 }
 
 /** Almost identical to sFopenRead(), but with the difference that the file
   gets opened for writing. */
 FileStream *sFopenWrite(StringView path)
 {
-  FILE *file = fopen(nullTerminate(path), "wb");
-  if(file == NULL)
+  FileStream *result = newFileStream(path);
+  result->handle = fopen(nullTerminate(path), "wb");
+  if(result->handle == NULL)
   {
+    CR_RegionRelease(result->r);
     dieErrno("failed to open \"%s\" for writing", nullTerminate(path));
   }
+  CR_RegionAttach(result->r, closeFileHandle, result);
 
-  return newFileStream(file, path);
+  return result;
 }
 
 /** Returns a temporary, single-use copy of its internal string. */
 static const char *internalFDestroy(FileStream *stream)
 {
-  char *result = strCopyRaw(str(stream->path), getTemporaryBuffer(false));
-
-  const int old_errno = errno;
-  fclose(stream->file);
-  errno = old_errno;
-
-  free(stream->path);
-  free(stream);
-
+  char *result = strCopyRaw(stream->path, getTemporaryBuffer(false));
+  CR_RegionRelease(stream->r);
   return result;
 }
 
@@ -187,9 +198,9 @@ static const char *internalFDestroy(FileStream *stream)
 */
 void sFread(void *ptr, const size_t size, FileStream *stream)
 {
-  if(fread(ptr, 1, size, stream->file) != size)
+  if(fread(ptr, 1, size, stream->handle) != size)
   {
-    if(feof(stream->file))
+    if(feof(stream->handle))
     {
       die("reading \"%s\": reached end of file unexpectedly",
           internalFDestroy(stream));
@@ -204,7 +215,7 @@ void sFread(void *ptr, const size_t size, FileStream *stream)
 /** Safe wrapper around fwrite(). Counterpart to sFread(). */
 void sFwrite(const void *ptr, const size_t size, FileStream *stream)
 {
-  if(fwrite(ptr, 1, size, stream->file) != size)
+  if(fwrite(ptr, 1, size, stream->handle) != size)
   {
     dieErrno("failed to write to \"%s\"", internalFDestroy(stream));
   }
@@ -216,7 +227,7 @@ void sFwrite(const void *ptr, const size_t size, FileStream *stream)
 */
 bool fWrite(const void *ptr, const size_t size, FileStream *stream)
 {
-  return fwrite(ptr, 1, size, stream->file) == size;
+  return fwrite(ptr, 1, size, stream->handle) == size;
 }
 
 /** Flushes and synchronizes the given FileStreams buffer to disk without
@@ -230,9 +241,9 @@ bool fWrite(const void *ptr, const size_t size, FileStream *stream)
 */
 bool fTodisk(FileStream *stream)
 {
-  const int descriptor = fileno(stream->file);
+  const int descriptor = fileno(stream->handle);
 
-  return descriptor != -1 && fflush(stream->file) == 0 &&
+  return descriptor != -1 && fflush(stream->handle) == 0 &&
     fdatasync(descriptor) == 0;
 }
 
@@ -242,12 +253,11 @@ bool fTodisk(FileStream *stream)
 */
 void sFclose(FileStream *stream)
 {
-  FILE *file = stream->file;
-  char *path = strCopyRaw(str(stream->path), getTemporaryBuffer(false));
-  free(stream->path);
-  free(stream);
+  FILE *handle = stream->handle;
+  stream->handle = NULL;
+  const char *path = internalFDestroy(stream);
 
-  if(fclose(file) != 0)
+  if(fclose(handle) != 0)
   {
     dieErrno("failed to close \"%s\"", path);
   }
@@ -355,7 +365,7 @@ bool sFbytesLeft(FileStream *stream)
   const int old_errno = errno;
   errno = 0;
 
-  const int character = fgetc(stream->file);
+  const int character = fgetc(stream->handle);
   if(character == EOF && errno != 0 && errno != EBADF)
   {
     dieErrno("failed to check for remaining bytes in \"%s\"",
@@ -363,7 +373,7 @@ bool sFbytesLeft(FileStream *stream)
   }
   errno = old_errno;
 
-  if(ungetc(character, stream->file) != character)
+  if(ungetc(character, stream->handle) != character)
   {
     die("failed to check for remaining bytes in \"%s\"",
         internalFDestroy(stream));
