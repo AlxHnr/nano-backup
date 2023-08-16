@@ -44,7 +44,8 @@ void fileHash(StringView path, const struct stat stats, uint8_t *hash_out)
 
   if(stream_not_at_end)
   {
-    die("file changed while calculating hash: \"%s\"", path.content);
+    die("file changed while calculating hash: \"" PRI_STR "\"",
+        STR_FMT(path));
   }
 
   blake2b_final(&state, hash_out, FILE_HASH_SIZE);

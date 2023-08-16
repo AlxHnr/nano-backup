@@ -55,11 +55,11 @@ static size_t skipCwd(SearchIterator *iterator, StringView cwd, const SearchNode
 
     if(result.type != SRT_directory)
     {
-      die("failed to find \"%s\" in the given iterator", nullTerminate(cwd));
+      die("failed to find \"" PRI_STR "\" in the given iterator", STR_FMT(cwd));
     }
     else if(result.node == NULL || result.node != node)
     {
-      die("search result contains invalid node for path \"%s\"", nullTerminate(result.path));
+      die("search result contains invalid node for path \"" PRI_STR "\"", STR_FMT(result.path));
     }
 
     checkSearchResult(result);
@@ -69,7 +69,7 @@ static size_t skipCwd(SearchIterator *iterator, StringView cwd, const SearchNode
     }
     if(result.policy != BPOL_none)
     {
-      die("unexpected policy in \"%s\"", nullTerminate(result.path));
+      die("unexpected policy in \"" PRI_STR "\"", STR_FMT(result.path));
     }
     else
     {
@@ -115,15 +115,15 @@ static const SearchNode *checkCwdTree(const SearchNode *root_node, const size_t 
   {
     if(node->subnodes == NULL)
     {
-      die("node doesn't have subnodes: \"%s\"", nullTerminate(node->name));
+      die("node doesn't have subnodes: \"" PRI_STR "\"", STR_FMT(node->name));
     }
     else if(node->subnodes->next != NULL)
     {
-      die("node has too many subnodes: \"%s\"", nullTerminate(node->name));
+      die("node has too many subnodes: \"" PRI_STR "\"", STR_FMT(node->name));
     }
     else if(node->search_match != SRT_directory)
     {
-      die("node has not matched a directory: \"%s\"", nullTerminate(node->name));
+      die("node has not matched a directory: \"" PRI_STR "\"", STR_FMT(node->name));
     }
 
     node = node->subnodes;
@@ -184,7 +184,7 @@ static size_t populateDirectoryTable(SearchIterator *iterator, StringTable *tabl
       StringView relative_path = trimCwd(result.path, cwd);
       if(strTableGet(table, relative_path) != NULL)
       {
-        die("path \"%s\" was found twice during search", nullTerminate(relative_path));
+        die("path \"" PRI_STR "\" was found twice during search", STR_FMT(relative_path));
       }
 
       file_count += (result.type == SRT_regular_file || result.type == SRT_symlink);

@@ -29,23 +29,23 @@ PathNode *findCwdNode(Metadata *metadata, StringView cwd, const BackupHint hint)
   {
     if((node->hint & ~BH_timestamp_changed) != hint)
     {
-      die("path has wrong backup hint: \"%s\"", nullTerminate(node->path));
+      die("path has wrong backup hint: \"" PRI_STR "\"", STR_FMT(node->path));
     }
     else if(node->policy != BPOL_none)
     {
-      die("path shouldn't have a policy: \"%s\"", nullTerminate(node->path));
+      die("path shouldn't have a policy: \"" PRI_STR "\"", STR_FMT(node->path));
     }
     else if(node->history->next != NULL)
     {
-      die("path has too many history points: \"%s\"", nullTerminate(node->path));
+      die("path has too many history points: \"" PRI_STR "\"", STR_FMT(node->path));
     }
     else if(node->next != NULL)
     {
-      die("item is not the last in list: \"%s\"", nullTerminate(node->path));
+      die("item is not the last in list: \"" PRI_STR "\"", STR_FMT(node->path));
     }
     else if(node->history->state.type != PST_directory)
     {
-      die("not a directory: \"%s\"", nullTerminate(node->path));
+      die("not a directory: \"" PRI_STR "\"", STR_FMT(node->path));
     }
     else if(strEqual(node->path, cwd))
     {
@@ -53,7 +53,7 @@ PathNode *findCwdNode(Metadata *metadata, StringView cwd, const BackupHint hint)
     }
   }
 
-  die("path does not exist in metadata: \"%s\"", nullTerminate(cwd));
+  die("path does not exist in metadata: \"" PRI_STR "\"", STR_FMT(cwd));
   return NULL;
 }
 
@@ -243,7 +243,7 @@ PathHistory *findExistingHistPoint(PathNode *node)
     }
   }
 
-  die("failed to find existing path state type for \"%s\"", nullTerminate(node->path));
+  die("failed to find existing path state type for \"" PRI_STR "\"", STR_FMT(node->path));
   return NULL;
 }
 
@@ -288,7 +288,7 @@ void restoreWithTimeRecursively(PathNode *node)
         makeDir(nullTerminate(node->path));
         sUtime(node->path, point->state.metadata.directory_info.modification_time);
         break;
-      default: die("unable to restore \"%s\"", nullTerminate(node->path));
+      default: die("unable to restore \"" PRI_STR "\"", STR_FMT(node->path));
     }
   }
 

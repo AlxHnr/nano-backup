@@ -631,7 +631,8 @@ static void copyFileIntoRepo(PathNode *node, StringView repo_path,
 
   if(stream_not_at_end)
   {
-    die("file has changed during backup: \"%s\"", node->path.content);
+    die("file has changed during backup: \"" PRI_STR "\"",
+        STR_FMT(node->path));
   }
 
   repoWriterClose(writer);
@@ -687,8 +688,8 @@ static bool equalsToStoredFile(const PathNode *node, StringView repo_path,
 
   if(bytes_left == 0 && stream_not_at_end)
   {
-    die("file has changed while comparing to backup: \"%s\"",
-        node->path.content);
+    die("file has changed while comparing to backup: \"" PRI_STR "\"",
+        STR_FMT(node->path));
   }
 
   return files_equal;
@@ -750,7 +751,8 @@ static void addFileToRepo(PathNode *node, StringView repo_path,
   if(node->history->state.metadata.file_info.modification_time !=
      stats.st_mtime)
   {
-    die("file has changed during backup: \"%s\"", node->path.content);
+    die("file has changed during backup: \"" PRI_STR "\"",
+        STR_FMT(node->path));
   }
   else if(file_info->size > FILE_HASH_SIZE)
   {
@@ -774,7 +776,8 @@ static void addFileToRepo(PathNode *node, StringView repo_path,
 
     if(stream_not_at_end)
     {
-      die("file has changed during backup: \"%s\"", node->path.content);
+      die("file has changed during backup: \"" PRI_STR "\"",
+          STR_FMT(node->path));
     }
   }
 }

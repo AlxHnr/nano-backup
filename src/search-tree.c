@@ -220,14 +220,14 @@ SearchNode *searchTreeParse(StringView config)
       /* Slice out and copy the invalid policy name. */
       StringView policy =
         strLegacyCopy(strUnterminated(&line.content[1], line.length - 2));
-      die("config: line %zu: invalid policy: \"%s\"", line_nr,
-          policy.content);
+      die("config: line %zu: invalid policy: \"" PRI_STR "\"", line_nr,
+          STR_FMT(policy));
     }
     else if(current_policy == BPOL_none)
     {
       StringView pattern = strLegacyCopy(line);
-      die("config: line %zu: pattern without policy: \"%s\"", line_nr,
-          pattern.content);
+      die("config: line %zu: pattern without policy: \"" PRI_STR "\"",
+          line_nr, STR_FMT(pattern));
     }
     else if(current_policy == BPOL_ignore ||
             current_policy == BPOL_summarize)
@@ -252,8 +252,9 @@ SearchNode *searchTreeParse(StringView config)
     {
       if(strPathContainsDotElements(line))
       {
-        die("config: line %zu: path contains \".\" or \"..\": \"%s\"",
-            line_nr, strLegacyCopy(line).content);
+        die("config: line %zu: path contains \".\" or \"..\": \"" PRI_STR
+            "\"",
+            line_nr, STR_FMT(line));
       }
 
       StringView path = strStripTrailingSlashes(line);
@@ -265,10 +266,11 @@ SearchNode *searchTreeParse(StringView config)
          !previous_definition->policy_inherited)
       {
         StringView redefined_path = strLegacyCopy(line);
-        die("config: line %zu: redefining %sline %zu: \"%s\"", line_nr,
+        die("config: line %zu: redefining %sline %zu: \"" PRI_STR "\"",
+            line_nr,
             previous_definition->policy != current_policy ? "policy of "
                                                           : "",
-            previous_definition->policy_line_nr, redefined_path.content);
+            previous_definition->policy_line_nr, STR_FMT(redefined_path));
       }
 
       /* Use either the existing node or create a new one. */
@@ -284,7 +286,8 @@ SearchNode *searchTreeParse(StringView config)
     else
     {
       StringView path = strLegacyCopy(line);
-      die("config: line %zu: invalid path: \"%s\"", line_nr, path.content);
+      die("config: line %zu: invalid path: \"" PRI_STR "\"", line_nr,
+          STR_FMT(path));
     }
 
     parser_position += line.length;

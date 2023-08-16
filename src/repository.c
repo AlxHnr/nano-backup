@@ -186,8 +186,8 @@ RepoReader *repoReaderOpenFile(StringView repo_path,
   FILE *stream = fopen(path_buffer, "rb");
   if(stream == NULL)
   {
-    dieErrno("failed to open \"%s\" in \"%s\"", source_file_path.content,
-             repo_path.content);
+    dieErrno("failed to open \"" PRI_STR "\" in \"" PRI_STR "\"",
+             STR_FMT(source_file_path), STR_FMT(repo_path));
   }
 
   RepoReader *reader = sMalloc(sizeof *reader);
@@ -220,13 +220,15 @@ void repoReaderRead(void *data, const size_t size, RepoReader *reader)
 
     if(reached_end_of_file)
     {
-      die("reading \"%s\" from \"%s\": reached end of file unexpectedly",
-          source_file_path.content, repo_path.content);
+      die("reading \"" PRI_STR "\" from \"" PRI_STR
+          "\": reached end of file unexpectedly",
+          STR_FMT(source_file_path), STR_FMT(repo_path));
     }
     else
     {
-      dieErrno("IO error while reading \"%s\" from \"%s\"",
-               source_file_path.content, repo_path.content);
+      dieErrno("IO error while reading \"" PRI_STR "\" from \"" PRI_STR
+               "\"",
+               STR_FMT(source_file_path), STR_FMT(repo_path));
     }
   }
 }
@@ -243,8 +245,8 @@ void repoReaderClose(RepoReader *reader_to_close)
 
   if(fclose(reader.stream) != 0)
   {
-    dieErrno("failed to close \"%s\" in \"%s\"",
-             reader.source_file_path.content, reader.repo_path.content);
+    dieErrno("failed to close \"" PRI_STR "\" in \"" PRI_STR "\"",
+             STR_FMT(reader.source_file_path), STR_FMT(reader.repo_path));
   }
 }
 
@@ -323,8 +325,8 @@ void repoWriterWrite(const void *data, const size_t size,
     fDestroy(writer->stream);
     free(writer);
 
-    dieErrno("IO error while writing \"%s\" to \"%s\"",
-             source_file_path.content, repo_path.content);
+    dieErrno("IO error while writing \"" PRI_STR "\" to \"" PRI_STR "\"",
+             STR_FMT(source_file_path), STR_FMT(repo_path));
   }
 }
 
@@ -338,7 +340,8 @@ static void fdatasyncDirectory(StringView path)
   if(dir_descriptor == -1 || fdatasync(dir_descriptor) != 0 ||
      close(dir_descriptor) != 0)
   {
-    dieErrno("failed to sync directory to device: \"%s\"", path.content);
+    dieErrno("failed to sync directory to device: \"" PRI_STR "\"",
+             STR_FMT(path));
   }
 }
 
@@ -357,8 +360,8 @@ void repoWriterClose(RepoWriter *writer_to_close)
   if(!fTodisk(writer.stream))
   {
     fDestroy(writer.stream);
-    dieErrno("failed to flush/sync \"%s\" to \"%s\"",
-             writer.source_file_path.content, writer.repo_path.content);
+    dieErrno("failed to flush/sync \"" PRI_STR "\" to \"" PRI_STR "\"",
+             STR_FMT(writer.source_file_path), STR_FMT(writer.repo_path));
   }
 
   sFclose(writer.stream);

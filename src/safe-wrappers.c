@@ -62,7 +62,7 @@ static struct stat safeStat(StringView path,
   struct stat buffer;
   if(stat_fun(nullTerminate(path), &buffer) == -1)
   {
-    dieErrno("failed to access \"%s\"", nullTerminate(path));
+    dieErrno("failed to access \"" PRI_STR "\"", STR_FMT(path));
   }
 
   return buffer;
@@ -157,7 +157,7 @@ FileStream *sFopenRead(StringView path)
   if(result->handle == NULL)
   {
     CR_RegionRelease(result->r);
-    dieErrno("failed to open \"%s\" for reading", nullTerminate(path));
+    dieErrno("failed to open \"" PRI_STR "\" for reading", STR_FMT(path));
   }
   CR_RegionAttach(result->r, closeFileHandle, result);
 
@@ -173,7 +173,7 @@ FileStream *sFopenWrite(StringView path)
   if(result->handle == NULL)
   {
     CR_RegionRelease(result->r);
-    dieErrno("failed to open \"%s\" for writing", nullTerminate(path));
+    dieErrno("failed to open \"" PRI_STR "\" for writing", STR_FMT(path));
   }
   CR_RegionAttach(result->r, closeFileHandle, result);
 
@@ -301,7 +301,7 @@ DirIterator *sDirOpen(StringView path)
   if(dir->handle == NULL)
   {
     CR_RegionRelease(r);
-    dieErrno("failed to open directory \"%s\"", nullTerminate(path));
+    dieErrno("failed to open directory \"" PRI_STR "\"", STR_FMT(path));
   }
   CR_RegionAttach(r, closeDirHandle, dir);
 
@@ -323,8 +323,8 @@ StringView sDirGetNext(DirIterator *dir)
 
     if(dir_entry == NULL && errno != 0)
     {
-      dieErrno("failed to read directory \"%s\"",
-               nullTerminate(dir->directory_path));
+      dieErrno("failed to read directory \"" PRI_STR "\"",
+               STR_FMT(dir->directory_path));
     }
   } while(dir_entry != NULL && dir_entry->d_name[0] == '.' &&
           (dir_entry->d_name[1] == '\0' ||
@@ -347,8 +347,8 @@ void sDirClose(DirIterator *dir)
 
   if(closedir(handle) != 0)
   {
-    dieErrno("failed to close directory \"%s\"",
-             nullTerminate(dir->directory_path));
+    dieErrno("failed to close directory \"" PRI_STR "\"",
+             STR_FMT(dir->directory_path));
   }
   CR_RegionRelease(dir->r);
 }
@@ -400,7 +400,8 @@ bool sPathExists(StringView path)
   {
     if(errno != 0 && errno != ENOENT)
     {
-      dieErrno("failed to check existence of \"%s\"", nullTerminate(path));
+      dieErrno("failed to check existence of \"" PRI_STR "\"",
+               STR_FMT(path));
     }
 
     exists = false;
@@ -427,7 +428,7 @@ void sMkdir(StringView path)
 {
   if(mkdir(nullTerminate(path), 0755) != 0)
   {
-    dieErrno("failed to create directory: \"%s\"", nullTerminate(path));
+    dieErrno("failed to create directory: \"" PRI_STR "\"", STR_FMT(path));
   }
 }
 
@@ -440,7 +441,7 @@ void sSymlink(StringView target, StringView path)
 {
   if(symlink(nullTerminate(target), nullTerminateSecondary(path)) != 0)
   {
-    dieErrno("failed to create symlink: \"%s\"", nullTerminate(path));
+    dieErrno("failed to create symlink: \"" PRI_STR "\"", STR_FMT(path));
   }
 }
 
@@ -449,8 +450,8 @@ void sRename(StringView oldpath, StringView newpath)
 {
   if(rename(nullTerminate(oldpath), nullTerminateSecondary(newpath)) != 0)
   {
-    dieErrno("failed to rename \"%s\" to \"%s\"", nullTerminate(oldpath),
-             nullTerminateSecondary(newpath));
+    dieErrno("failed to rename \"" PRI_STR "\" to \"" PRI_STR "\"",
+             STR_FMT(oldpath), STR_FMT(newpath));
   }
 }
 
@@ -459,8 +460,8 @@ void sChmod(StringView path, const mode_t mode)
 {
   if(chmod(nullTerminate(path), mode) != 0)
   {
-    dieErrno("failed to change permissions of \"%s\"",
-             nullTerminate(path));
+    dieErrno("failed to change permissions of \"" PRI_STR "\"",
+             STR_FMT(path));
   }
 }
 
@@ -469,7 +470,7 @@ void sChown(StringView path, const uid_t user, const gid_t group)
 {
   if(chown(nullTerminate(path), user, group) != 0)
   {
-    dieErrno("failed to change owner of \"%s\"", nullTerminate(path));
+    dieErrno("failed to change owner of \"" PRI_STR "\"", STR_FMT(path));
   }
 }
 
@@ -478,7 +479,7 @@ void sLChown(StringView path, const uid_t user, const gid_t group)
 {
   if(lchown(nullTerminate(path), user, group) != 0)
   {
-    dieErrno("failed to change owner of \"%s\"", nullTerminate(path));
+    dieErrno("failed to change owner of \"" PRI_STR "\"", STR_FMT(path));
   }
 }
 
@@ -492,7 +493,7 @@ void sUtime(StringView path, const time_t time)
 
   if(utime(nullTerminate(path), &time_buffer) != 0)
   {
-    dieErrno("failed to set timestamp of \"%s\"", nullTerminate(path));
+    dieErrno("failed to set timestamp of \"" PRI_STR "\"", STR_FMT(path));
   }
 }
 
@@ -501,7 +502,7 @@ void sRemove(StringView path)
 {
   if(remove(nullTerminate(path)) != 0)
   {
-    dieErrno("failed to remove \"%s\"", nullTerminate(path));
+    dieErrno("failed to remove \"" PRI_STR "\"", STR_FMT(path));
   }
 }
 
@@ -747,14 +748,14 @@ FileContent sGetFilesContent(CR_Region *region, StringView path)
   const struct stat file_stats = sStat(path);
   if(!S_ISREG(file_stats.st_mode))
   {
-    die("\"%s\" is not a regular file", nullTerminate(path));
+    die("\"" PRI_STR "\" is not a regular file", STR_FMT(path));
   }
 
   /* On 32-bit systems off_t is often larger than size_t. */
   if((uint64_t)file_stats.st_size > SIZE_MAX)
   {
-    die("unable to load file into mem due to its size: \"%s\"",
-        nullTerminate(path));
+    die("unable to load file into mem due to its size: \"" PRI_STR "\"",
+        STR_FMT(path));
   }
 
   if(file_stats.st_size > 0)
@@ -767,7 +768,7 @@ FileContent sGetFilesContent(CR_Region *region, StringView path)
 
     if(stream_not_at_end)
     {
-      die("file changed while reading: \"%s\"", nullTerminate(path));
+      die("file changed while reading: \"" PRI_STR "\"", STR_FMT(path));
     }
 
     return (FileContent){ .content = content, .size = file_stats.st_size };

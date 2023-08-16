@@ -34,8 +34,8 @@ const regex_t *rpCompile(StringView expression, StringView file_name,
     const size_t error_length = regerror(error, regex, NULL, 0);
     char *error_str = CR_RegionAlloc(CR_GetGlobalRegion(), error_length);
     regerror(error, regex, error_str, error_length);
-    die("%s: line %zu: %s: \"%s\"", file_name.content, line_nr, error_str,
-        expression.content);
+    die("" PRI_STR ": line %zu: %s: \"" PRI_STR "\"", STR_FMT(file_name),
+        line_nr, error_str, STR_FMT(expression));
   }
 
   CR_RegionAttach(CR_GetGlobalRegion(), releaseRegex, regex);

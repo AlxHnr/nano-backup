@@ -34,9 +34,10 @@ static void assertBytesLeft(const size_t reader_position,
 {
   if(sSizeAdd(reader_position, bytes) > content.size)
   {
-    die("corrupted metadata: expected %zu byte%s, got %zu: \"%s\"", bytes,
-        bytes == 1 ? "" : "s", content.size - reader_position,
-        metadata_path.content);
+    die("corrupted metadata: expected %zu byte%s, got %zu: \"" PRI_STR
+        "\"",
+        bytes, bytes == 1 ? "" : "s", content.size - reader_position,
+        STR_FMT(metadata_path));
   }
 }
 
@@ -135,8 +136,8 @@ static size_t readSize(const FileContent content, size_t *reader_position,
 
   if(size > SIZE_MAX)
   {
-    die("failed to read 64 bit size value from \"%s\"",
-        metadata_path.content);
+    die("failed to read 64 bit size value from \"" PRI_STR "\"",
+        STR_FMT(metadata_path));
   }
 
   return (size_t)size;
@@ -152,8 +153,8 @@ static time_t readTime(const FileContent content, size_t *reader_position,
 
   if(sizeof(time_t) == 4 && (time < INT32_MIN || time > INT32_MAX))
   {
-    die("unable to read 64-bit timestamp from \"%s\"",
-        metadata_path.content);
+    die("unable to read 64-bit timestamp from \"" PRI_STR "\"",
+        STR_FMT(metadata_path));
   }
 
   return (time_t)time;
@@ -203,7 +204,8 @@ static PathHistory *readPathHistory(const FileContent content,
   const size_t id = readSize(content, reader_position, metadata_path);
   if(id >= metadata->backup_history_length)
   {
-    die("backup id is out of range in \"%s\"", metadata_path.content);
+    die("backup id is out of range in \"" PRI_STR "\"",
+        STR_FMT(metadata_path));
   }
 
   point->backup = &metadata->backup_history[id];
@@ -266,7 +268,8 @@ static PathHistory *readPathHistory(const FileContent content,
   }
   else if(point->state.type != PST_non_existing)
   {
-    die("invalid PathStateType in \"%s\"", metadata_path.content);
+    die("invalid PathStateType in \"" PRI_STR "\"",
+        STR_FMT(metadata_path));
   }
 
   point->next = NULL;
@@ -416,8 +419,8 @@ static PathNode *readPathSubnodes(const FileContent content,
       readSize(content, reader_position, metadata_path);
     if(name_length == 0)
     {
-      die("contains filename with length zero: \"%s\"",
-          metadata_path.content);
+      die("contains filename with length zero: \"" PRI_STR "\"",
+          STR_FMT(metadata_path));
     }
 
     assertBytesLeft(*reader_position, name_length, content, metadata_path);
@@ -428,14 +431,14 @@ static PathNode *readPathSubnodes(const FileContent content,
 
     if(memchr(name.content, '\0', name.length) != NULL)
     {
-      die("contains filename with null-bytes: \"%s\"",
-          metadata_path.content);
+      die("contains filename with null-bytes: \"" PRI_STR "\"",
+          STR_FMT(metadata_path));
     }
     else if(memchr(name.content, '/', name.length) != NULL ||
             strIsDotElement(name))
     {
-      die("contains invalid filename \"%s\": \"%s\"",
-          strLegacyCopy(name).content, metadata_path.content);
+      die("contains invalid filename \"" PRI_STR "\": \"" PRI_STR "\"",
+          STR_FMT(name), STR_FMT(metadata_path));
     }
 
     StringView full_path = strLegacyAppendPath(
@@ -568,7 +571,7 @@ Metadata *metadataLoad(StringView path)
 
   if(reader_position != content.size)
   {
-    die("unneeded trailing bytes in \"%s\"", path.content);
+    die("unneeded trailing bytes in \"" PRI_STR "\"", STR_FMT(path));
   }
 
   return metadata;

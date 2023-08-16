@@ -16,6 +16,13 @@ typedef struct
   const bool is_terminated;
 } StringView;
 
+/** Printf format specifier for StringView. */
+#define PRI_STR "%.*s"
+
+/** Argument builder for printf. Example:
+    printf("Hello " PRI_STR "\n", STR_FMT(my_string_view)); */
+#define STR_FMT(string) ((int)(string).length), (string).content
+
 extern StringView str(const char *string);
 extern StringView strUnterminated(const char *string, size_t length);
 extern const char *strGetContent(StringView string, Allocator *a);

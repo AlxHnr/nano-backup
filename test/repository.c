@@ -56,11 +56,11 @@ static void checkFilesContent(StringView file_path, const char *expected_content
 
   if(content.size != expected_size)
   {
-    die("content size: %zu != %zu: \"%s\"", content.size, expected_size, nullTerminate(file_path));
+    die("content size: %zu != %zu: \"" PRI_STR "\"", content.size, expected_size, STR_FMT(file_path));
   }
   else if(memcmp(content.content, expected_content, expected_size) != 0)
   {
-    die("file has invalid content: \"%s\"", nullTerminate(file_path));
+    die("file has invalid content: \"" PRI_STR "\"", STR_FMT(file_path));
   }
 
   CR_RegionRelease(r);

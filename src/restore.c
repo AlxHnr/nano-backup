@@ -54,8 +54,8 @@ static const PathState *findExistingPathState(const PathNode *node,
 
   if(state == NULL)
   {
-    die("path didn't exist at the specified time: \"%s\"",
-        node->path.content);
+    die("path didn't exist at the specified time: \"" PRI_STR "\"",
+        STR_FMT(node->path));
   }
 
   return state;
@@ -209,8 +209,9 @@ static void initiateRestoreRecursively(PathNode *node_list,
       const PathState *state = findExistingPathState(node, id);
       if(state->type != PST_directory)
       {
-        die("path was not a directory at the specified time: \"%s\"",
-            node->path.content);
+        die("path was not a directory at the specified time: \"" PRI_STR
+            "\"",
+            STR_FMT(node->path));
       }
 
       checkAndHandleChanges(node, state, could_exist);
@@ -226,7 +227,8 @@ static void initiateRestoreRecursively(PathNode *node_list,
 
   if(!found_node)
   {
-    die("path doesn't exist in repository: \"%s\"", path.content);
+    die("path doesn't exist in repository: \"" PRI_STR "\"",
+        STR_FMT(path));
   }
 }
 

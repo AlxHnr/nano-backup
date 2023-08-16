@@ -102,7 +102,8 @@ static void runIntegrityCheck(const Metadata *metadata,
       path_node != NULL; path_node = path_node->next)
   {
     colorPrintf(stdout, TC_red_bold, "?? ");
-    colorPrintf(stdout, TC_red, "%s ", path_node->node->path.content);
+    colorPrintf(stdout, TC_red, "" PRI_STR " ",
+                STR_FMT(path_node->node->path));
     printf("(corrupted)\n");
     broken_node_count++;
   }
@@ -127,7 +128,8 @@ static void backup(StringView repo_arg)
 
   if(!sPathExists(config_path))
   {
-    die("repository has no config file: \"%s\"", repo_arg.content);
+    die("repository has no config file: \"" PRI_STR "\"",
+        STR_FMT(repo_arg));
   }
   repoLockUntilExit(repo_path);
   SearchNode *root_node = searchTreeLoad(config_path);
@@ -180,7 +182,7 @@ static Metadata *metadataLoadFromRepo(StringView repo_arg)
 
   if(!sPathExists(metadata_path))
   {
-    die("repository has no metadata: \"%s\"", repo_arg.content);
+    die("repository has no metadata: \"" PRI_STR "\"", STR_FMT(repo_arg));
   }
 
   repoLockUntilExit(repo_path);

@@ -19,7 +19,7 @@ static void warnConfigLineNr(const size_t line_nr)
 static void warnPath(StringView path)
 {
   fprintf(stderr, "\"");
-  colorPrintf(stderr, TC_red, "%s", path.content);
+  colorPrintf(stderr, TC_red, "" PRI_STR "", STR_FMT(path));
   fprintf(stderr, "\"");
 }
 
@@ -299,8 +299,8 @@ static void printNodePath(const PathNode *node, const TextColor color)
 {
   const PathState *state = getExistingState(node);
 
-  colorPrintf(stdout, color, "%s%s%s",
-              state->type == PST_symlink ? "^" : "", node->path.content,
+  colorPrintf(stdout, color, "%s" PRI_STR "%s",
+              state->type == PST_symlink ? "^" : "", STR_FMT(node->path),
               state->type == PST_directory ? "/" : "");
 }
 
@@ -472,8 +472,8 @@ static void printNode(const PathNode *node, const ChangeSummary *summary,
   if(existing_state->type == PST_symlink)
   {
     colorPrintf(stdout, TC_magenta, " -> ");
-    colorPrintf(stdout, TC_cyan, "%s",
-                existing_state->metadata.symlink_target.content);
+    colorPrintf(stdout, TC_cyan, "" PRI_STR "",
+                STR_FMT(existing_state->metadata.symlink_target));
   }
 
   printf("\n");
@@ -645,6 +645,6 @@ void warnNodeMatches(const SearchNode *node, StringView string)
   fprintf(stderr, "%s ", typeOf(node));
   warnPath(node->name);
   fprintf(stderr, " matches \"");
-  colorPrintf(stderr, TC_yellow, "%s", string.content);
+  colorPrintf(stderr, TC_yellow, "" PRI_STR "", STR_FMT(string));
   fprintf(stderr, "\"\n");
 }
