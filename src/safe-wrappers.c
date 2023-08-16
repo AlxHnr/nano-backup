@@ -277,9 +277,9 @@ struct DirIterator
   Allocator *returned_result_buffer;
   DIR *handle;
 };
-void closeDirHandle(void *pointer)
+void closeDirHandle(void *data)
 {
-  DirIterator *dir = pointer;
+  DirIterator *dir = data;
   if(dir->handle == NULL) return;
 
   const int old_errno = errno;
@@ -565,7 +565,7 @@ void sRemoveRecursivelyIf(StringView path,
                           ShouldRemoveCallback should_remove,
                           void *user_data)
 {
-  removeRecursivelyIf(path, should_remove, user_data);
+  (void)removeRecursivelyIf(path, should_remove, user_data);
 }
 
 /** Safe and simplified wrapper around getcwd().
