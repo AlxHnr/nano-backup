@@ -183,7 +183,7 @@ PathSplit strSplitPath(StringView path)
 
 /** Returns true if the given string is empty, or contains only
   whitespaces. */
-bool strWhitespaceOnly(StringView string)
+bool strIsWhitespaceOnly(StringView string)
 {
   for(size_t index = 0; index < string.length; index++)
   {

@@ -361,17 +361,17 @@ int main(void)
 
   testGroupStart("strWhitespaceOnly()");
   {
-    assert_true(strWhitespaceOnly(checkedStr("")));
-    assert_true(strWhitespaceOnly(checkedStr("   ")));
-    assert_true(strWhitespaceOnly(checkedStr("	")));
-    assert_true(strWhitespaceOnly(checkedStr(" 	  	 ")));
-    assert_true(!strWhitespaceOnly(checkedStr("	o ")));
-    assert_true(!strWhitespaceOnly(checkedStr(".   ")));
-    assert_true(!strWhitespaceOnly(checkedStr("foo")));
-    assert_true(strWhitespaceOnly(zero_length));
+    assert_true(strIsWhitespaceOnly(checkedStr("")));
+    assert_true(strIsWhitespaceOnly(checkedStr("   ")));
+    assert_true(strIsWhitespaceOnly(checkedStr("	")));
+    assert_true(strIsWhitespaceOnly(checkedStr(" 	  	 ")));
+    assert_true(!strIsWhitespaceOnly(checkedStr("	o ")));
+    assert_true(!strIsWhitespaceOnly(checkedStr(".   ")));
+    assert_true(!strIsWhitespaceOnly(checkedStr("foo")));
+    assert_true(strIsWhitespaceOnly(zero_length));
 
     StringView string = checkedStrUnterminated("         a string.", 9);
-    assert_true(strWhitespaceOnly(string));
+    assert_true(strIsWhitespaceOnly(string));
   }
   testGroupEnd();
 
