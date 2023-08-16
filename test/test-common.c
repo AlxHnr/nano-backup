@@ -323,7 +323,7 @@ PathNode *findPathNode(PathNode *start_node, const char *path_str, BackupHint hi
 
   for(PathNode *node = start_node; node != NULL && requested_node == NULL; node = node->next)
   {
-    if(strEqual(node->path, str(path_str)))
+    if(strIsEqual(node->path, str(path_str)))
     {
       requested_node = node;
     }
@@ -406,7 +406,7 @@ void mustHaveSymlink(const PathNode *node, const Backup *backup, const uid_t uid
     die("backup point %zu in node \"" PRI_STR "\" doesn't have the state PST_symlink", backup->id,
         STR_FMT(node->path));
   }
-  else if(!strEqual(point->state.metadata.symlink_target, str(symlink_target)))
+  else if(!strIsEqual(point->state.metadata.symlink_target, str(symlink_target)))
   {
     die("backup point %zu in node \"" PRI_STR "\" doesn't contain the symlink target \"%s\"", backup->id,
         STR_FMT(node->path), symlink_target);

@@ -64,7 +64,7 @@ static bool shouldBeRemoved(StringView path, const struct stat *stats,
 {
   GCContext *ctx = user_data;
 
-  if(strEqual(path, ctx->repo_path))
+  if(strIsEqual(path, ctx->repo_path))
   {
     return false;
   }

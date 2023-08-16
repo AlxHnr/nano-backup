@@ -105,7 +105,7 @@ static bool searchNodeMatches(SearchNode *node, StringView path_tail)
     return regexec(node->regex, path_tail.content, 0, NULL, 0) == 0;
   }
 
-  return strEqual(node->name, path_tail);
+  return strIsEqual(node->name, path_tail);
 }
 
 /** Checks if a subnode of the given result node matches the specified

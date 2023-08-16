@@ -51,12 +51,6 @@ void strSet(StringView *string, StringView value)
   memcpy(string, &value, sizeof(StringView));
 }
 
-bool strEqual(StringView a, StringView b)
-{
-  return a.length == b.length &&
-    memcmp(a.content, b.content, a.length) == 0;
-}
-
 /** Create a copy of the given string view.
 
   @param string To be copied.
@@ -184,6 +178,12 @@ PathSplit strSplitPath(StringView path)
 bool strIsEmpty(StringView string)
 {
   return string.length == 0;
+}
+
+bool strIsEqual(StringView a, StringView b)
+{
+  return a.length == b.length &&
+    memcmp(a.content, b.content, a.length) == 0;
 }
 
 /** Returns true if the given string is empty, or contains only

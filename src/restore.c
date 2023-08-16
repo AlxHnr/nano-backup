@@ -196,7 +196,7 @@ static void initiateRestoreRecursively(PathNode *node_list,
   for(PathNode *node = node_list; node != NULL && found_node == false;
       node = node->next)
   {
-    if(strEqual(node->path, path))
+    if(strIsEqual(node->path, path))
     {
       found_node = true;
       const PathState *state = findExistingPathState(node, id);

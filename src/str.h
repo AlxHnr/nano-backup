@@ -27,16 +27,15 @@ extern StringView str(const char *string);
 extern StringView strUnterminated(const char *string, size_t length);
 extern const char *strGetContent(StringView string, Allocator *a);
 extern void strSet(StringView *string, StringView value);
-extern bool strEqual(StringView a, StringView b);
 extern StringView strCopy(StringView string, Allocator *a);
 extern char *strCopyRaw(StringView string, Allocator *a);
 
-extern StringView strStripTrailingSlashes(StringView string);
 extern bool strIsEmpty(StringView string);
+extern bool strIsEqual(StringView a, StringView b);
 extern bool strIsWhitespaceOnly(StringView string);
 extern bool strIsDotElement(StringView string);
-extern bool strPathContainsDotElements(StringView path);
 extern bool strIsParentPath(StringView parent, StringView path);
+extern bool strPathContainsDotElements(StringView path);
 
 typedef struct
 {
@@ -46,6 +45,7 @@ typedef struct
 extern PathSplit strSplitPath(StringView path);
 extern StringView strAppendPath(StringView path, StringView filename,
                                 Allocator *a);
+extern StringView strStripTrailingSlashes(StringView string);
 
 extern StringView strLegacyCopy(StringView string);
 extern StringView strLegacyAppendPath(StringView path,

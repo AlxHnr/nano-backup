@@ -146,7 +146,7 @@ void *strTableGet(const StringTable *table, StringView key)
   for(const Bucket *bucket = table->buckets[bucket_id]; bucket != NULL;
       bucket = bucket->next)
   {
-    if(strEqual(key, bucket->key))
+    if(strIsEqual(key, bucket->key))
     {
       return bucket->data;
     }

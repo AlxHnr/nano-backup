@@ -195,23 +195,23 @@ SearchNode *searchTreeParse(StringView config)
     {
       /* Ignore. */
     }
-    else if(strEqual(line, copy_token))
+    else if(strIsEqual(line, copy_token))
     {
       current_policy = BPOL_copy;
     }
-    else if(strEqual(line, mirror_token))
+    else if(strIsEqual(line, mirror_token))
     {
       current_policy = BPOL_mirror;
     }
-    else if(strEqual(line, track_token))
+    else if(strIsEqual(line, track_token))
     {
       current_policy = BPOL_track;
     }
-    else if(strEqual(line, ignore_token))
+    else if(strIsEqual(line, ignore_token))
     {
       current_policy = BPOL_ignore;
     }
-    else if(strEqual(line, summarize_token))
+    else if(strIsEqual(line, summarize_token))
     {
       current_policy = BPOL_summarize;
     }

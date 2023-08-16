@@ -41,8 +41,8 @@ static void checkReadDir(DirIterator *dir)
   assert_true(errno == 0);
 
   assert_true(!strIsEmpty(path));
-  assert_true(!strEqual(path, str(".")));
-  assert_true(!strEqual(path, str("..")));
+  assert_true(!strIsEqual(path, str(".")));
+  assert_true(!strIsEqual(path, str("..")));
 }
 
 static bool checkPathExists(const char *path)
@@ -103,11 +103,11 @@ static bool checkStats(StringView path, const struct stat *stats, void *user_dat
   (void)stats;
   (void)user_data;
 
-  if(strEqual(path, str("tmp/file")))
+  if(strIsEqual(path, str("tmp/file")))
   {
     assert_true(S_ISREG(stats->st_mode));
   }
-  if(strEqual(path, str("tmp/test1")))
+  if(strIsEqual(path, str("tmp/test1")))
   {
     assert_true(S_ISDIR(stats->st_mode));
   }
@@ -119,8 +119,8 @@ static bool dontPassNeededDirectories(StringView path, const struct stat *stats,
   (void)stats;
   (void)user_data;
 
-  assert_true(!strEqual(path, str("tmp/test1")));
-  assert_true(!strEqual(path, str("tmp/test1/test2")));
+  assert_true(!strIsEqual(path, str("tmp/test1")));
+  assert_true(!strIsEqual(path, str("tmp/test1/test2")));
   return false;
 }
 static bool countCalls(StringView path, const struct stat *stats, void *user_data)
@@ -136,22 +136,22 @@ static bool deleteSpecificFiles(StringView path, const struct stat *stats, void 
   (void)stats;
   (void)user_data;
 
-  return strEqual(path, str("tmp/test1/test3")) || strEqual(path, str("tmp/test1/foo")) ||
-    strEqual(path, str("tmp/test1/test2/file"));
+  return strIsEqual(path, str("tmp/test1/test3")) || strIsEqual(path, str("tmp/test1/foo")) ||
+    strIsEqual(path, str("tmp/test1/test2/file"));
 }
 static bool checkIfTest1DirWasProvided(StringView path, const struct stat *stats, void *user_data)
 {
   (void)path;
   (void)stats;
 
-  if(strEqual(path, str("tmp/test1")))
+  if(strIsEqual(path, str("tmp/test1")))
   {
     bool *value = user_data;
     assert_true(*value == false);
     *value = true;
   }
 
-  return strEqual(path, str("tmp/test1/test2"));
+  return strIsEqual(path, str("tmp/test1/test2"));
 }
 
 static void testRemoveRecursivelyIf(void)

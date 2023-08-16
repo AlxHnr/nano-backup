@@ -74,7 +74,7 @@ static void testStrAppendPath(const char *raw_path, const char *raw_filename, co
   StringView path = checkedStr(raw_path);
   StringView filename = checkedStr(raw_filename);
   StringView result = checkedStrAppendPath(path, filename, a);
-  assert_true(strEqual(result, checkedStr(expected_result)));
+  assert_true(strIsEqual(result, checkedStr(expected_result)));
 }
 
 static void checkedStrSet(StringView *string, StringView value)
@@ -100,7 +100,7 @@ static void testStrStripTrailingSlashes(StringView original, StringView expected
 {
   StringView trimmed = checkedStrStripTrailingSlashes(original);
   assert_true(trimmed.length == expected.length);
-  assert_true(strEqual(trimmed, expected));
+  assert_true(strIsEqual(trimmed, expected));
 }
 
 static bool isParentPath(const char *parent, const char *path)
@@ -133,8 +133,8 @@ static void testStrSplitPath(const char *cpath, const char *cexpected_head, cons
   StringView expected_tail = checkedStr(cexpected_tail);
 
   PathSplit split = checkedStrSplitPath(path);
-  assert_true(strEqual(split.head, expected_head));
-  assert_true(strEqual(split.tail, expected_tail));
+  assert_true(strIsEqual(split.head, expected_head));
+  assert_true(strIsEqual(split.tail, expected_tail));
 }
 
 int main(void)
@@ -174,28 +174,28 @@ int main(void)
   }
   testGroupEnd();
 
-  testGroupStart("strEqual()");
+  testGroupStart("strIsEqual()");
   {
     StringView foo = checkedStr("foo");
     StringView bar = checkedStr("bar");
     StringView empty = checkedStr("");
     StringView foo_bar = checkedStr("foo-bar");
 
-    assert_true(strEqual(foo, checkedStr("foo")));
-    assert_true(!strEqual(foo, bar));
-    assert_true(!strEqual(foo, foo_bar));
-    assert_true(strEqual(zero_length, checkedStr("")));
-    assert_true(strEqual(empty, checkedStr("")));
-    assert_true(strEqual(slice1, checkedStr("this")));
-    assert_true(strEqual(slice2, checkedStr("is a test")));
-    assert_true(strEqual(slice3, checkedStr("test string")));
-    assert_true(!strEqual(slice1, checkedStr("This")));
-    assert_true(!strEqual(slice2, checkedStr("is a Test")));
-    assert_true(!strEqual(slice3, checkedStr("test String")));
-    assert_true(!strEqual(slice1, slice2));
-    assert_true(!strEqual(slice1, slice3));
-    assert_true(!strEqual(slice2, slice3));
-    assert_true(!strEqual(slice3, slice2));
+    assert_true(strIsEqual(foo, checkedStr("foo")));
+    assert_true(!strIsEqual(foo, bar));
+    assert_true(!strIsEqual(foo, foo_bar));
+    assert_true(strIsEqual(zero_length, checkedStr("")));
+    assert_true(strIsEqual(empty, checkedStr("")));
+    assert_true(strIsEqual(slice1, checkedStr("this")));
+    assert_true(strIsEqual(slice2, checkedStr("is a test")));
+    assert_true(strIsEqual(slice3, checkedStr("test string")));
+    assert_true(!strIsEqual(slice1, checkedStr("This")));
+    assert_true(!strIsEqual(slice2, checkedStr("is a Test")));
+    assert_true(!strIsEqual(slice3, checkedStr("test String")));
+    assert_true(!strIsEqual(slice1, slice2));
+    assert_true(!strIsEqual(slice1, slice3));
+    assert_true(!strIsEqual(slice2, slice3));
+    assert_true(!strIsEqual(slice3, slice2));
   }
   testGroupEnd();
 
@@ -302,12 +302,12 @@ int main(void)
     testStrAppendPath("etc/init.d", "start.sh", "etc/init.d/start.sh", a);
     testStrAppendPath("etc/init.d", "/start.sh", "etc/init.d//start.sh", a);
 
-    assert_true(strEqual(checkedStrAppendPath(slice1, slice2, a), checkedStr("this/is a test")));
-    assert_true(strEqual(checkedStrAppendPath(slice2, slice3, a), checkedStr("is a test/test string")));
-    assert_true(strEqual(checkedStrAppendPath(slice3, slice1, a), checkedStr("test string/this")));
-    assert_true(strEqual(checkedStrAppendPath(slice2, zero_length, a), checkedStr("is a test/")));
-    assert_true(strEqual(checkedStrAppendPath(zero_length, slice1, a), checkedStr("/this")));
-    assert_true(strEqual(checkedStrAppendPath(zero_length, zero_length, a), checkedStr("/")));
+    assert_true(strIsEqual(checkedStrAppendPath(slice1, slice2, a), checkedStr("this/is a test")));
+    assert_true(strIsEqual(checkedStrAppendPath(slice2, slice3, a), checkedStr("is a test/test string")));
+    assert_true(strIsEqual(checkedStrAppendPath(slice3, slice1, a), checkedStr("test string/this")));
+    assert_true(strIsEqual(checkedStrAppendPath(slice2, zero_length, a), checkedStr("is a test/")));
+    assert_true(strIsEqual(checkedStrAppendPath(zero_length, slice1, a), checkedStr("/this")));
+    assert_true(strIsEqual(checkedStrAppendPath(zero_length, zero_length, a), checkedStr("/")));
 
     CR_RegionRelease(r);
   }
@@ -317,8 +317,8 @@ int main(void)
   {
     PathSplit empty_split = checkedStrSplitPath(checkedStr(""));
     PathSplit empty_split2 = checkedStrSplitPath(checkedStr("/"));
-    assert_true(strEqual(empty_split.head, empty_split2.head));
-    assert_true(strEqual(empty_split.tail, empty_split2.tail));
+    assert_true(strIsEqual(empty_split.head, empty_split2.head));
+    assert_true(strIsEqual(empty_split.tail, empty_split2.tail));
 
     StringView no_slash = checkedStr("no-slash");
     testStrSplitPath("no-slash", "", "no-slash");

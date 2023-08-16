@@ -263,7 +263,7 @@ static bool nodeMatches(const SearchNode *node, StringView string)
     return regexec(node->regex, string.content, 0, NULL, 0) == 0;
   }
 
-  return strEqual(node->name, string);
+  return strIsEqual(node->name, string);
 }
 
 /** Completes a search step by querying the next file from the currently

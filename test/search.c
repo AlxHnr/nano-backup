@@ -63,7 +63,7 @@ static size_t skipCwd(SearchIterator *iterator, StringView cwd, const SearchNode
     }
 
     checkSearchResult(result);
-    if(strEqual(result.path, cwd))
+    if(strIsEqual(result.path, cwd))
     {
       break;
     }
@@ -253,7 +253,7 @@ static const SearchNode *findSubnode(const SearchNode *parent_node, const char *
   StringView name = str(name_str);
   for(const SearchNode *node = parent_node->subnodes; node != NULL; node = node->next)
   {
-    if(strEqual(node->name, name) && node->search_match == search_match)
+    if(strIsEqual(node->name, name) && node->search_match == search_match)
     {
       return node;
     }
@@ -268,7 +268,7 @@ static void checkIgnoreExpression(const SearchNode *node, const char *expression
   StringView name = str(expression);
   for(const RegexList *element = *node->ignore_expressions; element != NULL; element = element->next)
   {
-    if(strEqual(element->expression, name) && element->has_matched == has_matched)
+    if(strIsEqual(element->expression, name) && element->has_matched == has_matched)
     {
       return;
     }

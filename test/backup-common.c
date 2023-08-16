@@ -47,7 +47,7 @@ PathNode *findCwdNode(Metadata *metadata, StringView cwd, const BackupHint hint)
     {
       die("not a directory: \"" PRI_STR "\"", STR_FMT(node->path));
     }
-    else if(strEqual(node->path, cwd))
+    else if(strIsEqual(node->path, cwd))
     {
       return node;
     }
