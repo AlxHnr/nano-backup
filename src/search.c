@@ -59,6 +59,7 @@ typedef struct
 typedef struct
 {
   DirSearchState *state_array;
+  Allocator *state_array_buffer;
   size_t capacity;
   size_t used;
 
@@ -66,6 +67,8 @@ typedef struct
 
 struct SearchIterator
 {
+  CR_Region *r;
+
   /** A buffer for constructing paths. */
   StringBuffer buffer;
 
@@ -93,7 +96,7 @@ static void pushCurrentState(SearchIterator *iterator)
     iterator->state_stack.capacity =
       sSizeMul(iterator->state_stack.capacity, 2);
     iterator->state_stack.state_array =
-      sRealloc(iterator->state_stack.state_array,
+      allocate(iterator->state_stack.state_array_buffer,
                sSizeMul(sizeof *iterator->state_stack.state_array,
                         iterator->state_stack.capacity));
   }
@@ -249,9 +252,8 @@ static SearchResult finishDirectory(SearchIterator *iterator)
     return (SearchResult){ .type = SRT_end_of_directory };
   }
 
-  free(iterator->state_stack.state_array);
   free(iterator->buffer.str);
-  free(iterator);
+  CR_RegionRelease(iterator->r);
 
   return (SearchResult){ .type = SRT_end_of_search };
 }
@@ -375,7 +377,10 @@ static SearchResult finishCurrentNode(SearchIterator *iterator)
 */
 SearchIterator *searchNew(SearchNode *root_node)
 {
-  SearchIterator *iterator = sMalloc(sizeof *iterator);
+  CR_Region *r = CR_RegionNew();
+
+  SearchIterator *iterator = CR_RegionAlloc(r, sizeof *iterator);
+  iterator->r = r;
 
   /* Initialize string buffer. */
   iterator->buffer.capacity = 8;
@@ -397,9 +402,13 @@ SearchIterator *searchNew(SearchNode *root_node)
   /* Initialise the state stack. */
   iterator->state_stack.used = 0;
   iterator->state_stack.capacity = 4;
+
+  Allocator *state_array_buffer = allocatorWrapOneSingleGrowableBuffer(r);
+  iterator->state_stack.state_array_buffer = state_array_buffer;
   iterator->state_stack.state_array =
-    sMalloc(sSizeMul(sizeof *iterator->state_stack.state_array,
-                     iterator->state_stack.capacity));
+    allocate(state_array_buffer,
+             sSizeMul(sizeof *iterator->state_stack.state_array,
+                      iterator->state_stack.capacity));
 
   return iterator;
 }
