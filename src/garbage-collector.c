@@ -12,10 +12,9 @@
 /** Populates the given StringTable with referenced unique filepaths
   relative to their repository.
 
-  @param table The table to populate.
-  @param node The node to recurse into.
+  @param a Allocator to use for constructing table keys.
 */
-static void populateTableRecursively(StringTable *table,
+static void populateTableRecursively(Allocator *a, StringTable *table,
                                      const PathNode *node)
 {
   if(backupHintNoPol(node->hint) == BH_not_part_of_repository)
@@ -38,14 +37,14 @@ static void populateTableRecursively(StringTable *table,
 
     if(strTableGet(table, path) == NULL)
     {
-      strTableMap(table, strLegacyCopy(path), (void *)0x1);
+      strTableMap(table, strCopy(path, a), (void *)0x1);
     }
   }
 
   for(const PathNode *subnode = node->subnodes; subnode != NULL;
       subnode = subnode->next)
   {
-    populateTableRecursively(table, subnode);
+    populateTableRecursively(a, table, subnode);
   }
 }
 
@@ -107,10 +106,11 @@ GCStatistics collectGarbage(const Metadata *metadata, StringView repo_path)
   strTableMap(ctx.paths_to_preserve, str("metadata"), (void *)0x1);
   strTableMap(ctx.paths_to_preserve, str("lockfile"), (void *)0x1);
 
+  Allocator *region_wrapper = allocatorWrapRegion(r);
   for(const PathNode *node = metadata->paths; node != NULL;
       node = node->next)
   {
-    populateTableRecursively(ctx.paths_to_preserve, node);
+    populateTableRecursively(region_wrapper, ctx.paths_to_preserve, node);
   }
 
   DirIterator *dir = sDirOpen(repo_path);
