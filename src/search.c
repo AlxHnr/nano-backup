@@ -10,14 +10,6 @@
 
 typedef struct
 {
-  /** A null-terminated buffer, containing the string. */
-  char *str;
-  size_t length;
-  size_t capacity;
-} StringBuffer;
-
-typedef struct
-{
   DirIterator *dir;
 
   /** The subnodes of the current directories node. Can be NULL. */
@@ -37,7 +29,7 @@ typedef struct
   bool is_dir_search;
 
   /** The string length of the path of the directory to which this search
-    state belongs to. Useful for restoring the buffer length, when changing
+    state belongs to. Useful for restoring the previous path, when changing
     from a directory into its parent directory. */
   size_t path_length;
 
@@ -69,8 +61,9 @@ struct SearchIterator
 {
   CR_Region *r;
 
-  /** A buffer for constructing paths. */
-  StringBuffer buffer;
+  StringView current_path;
+  Allocator *current_path_buffer;
+  Allocator *tmp_buffer; /**< For allocating disposable one-off strings. */
 
   /* The ignore expression list of the tree, to which the current iterator
      belongs to. Can be NULL. */
@@ -106,48 +99,30 @@ static void pushCurrentState(SearchIterator *iterator)
   iterator->state_stack.used++;
 }
 
-/** Appends the given filename to the currently traversed path. The
-  iterators buffer will be resized if required.
-
-  @param iterator The iterator with the buffer that should be updated.
-  @param filename The filename that should be appended.
-*/
-static void setPathToFile(SearchIterator *iterator, StringView filename)
+/** Appends the given filename to the currently traversed path. */
+static void replaceCurrentFilename(SearchIterator *iterator,
+                                   StringView filename)
 {
-  /* Add 2 extra bytes for the slash and '\0'. */
-  const size_t required_capacity =
-    sSizeAdd(2, sSizeAdd(iterator->state.path_length, filename.length));
-  const size_t new_length = required_capacity - 1;
-
-  /* Ensure that the new path fits into the buffer. */
-  if(required_capacity > iterator->buffer.capacity)
-  {
-    iterator->buffer.str =
-      sRealloc(iterator->buffer.str, required_capacity);
-    iterator->buffer.capacity = required_capacity;
-  }
-
-  /* Construct the path to the file described by the current node. */
-  memcpy(&iterator->buffer.str[iterator->state.path_length + 1],
-         filename.content, filename.length);
-  iterator->buffer.str[iterator->state.path_length] = '/';
-  iterator->buffer.str[new_length] = '\0';
-  iterator->buffer.length = new_length;
+  StringView path_head =
+    strCopy(strUnterminated(iterator->current_path.content,
+                            iterator->state.path_length),
+            iterator->tmp_buffer);
+  strSet(
+    &iterator->current_path,
+    strAppendPath(path_head, filename, iterator->current_path_buffer));
 }
 
 /**
-  @param iterator A valid SearchIterator with a filepath in its buffer.
-  @param node The node associated with the path in the iterators buffer.
-  Can be NULL.
-  @param policy The policy of the file in the iterators buffer.
+  @param node The node associated with the current path. Can be NULL.
+  @param policy The policy of the current path.
 */
 static SearchResult buildSearchResult(const SearchIterator *iterator,
                                       const SearchNode *node,
                                       const BackupPolicy policy)
 {
   const struct stat stats = node != NULL && node->subnodes != NULL
-    ? sStat(str(iterator->buffer.str))
-    : sLStat(str(iterator->buffer.str));
+    ? sStat(iterator->current_path)
+    : sLStat(iterator->current_path);
 
   return (SearchResult){
     .type = S_ISREG(stats.st_mode) ? SRT_regular_file
@@ -155,7 +130,7 @@ static SearchResult buildSearchResult(const SearchIterator *iterator,
       : S_ISDIR(stats.st_mode)     ? SRT_directory
                                    : SRT_other,
 
-    .path = strUnterminated(iterator->buffer.str, iterator->buffer.length),
+    .path = iterator->current_path,
 
     .node = node,
     .policy = policy,
@@ -166,8 +141,7 @@ static SearchResult buildSearchResult(const SearchIterator *iterator,
 /** Starts a recursion step and stores it in the iterators current state.
   It will not backup the search state and will simply overwrite it.
 
-  @param iterator A valid iterator with a valid directory path in its
-  buffer. This is the directory for which the recursion will be
+  @param iterator Contains the current path for which the recursion will be
   initialised.
   @param node The node associated with the directory. Can be NULL.
   @param policy The directories policy.
@@ -176,7 +150,7 @@ static void recursionStepRaw(SearchIterator *iterator, SearchNode *node,
                              const BackupPolicy policy)
 {
   /* Store the directories path length before recursing into it. */
-  iterator->state.path_length = iterator->buffer.length;
+  iterator->state.path_length = iterator->current_path.length;
 
   if(node != NULL && node->policy == BPOL_none &&
      !node->subnodes_contain_regex)
@@ -187,8 +161,7 @@ static void recursionStepRaw(SearchIterator *iterator, SearchNode *node,
   else
   {
     iterator->state.is_dir_search = true;
-    iterator->state.access.search.dir =
-      sDirOpen(str(iterator->buffer.str));
+    iterator->state.access.search.dir = sDirOpen(iterator->current_path);
     iterator->state.access.search.subnodes = node ? node->subnodes : NULL;
     iterator->state.access.search.fallback_policy = policy;
   }
@@ -206,11 +179,11 @@ static void recursionStep(SearchIterator *iterator, SearchNode *node,
   will only make sure, that if this search step hits a directory, a
   recursion step will be initialized.
 
-  @param iterator A valid search iterator, with a filepath in its buffer.
-  This is the filepath, for which the search step will be completed.
-  @param node The node corresponding to the file in the iterator buffers
-  filepath. Can be NULL.
-  @param policy The policy for the iterator buffers filepath.
+  @param iterator Contains the current directory, for which the search step
+  will be completed.
+  @param node The node corresponding to the iterators current path. Can be
+  NULL.
+  @param policy The policy for the iterators current path.
 */
 static SearchResult finishNodeStep(SearchIterator *iterator,
                                    SearchNode *node,
@@ -252,7 +225,6 @@ static SearchResult finishDirectory(SearchIterator *iterator)
     return (SearchResult){ .type = SRT_end_of_directory };
   }
 
-  free(iterator->buffer.str);
   CR_RegionRelease(iterator->r);
 
   return (SearchResult){ .type = SRT_end_of_search };
@@ -288,7 +260,7 @@ static SearchResult finishSearchStep(SearchIterator *iterator)
 
   /* Create new path for matching. */
   StringView dir_entry_name = strSplitPath(entry).tail;
-  setPathToFile(iterator, dir_entry_name);
+  replaceCurrentFilename(iterator, dir_entry_name);
 
   /* Match subnodes against dir_entry. */
   SearchNode *matched_node = NULL;
@@ -305,7 +277,8 @@ static SearchResult finishSearchStep(SearchIterator *iterator)
       {
         warnNodeMatches(node, dir_entry_name);
         warnNodeMatches(matched_node, dir_entry_name);
-        die("ambiguous rules for path: \"%s\"", iterator->buffer.str);
+        die("ambiguous rules for path: \"" PRI_STR "\"",
+            STR_FMT(iterator->current_path));
       }
     }
   }
@@ -325,7 +298,8 @@ static SearchResult finishSearchStep(SearchIterator *iterator)
   for(RegexList *element = iterator->ignore_expressions; element != NULL;
       element = element->next)
   {
-    if(regexec(element->regex, iterator->buffer.str, 0, NULL, 0) == 0)
+    if(regexec(element->regex, iterator->current_path.content, 0, NULL,
+               0) == 0)
     {
       element->has_matched = true;
       return finishSearchStep(iterator);
@@ -353,9 +327,9 @@ static SearchResult finishCurrentNode(SearchIterator *iterator)
   SearchNode *node = iterator->state.access.current_node;
   iterator->state.access.current_node = node->next;
 
-  setPathToFile(iterator, node->name);
+  replaceCurrentFilename(iterator, node->name);
 
-  if(sPathExists(str(iterator->buffer.str)))
+  if(sPathExists(iterator->current_path))
   {
     return finishNodeStep(iterator, node, node->policy);
   }
@@ -382,14 +356,10 @@ SearchIterator *searchNew(SearchNode *root_node)
   SearchIterator *iterator = CR_RegionAlloc(r, sizeof *iterator);
   iterator->r = r;
 
-  /* Initialize string buffer. */
-  iterator->buffer.capacity = 8;
-  iterator->buffer.str = sMalloc(iterator->buffer.capacity);
-
-  /* Initialize a search step into "/". */
-  iterator->buffer.str[0] = '/';
-  iterator->buffer.str[1] = '\0';
-  iterator->buffer.length = 1;
+  iterator->current_path_buffer = allocatorWrapOneSingleGrowableBuffer(r);
+  strSet(&iterator->current_path,
+         strCopy(str("/"), iterator->current_path_buffer));
+  iterator->tmp_buffer = allocatorWrapOneSingleGrowableBuffer(r);
 
   recursionStepRaw(iterator, root_node, root_node->policy);
 
