@@ -5,12 +5,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "CRegion/global-region.h"
 #include "CRegion/static-assert.h"
 
 #include "error-handling.h"
 #include "file-hash.h"
-#include "memory-pool.h"
 #include "safe-math.h"
 #include "safe-wrappers.h"
 
@@ -190,16 +188,14 @@ static void readBytes(const FileContent content, size_t *reader_position,
   @param metadata_path The path to the file to which the given content
   belongs to.
   @param metadata The metadata to which the returned PathHistory belongs.
-
-  @return A new path history allocated inside the internal memory pool,
-  which should not be freed by the caller.
 */
-static PathHistory *readPathHistory(const FileContent content,
+static PathHistory *readPathHistory(Allocator *region_wrapper,
+                                    const FileContent content,
                                     size_t *reader_position,
                                     StringView metadata_path,
                                     Metadata *metadata)
 {
-  PathHistory *point = mpAlloc(sizeof *point);
+  PathHistory *point = allocate(region_wrapper, sizeof *point);
 
   const size_t id = readSize(content, reader_position, metadata_path);
   if(id >= metadata->backup_history_length)
@@ -250,7 +246,7 @@ static PathHistory *readPathHistory(const FileContent content,
     const size_t target_length =
       readSize(content, reader_position, metadata_path);
 
-    char *buffer = mpAlloc(sSizeAdd(target_length, 1));
+    char *buffer = allocate(region_wrapper, sSizeAdd(target_length, 1));
 
     readBytes(content, reader_position, (uint8_t *)buffer, target_length,
               metadata_path);
@@ -283,11 +279,9 @@ static PathHistory *readPathHistory(const FileContent content,
   moved to the next unread byte.
   @param metadata_path The path to the metadata file.
   @param metadata The metadata to which the returned PathHistory belongs.
-
-  @return A complete path history allocated inside the internal memory
-  pool. It should not be freed by the caller.
 */
-static PathHistory *readFullPathHistory(const FileContent content,
+static PathHistory *readFullPathHistory(Allocator *region_wrapper,
+                                        const FileContent content,
                                         size_t *reader_position,
                                         StringView metadata_path,
                                         Metadata *metadata)
@@ -300,14 +294,14 @@ static PathHistory *readFullPathHistory(const FileContent content,
     return NULL;
   }
 
-  PathHistory *first_point =
-    readPathHistory(content, reader_position, metadata_path, metadata);
+  PathHistory *first_point = readPathHistory(
+    region_wrapper, content, reader_position, metadata_path, metadata);
   PathHistory *current_point = first_point;
 
   for(size_t counter = 1; counter < history_length; counter++)
   {
-    current_point->next =
-      readPathHistory(content, reader_position, metadata_path, metadata);
+    current_point->next = readPathHistory(
+      region_wrapper, content, reader_position, metadata_path, metadata);
     current_point = current_point->next;
   }
 
@@ -392,15 +386,12 @@ static void writePathHistoryList(const PathHistory *starting_point,
   @param metadata The metadata of the repository to which the nodes belong
   to. Its path table will be used for mapping full paths to nodes.
 
-  @return A node list allocated inside the internal memory pool, which
-  should not be freed by the caller. It can be NULL, if the given parent
-  node has no subnodes.
+  @return Will be NULL if the given parent node has no subnodes.
 */
-static PathNode *readPathSubnodes(const FileContent content,
-                                  size_t *reader_position,
-                                  StringView metadata_path,
-                                  PathNode *parent_node,
-                                  Metadata *metadata)
+static PathNode *
+readPathSubnodes(Allocator *region_wrapper, const FileContent content,
+                 size_t *reader_position, StringView metadata_path,
+                 PathNode *parent_node, Metadata *metadata)
 {
   const size_t node_count =
     readSize(content, reader_position, metadata_path);
@@ -408,7 +399,7 @@ static PathNode *readPathSubnodes(const FileContent content,
 
   for(size_t counter = 0; counter < node_count; counter++)
   {
-    PathNode *node = mpAlloc(sizeof *node);
+    PathNode *node = allocate(region_wrapper, sizeof *node);
 
     /* Prepend current node to node tree. */
     node->next = node_tree;
@@ -441,21 +432,21 @@ static PathNode *readPathSubnodes(const FileContent content,
           STR_FMT(name), STR_FMT(metadata_path));
     }
 
-    StringView full_path = strLegacyAppendPath(
-      parent_node == NULL ? str("") : parent_node->path, name);
-
-    strSet(&node->path, full_path);
+    StringView parent_path =
+      parent_node == NULL ? str("") : parent_node->path;
+    strSet(&node->path, strAppendPath(parent_path, name, region_wrapper));
 
     /* Read other node variables. */
     strTableMap(metadata->path_table, node->path, node);
 
     node->hint = BH_none;
     node->policy = read8(content, reader_position, metadata_path);
-    node->history = readFullPathHistory(content, reader_position,
-                                        metadata_path, metadata);
+    node->history = readFullPathHistory(
+      region_wrapper, content, reader_position, metadata_path, metadata);
 
-    node->subnodes = readPathSubnodes(content, reader_position,
-                                      metadata_path, node, metadata);
+    node->subnodes =
+      readPathSubnodes(region_wrapper, content, reader_position,
+                       metadata_path, node, metadata);
   }
 
   return node_tree;
@@ -504,7 +495,7 @@ Metadata *metadataNew(CR_Region *r)
   metadata->config_history = NULL;
 
   metadata->total_path_count = 0;
-  metadata->path_table = strTableNew(CR_GetGlobalRegion());
+  metadata->path_table = strTableNew(r);
   metadata->paths = NULL;
 
   return metadata;
@@ -535,8 +526,10 @@ Metadata *metadataLoad(CR_Region *r, StringView path)
   }
   else
   {
-    metadata->backup_history = mpAlloc(sSizeMul(
-      sizeof *metadata->backup_history, metadata->backup_history_length));
+    metadata->backup_history =
+      CR_RegionAlloc(r,
+                     sSizeMul(sizeof *metadata->backup_history,
+                              metadata->backup_history_length));
   }
 
   for(size_t id = 0; id < metadata->backup_history_length; id++)
@@ -549,14 +542,15 @@ Metadata *metadataLoad(CR_Region *r, StringView path)
     metadata->backup_history[id].ref_count = 0;
   }
 
-  metadata->config_history =
-    readFullPathHistory(content, &reader_position, path, metadata);
+  Allocator *region_wrapper = allocatorWrapRegion(r);
+  metadata->config_history = readFullPathHistory(
+    region_wrapper, content, &reader_position, path, metadata);
 
   metadata->total_path_count = readSize(content, &reader_position, path);
-  metadata->path_table = strTableNew(CR_GetGlobalRegion());
+  metadata->path_table = strTableNew(r);
 
-  metadata->paths =
-    readPathSubnodes(content, &reader_position, path, NULL, metadata);
+  metadata->paths = readPathSubnodes(
+    region_wrapper, content, &reader_position, path, NULL, metadata);
   CR_RegionRelease(disposable_r);
 
   if(reader_position != content.size)
