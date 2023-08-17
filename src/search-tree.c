@@ -6,7 +6,6 @@
 #include "CRegion/region.h"
 
 #include "error-handling.h"
-#include "memory-pool.h"
 #include "regex-pool.h"
 #include "safe-wrappers.h"
 #include "string-table.h"
@@ -48,7 +47,8 @@ static StringView getLine(StringView config, const size_t start)
   @return A new search node, which has inherited properties from its parent
   node.
 */
-static SearchNode *newNode(StringTable *existing_nodes, StringView path,
+static SearchNode *newNode(Allocator *region_wrapper,
+                           StringTable *existing_nodes, StringView path,
                            const size_t line_nr)
 {
   PathSplit paths = strSplitPath(path);
@@ -57,11 +57,12 @@ static SearchNode *newNode(StringTable *existing_nodes, StringView path,
   SearchNode *parent_node = strTableGet(existing_nodes, paths.head);
   if(parent_node == NULL)
   {
-    parent_node = newNode(existing_nodes, paths.head, line_nr);
+    parent_node =
+      newNode(region_wrapper, existing_nodes, paths.head, line_nr);
   }
 
   /* Initialize a new node. */
-  SearchNode *node = mpAlloc(sizeof *node);
+  SearchNode *node = allocate(region_wrapper, sizeof *node);
 
   /* Build regular expression. */
   if(paths.tail.length >= 2 && paths.tail.content[0] == '/')
@@ -70,17 +71,14 @@ static SearchNode *newNode(StringTable *existing_nodes, StringView path,
     StringView expression =
       strUnterminated(&paths.tail.content[1], paths.tail.length - 1);
 
-    StringView copy = strLegacyCopy(expression);
-    strSet(&node->name, copy);
-
+    strSet(&node->name, strCopy(expression, region_wrapper));
     node->regex = rpCompile(node->name, str("config"), line_nr);
 
     parent_node->subnodes_contain_regex = true;
   }
   else
   {
-    strSet(&node->name, strLegacyCopy(paths.tail));
-
+    strSet(&node->name, strCopy(paths.tail, region_wrapper));
     node->regex = NULL;
   }
 
@@ -126,22 +124,17 @@ static void inheritPolicyToSubnodes(SearchNode *parent_node)
   }
 }
 
-/** Parses the given config source into a search tree.
-
-  @param config The source of the config file.
-
-  @return The root node of the search tree. All nodes are allocated inside
-  the internal memory pool and should not be freed by the caller.
-*/
-SearchNode *searchTreeParse(StringView config)
+SearchNode *searchTreeParse(CR_Region *r, StringView config)
 {
   if(memchr(config.content, '\0', config.length) != NULL)
   {
     die("config: contains null-bytes");
   }
 
+  Allocator *region_wrapper = allocatorWrapRegion(r);
+
   /* Initialize the root node of this tree. */
-  SearchNode *root_node = mpAlloc(sizeof *root_node);
+  SearchNode *root_node = allocate(region_wrapper, sizeof *root_node);
   strSet(&root_node->name, str("/"));
 
   root_node->line_nr = 0;
@@ -157,10 +150,10 @@ SearchNode *searchTreeParse(StringView config)
   /* Initialize expression lists, which are shared across all nodes of the
      tree. */
   root_node->ignore_expressions =
-    mpAlloc(sizeof *root_node->ignore_expressions);
+    allocate(region_wrapper, sizeof *root_node->ignore_expressions);
   *root_node->ignore_expressions = NULL;
   root_node->summarize_expressions =
-    mpAlloc(sizeof *root_node->summarize_expressions);
+    allocate(region_wrapper, sizeof *root_node->summarize_expressions);
   *root_node->summarize_expressions = NULL;
 
   /* This table maps paths to existing nodes, without a trailing slash. */
@@ -217,24 +210,22 @@ SearchNode *searchTreeParse(StringView config)
     }
     else if(line.content[0] == '[' && line.content[line.length - 1] == ']')
     {
-      /* Slice out and copy the invalid policy name. */
       StringView policy =
-        strLegacyCopy(strUnterminated(&line.content[1], line.length - 2));
+        strUnterminated(&line.content[1], line.length - 2);
       die("config: line %zu: invalid policy: \"" PRI_STR "\"", line_nr,
           STR_FMT(policy));
     }
     else if(current_policy == BPOL_none)
     {
-      StringView pattern = strLegacyCopy(line);
       die("config: line %zu: pattern without policy: \"" PRI_STR "\"",
-          line_nr, STR_FMT(pattern));
+          line_nr, STR_FMT(line));
     }
     else if(current_policy == BPOL_ignore ||
             current_policy == BPOL_summarize)
     {
-      RegexList *expression = mpAlloc(sizeof *expression);
+      RegexList *expression = allocate(region_wrapper, sizeof *expression);
 
-      strSet(&expression->expression, strLegacyCopy(line));
+      strSet(&expression->expression, strCopy(line, region_wrapper));
       expression->line_nr = line_nr;
       expression->regex =
         rpCompile(expression->expression, str("config"), line_nr);
@@ -265,18 +256,17 @@ SearchNode *searchTreeParse(StringView config)
          previous_definition->policy != BPOL_none &&
          !previous_definition->policy_inherited)
       {
-        StringView redefined_path = strLegacyCopy(line);
         die("config: line %zu: redefining %sline %zu: \"" PRI_STR "\"",
             line_nr,
             previous_definition->policy != current_policy ? "policy of "
                                                           : "",
-            previous_definition->policy_line_nr, STR_FMT(redefined_path));
+            previous_definition->policy_line_nr, STR_FMT(line));
       }
 
       /* Use either the existing node or create a new one. */
       SearchNode *node = previous_definition != NULL
         ? previous_definition
-        : newNode(existing_nodes, path, line_nr);
+        : newNode(region_wrapper, existing_nodes, path, line_nr);
 
       node->policy = current_policy;
       node->policy_inherited = false;
@@ -285,9 +275,8 @@ SearchNode *searchTreeParse(StringView config)
     }
     else
     {
-      StringView path = strLegacyCopy(line);
       die("config: line %zu: invalid path: \"" PRI_STR "\"", line_nr,
-          STR_FMT(path));
+          STR_FMT(line));
     }
 
     parser_position += line.length;
@@ -300,21 +289,15 @@ SearchNode *searchTreeParse(StringView config)
   return root_node;
 }
 
-/** Loads a search tree from the specified config file.
-
-  @param path The path to the config file.
-
-  @return The root node of the search tree. All nodes are allocated inside
-  the internal memory pool and should not be freed by the caller.
-*/
-SearchNode *searchTreeLoad(StringView path)
+SearchNode *searchTreeLoad(CR_Region *r, StringView path_to_config)
 {
-  CR_Region *r = CR_RegionNew();
-  const FileContent content = sGetFilesContent(r, path);
+  CR_Region *disposable_r = CR_RegionNew();
+  const FileContent content =
+    sGetFilesContent(disposable_r, path_to_config);
   StringView config = strUnterminated(content.content, content.size);
 
-  SearchNode *root_node = searchTreeParse(config);
-  CR_RegionRelease(r);
+  SearchNode *root_node = searchTreeParse(r, config);
+  CR_RegionRelease(disposable_r);
 
   return root_node;
 }

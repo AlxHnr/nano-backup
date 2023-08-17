@@ -19,9 +19,9 @@ static void writeToFile(const char *path, const char *content)
   sFclose(writer);
 }
 
-static void makeBackup(Metadata *metadata)
+static void makeBackup(CR_Region *r, Metadata *metadata)
 {
-  SearchNode *search_tree = searchTreeLoad(str("generated-config-files/integrity-test.txt"));
+  SearchNode *search_tree = searchTreeLoad(r, str("generated-config-files/integrity-test.txt"));
   initiateBackup(metadata, search_tree);
   finishBackup(metadata, repo_path, tmp_file_path);
   metadataWrite(metadata, repo_path, tmp_file_path, metadata_path);
@@ -43,12 +43,12 @@ int main(void)
   writeToFile("tmp/files/20-bytes.txt", "20 byte large file!!");
   writeToFile("tmp/files/21-bytes.txt", "21 byte large file!!!");
   writeToFile("tmp/files/extra-file-for-deduplication.txt", "a b c d e f g h i j 01213131231");
-  makeBackup(metadataNew(r));
+  makeBackup(r, metadataNew(r));
 
   writeToFile("tmp/files/Another File.txt", "a b c d e f g h i j 01213131231");
   writeToFile("tmp/files/smaller file", "string slightly larger than 20 bytes");
-  makeBackup(metadataLoad(r, metadata_path));
-  makeBackup(metadataLoad(r, metadata_path)); /* Extra backup to enlarge history. */
+  makeBackup(r, metadataLoad(r, metadata_path));
+  makeBackup(r, metadataLoad(r, metadata_path)); /* Extra backup to enlarge history. */
 
   writeToFile("tmp/files/empty-file.txt", "xyz test test test test test 1234567890");
   writeToFile("tmp/files/Another File.txt", "");
@@ -58,11 +58,11 @@ int main(void)
   writeToFile("tmp/files/additional-file-02", "This is some test content of a new file.");
   writeToFile("tmp/files/additional-file-03", "nano-backup nano-backup nano-backup");
   writeToFile("tmp/files/breaks-via-deduplication.txt", "content of another file");
-  makeBackup(metadataLoad(r, metadata_path));
+  makeBackup(r, metadataLoad(r, metadata_path));
 
   writeToFile("tmp/files/Another File.txt", "content of another file");
   writeToFile("tmp/files/smaller file", "1234");
-  makeBackup(metadataLoad(r, metadata_path));
+  makeBackup(r, metadataLoad(r, metadata_path));
 
   StringView cwd = getCwd();
   const Metadata *metadata = metadataLoad(r, metadata_path);

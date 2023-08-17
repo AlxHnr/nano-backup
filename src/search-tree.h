@@ -4,6 +4,7 @@
 #include <regex.h>
 #include <stdbool.h>
 
+#include "CRegion/region.h"
 #include "backup-policies.h"
 #include "search-result-type.h"
 #include "str.h"
@@ -78,7 +79,7 @@ struct SearchNode
   SearchNode *next;
 };
 
-extern SearchNode *searchTreeParse(StringView config);
-extern SearchNode *searchTreeLoad(StringView path);
+extern SearchNode *searchTreeParse(CR_Region *r, StringView config);
+extern SearchNode *searchTreeLoad(CR_Region *r, StringView path_to_config);
 
 #endif

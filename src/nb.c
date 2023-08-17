@@ -132,7 +132,7 @@ static void backup(CR_Region *r, StringView repo_arg)
         STR_FMT(repo_arg));
   }
   repoLockUntilExit(repo_path);
-  SearchNode *root_node = searchTreeLoad(config_path);
+  SearchNode *root_node = searchTreeLoad(r, config_path);
 
   Metadata *metadata = sPathExists(metadata_path)
     ? metadataLoad(r, metadata_path)

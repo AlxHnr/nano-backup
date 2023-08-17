@@ -1198,7 +1198,7 @@ int main(void)
   CR_Region *r = CR_RegionNew();
 
   testGroupStart("filetype changes in nodes with no policy");
-  SearchNode *none_filetype_node = searchTreeLoad(str("generated-config-files/filetype-changes-none.txt"));
+  SearchNode *none_filetype_node = searchTreeLoad(r, str("generated-config-files/filetype-changes-none.txt"));
 
   initNoneFiletypeChange(r, none_filetype_node);
   change1NoneFiletypeChange(r, none_filetype_node);
@@ -1208,7 +1208,7 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("filetype changes in copied nodes");
-  SearchNode *copy_filetype_node = searchTreeLoad(str("generated-config-files/filetype-changes-copy.txt"));
+  SearchNode *copy_filetype_node = searchTreeLoad(r, str("generated-config-files/filetype-changes-copy.txt"));
 
   initFiletypeChange(r, copy_filetype_node, BPOL_copy);
   modifyFiletypeChange(r, copy_filetype_node, BPOL_copy);
@@ -1217,7 +1217,7 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("filetype changes in mirrored nodes");
-  SearchNode *mirror_filetype_node = searchTreeLoad(str("generated-config-files/filetype-changes-mirror.txt"));
+  SearchNode *mirror_filetype_node = searchTreeLoad(r, str("generated-config-files/filetype-changes-mirror.txt"));
 
   initFiletypeChange(r, mirror_filetype_node, BPOL_mirror);
   modifyFiletypeChange(r, mirror_filetype_node, BPOL_mirror);
@@ -1226,7 +1226,7 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("filetype changes in tracked nodes");
-  SearchNode *track_filetype_node = searchTreeLoad(str("generated-config-files/filetype-changes-track.txt"));
+  SearchNode *track_filetype_node = searchTreeLoad(r, str("generated-config-files/filetype-changes-track.txt"));
 
   initFiletypeChange(r, track_filetype_node, BPOL_track);
   modifyFiletypeChange(r, track_filetype_node, BPOL_track);

@@ -2221,16 +2221,17 @@ static void phase(const char *test_name, void (*phase_fun)(CR_Region *r, SearchN
 int main(void)
 {
   testGroupStart("prepare backup");
-  SearchNode *phase_1_node = searchTreeLoad(str("generated-config-files/backup-phase-1.txt"));
-  SearchNode *phase_3_node = searchTreeLoad(str("generated-config-files/backup-phase-3.txt"));
-  SearchNode *phase_4_node = searchTreeLoad(str("generated-config-files/backup-phase-4.txt"));
-  SearchNode *phase_5_node = searchTreeLoad(str("generated-config-files/backup-phase-5.txt"));
-  SearchNode *phase_6_node = searchTreeLoad(str("generated-config-files/backup-phase-6.txt"));
-  SearchNode *phase_7_node = searchTreeLoad(str("generated-config-files/backup-phase-7.txt"));
-  SearchNode *phase_8_node = searchTreeLoad(str("generated-config-files/backup-phase-8.txt"));
-  SearchNode *phase_9_node = searchTreeLoad(str("generated-config-files/backup-phase-9.txt"));
-  SearchNode *phase_13_node = searchTreeLoad(str("generated-config-files/backup-phase-13.txt"));
-  SearchNode *phase_14_node = searchTreeLoad(str("generated-config-files/backup-phase-14.txt"));
+  CR_Region *r = CR_RegionNew();
+  SearchNode *phase_1_node = searchTreeLoad(r, str("generated-config-files/backup-phase-1.txt"));
+  SearchNode *phase_3_node = searchTreeLoad(r, str("generated-config-files/backup-phase-3.txt"));
+  SearchNode *phase_4_node = searchTreeLoad(r, str("generated-config-files/backup-phase-4.txt"));
+  SearchNode *phase_5_node = searchTreeLoad(r, str("generated-config-files/backup-phase-5.txt"));
+  SearchNode *phase_6_node = searchTreeLoad(r, str("generated-config-files/backup-phase-6.txt"));
+  SearchNode *phase_7_node = searchTreeLoad(r, str("generated-config-files/backup-phase-7.txt"));
+  SearchNode *phase_8_node = searchTreeLoad(r, str("generated-config-files/backup-phase-8.txt"));
+  SearchNode *phase_9_node = searchTreeLoad(r, str("generated-config-files/backup-phase-9.txt"));
+  SearchNode *phase_13_node = searchTreeLoad(r, str("generated-config-files/backup-phase-13.txt"));
+  SearchNode *phase_14_node = searchTreeLoad(r, str("generated-config-files/backup-phase-14.txt"));
 
   initBackupCommon(1);
   makeDir("tmp/repo");
@@ -2251,11 +2252,9 @@ int main(void)
   /* Create a backup of the current metadata. */
   time_t tmp_timestamp = sStat(str("tmp")).st_mtime;
   {
-    CR_Region *r = CR_RegionNew();
     metadataWrite(metadataLoad(r, str("tmp/repo/metadata")), str("tmp"), str("tmp/tmp-file"),
                   str("tmp/metadata-backup"));
     sUtime(str("tmp"), tmp_timestamp);
-    CR_RegionRelease(r);
   }
 
   /* Run some backup phases. */
@@ -2272,16 +2271,14 @@ int main(void)
 
   testGroupStart("non-recursive re-adding of copied files");
   {
-    CR_Region *r = CR_RegionNew();
     runPhase14(r, phase_14_node);
     runPhase15(r, phase_14_node);
     runPhase16(r, phase_14_node);
-    CR_RegionRelease(r);
   }
   testGroupEnd();
 
   /* Run special backup phases. */
-  SearchNode *phase_collision_node = searchTreeLoad(str("generated-config-files/backup-phase-collision.txt"));
+  SearchNode *phase_collision_node = searchTreeLoad(r, str("generated-config-files/backup-phase-collision.txt"));
   phase("file hash collision handling", runPhaseCollision, phase_collision_node);
   phase("collision slot overflow handling", runPhaseSlotOverflow, phase_collision_node);
 }

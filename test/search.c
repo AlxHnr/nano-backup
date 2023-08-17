@@ -281,9 +281,9 @@ static void checkIgnoreExpression(const SearchNode *node, const char *expression
 
   @param cwd The path to the current working directory.
 */
-static void testSimpleSearch(StringView cwd)
+static void testSimpleSearch(CR_Region *r, StringView cwd)
 {
-  SearchNode *root = searchTreeLoad(str("generated-config-files/simple-search.txt"));
+  SearchNode *root = searchTreeLoad(r, str("generated-config-files/simple-search.txt"));
   SearchIterator *iterator = searchNew(root);
   assert_true(iterator != NULL);
 
@@ -362,9 +362,9 @@ static void testSimpleSearch(StringView cwd)
 
   @param cwd The path to the current working directory.
 */
-static void testIgnoreExpressions(StringView cwd)
+static void testIgnoreExpressions(CR_Region *r, StringView cwd)
 {
-  SearchNode *root = searchTreeLoad(str("generated-config-files/ignore-expressions.txt"));
+  SearchNode *root = searchTreeLoad(r, str("generated-config-files/ignore-expressions.txt"));
   SearchIterator *iterator = searchNew(root);
   assert_true(iterator != NULL);
 
@@ -437,9 +437,9 @@ static void testIgnoreExpressions(StringView cwd)
 
   @param cwd The path to the current working directory.
 */
-static void testSymlinkFollowing(StringView cwd)
+static void testSymlinkFollowing(CR_Region *r, StringView cwd)
 {
-  SearchNode *root = searchTreeLoad(str("generated-config-files/symlink-following.txt"));
+  SearchNode *root = searchTreeLoad(r, str("generated-config-files/symlink-following.txt"));
   SearchIterator *iterator = searchNew(root);
   assert_true(iterator != NULL);
 
@@ -505,9 +505,9 @@ static void testSymlinkFollowing(StringView cwd)
 
   @param cwd The path to the current working directory.
 */
-static void testMismatchedPaths(StringView cwd)
+static void testMismatchedPaths(CR_Region *r, StringView cwd)
 {
-  SearchNode *root = searchTreeLoad(str("generated-config-files/mismatched-paths.txt"));
+  SearchNode *root = searchTreeLoad(r, str("generated-config-files/mismatched-paths.txt"));
   SearchIterator *iterator = searchNew(root);
   assert_true(iterator != NULL);
 
@@ -564,9 +564,9 @@ static void testMismatchedPaths(StringView cwd)
 
   @param cwd The full path to the current working directory.
 */
-static void testComplexSearch(StringView cwd)
+static void testComplexSearch(CR_Region *r, StringView cwd)
 {
-  SearchNode *root = searchTreeLoad(str("generated-config-files/complex-search.txt"));
+  SearchNode *root = searchTreeLoad(r, str("generated-config-files/complex-search.txt"));
   SearchIterator *iterator = searchNew(root);
   assert_true(iterator != NULL);
 
@@ -641,24 +641,28 @@ static void testComplexSearch(StringView cwd)
 
 int main(void)
 {
+  CR_Region *r = CR_RegionNew();
+
   testGroupStart("simple file search");
   StringView cwd = getCwd();
-  testSimpleSearch(cwd);
+  testSimpleSearch(r, cwd);
   testGroupEnd();
 
   testGroupStart("ignore expressions");
-  testIgnoreExpressions(cwd);
+  testIgnoreExpressions(r, cwd);
   testGroupEnd();
 
   testGroupStart("symlink following rules");
-  testSymlinkFollowing(cwd);
+  testSymlinkFollowing(r, cwd);
   testGroupEnd();
 
   testGroupStart("mismatched paths");
-  testMismatchedPaths(cwd);
+  testMismatchedPaths(r, cwd);
   testGroupEnd();
 
   testGroupStart("complex file search");
-  testComplexSearch(cwd);
+  testComplexSearch(r, cwd);
   testGroupEnd();
+
+  CR_RegionRelease(r);
 }

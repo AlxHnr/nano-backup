@@ -1641,9 +1641,9 @@ int main(void)
 
   testGroupStart("policy change from none");
   SearchNode *change_from_none_init =
-    searchTreeLoad(str("generated-config-files/policy-change-from-none-init.txt"));
+    searchTreeLoad(r, str("generated-config-files/policy-change-from-none-init.txt"));
   SearchNode *change_from_none_final =
-    searchTreeLoad(str("generated-config-files/policy-change-from-none-final.txt"));
+    searchTreeLoad(r, str("generated-config-files/policy-change-from-none-final.txt"));
 
   policyChangeFromNoneInit(r, change_from_none_init);
   policyChangeFromNoneChange(r, change_from_none_final);
@@ -1652,9 +1652,9 @@ int main(void)
 
   testGroupStart("policy change from copy");
   SearchNode *change_from_copy_init =
-    searchTreeLoad(str("generated-config-files/policy-change-from-copy-init.txt"));
+    searchTreeLoad(r, str("generated-config-files/policy-change-from-copy-init.txt"));
   SearchNode *change_from_copy_final =
-    searchTreeLoad(str("generated-config-files/policy-change-from-copy-final.txt"));
+    searchTreeLoad(r, str("generated-config-files/policy-change-from-copy-final.txt"));
 
   policyChangeFromCopyInit(r, change_from_copy_init);
   policyChangeFromCopyChange(r, change_from_copy_final);
@@ -1663,9 +1663,9 @@ int main(void)
 
   testGroupStart("policy change from mirror");
   SearchNode *change_from_mirror_init =
-    searchTreeLoad(str("generated-config-files/policy-change-from-mirror-init.txt"));
+    searchTreeLoad(r, str("generated-config-files/policy-change-from-mirror-init.txt"));
   SearchNode *change_from_mirror_final =
-    searchTreeLoad(str("generated-config-files/policy-change-from-mirror-final.txt"));
+    searchTreeLoad(r, str("generated-config-files/policy-change-from-mirror-final.txt"));
 
   policyChangeFromMirrorInit(r, change_from_mirror_init);
   policyChangeFromMirrorChange(r, change_from_mirror_final);
@@ -1674,9 +1674,9 @@ int main(void)
 
   testGroupStart("policy change from track");
   SearchNode *change_from_track_init =
-    searchTreeLoad(str("generated-config-files/policy-change-from-track-init.txt"));
+    searchTreeLoad(r, str("generated-config-files/policy-change-from-track-init.txt"));
   SearchNode *change_from_track_final =
-    searchTreeLoad(str("generated-config-files/policy-change-from-track-final.txt"));
+    searchTreeLoad(r, str("generated-config-files/policy-change-from-track-final.txt"));
 
   policyChangeFromTrackInit0(r, change_from_track_init);
   policyChangeFromTrackInit1(r, change_from_track_init);

@@ -184,7 +184,9 @@ static void checkNode(const SearchNode *node, const SearchNode *root_node, const
 /** Loads a search tree from a simple config file and checks it. */
 static void testSimpleConfigFile(StringView path)
 {
-  const SearchNode *root = searchTreeLoad(path);
+  CR_Region *r = CR_RegionNew();
+
+  const SearchNode *root = searchTreeLoad(r, path);
   checkRootNode(root, BPOL_none, 0, 2, false, 0, 0);
 
   const SearchNode *home = findSubnode(root, "home");
@@ -200,12 +202,16 @@ static void testSimpleConfigFile(StringView path)
   checkNode(findSubnode(user, ".config"), root, ".config", 9, false, BPOL_track, false, 9, 0, false);
 
   checkNode(findSubnode(root, "etc"), root, "etc", 8, false, BPOL_track, false, 8, 0, false);
+
+  CR_RegionRelease(r);
 }
 
 /** Test parsing the config file "inheritance-1.txt". */
 static void testInheritance1(void)
 {
-  const SearchNode *root = searchTreeLoad(str("valid-config-files/inheritance-1.txt"));
+  CR_Region *r = CR_RegionNew();
+
+  const SearchNode *root = searchTreeLoad(r, str("valid-config-files/inheritance-1.txt"));
   checkRootNode(root, BPOL_track, 14, 1, false, 0, 0);
 
   const SearchNode *usr = findSubnode(root, "usr");
@@ -221,12 +227,16 @@ static void testInheritance1(void)
   checkNode(seahorse, root, "seahorse", 2, false, BPOL_mirror, false, 5, 1, true);
 
   checkNode(findSubnode(seahorse, ".*\\.ebuild"), root, ".*\\.ebuild", 2, true, BPOL_copy, false, 2, 0, false);
+
+  CR_RegionRelease(r);
 }
 
 /** Test parsing the config file "inheritance-2.txt". */
 static void testInheritance2(void)
 {
-  const SearchNode *root = searchTreeLoad(str("valid-config-files/inheritance-2.txt"));
+  CR_Region *r = CR_RegionNew();
+
+  const SearchNode *root = searchTreeLoad(r, str("valid-config-files/inheritance-2.txt"));
   checkRootNode(root, BPOL_copy, 3, 1, false, 3, 0);
   assert_true(checkIgnoreExpression(root, "foo", 9));
   assert_true(checkIgnoreExpression(root, "^ ", 10));
@@ -246,12 +256,16 @@ static void testInheritance2(void)
 
   const SearchNode *ebuild = findSubnode(seahorse, ".*\\.ebuild");
   checkNode(ebuild, root, ".*\\.ebuild", 21, true, BPOL_mirror, false, 21, 0, false);
+
+  CR_RegionRelease(r);
 }
 
 /** Tests parsing the config file "inheritance-3.txt". */
 static void testInheritance3(void)
 {
-  const SearchNode *root = searchTreeLoad(str("valid-config-files/inheritance-3.txt"));
+  CR_Region *r = CR_RegionNew();
+
+  const SearchNode *root = searchTreeLoad(r, str("valid-config-files/inheritance-3.txt"));
   checkRootNode(root, BPOL_none, 0, 2, false, 2, 0);
   assert_true(checkIgnoreExpression(root, ".*\\.png", 14));
   assert_true(checkIgnoreExpression(root, ".*\\.jpg", 16));
@@ -286,23 +300,31 @@ static void testInheritance3(void)
 
   checkNode(findSubnode(portage_1, "(distfiles|packages)"), root, "(distfiles|packages)", 27, true, BPOL_mirror,
             false, 27, 0, false);
+
+  CR_RegionRelease(r);
 }
 
 /** Tests parsing the config file "root-with-regex-subnodes.txt". */
 static void testRootWithRegexSubnodes(void)
 {
-  const SearchNode *root = searchTreeLoad(str("valid-config-files/root-with-regex-subnodes.txt"));
+  CR_Region *r = CR_RegionNew();
+
+  const SearchNode *root = searchTreeLoad(r, str("valid-config-files/root-with-regex-subnodes.txt"));
   checkRootNode(root, BPOL_none, 0, 3, true, 0, 0);
 
   checkNode(findSubnode(root, "\\.txt$"), root, "\\.txt$", 2, true, BPOL_copy, false, 2, 0, false);
   checkNode(findSubnode(root, "foo"), root, "foo", 5, false, BPOL_mirror, false, 5, 0, false);
   checkNode(findSubnode(root, "(foo-)?bar$"), root, "(foo-)?bar$", 6, true, BPOL_mirror, false, 6, 0, false);
+
+  CR_RegionRelease(r);
 }
 
 /** Tests parsing the config file "paths with whitespaces.txt" */
 static void testPathsWithWhitespaces(void)
 {
-  const SearchNode *root = searchTreeLoad(str("valid-config-files/paths with whitespaces.txt"));
+  CR_Region *r = CR_RegionNew();
+
+  const SearchNode *root = searchTreeLoad(r, str("valid-config-files/paths with whitespaces.txt"));
   checkRootNode(root, BPOL_none, 0, 1, false, 0, 0);
 
   const SearchNode *usr = findSubnode(root, "usr");
@@ -315,12 +337,16 @@ static void testPathsWithWhitespaces(void)
   const SearchNode *bar = findSubnode(foo, " bar ");
   checkNode(bar, root, " bar ", 6, false, BPOL_copy, true, 6, 1, false);
   checkNode(findSubnode(bar, "foo bar "), root, "foo bar ", 6, false, BPOL_mirror, false, 6, 0, false);
+
+  CR_RegionRelease(r);
 }
 
 /** Tests parsing "valid-config-files/comment.txt". */
 static void testIgnoringComments(void)
 {
-  const SearchNode *root = searchTreeLoad(str("valid-config-files/comment.txt"));
+  CR_Region *r = CR_RegionNew();
+
+  const SearchNode *root = searchTreeLoad(r, str("valid-config-files/comment.txt"));
   checkRootNode(root, BPOL_none, 0, 1, false, 2, 0);
 
   const SearchNode *etc = findSubnode(root, "#etc");
@@ -333,6 +359,8 @@ static void testIgnoringComments(void)
 
   assert_true(checkIgnoreExpression(root, " # Pattern 1.", 16));
   assert_true(checkIgnoreExpression(root, "   # Pattern 2. ", 20));
+
+  CR_RegionRelease(r);
 }
 
 /** Asserts that parsing the given config file results in the given error
@@ -347,7 +375,7 @@ static void assertParseError(const char *path, const char *message)
   const FileContent content = sGetFilesContent(r, str(path));
   StringView config = { .content = content.content, .length = content.size };
 
-  assert_error(searchTreeParse(config), message);
+  assert_error(searchTreeParse(r, config), message);
 
   CR_RegionRelease(r);
 }
@@ -355,7 +383,9 @@ static void assertParseError(const char *path, const char *message)
 /** Tests loading various invalid config files. */
 static void testBrokenConfigFiles(void)
 {
-  assert_error_errno(searchTreeLoad(str("non-existing-file.txt")), "failed to access \"non-existing-file.txt\"",
+  CR_Region *r = CR_RegionNew();
+
+  assert_error_errno(searchTreeLoad(r, str("non-existing-file.txt")), "failed to access \"non-existing-file.txt\"",
                      ENOENT);
 
   assertParseError("broken-config-files/invalid-policy.txt", "config: line 7: invalid policy: \"trak\"");
@@ -371,30 +401,27 @@ static void testBrokenConfigFiles(void)
   assertParseError("broken-config-files/closing-brace-empty.txt", "config: line 3: invalid path: \"]\"");
 
   {
-    CR_Region *r = CR_RegionNew();
     char error_buffer[128];
 
     FileContent content = sGetFilesContent(r, str("broken-config-files/invalid-regex.txt"));
-    assert_error_any(searchTreeParse(strUnterminated(content.content, content.size)));
+    assert_error_any(searchTreeParse(r, strUnterminated(content.content, content.size)));
     getLastErrorMessage(error_buffer, sizeof(error_buffer));
     assert_true(strstr(error_buffer, "config: line 5: ") == error_buffer);
 
     content = sGetFilesContent(r, str("broken-config-files/invalid-ignore-expression.txt"));
-    assert_error_any(searchTreeParse(strUnterminated(content.content, content.size)));
+    assert_error_any(searchTreeParse(r, strUnterminated(content.content, content.size)));
     getLastErrorMessage(error_buffer, sizeof(error_buffer));
     assert_true(strstr(error_buffer, "config: line 6: ") == error_buffer);
 
     content = sGetFilesContent(r, str("broken-config-files/invalid-summarize-expression.txt"));
-    assert_error_any(searchTreeParse(strUnterminated(content.content, content.size)));
+    assert_error_any(searchTreeParse(r, strUnterminated(content.content, content.size)));
     getLastErrorMessage(error_buffer, sizeof(error_buffer));
     assert_true(strstr(error_buffer, "config: line 8: ") == error_buffer);
 
     content = sGetFilesContent(r, str("broken-config-files/multiple-errors.txt"));
-    assert_error_any(searchTreeParse(strUnterminated(content.content, content.size)));
+    assert_error_any(searchTreeParse(r, strUnterminated(content.content, content.size)));
     getLastErrorMessage(error_buffer, sizeof(error_buffer));
     assert_true(strstr(error_buffer, "config: line 9: ") == error_buffer);
-
-    CR_RegionRelease(r);
   }
 
   assertParseError("broken-config-files/pattern-without-policy.txt",
@@ -484,6 +511,8 @@ static void testBrokenConfigFiles(void)
 
   assertParseError("broken-config-files/invalid-comment-2.txt",
                    "config: line 3: pattern without policy: \"   # Comment without policy.\"");
+
+  CR_RegionRelease(r);
 }
 
 /** Loads the given config file, sets various bytes to '\0' and passes it
@@ -507,7 +536,7 @@ static void testInsertNullBytes(StringView path)
     const char old_char = content.content[index];
     content.content[index] = '\0';
 
-    assert_error(searchTreeParse(config), "config: contains null-bytes");
+    assert_error(searchTreeParse(r, config), "config: contains null-bytes");
 
     content.content[index] = old_char;
   }
@@ -549,34 +578,36 @@ int main(void)
   testRootWithRegexSubnodes();
   testPathsWithWhitespaces();
 
-  checkRootNode(searchTreeLoad(str("empty.txt")), BPOL_none, 0, 0, false, 0, 0);
-  checkRootNode(searchTreeLoad(str("valid-config-files/no-paths-and-no-ignores.txt")), BPOL_none, 0, 0, false, 0,
-                0);
+  CR_Region *r = CR_RegionNew();
+  checkRootNode(searchTreeLoad(r, str("empty.txt")), BPOL_none, 0, 0, false, 0, 0);
+  checkRootNode(searchTreeLoad(r, str("valid-config-files/no-paths-and-no-ignores.txt")), BPOL_none, 0, 0, false,
+                0, 0);
 
-  const SearchNode *ignore_1 = searchTreeLoad(str("valid-config-files/ignore-patterns-only-1.txt"));
+  const SearchNode *ignore_1 = searchTreeLoad(r, str("valid-config-files/ignore-patterns-only-1.txt"));
   checkRootNode(ignore_1, BPOL_none, 0, 0, false, 2, 0);
   assert_true(checkIgnoreExpression(ignore_1, " .*\\.(png|jpg|pdf) ", 2));
   assert_true(checkIgnoreExpression(ignore_1, "foo", 3));
 
-  const SearchNode *ignore_2 = searchTreeLoad(str("valid-config-files/ignore-patterns-only-2.txt"));
+  const SearchNode *ignore_2 = searchTreeLoad(r, str("valid-config-files/ignore-patterns-only-2.txt"));
   checkRootNode(ignore_2, BPOL_none, 0, 0, false, 4, 0);
   assert_true(checkIgnoreExpression(ignore_2, "foo", 7));
   assert_true(checkIgnoreExpression(ignore_2, "bar", 9));
   assert_true(checkIgnoreExpression(ignore_2, "foo-bar", 12));
   assert_true(checkIgnoreExpression(ignore_2, ".*\\.png", 17));
 
-  const SearchNode *summarize_1 = searchTreeLoad(str("valid-config-files/summarize-patterns.txt"));
+  const SearchNode *summarize_1 = searchTreeLoad(r, str("valid-config-files/summarize-patterns.txt"));
   checkRootNode(summarize_1, BPOL_none, 0, 0, false, 0, 3);
   assert_true(checkSummarizeExpression(summarize_1, "\\.git$", 3));
   assert_true(checkSummarizeExpression(summarize_1, "^/home/user/\\.cache$", 13));
   assert_true(checkSummarizeExpression(summarize_1, "^/home/user/\\.mozilla$", 14));
 
-  const SearchNode *summarize_2 = searchTreeLoad(str("valid-config-files/summarize-patterns-mixed.txt"));
+  const SearchNode *summarize_2 = searchTreeLoad(r, str("valid-config-files/summarize-patterns-mixed.txt"));
   checkRootNode(summarize_2, BPOL_none, 0, 2, false, 1, 2);
   assert_true(checkSummarizeExpression(summarize_2, "\\.cache$", 5));
   assert_true(checkSummarizeExpression(summarize_2, "\\.git$", 11));
 
   testIgnoringComments();
+  CR_RegionRelease(r);
   testGroupEnd();
 
   testGroupStart("BOM and EOL variations");
