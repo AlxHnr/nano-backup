@@ -794,12 +794,12 @@ static void releaseRegex(void *data)
 
   @return A regex_t which should not be freed by the caller.
 */
-const regex_t *rpCompile(StringView expression, StringView file_name,
-                         const size_t line_nr)
+const regex_t *sRegexCompile(StringView expression, StringView file_name,
+                             const size_t line_nr)
 {
   regex_t *regex = CR_RegionAlloc(CR_GetGlobalRegion(), sizeof(*regex));
   const int error =
-    regcomp(regex, expression.content, REG_EXTENDED | REG_NOSUB);
+    regcomp(regex, nullTerminate(expression), REG_EXTENDED | REG_NOSUB);
 
   if(error != 0)
   {

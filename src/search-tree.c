@@ -71,7 +71,7 @@ static SearchNode *newNode(Allocator *region_wrapper,
       strUnterminated(&paths.tail.content[1], paths.tail.length - 1);
 
     strSet(&node->name, strCopy(expression, region_wrapper));
-    node->regex = rpCompile(node->name, str("config"), line_nr);
+    node->regex = sRegexCompile(node->name, str("config"), line_nr);
 
     parent_node->subnodes_contain_regex = true;
   }
@@ -227,7 +227,7 @@ SearchNode *searchTreeParse(CR_Region *r, StringView config)
       strSet(&expression->expression, strCopy(line, region_wrapper));
       expression->line_nr = line_nr;
       expression->regex =
-        rpCompile(expression->expression, str("config"), line_nr);
+        sRegexCompile(expression->expression, str("config"), line_nr);
       expression->has_matched = false;
 
       RegexList **shared_expression_list = current_policy == BPOL_summarize
