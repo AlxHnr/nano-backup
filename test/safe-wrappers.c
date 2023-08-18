@@ -28,7 +28,19 @@ static void testAtExit2(void)
 /** Wrap string for testing unterminated string view handling. */
 static StringView wrap(const char *string)
 {
-  return strUnterminated(string, strlen(string));
+  static CR_Region *r = NULL;
+  if(r == NULL) r = CR_RegionNew();
+
+  const size_t string_length = strlen(string);
+  char *buffer = CR_RegionAlloc(r, string_length + 20);
+
+  /* This string is intentionally not null-terminated. It contains
+     uninitialized extra bytes to allow ASAN and valgrind to catch
+     overflows. */
+  /* NOLINTNEXTLINE(bugprone-not-null-terminated-result) */
+  memcpy(buffer, string, string_length);
+
+  return strUnterminated(buffer, string_length);
 }
 
 /** Calls sDirGetNext() with the given arguments and checks its result. This
