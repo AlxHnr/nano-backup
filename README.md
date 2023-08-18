@@ -11,25 +11,6 @@
 * **Portable** - Conforms strictly to C99 and POSIX.1-2001
 * **Fast and snappy** - Reduces friction and is satisfying to use
 
-## Why?
-
-I needed something to track files precisely. Without polluting the change
-history with stuff I never want to restore again. Tools like git don't
-handle binary files well and always keep a history of everything. This
-makes it useless for for backing up binpkg cache directories. I also want
-to know exactly _what_ has changed on my system since the last backup. This
-includes file permissions, timestamps, etc. All that in a simple,
-straightforward and atomic way, preventing changes to sneak in without
-approval.
-
-I _greatly_ disagree with the idea to just `dd` or `rsync` the entire
-hard-drive. Sometimes you may tinker around with config files you never
-need again, probably leaving them in an inconsistent state. There is no
-reason to have those files polluting the backup history. Nano-backup makes
-it easy to track only the few files you really need. To wipe files
-completely from the repository, simply remove their entries from the config
-file. This keeps the backup as lean as possible.
-
 **Note**: Nano-backup does not try to replace existing backup tools and
 implements only a handful of backup strategies. It focuses on local backups
 and stores full snapshots of files. This makes it unsuitable for backing up
@@ -153,11 +134,7 @@ nb "$HOME/backup"
 
 ### How do I tell it to do automatic backups once a day?
 
-You can't. This is the task of tools like cron. But doing so would
-completely defeat the purpose of using nano-backup in the first place.
-Nano-backup was written for precise and explicit backups, providing full
-control over changes. If you still want to go the cron-way, make sure to
-log the output to get a useful changelog.
+You can't. This is the task of tools like cron.
 
 ### Does it support encrypted backups?
 
@@ -166,12 +143,8 @@ distributed cloud storage. Use them for housing your repository.
 
 ### Does it deduplicate data chunks of variable length?
 
-No, it does only whole-file deduplication. Implementing such a feature
-_properly_ as a single developer with very limited time is not possible.
-The cost greatly exceeds the benefit, especially in times of modern
-deduplicating filesystems.
+No, it does only whole-file deduplication.
 
 ### Does it compress the backed up files?
 
-No. It would make the codebase more complicated, may introduce additional
-dependencies and would take quite some time to test properly.
+No.
