@@ -46,7 +46,7 @@ static StringView getLine(StringView config, const size_t start)
   @return A new search node, which has inherited properties from its parent
   node.
 */
-static SearchNode *newNode(Allocator *region_wrapper,
+static SearchNode *newNode(CR_Region *r, Allocator *region_wrapper,
                            StringTable *existing_nodes, StringView path,
                            const size_t line_nr)
 {
@@ -57,7 +57,7 @@ static SearchNode *newNode(Allocator *region_wrapper,
   if(parent_node == NULL)
   {
     parent_node =
-      newNode(region_wrapper, existing_nodes, paths.head, line_nr);
+      newNode(r, region_wrapper, existing_nodes, paths.head, line_nr);
   }
 
   /* Initialize a new node. */
@@ -71,7 +71,7 @@ static SearchNode *newNode(Allocator *region_wrapper,
       strUnterminated(&paths.tail.content[1], paths.tail.length - 1);
 
     strSet(&node->name, strCopy(expression, region_wrapper));
-    node->regex = sRegexCompile(node->name, str("config"), line_nr);
+    node->regex = sRegexCompile(r, node->name, str("config"), line_nr);
 
     parent_node->subnodes_contain_regex = true;
   }
@@ -227,7 +227,7 @@ SearchNode *searchTreeParse(CR_Region *r, StringView config)
       strSet(&expression->expression, strCopy(line, region_wrapper));
       expression->line_nr = line_nr;
       expression->regex =
-        sRegexCompile(expression->expression, str("config"), line_nr);
+        sRegexCompile(r, expression->expression, str("config"), line_nr);
       expression->has_matched = false;
 
       RegexList **shared_expression_list = current_policy == BPOL_summarize
@@ -265,7 +265,7 @@ SearchNode *searchTreeParse(CR_Region *r, StringView config)
       /* Use either the existing node or create a new one. */
       SearchNode *node = previous_definition != NULL
         ? previous_definition
-        : newNode(region_wrapper, existing_nodes, path, line_nr);
+        : newNode(r, region_wrapper, existing_nodes, path, line_nr);
 
       node->policy = current_policy;
       node->policy_inherited = false;

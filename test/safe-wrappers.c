@@ -214,32 +214,34 @@ static void testRemoveRecursivelyIf(void)
 
 void testRegexWrapper(void)
 {
+  CR_Region *r = CR_RegionNew();
+
   testGroupStart("regex: compiling regular expressions");
-  const regex_t *r1 = sRegexCompile(str("^foo$"), str(__FILE__), __LINE__);
+  const regex_t *r1 = sRegexCompile(r, str("^foo$"), str(__FILE__), __LINE__);
   assert_true(r1 != NULL);
 
-  const regex_t *r2 = sRegexCompile(str("^(foo|bar)$"), str(__FILE__), __LINE__);
+  const regex_t *r2 = sRegexCompile(r, str("^(foo|bar)$"), str(__FILE__), __LINE__);
   assert_true(r2 != NULL);
 
-  const regex_t *r3 = sRegexCompile(str(".*"), str(__FILE__), __LINE__);
+  const regex_t *r3 = sRegexCompile(r, str(".*"), str(__FILE__), __LINE__);
   assert_true(r3 != NULL);
 
-  const regex_t *r4 = sRegexCompile(str("^...$"), str(__FILE__), __LINE__);
+  const regex_t *r4 = sRegexCompile(r, str("^...$"), str(__FILE__), __LINE__);
   assert_true(r4 != NULL);
 
-  const regex_t *r5 = sRegexCompile(str("^a"), str(__FILE__), __LINE__);
+  const regex_t *r5 = sRegexCompile(r, str("^a"), str(__FILE__), __LINE__);
   assert_true(r5 != NULL);
 
-  const regex_t *r6 = sRegexCompile(str("x"), str(__FILE__), __LINE__);
+  const regex_t *r6 = sRegexCompile(r, str("x"), str(__FILE__), __LINE__);
   assert_true(r6 != NULL);
 
-  const regex_t *r7 = sRegexCompile(str(".?"), str(__FILE__), __LINE__);
+  const regex_t *r7 = sRegexCompile(r, str(".?"), str(__FILE__), __LINE__);
   assert_true(r7 != NULL);
 
-  const regex_t *r8 = sRegexCompile(str("a?"), str(__FILE__), __LINE__);
+  const regex_t *r8 = sRegexCompile(r, str("a?"), str(__FILE__), __LINE__);
   assert_true(r8 != NULL);
 
-  const regex_t *r9 = sRegexCompile(str("[abc]"), str(__FILE__), __LINE__);
+  const regex_t *r9 = sRegexCompile(r, str("[abc]"), str(__FILE__), __LINE__);
   assert_true(r9 != NULL);
   testGroupEnd();
 
@@ -268,14 +270,16 @@ void testRegexWrapper(void)
   testGroupStart("regex: reject invalid regular expressions");
   char error_buffer[128];
 
-  assert_error_any(sRegexCompile(str("^(foo|bar"), str("example.txt"), 197));
+  assert_error_any(sRegexCompile(r, str("^(foo|bar"), str("example.txt"), 197));
   getLastErrorMessage(error_buffer, sizeof(error_buffer));
   assert_true(strstr(error_buffer, "example.txt: line 197: ") == error_buffer);
 
-  assert_error_any(sRegexCompile(str("*test*"), str("this/is/a/file.c"), 4));
+  assert_error_any(sRegexCompile(r, str("*test*"), str("this/is/a/file.c"), 4));
   getLastErrorMessage(error_buffer, sizeof(error_buffer));
   assert_true(strstr(error_buffer, "this/is/a/file.c: line 4: ") == error_buffer);
   testGroupEnd();
+
+  CR_RegionRelease(r);
 }
 
 int main(void)

@@ -74,7 +74,7 @@ typedef struct
 
 extern FileContent sGetFilesContent(CR_Region *region, StringView path);
 
-extern const regex_t *sRegexCompile(StringView expression,
+extern const regex_t *sRegexCompile(CR_Region *r, StringView expression,
                                     StringView file_name, size_t line_nr);
 extern bool sRegexIsMatching(const regex_t *regex, StringView string);
 

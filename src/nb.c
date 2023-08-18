@@ -266,7 +266,7 @@ int main(const int arg_count, const char **arg_list)
     runIntegrityCheck(metadataLoadFromRepo(r, path_to_repo), path_to_repo);
   }
   else if(sRegexIsMatching(
-            sRegexCompile(str("^[0-9]+$"), str(__FILE__), __LINE__),
+            sRegexCompile(r, str("^[0-9]+$"), str(__FILE__), __LINE__),
             str(arg_list[2])))
   {
     if(arg_count > 4)

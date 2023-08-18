@@ -785,32 +785,30 @@ static void releaseRegex(void *data)
   regfree(data);
 }
 
-/** Compiles the given regular expression and terminates the program on
-  failure.
+/** Compile the given regular expression and terminate the program on
+  errors.
 
-  @param file_name The name of the file to show in the error message.
-  @param line_nr The line number in the file at which the regular
-  expression was found. Needed for printing useful error messages.
-
-  @return A regex_t which should not be freed by the caller.
+  @param file_name Name of the file containing the regular expression. Used
+  for logging an error message.
+  @param line_nr Line number in the file at which the regular expression
+  was found. Needed for printing useful error messages.
 */
-const regex_t *sRegexCompile(StringView expression, StringView file_name,
-                             const size_t line_nr)
+const regex_t *sRegexCompile(CR_Region *r, StringView expression,
+                             StringView file_name, const size_t line_nr)
 {
-  regex_t *regex = CR_RegionAlloc(CR_GetGlobalRegion(), sizeof(*regex));
+  regex_t *regex = CR_RegionAlloc(r, sizeof *regex);
   const int error =
     regcomp(regex, nullTerminate(expression), REG_EXTENDED | REG_NOSUB);
 
   if(error != 0)
   {
     const size_t error_length = regerror(error, regex, NULL, 0);
-    char *error_str = CR_RegionAlloc(CR_GetGlobalRegion(), error_length);
+    char *error_str = allocate(getTemporaryBuffer(false), error_length);
     regerror(error, regex, error_str, error_length);
-    die("" PRI_STR ": line %zu: %s: \"" PRI_STR "\"", STR_FMT(file_name),
+    die(PRI_STR ": line %zu: %s: \"" PRI_STR "\"", STR_FMT(file_name),
         line_nr, error_str, STR_FMT(expression));
   }
-
-  CR_RegionAttach(CR_GetGlobalRegion(), releaseRegex, regex);
+  CR_RegionAttach(r, releaseRegex, regex);
 
   return regex;
 }
