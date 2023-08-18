@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <sys/types.h>
 
+#include "CRegion/region.h"
 #include "file-hash.h"
 #include "str.h"
 
@@ -56,6 +57,6 @@ extern void repoWriterWrite(const void *data, size_t size,
                             RepoWriter *writer);
 extern void repoWriterClose(RepoWriter *writer_to_close);
 
-extern void repoLockUntilExit(StringView repo_path);
+extern void repoLock(CR_Region *r, StringView repo_path);
 
 #endif

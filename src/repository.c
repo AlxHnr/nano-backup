@@ -429,24 +429,21 @@ static void cleanupLockfile(void *lockfile_info_ptr)
   errno = old_errno;
 }
 
-/** Lock the specified repository or terminate with an error message. The
-  repository will stay locked until the program exits. Calling this
-  function twice from the same process on the same repository will not
-  fail.
+/** Lock the specified repository until the given region gets released. If
+  the repository is already locked by another process, the program will be
+  terminated with an error message. Calling this function twice from the
+  same process on the same repository will always succeed.
 
-  @param repo_path Either a relative or absolute path to the repository to
-  lock.
+  @param r Region to which the lifetime of the created lock will be bound.
 */
-void repoLockUntilExit(StringView repo_path)
+void repoLock(CR_Region *r, StringView repo_path)
 {
-  CR_Region *r = CR_RegionNew();
-
-  StringView lockfile_path =
-    strAppendPath(repo_path, str("lockfile"), allocatorWrapRegion(r));
+  Allocator *a = allocatorWrapRegion(r);
 
   LockfileInfo *lockfile_info = CR_RegionAlloc(r, sizeof *lockfile_info);
   lockfile_info->is_locked = false;
-  lockfile_info->file_path = lockfile_path.content;
+  lockfile_info->file_path =
+    strGetContent(strAppendPath(repo_path, str("lockfile"), a), a);
   lockfile_info->file_descriptor =
     open(lockfile_info->file_path, O_CREAT | O_WRONLY, S_IWUSR | S_IWGRP);
 

@@ -428,10 +428,16 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("Locking repository");
-  assert_error_errno(repoLockUntilExit(str("tmp/non/existing/path")),
-                     "failed to create lockfile: \"tmp/non/existing/path/lockfile\"", ENOENT);
+  {
+    CR_Region *r = CR_RegionNew();
 
-  repoLockUntilExit(str("tmp"));
-  assert_true(sPathExists(str("tmp/lockfile")));
+    assert_error_errno(repoLock(r, str("tmp/non/existing/path")),
+                       "failed to create lockfile: \"tmp/non/existing/path/lockfile\"", ENOENT);
+
+    repoLock(r, str("tmp"));
+    assert_true(sPathExists(str("tmp/lockfile")));
+    CR_RegionRelease(r);
+    assert_true(!sPathExists(str("tmp/lockfile")));
+  }
   testGroupEnd();
 }

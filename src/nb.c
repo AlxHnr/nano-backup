@@ -130,7 +130,7 @@ static void backup(CR_Region *r, StringView repo_arg)
     die("repository has no config file: \"" PRI_STR "\"",
         STR_FMT(repo_arg));
   }
-  repoLockUntilExit(repo_path);
+  repoLock(r, repo_path);
   SearchNode *root_node = searchTreeLoad(r, config_path);
 
   Metadata *metadata = sPathExists(metadata_path)
@@ -184,7 +184,7 @@ static Metadata *metadataLoadFromRepo(CR_Region *r, StringView repo_arg)
     die("repository has no metadata: \"" PRI_STR "\"", STR_FMT(repo_arg));
   }
 
-  repoLockUntilExit(repo_path);
+  repoLock(r, repo_path);
   return metadataLoad(r, metadata_path);
 }
 
