@@ -814,3 +814,8 @@ const regex_t *sRegexCompile(StringView expression, StringView file_name,
 
   return regex;
 }
+
+bool sRegexIsMatching(const regex_t *regex, StringView string)
+{
+  return regexec(regex, nullTerminate(string), 0, NULL, 0) == 0;
+}

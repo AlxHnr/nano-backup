@@ -217,14 +217,9 @@ void testRegexWrapper(void)
   testGroupStart("regex: compiling regular expressions");
   const regex_t *r1 = sRegexCompile(str("^foo$"), str(__FILE__), __LINE__);
   assert_true(r1 != NULL);
-  assert_true(regexec(r1, "foo", 0, NULL, 0) == 0);
-  assert_true(regexec(r1, "fooo", 0, NULL, 0) != 0);
-  assert_true(regexec(r1, "bar", 0, NULL, 0) != 0);
 
   const regex_t *r2 = sRegexCompile(str("^(foo|bar)$"), str(__FILE__), __LINE__);
   assert_true(r2 != NULL);
-  assert_true(regexec(r2, "foo", 0, NULL, 0) == 0);
-  assert_true(regexec(r2, "bar", 0, NULL, 0) == 0);
 
   const regex_t *r3 = sRegexCompile(str(".*"), str(__FILE__), __LINE__);
   assert_true(r3 != NULL);
@@ -249,20 +244,25 @@ void testRegexWrapper(void)
   testGroupEnd();
 
   testGroupStart("regex: matching regular expressions");
-  assert_true(regexec(r1, "foo", 0, NULL, 0) == 0);
-  assert_true(regexec(r1, "fooo", 0, NULL, 0) != 0);
-  assert_true(regexec(r1, "bar", 0, NULL, 0) != 0);
-  assert_true(regexec(r2, "foo", 0, NULL, 0) == 0);
-  assert_true(regexec(r2, "bar", 0, NULL, 0) == 0);
-  assert_true(regexec(r4, "bar", 0, NULL, 0) == 0);
-  assert_true(regexec(r4, "baar", 0, NULL, 0) != 0);
-  assert_true(regexec(r4, "xyz", 0, NULL, 0) == 0);
-  assert_true(regexec(r4, "  ", 0, NULL, 0) != 0);
-  assert_true(regexec(r6, "  ", 0, NULL, 0) != 0);
-  assert_true(regexec(r6, " x", 0, NULL, 0) == 0);
-  assert_true(regexec(r6, " \\x", 0, NULL, 0) == 0);
-  assert_true(regexec(r9, "this is test", 0, NULL, 0) != 0);
-  assert_true(regexec(r9, "this is a test", 0, NULL, 0) == 0);
+  assert_true(sRegexIsMatching(r1, str("foo")));
+  assert_true(!sRegexIsMatching(r1, str("fooo")));
+  assert_true(!sRegexIsMatching(r1, str("bar")));
+  assert_true(sRegexIsMatching(r2, str("foo")));
+  assert_true(sRegexIsMatching(r2, str("bar")));
+  assert_true(sRegexIsMatching(r1, str("foo")));
+  assert_true(!sRegexIsMatching(r1, str("fooo")));
+  assert_true(!sRegexIsMatching(r1, str("bar")));
+  assert_true(sRegexIsMatching(r2, str("foo")));
+  assert_true(sRegexIsMatching(r2, str("bar")));
+  assert_true(sRegexIsMatching(r4, str("bar")));
+  assert_true(!sRegexIsMatching(r4, str("baar")));
+  assert_true(sRegexIsMatching(r4, str("xyz")));
+  assert_true(!sRegexIsMatching(r4, str("  ")));
+  assert_true(!sRegexIsMatching(r6, str("  ")));
+  assert_true(sRegexIsMatching(r6, str(" x")));
+  assert_true(sRegexIsMatching(r6, str(" \\x")));
+  assert_true(!sRegexIsMatching(r9, str("this is test")));
+  assert_true(sRegexIsMatching(r9, str("this is a test")));
   testGroupEnd();
 
   testGroupStart("regex: reject invalid regular expressions");

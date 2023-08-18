@@ -495,7 +495,7 @@ static bool matchesRegexList(const PathNode *node,
   for(RegexList *expression = expression_list; expression != NULL;
       expression = expression->next)
   {
-    if(regexec(expression->regex, node->path.content, 0, NULL, 0) == 0)
+    if(sRegexIsMatching(expression->regex, node->path))
     {
       expression->has_matched = true;
       return true;

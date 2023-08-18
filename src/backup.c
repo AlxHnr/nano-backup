@@ -101,7 +101,7 @@ static bool searchNodeMatches(SearchNode *node, StringView path_tail)
 {
   if(node->regex)
   {
-    return regexec(node->regex, path_tail.content, 0, NULL, 0) == 0;
+    return sRegexIsMatching(node->regex, path_tail);
   }
 
   return strIsEqual(node->name, path_tail);
@@ -146,7 +146,7 @@ static bool matchesIgnoreList(StringView path,
 {
   for(const RegexList *item = ignore_list; item != NULL; item = item->next)
   {
-    if(regexec(item->regex, path.content, 0, NULL, 0) == 0)
+    if(sRegexIsMatching(item->regex, path))
     {
       return true;
     }
