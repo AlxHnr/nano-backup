@@ -1,6 +1,7 @@
 #ifndef NANO_BACKUP_SRC_SAFE_WRAPPERS_H
 #define NANO_BACKUP_SRC_SAFE_WRAPPERS_H
 
+#include <regex.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -72,5 +73,8 @@ typedef struct
 } FileContent;
 
 extern FileContent sGetFilesContent(CR_Region *region, StringView path);
+
+extern const regex_t *rpCompile(StringView expression,
+                                StringView file_name, size_t line_nr);
 
 #endif

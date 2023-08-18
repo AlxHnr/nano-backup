@@ -6,7 +6,6 @@
 #include "CRegion/region.h"
 
 #include "error-handling.h"
-#include "regex-pool.h"
 #include "safe-wrappers.h"
 #include "string-table.h"
 

@@ -779,3 +779,38 @@ FileContent sGetFilesContent(CR_Region *region, StringView path)
 
   return (FileContent){ .content = content, .size = 0 };
 }
+
+static void releaseRegex(void *data)
+{
+  regfree(data);
+}
+
+/** Compiles the given regular expression and terminates the program on
+  failure.
+
+  @param file_name The name of the file to show in the error message.
+  @param line_nr The line number in the file at which the regular
+  expression was found. Needed for printing useful error messages.
+
+  @return A regex_t which should not be freed by the caller.
+*/
+const regex_t *rpCompile(StringView expression, StringView file_name,
+                         const size_t line_nr)
+{
+  regex_t *regex = CR_RegionAlloc(CR_GetGlobalRegion(), sizeof(*regex));
+  const int error =
+    regcomp(regex, expression.content, REG_EXTENDED | REG_NOSUB);
+
+  if(error != 0)
+  {
+    const size_t error_length = regerror(error, regex, NULL, 0);
+    char *error_str = CR_RegionAlloc(CR_GetGlobalRegion(), error_length);
+    regerror(error, regex, error_str, error_length);
+    die("" PRI_STR ": line %zu: %s: \"" PRI_STR "\"", STR_FMT(file_name),
+        line_nr, error_str, STR_FMT(expression));
+  }
+
+  CR_RegionAttach(CR_GetGlobalRegion(), releaseRegex, regex);
+
+  return regex;
+}

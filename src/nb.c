@@ -9,7 +9,6 @@
 #include "informations.h"
 #include "integrity.h"
 #include "metadata.h"
-#include "regex-pool.h"
 #include "restore.h"
 #include "safe-wrappers.h"
 #include "search-tree.h"
