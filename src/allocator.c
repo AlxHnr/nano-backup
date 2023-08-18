@@ -73,9 +73,10 @@ Allocator *allocatorWrapRegion(CR_Region *r)
   return a;
 }
 
-/** Create an allocator which always returns the same growable buffer. All
-  memory allocated trough this allocator will be invalidated by further
-  calls to allocate().
+/** Create an allocator which always returns the same growable buffer. The
+  buffers content will be preserved between reallocations. All memory
+  allocated trough this allocator will be invalidated by further calls to
+  allocate().
 
   @param r Region to which the lifetime of the growable buffer should be
   bound to.
