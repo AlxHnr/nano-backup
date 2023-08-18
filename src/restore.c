@@ -125,7 +125,8 @@ static void handleFiletypeChanges(PathNode *node, const PathState *state,
   @param could_exist True if the path in the given node should be checked
   for existence. Otherwise it will be marked as BH_added.
 */
-static void checkAndHandleChanges(PathNode *node, const PathState *state,
+static void checkAndHandleChanges(AllocatorPair *allocator_pair,
+                                  PathNode *node, const PathState *state,
                                   const bool could_exist)
 {
   if(could_exist && sPathExists(node->path))
@@ -137,7 +138,7 @@ static void checkAndHandleChanges(PathNode *node, const PathState *state,
     if(backupHintNoPol(node->hint) == BH_none)
     {
       PathState dummy_state = *state;
-      applyNodeChanges(node, &dummy_state, stats);
+      applyNodeChanges(allocator_pair, node, &dummy_state, stats);
     }
   }
   else
@@ -151,12 +152,13 @@ static void checkAndHandleChanges(PathNode *node, const PathState *state,
 
   @param id The id of the backup against which should be compared.
 */
-static void checkAndHandleChangesRecursively(PathNode *node,
+static void checkAndHandleChangesRecursively(AllocatorPair *allocator_pair,
+                                             PathNode *node,
                                              const PathState *state,
                                              const size_t id,
                                              bool could_exist)
 {
-  checkAndHandleChanges(node, state, could_exist);
+  checkAndHandleChanges(allocator_pair, node, state, could_exist);
   if(state->type != PST_directory)
   {
     return;
@@ -173,8 +175,8 @@ static void checkAndHandleChangesRecursively(PathNode *node,
     const PathState *subnode_state = searchExistingPathState(subnode, id);
     if(subnode_state != NULL)
     {
-      checkAndHandleChangesRecursively(subnode, subnode_state, id,
-                                       could_exist);
+      checkAndHandleChangesRecursively(allocator_pair, subnode,
+                                       subnode_state, id, could_exist);
     }
   }
 }
@@ -187,7 +189,8 @@ static void checkAndHandleChangesRecursively(PathNode *node,
   @param could_exist True if the path to restore could exist. See
   checkAndHandleChanges() for more informations.
 */
-static void initiateRestoreRecursively(PathNode *node_list,
+static void initiateRestoreRecursively(AllocatorPair *allocator_pair,
+                                       PathNode *node_list,
                                        const size_t id, StringView path,
                                        const bool could_exist)
 {
@@ -200,7 +203,8 @@ static void initiateRestoreRecursively(PathNode *node_list,
     {
       found_node = true;
       const PathState *state = findExistingPathState(node, id);
-      checkAndHandleChangesRecursively(node, state, id, could_exist);
+      checkAndHandleChangesRecursively(allocator_pair, node, state, id,
+                                       could_exist);
     }
     else if(strIsParentPath(node->path, path))
     {
@@ -214,13 +218,13 @@ static void initiateRestoreRecursively(PathNode *node_list,
             STR_FMT(node->path));
       }
 
-      checkAndHandleChanges(node, state, could_exist);
+      checkAndHandleChanges(allocator_pair, node, state, could_exist);
 
       const bool subnode_could_exist = could_exist &&
         !(backupHintNoPol(node->hint) >= BH_added &&
           backupHintNoPol(node->hint) <= BH_other_to_directory);
 
-      initiateRestoreRecursively(node->subnodes, id, path,
+      initiateRestoreRecursively(allocator_pair, node->subnodes, id, path,
                                  subnode_could_exist);
     }
   }
@@ -242,6 +246,11 @@ static void initiateRestoreRecursively(PathNode *node_list,
 */
 void initiateRestore(Metadata *metadata, const size_t id, StringView path)
 {
+  AllocatorPair allocator_pair = {
+    .a = allocatorWrapRegion(metadata->r),
+    .reusable_buffer = allocatorWrapOneSingleGrowableBuffer(metadata->r),
+  };
+
   if(strIsEmpty(path))
   {
     for(PathNode *node = metadata->paths; node != NULL; node = node->next)
@@ -249,13 +258,15 @@ void initiateRestore(Metadata *metadata, const size_t id, StringView path)
       const PathState *state = searchExistingPathState(node, id);
       if(state != NULL)
       {
-        checkAndHandleChangesRecursively(node, state, id, true);
+        checkAndHandleChangesRecursively(&allocator_pair, node, state, id,
+                                         true);
       }
     }
   }
   else
   {
-    initiateRestoreRecursively(metadata->paths, id, path, true);
+    initiateRestoreRecursively(&allocator_pair, metadata->paths, id, path,
+                               true);
   }
 }
 

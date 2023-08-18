@@ -361,14 +361,15 @@ static void handleFiletypeChanges(PathNode *node,
   @param state The path state which will be updated with the changes.
   @param result The search result which matched the given node.
 */
-static void handleNodeChanges(PathNode *node, PathState *state,
+static void handleNodeChanges(AllocatorPair *allocator_pair,
+                              PathNode *node, PathState *state,
                               const SearchResult result)
 {
   handleFiletypeChanges(node, result);
 
   if(backupHintNoPol(node->hint) == BH_none)
   {
-    applyNodeChanges(node, state, result.stats);
+    applyNodeChanges(allocator_pair, node, state, result.stats);
   }
   else if(result.policy != BPOL_none)
   {
@@ -382,14 +383,15 @@ static void handleNodeChanges(PathNode *node, PathState *state,
   @param node The node to check for changes.
   @param result The search result which has matched the given node.
 */
-static void handleFoundNode(Metadata *metadata, PathNode *node,
+static void handleFoundNode(AllocatorPair *allocator_pair,
+                            Metadata *metadata, PathNode *node,
                             const SearchResult result)
 {
   handlePolicyChanges(metadata, node, result.policy);
 
   if(result.policy != BPOL_track)
   {
-    handleNodeChanges(node, &node->history->state, result);
+    handleNodeChanges(allocator_pair, node, &node->history->state, result);
 
     if(backupHintNoPol(node->hint) != BH_none ||
        result.policy == BPOL_none)
@@ -409,7 +411,7 @@ static void handleFoundNode(Metadata *metadata, PathNode *node,
   else
   {
     PathState state = node->history->state;
-    handleNodeChanges(node, &state, result);
+    handleNodeChanges(allocator_pair, node, &state, result);
 
     if(backupHintNoPol(node->hint) != BH_none)
     {
@@ -471,7 +473,6 @@ static void handleNotFoundSubnodes(Metadata *metadata,
 /** Queries and processes the next search result recursively and updates
   the given metadata as described in the documentation of initiateBackup().
 
-  @param metadata The metadata which should be updated.
   @param node_list A pointer to the node list corresponding to the
   currently traversed directory.
   @param context The context from which the search result should be
@@ -481,10 +482,9 @@ static void handleNotFoundSubnodes(Metadata *metadata,
 
   @return The type of the processed result.
 */
-static SearchResultType
-initiateMetadataRecursively(Metadata *metadata, PathNode **node_list,
-                            SearchIterator *context,
-                            const RegexList *ignore_list)
+static SearchResultType initiateMetadataRecursively(
+  AllocatorPair *allocator_pair, Metadata *metadata, PathNode **node_list,
+  SearchIterator *context, const RegexList *ignore_list)
 {
   const SearchResult result = searchGetNext(context);
   if(result.type == SRT_end_of_directory ||
@@ -515,12 +515,13 @@ initiateMetadataRecursively(Metadata *metadata, PathNode **node_list,
   }
   else
   {
-    handleFoundNode(metadata, node, result);
+    handleFoundNode(allocator_pair, metadata, node, result);
   }
 
   if(result.type == SRT_directory)
   {
-    while(initiateMetadataRecursively(metadata, &node->subnodes, context,
+    while(initiateMetadataRecursively(allocator_pair, metadata,
+                                      &node->subnodes, context,
                                       ignore_list) != SRT_end_of_directory)
       ;
   }
@@ -831,10 +832,15 @@ static void finishBackupRecursively(Metadata *metadata,
 */
 void initiateBackup(Metadata *metadata, SearchNode *root_node)
 {
+  AllocatorPair allocator_pair = {
+    .a = allocatorWrapRegion(metadata->r),
+    .reusable_buffer = allocatorWrapOneSingleGrowableBuffer(metadata->r),
+  };
+
   SearchIterator *context = searchNew(root_node);
-  while(initiateMetadataRecursively(metadata, &metadata->paths, context,
-                                    *root_node->ignore_expressions) !=
-        SRT_end_of_search)
+  while(initiateMetadataRecursively(
+          &allocator_pair, metadata, &metadata->paths, context,
+          *root_node->ignore_expressions) != SRT_end_of_search)
     ;
 
   handleNotFoundSubnodes(metadata, root_node, root_node->policy,

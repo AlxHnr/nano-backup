@@ -8,7 +8,14 @@
 
 extern void readSymlink(StringView path, struct stat stats,
                         char **buffer_ptr);
-extern void applyNodeChanges(PathNode *node, PathState *state,
-                             struct stat stats);
+
+typedef struct
+{
+  Allocator *a;
+  Allocator *reusable_buffer;
+} AllocatorPair;
+
+extern void applyNodeChanges(AllocatorPair *allocator_pair, PathNode *node,
+                             PathState *state, struct stat stats);
 
 #endif

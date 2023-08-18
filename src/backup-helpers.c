@@ -104,8 +104,8 @@ void readSymlink(StringView path, const struct stat stats,
   @param state The state to update.
   @param stats The stats of the file represented by the given node.
 */
-void applyNodeChanges(PathNode *node, PathState *state,
-                      const struct stat stats)
+void applyNodeChanges(AllocatorPair *allocator_pair, PathNode *node,
+                      PathState *state, const struct stat stats)
 {
   if(state->uid != stats.st_uid || state->gid != stats.st_gid)
   {
@@ -142,12 +142,13 @@ void applyNodeChanges(PathNode *node, PathState *state,
   }
   else if(state->type == PST_symlink)
   {
-    static char *buffer = NULL;
-    readSymlink(node->path, stats, &buffer);
+    StringView target =
+      sSymlinkReadTarget(node->path, allocator_pair->reusable_buffer);
 
-    if(!strIsEqual(state->metadata.symlink_target, str(buffer)))
+    if(!strIsEqual(state->metadata.symlink_target, target))
     {
-      strSet(&state->metadata.symlink_target, strLegacyCopy(str(buffer)));
+      strSet(&state->metadata.symlink_target,
+             strCopy(target, allocator_pair->a));
       backupHintSet(node->hint, BH_content_changed);
     }
   }
