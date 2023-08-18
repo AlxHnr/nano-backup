@@ -719,17 +719,20 @@ int main(void)
   testRemoveRecursivelyIf();
 
   testGroupStart("sGetCwd()");
-  errno = 22;
-  char *cwd = sGetCwd();
-  assert_true(cwd != NULL);
-  assert_true(errno == 22);
+  {
+    r = CR_RegionNew();
 
-  char *cwd_copy = sMalloc(strlen(cwd) + 1);
-  assert_true(getcwd(cwd_copy, strlen(cwd) + 1) == cwd_copy);
-  assert_true(strcmp(cwd, cwd_copy) == 0);
+    errno = 22;
+    StringView cwd = sGetCurrentDir(allocatorWrapRegion(r));
+    assert_true(!strIsEmpty(cwd));
+    assert_true(errno == 22);
 
-  free(cwd);
-  free(cwd_copy);
+    char *cwd_copy = CR_RegionAlloc(r, cwd.length + 1);
+    assert_true(getcwd(cwd_copy, cwd.length + 1) == cwd_copy);
+    assert_true(strIsEqual(cwd, wrap(cwd_copy)));
+
+    CR_RegionRelease(r);
+  }
   testGroupEnd();
 
   testGroupStart("sReadLine()");

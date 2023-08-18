@@ -188,19 +188,15 @@ static Metadata *metadataLoadFromRepo(CR_Region *r, StringView repo_arg)
   return metadataLoad(r, metadata_path);
 }
 
-static StringView buildFullPath(CR_Region *r, StringView path)
+static StringView buildFullPath(Allocator *a, StringView path)
 {
   if(path.content[0] == '/')
   {
     return path;
   }
 
-  char *cwd = sGetCwd();
-  StringView full_path = strAppendPath(strStripTrailingSlashes(str(cwd)),
-                                       path, allocatorWrapRegion(r));
-  free(cwd);
-
-  return full_path;
+  StringView cwd = sGetCurrentDir(a);
+  return strAppendPath(strStripTrailingSlashes(cwd), path, a);
 }
 
 /** Restores a path.
@@ -213,7 +209,8 @@ static void restore(CR_Region *r, StringView repo_arg, const size_t id,
                     StringView path)
 {
   Metadata *metadata = metadataLoadFromRepo(r, repo_arg);
-  StringView full_path = strStripTrailingSlashes(buildFullPath(r, path));
+  StringView full_path =
+    strStripTrailingSlashes(buildFullPath(allocatorWrapRegion(r), path));
   initiateRestore(metadata, id, full_path);
 
   const ChangeSummary changes = printMetadataChanges(metadata, NULL);

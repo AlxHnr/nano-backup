@@ -617,37 +617,28 @@ void sRemoveRecursivelyIf(StringView path,
   (void)removeRecursivelyIf(path, should_remove, user_data);
 }
 
-/** Safe and simplified wrapper around getcwd().
-
-  @return The current working directory. Must be freed by the caller using
-  free().
-*/
-char *sGetCwd(void)
+StringView sGetCurrentDir(Allocator *a)
 {
-  size_t capacity = 4;
-  char *buffer = sMalloc(capacity);
   const int old_errno = errno;
+  size_t capacity = 4;
+  char *buffer = allocate(getTemporaryBuffer(false), capacity);
 
-  char *result = NULL;
-  do
+  while(true)
   {
     errno = 0;
-    result = getcwd(buffer, capacity);
-    if(result == NULL)
+    if(getcwd(buffer, capacity) != NULL)
     {
-      if(errno != ERANGE)
-      {
-        free(buffer);
-        dieErrno("failed to determine current working directory");
-      }
-
-      capacity = sSizeMul(capacity, 2);
-      buffer = sRealloc(buffer, capacity);
+      errno = old_errno;
+      return strCopy(str(buffer), a);
     }
-  } while(result == NULL);
+    if(errno != ERANGE)
+    {
+      dieErrno("failed to determine current working directory");
+    }
 
-  errno = old_errno;
-  return buffer;
+    capacity = sSizeMul(capacity, 2);
+    buffer = allocate(getTemporaryBuffer(false), capacity);
+  }
 }
 
 /** Reads a line from the given stream and terminates the program on

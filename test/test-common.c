@@ -204,15 +204,6 @@ static void checkPathState(const PathNode *node, const PathHistory *point, const
   }
 }
 
-StringView getCwd(Allocator *a)
-{
-  char *cwd = sGetCwd();
-  StringView cwd_string = strCopy(str(cwd), a);
-  free(cwd);
-
-  return cwd_string;
-}
-
 static size_t directory_item_counter = 0;
 
 /** Increments directory_item_counter and can be passed to nftw(). */

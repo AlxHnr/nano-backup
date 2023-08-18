@@ -64,7 +64,7 @@ int main(void)
   writeToFile("tmp/files/smaller file", "1234");
   makeBackup(r, metadataLoad(r, metadata_path));
 
-  StringView cwd = getCwd(allocatorWrapRegion(r));
+  StringView cwd = sGetCurrentDir(allocatorWrapRegion(r));
   const Metadata *metadata = metadataLoad(r, metadata_path);
   testGroupEnd();
 

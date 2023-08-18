@@ -328,7 +328,7 @@ static void initStatCache(void)
     stat_cache_array[index] = strTableNew(stat_cache_region);
   }
 
-  strSet(&cwd_path, getCwd(stat_cache_region_wrapper));
+  strSet(&cwd_path, sGetCurrentDir(stat_cache_region_wrapper));
 
   cwd_depth_count = 0;
   for(size_t index = 0; index < cwd_path.length; index++)

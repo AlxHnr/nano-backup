@@ -645,7 +645,7 @@ int main(void)
   CR_Region *r = CR_RegionNew();
 
   testGroupStart("simple file search");
-  StringView cwd = getCwd(allocatorWrapRegion(r));
+  StringView cwd = sGetCurrentDir(allocatorWrapRegion(r));
   testSimpleSearch(r, cwd);
   testGroupEnd();
 
