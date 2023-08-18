@@ -439,11 +439,11 @@ static void cleanupLockfile(void *lockfile_info_ptr)
 */
 void repoLockUntilExit(StringView repo_path)
 {
-  /* Must be allocated before the region to outlive it. */
-  StringView lockfile_path =
-    strLegacyAppendPath(repo_path, str("lockfile"));
-
   CR_Region *r = CR_RegionNew();
+
+  StringView lockfile_path =
+    strAppendPath(repo_path, str("lockfile"), allocatorWrapRegion(r));
+
   LockfileInfo *lockfile_info = CR_RegionAlloc(r, sizeof *lockfile_info);
   lockfile_info->is_locked = false;
   lockfile_info->file_path = lockfile_path.content;

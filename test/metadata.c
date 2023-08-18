@@ -47,6 +47,7 @@ static PathNode *createPathNode(const char *path_str, const BackupPolicy policy,
                                 Metadata *metadata)
 {
   PathNode *node = CR_RegionAlloc(metadata->r, sizeof *node);
+  Allocator *a = allocatorWrapRegion(metadata->r);
 
   node->hint = BH_none;
   node->policy = policy;
@@ -55,14 +56,14 @@ static PathNode *createPathNode(const char *path_str, const BackupPolicy policy,
 
   if(parent_node == NULL)
   {
-    StringView path = strLegacyAppendPath(str(""), str(path_str));
+    StringView path = strAppendPath(str(""), str(path_str), a);
     strSet(&node->path, path);
 
     node->next = NULL;
   }
   else
   {
-    StringView path = strLegacyAppendPath(parent_node->path, str(path_str));
+    StringView path = strAppendPath(parent_node->path, str(path_str), a);
     strSet(&node->path, path);
 
     node->next = parent_node->subnodes;

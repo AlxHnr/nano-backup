@@ -104,35 +104,6 @@ StringView strStripTrailingSlashes(StringView string)
   };
 }
 
-/** Appends the two given strings with a slash in between. E.g.
-  strAppendPath("/etc", "init.d") -> "/etc/init.d".
-
-  @param path The string to which b will be appended.
-  @param filename The string which will be appended to a.
-
-  @return A new string which lifetime will be bound to the entire program.
-*/
-StringView strLegacyAppendPath(StringView path, StringView filename)
-{
-  const size_t buffer_size =
-    sSizeAdd(sSizeAdd(path.length, filename.length), 2);
-  const size_t path_length = buffer_size - 1;
-
-  char *cstring =
-    CR_RegionAllocUnaligned(CR_GetGlobalRegion(), buffer_size);
-
-  memcpy(cstring, path.content, path.length);
-  cstring[path.length] = '/';
-  memcpy(&cstring[path.length + 1], filename.content, filename.length);
-  cstring[path_length] = '\0';
-
-  return (StringView){
-    .content = cstring,
-    .length = path_length,
-    .is_terminated = true,
-  };
-}
-
 /** Splits the given path at the last slash it contains. If the last slash
   is preceded by more slashes, then the first slash of them will be seen as
   the split point. E.g. "/home/foo///bar" -> [ "/home/foo", "//bar" ].

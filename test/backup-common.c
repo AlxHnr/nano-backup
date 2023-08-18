@@ -74,9 +74,11 @@ PathNode *findCwdNode(Metadata *metadata, StringView cwd, const BackupHint hint)
 PathNode *findSubnode(PathNode *node, const char *subnode_name, const BackupHint hint, const BackupPolicy policy,
                       const size_t requested_history_length, const size_t requested_subnode_count)
 {
-  StringView subnode_path = strLegacyAppendPath(node->path, str(subnode_name));
+  CR_Region *r = CR_RegionNew();
+  StringView subnode_path = strAppendPath(node->path, str(subnode_name), allocatorWrapRegion(r));
   return findPathNode(node->subnodes, nullTerminate(subnode_path), hint, policy, requested_history_length,
                       requested_subnode_count);
+  CR_RegionRelease(r);
 }
 
 time_t getParentTime(const char *path)

@@ -47,7 +47,4 @@ extern StringView strAppendPath(StringView path, StringView filename,
                                 Allocator *a);
 extern StringView strStripTrailingSlashes(StringView string);
 
-extern StringView strLegacyAppendPath(StringView path,
-                                      StringView filename);
-
 #endif

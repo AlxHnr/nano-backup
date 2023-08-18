@@ -118,12 +118,12 @@ static void runIntegrityCheck(const Metadata *metadata,
 
 static void backup(CR_Region *r, StringView repo_arg)
 {
+  Allocator *a = allocatorWrapRegion(r);
+
   StringView repo_path = strStripTrailingSlashes(repo_arg);
-  StringView config_path = strLegacyAppendPath(repo_path, str("config"));
-  StringView metadata_path =
-    strLegacyAppendPath(repo_path, str("metadata"));
-  StringView tmp_file_path =
-    strLegacyAppendPath(repo_path, str("tmp-file"));
+  StringView config_path = strAppendPath(repo_path, str("config"), a);
+  StringView metadata_path = strAppendPath(repo_path, str("metadata"), a);
+  StringView tmp_file_path = strAppendPath(repo_path, str("tmp-file"), a);
 
   if(!sPathExists(config_path))
   {
@@ -177,7 +177,7 @@ static Metadata *metadataLoadFromRepo(CR_Region *r, StringView repo_arg)
 {
   StringView repo_path = strStripTrailingSlashes(repo_arg);
   StringView metadata_path =
-    strLegacyAppendPath(repo_path, str("metadata"));
+    strAppendPath(repo_path, str("metadata"), allocatorWrapRegion(r));
 
   if(!sPathExists(metadata_path))
   {
@@ -188,7 +188,7 @@ static Metadata *metadataLoadFromRepo(CR_Region *r, StringView repo_arg)
   return metadataLoad(r, metadata_path);
 }
 
-static StringView buildFullPath(StringView path)
+static StringView buildFullPath(CR_Region *r, StringView path)
 {
   if(path.content[0] == '/')
   {
@@ -196,8 +196,8 @@ static StringView buildFullPath(StringView path)
   }
 
   char *cwd = sGetCwd();
-  StringView full_path =
-    strLegacyAppendPath(strStripTrailingSlashes(str(cwd)), path);
+  StringView full_path = strAppendPath(strStripTrailingSlashes(str(cwd)),
+                                       path, allocatorWrapRegion(r));
   free(cwd);
 
   return full_path;
@@ -213,7 +213,7 @@ static void restore(CR_Region *r, StringView repo_arg, const size_t id,
                     StringView path)
 {
   Metadata *metadata = metadataLoadFromRepo(r, repo_arg);
-  StringView full_path = strStripTrailingSlashes(buildFullPath(path));
+  StringView full_path = strStripTrailingSlashes(buildFullPath(r, path));
   initiateRestore(metadata, id, full_path);
 
   const ChangeSummary changes = printMetadataChanges(metadata, NULL);
