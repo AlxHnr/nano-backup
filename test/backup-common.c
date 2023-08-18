@@ -81,12 +81,12 @@ PathNode *findSubnode(PathNode *node, const char *subnode_name, const BackupHint
 
 time_t getParentTime(const char *path)
 {
-  return sStat(strLegacyCopy(strSplitPath(str(path)).head)).st_mtime;
+  return sStat(strSplitPath(str(path)).head).st_mtime;
 }
 
 void restoreParentTime(const char *path, const time_t time)
 {
-  StringView parent_path = strLegacyCopy(strSplitPath(str(path)).head);
+  StringView parent_path = strSplitPath(str(path)).head;
   sUtime(parent_path, time);
 }
 
@@ -304,19 +304,33 @@ void restoreWithTimeRecursively(PathNode *node)
 
 /* Associates a file path with its stats. */
 static CR_Region *stat_cache_region = NULL;
+static Allocator *stat_cache_region_wrapper = NULL;
 static StringTable *current_stat_cache = NULL;
 static StringTable **stat_cache_array = NULL;
 static size_t stat_cache_array_length = 0;
+
+/** Will be updated with a copy of PWD. */
+static StringView cwd_path;
+static size_t cwd_depth_count = 0;
 
 /** Populates the stat_cache_array with new string tables. */
 static void initStatCache(void)
 {
   stat_cache_region = CR_RegionNew();
+  stat_cache_region_wrapper = allocatorWrapRegion(stat_cache_region);
   stat_cache_array = CR_RegionAlloc(stat_cache_region, sizeof *stat_cache_array * stat_cache_array_length);
 
   for(size_t index = 0; index < stat_cache_array_length; index++)
   {
     stat_cache_array[index] = strTableNew(stat_cache_region);
+  }
+
+  strSet(&cwd_path, getCwd(stat_cache_region_wrapper));
+
+  cwd_depth_count = 0;
+  for(size_t index = 0; index < cwd_path.length; index++)
+  {
+    cwd_depth_count += cwd_path.content[index] == '/';
   }
 
   current_stat_cache = stat_cache_array[0];
@@ -351,7 +365,7 @@ struct stat cachedStat(StringView path, struct stat (*stat_fun)(StringView))
   {
     cache = CR_RegionAlloc(stat_cache_region, sizeof *cache);
     *cache = stat_fun(path);
-    strTableMap(current_stat_cache, path, cache);
+    strTableMap(current_stat_cache, strCopy(path, stat_cache_region_wrapper), cache);
   }
 
   return *cache;
@@ -421,10 +435,6 @@ void mustHaveDirectoryCached(const PathNode *node, const Backup *backup)
 {
   mustHaveDirectoryStats(node, backup, cachedStat(node->path, sStat));
 }
-
-/** Will be updated with a copy of PWD. */
-static StringView cwd_path;
-static size_t cwd_depth_count = 0;
 
 /** Finds the node "$PWD/tmp/files".
 
@@ -509,15 +519,6 @@ void initBackupCommon(size_t stat_cache_count)
 
   stat_cache_array_length = stat_cache_count;
   initStatCache();
-
-  StringView tmp_cwd_path = getCwd();
-  strSet(&cwd_path, tmp_cwd_path);
-
-  cwd_depth_count = 0;
-  for(size_t index = 0; index < cwd_path.length; index++)
-  {
-    cwd_depth_count += cwd_path.content[index] == '/';
-  }
 
   sAtexit(freeBackupCommon);
 }

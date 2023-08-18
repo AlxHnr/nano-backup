@@ -204,10 +204,10 @@ static void checkPathState(const PathNode *node, const PathHistory *point, const
   }
 }
 
-StringView getCwd(void)
+StringView getCwd(Allocator *a)
 {
   char *cwd = sGetCwd();
-  StringView cwd_string = strLegacyCopy(str(cwd));
+  StringView cwd_string = strCopy(str(cwd), a);
   free(cwd);
 
   return cwd_string;

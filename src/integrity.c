@@ -11,6 +11,7 @@ typedef struct
 {
   /** Used for allocating broken path nodes. */
   CR_Region *r;
+  Allocator *r_wrapper;
 
   /** All broken path nodes found during the check will be stored here. The
     lifetime of this list is bound to the region `r` in this struct. */
@@ -99,7 +100,7 @@ static bool historyPointIsHealthy(IntegrityCheckContext *context,
     const bool is_healthy =
       storedFileIsHealthy(file_info, full_unique_path);
     strTableMap(context->unique_subpath_cache,
-                strLegacyCopy(unique_subpath),
+                strCopy(unique_subpath, context->r_wrapper),
                 is_healthy ? subpath_is_healthy : subpath_is_broken);
     return is_healthy;
   }
@@ -152,6 +153,7 @@ ListOfBrokenPathNodes *checkIntegrity(CR_Region *r,
 
   IntegrityCheckContext context = {
     .r = r,
+    .r_wrapper = allocatorWrapRegion(r),
     .broken_nodes = NULL,
     .repo_path = repo_path,
     .reusable_buffer_allocator =

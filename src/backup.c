@@ -505,8 +505,7 @@ static SearchResultType initiateMetadataRecursively(
   {
     node = CR_RegionAlloc(metadata->r, sizeof *node);
 
-    StringView path_copy = strLegacyCopy(result.path);
-    memcpy(&node->path, &path_copy, sizeof(node->path));
+    strSet(&node->path, strCopy(result.path, allocator_pair->a));
 
     node->hint = BH_added;
     node->policy = result.policy;

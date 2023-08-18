@@ -214,7 +214,7 @@ static void restore(CR_Region *r, StringView repo_arg, const size_t id,
 {
   Metadata *metadata = metadataLoadFromRepo(r, repo_arg);
   StringView full_path = strStripTrailingSlashes(buildFullPath(path));
-  initiateRestore(metadata, id, strLegacyCopy(full_path));
+  initiateRestore(metadata, id, full_path);
 
   const ChangeSummary changes = printMetadataChanges(metadata, NULL);
   if(containsChanges(&changes) && printf("\n") == 1)

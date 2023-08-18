@@ -90,7 +90,7 @@ static size_t skipCwd(SearchIterator *iterator, StringView cwd, const SearchNode
 */
 static StringView trimCwd(StringView string, StringView cwd)
 {
-  return strLegacyCopy(strUnterminated(&string.content[cwd.length + 1], string.length - 1 - cwd.length));
+  return strUnterminated(&string.content[cwd.length + 1], string.length - 1 - cwd.length);
 }
 
 /** Asserts that all nodes in the given search tree got correctly set and
@@ -165,6 +165,8 @@ static size_t populateDirectoryTable(CR_Region *r, SearchIterator *iterator, Str
 {
   size_t file_count = 0;
   size_t recursion_depth = 1;
+  Allocator *a = allocatorWrapRegion(r);
+
   while(recursion_depth > 0)
   {
     const SearchResult result = searchGetNext(iterator);
@@ -191,7 +193,7 @@ static size_t populateDirectoryTable(CR_Region *r, SearchIterator *iterator, Str
       FoundPathInfo *info = CR_RegionAlloc(r, sizeof *info);
       info->policy = result.policy;
       info->node = result.node;
-      strTableMap(table, relative_path, info);
+      strTableMap(table, strCopy(relative_path, a), info);
     }
   }
 
@@ -643,7 +645,7 @@ int main(void)
   CR_Region *r = CR_RegionNew();
 
   testGroupStart("simple file search");
-  StringView cwd = getCwd();
+  StringView cwd = getCwd(allocatorWrapRegion(r));
   testSimpleSearch(r, cwd);
   testGroupEnd();
 

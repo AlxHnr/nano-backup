@@ -265,17 +265,3 @@ StringView strAppendPath(StringView path, StringView filename,
     .is_terminated = true,
   };
 }
-
-StringView strLegacyCopy(StringView string)
-{
-  char *cstring = CR_RegionAllocUnaligned(CR_GetGlobalRegion(),
-                                          sSizeAdd(string.length, 1));
-  memcpy(cstring, string.content, string.length);
-  cstring[string.length] = '\0';
-
-  return (StringView){
-    .content = cstring,
-    .length = string.length,
-    .is_terminated = true,
-  };
-}
