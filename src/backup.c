@@ -8,7 +8,6 @@
 #include "backup-helpers.h"
 #include "error-handling.h"
 #include "file-hash.h"
-#include "memory-pool.h"
 #include "repository.h"
 #include "safe-math.h"
 #include "safe-wrappers.h"
@@ -65,7 +64,7 @@ static void setPathHistoryState(PathState *state,
 static PathHistory *buildPathHistoryPoint(Metadata *metadata,
                                           const SearchResult result)
 {
-  PathHistory *point = mpAlloc(sizeof *point);
+  PathHistory *point = CR_RegionAlloc(metadata->r, sizeof *point);
 
   point->backup = &metadata->current_backup;
   point->backup->ref_count = sSizeAdd(point->backup->ref_count, 1);
@@ -224,7 +223,7 @@ static void markAsRemovedRecursively(Metadata *metadata, PathNode *node,
 
     if(extend_tracked_histories)
     {
-      PathHistory *point = mpAlloc(sizeof *point);
+      PathHistory *point = CR_RegionAlloc(metadata->r, sizeof *point);
       point->backup = &metadata->current_backup;
       point->backup->ref_count = sSizeAdd(point->backup->ref_count, 1);
       point->state.type = PST_non_existing;
@@ -414,7 +413,7 @@ static void handleFoundNode(Metadata *metadata, PathNode *node,
 
     if(backupHintNoPol(node->hint) != BH_none)
     {
-      PathHistory *point = mpAlloc(sizeof *point);
+      PathHistory *point = CR_RegionAlloc(metadata->r, sizeof *point);
 
       memcpy(&point->state, &state, sizeof(point->state));
       point->backup = &metadata->current_backup;
@@ -498,7 +497,7 @@ initiateMetadataRecursively(Metadata *metadata, PathNode **node_list,
 
   if(node == NULL)
   {
-    node = mpAlloc(sizeof *node);
+    node = CR_RegionAlloc(metadata->r, sizeof *node);
 
     StringView path_copy = strLegacyCopy(result.path);
     memcpy(&node->path, &path_copy, sizeof(node->path));

@@ -1,7 +1,6 @@
 #include "search.h"
 
 #include "error-handling.h"
-#include "memory-pool.h"
 #include "safe-wrappers.h"
 #include "string-table.h"
 #include "test-common.h"
@@ -162,7 +161,7 @@ static void finishSearch(SearchIterator *iterator, const size_t recursion_depth)
 
   @return The amount of files found during search.
 */
-static size_t populateDirectoryTable(SearchIterator *iterator, StringTable *table, StringView cwd)
+static size_t populateDirectoryTable(CR_Region *r, SearchIterator *iterator, StringTable *table, StringView cwd)
 {
   size_t file_count = 0;
   size_t recursion_depth = 1;
@@ -189,7 +188,7 @@ static size_t populateDirectoryTable(SearchIterator *iterator, StringTable *tabl
       file_count += (result.type == SRT_regular_file || result.type == SRT_symlink);
       recursion_depth += result.type == SRT_directory;
 
-      FoundPathInfo *info = mpAlloc(sizeof *info);
+      FoundPathInfo *info = CR_RegionAlloc(r, sizeof *info);
       info->policy = result.policy;
       info->node = result.node;
       strTableMap(table, relative_path, info);
@@ -290,7 +289,7 @@ static void testSimpleSearch(CR_Region *r, StringView cwd)
   const size_t cwd_depth = skipCwd(iterator, cwd, root);
   CR_Region *paths_region = CR_RegionNew();
   StringTable *paths = strTableNew(paths_region);
-  assert_true(populateDirectoryTable(iterator, paths, cwd) == 29);
+  assert_true(populateDirectoryTable(r, iterator, paths, cwd) == 29);
   finishSearch(iterator, cwd_depth);
 
   /* Check nodes in search tree. */
@@ -371,7 +370,7 @@ static void testIgnoreExpressions(CR_Region *r, StringView cwd)
   const size_t cwd_depth = skipCwd(iterator, cwd, root);
   CR_Region *paths_region = CR_RegionNew();
   StringTable *paths = strTableNew(paths_region);
-  assert_true(populateDirectoryTable(iterator, paths, cwd) == 19);
+  assert_true(populateDirectoryTable(r, iterator, paths, cwd) == 19);
   finishSearch(iterator, cwd_depth);
 
   /* Check nodes in search tree. */
@@ -446,7 +445,7 @@ static void testSymlinkFollowing(CR_Region *r, StringView cwd)
   const size_t cwd_depth = skipCwd(iterator, cwd, root);
   CR_Region *paths_region = CR_RegionNew();
   StringTable *paths = strTableNew(paths_region);
-  assert_true(populateDirectoryTable(iterator, paths, cwd) == 20);
+  assert_true(populateDirectoryTable(r, iterator, paths, cwd) == 20);
   finishSearch(iterator, cwd_depth);
 
   /* Check nodes in search tree. */
@@ -514,7 +513,7 @@ static void testMismatchedPaths(CR_Region *r, StringView cwd)
   const size_t cwd_depth = skipCwd(iterator, cwd, root);
   CR_Region *paths_region = CR_RegionNew();
   StringTable *paths = strTableNew(paths_region);
-  assert_true(populateDirectoryTable(iterator, paths, cwd) == 2);
+  assert_true(populateDirectoryTable(r, iterator, paths, cwd) == 2);
   finishSearch(iterator, cwd_depth);
 
   /* Check nodes in search tree. */
@@ -573,7 +572,7 @@ static void testComplexSearch(CR_Region *r, StringView cwd)
   const size_t cwd_depth = skipCwd(iterator, cwd, root);
   CR_Region *paths_region = CR_RegionNew();
   StringTable *paths = strTableNew(paths_region);
-  assert_true(populateDirectoryTable(iterator, paths, cwd) == 26);
+  assert_true(populateDirectoryTable(r, iterator, paths, cwd) == 26);
   finishSearch(iterator, cwd_depth);
 
   /* Check nodes in search tree. */

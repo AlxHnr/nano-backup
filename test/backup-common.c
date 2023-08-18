@@ -5,7 +5,6 @@
 
 #include "backup.h"
 #include "error-handling.h"
-#include "memory-pool.h"
 #include "restore.h"
 #include "safe-wrappers.h"
 #include "test-common.h"
@@ -313,6 +312,7 @@ static size_t stat_cache_array_length = 0;
 static void initStatCache(void)
 {
   stat_cache_region = CR_RegionNew();
+  stat_cache_array = CR_RegionAlloc(stat_cache_region, sizeof *stat_cache_array * stat_cache_array_length);
 
   for(size_t index = 0; index < stat_cache_array_length; index++)
   {
@@ -349,7 +349,7 @@ struct stat cachedStat(StringView path, struct stat (*stat_fun)(StringView))
   struct stat *cache = strTableGet(current_stat_cache, path);
   if(cache == NULL)
   {
-    cache = mpAlloc(sizeof *cache);
+    cache = CR_RegionAlloc(stat_cache_region, sizeof *cache);
     *cache = stat_fun(path);
     strTableMap(current_stat_cache, path, cache);
   }
@@ -508,7 +508,6 @@ void initBackupCommon(size_t stat_cache_count)
   assert_true(stat_cache_count > 0);
 
   stat_cache_array_length = stat_cache_count;
-  stat_cache_array = mpAlloc(sizeof *stat_cache_array * stat_cache_array_length);
   initStatCache();
 
   StringView tmp_cwd_path = getCwd();
