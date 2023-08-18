@@ -30,6 +30,7 @@ extern void sFread(void *ptr, size_t size, FileStream *stream);
 extern void sFwrite(const void *ptr, size_t size, FileStream *stream);
 extern bool fWrite(const void *ptr, size_t size, FileStream *stream);
 extern bool fTodisk(FileStream *stream);
+extern void fDatasync(StringView path);
 extern bool sFbytesLeft(FileStream *stream);
 extern void sFclose(FileStream *stream);
 extern void fDestroy(FileStream *stream);

@@ -513,6 +513,13 @@ int main(void)
   sFclose(test_file);
   testGroupEnd();
 
+  testGroupStart("fDatasync()");
+  fDatasync(wrap("tmp"));
+  fDatasync(wrap("test directory"));
+  assert_error_errno(fDatasync(wrap("non-existing-path.txt")),
+                     "failed to sync path to device: \"non-existing-path.txt\"", ENOENT);
+  testGroupEnd();
+
   testGroupStart("sMkdir()");
   assert_true(!sPathExists(wrap("tmp/some-directory")));
   sMkdir(wrap("tmp/some-directory"));

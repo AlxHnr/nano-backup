@@ -1,6 +1,7 @@
 #include "safe-wrappers.h"
 
 #include <errno.h>
+#include <fcntl.h>
 #include <limits.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -245,6 +246,17 @@ bool fTodisk(FileStream *stream)
 
   return descriptor != -1 && fflush(stream->handle) == 0 &&
     fdatasync(descriptor) == 0;
+}
+
+void fDatasync(StringView path)
+{
+  const int dir_descriptor = open(nullTerminate(path), O_RDONLY, 0);
+  if(dir_descriptor == -1 || fdatasync(dir_descriptor) != 0 ||
+     close(dir_descriptor) != 0)
+  {
+    dieErrno("failed to sync path to device: \"" PRI_STR "\"",
+             STR_FMT(path));
+  }
 }
 
 /** Safe wrapper around fclose().

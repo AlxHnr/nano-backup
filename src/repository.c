@@ -330,21 +330,6 @@ void repoWriterWrite(const void *data, const size_t size,
   }
 }
 
-/** Calls fdatasync() on the given directories descriptor.
-
-  @param path The path to the directory to sync to disk.
-*/
-static void fdatasyncDirectory(StringView path)
-{
-  const int dir_descriptor = open(path.content, O_RDONLY, 0);
-  if(dir_descriptor == -1 || fdatasync(dir_descriptor) != 0 ||
-     close(dir_descriptor) != 0)
-  {
-    dieErrno("failed to sync directory to device: \"" PRI_STR "\"",
-             STR_FMT(path));
-  }
-}
-
 /** Finalizes the write process represented by the given writer. All its
   data will be written to disk and the temporary file will be renamed to
   its final filename.
@@ -383,24 +368,24 @@ void repoWriterClose(RepoWriter *writer_to_close)
       if(!sPathExists(str(path_buffer)))
       {
         sMkdir(str(path_buffer));
-        fdatasyncDirectory(writer.repo_path);
+        fDatasync(writer.repo_path);
       }
       path_buffer[repo_path.length + 2] = '/';
 
       sMkdir(str(path_buffer));
 
       path_buffer[repo_path.length + 2] = '\0';
-      fdatasyncDirectory(str(path_buffer));
+      fDatasync(str(path_buffer));
       path_buffer[repo_path.length + 2] = '/';
     }
     path_buffer[repo_path.length + 5] = '/';
 
     sRename(writer.repo_tmp_file_path, str(path_buffer));
     path_buffer[repo_path.length + 5] = '\0';
-    fdatasyncDirectory(str(path_buffer));
+    fDatasync(str(path_buffer));
   }
 
-  fdatasyncDirectory(writer.repo_path);
+  fDatasync(writer.repo_path);
 }
 
 typedef struct
