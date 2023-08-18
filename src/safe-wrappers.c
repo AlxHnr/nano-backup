@@ -82,33 +82,6 @@ void *sMalloc(const size_t size)
   return allocate(allocatorWrapMalloc(), size);
 }
 
-/** A safe wrapper around realloc().
-
-  @param ptr The pointer to the data, which should be reallocated. The data
-  may be moved, so the caller shouldn't use this pointer anymore once this
-  function returns.
-  @param size A value larger than 0. Otherwise the program will be
-  terminated.
-
-  @return A pointer to the reallocated memory. Must be freed by the caller
-  using free().
-*/
-void *sRealloc(void *ptr, const size_t size)
-{
-  if(size == 0)
-  {
-    die("unable to reallocate 0 bytes");
-  }
-
-  void *data = realloc(ptr, size);
-  if(data == NULL)
-  {
-    die("out of memory: failed to reallocate %zu bytes", size);
-  }
-
-  return data;
-}
-
 /** Safe wrapper around atexit(). */
 void sAtexit(void (*function)(void))
 {

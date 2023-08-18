@@ -467,7 +467,7 @@ size_t cwd_depth(void)
 }
 
 /** Contains the timestamp at which a phase finished. */
-static time_t *phase_timestamp_array = NULL;
+static time_t phase_timestamp_array[100] = { 0 };
 static size_t phases_completed = 0;
 
 /** Finishes a backup and writes the given metadata struct into "tmp/repo".
@@ -479,8 +479,7 @@ void completeBackup(Metadata *metadata)
 {
   const size_t phase = phases_completed;
   phases_completed++;
-
-  phase_timestamp_array = sRealloc(phase_timestamp_array, sizeof *phase_timestamp_array * phases_completed);
+  assert_true(phases_completed < sizeof(phase_timestamp_array) / sizeof(phase_timestamp_array[0]));
 
   const time_t before_finishing = sTime();
   finishBackup(metadata, str("tmp/repo"), str("tmp/repo/tmp-file"));
@@ -508,7 +507,6 @@ size_t backup_counter(void)
 /** Counterpart to initBackupCommon(). */
 static void freeBackupCommon(void)
 {
-  free(phase_timestamp_array);
   freeStatCache();
 }
 

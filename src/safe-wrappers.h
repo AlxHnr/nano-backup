@@ -16,7 +16,6 @@
 #include "str.h"
 
 extern void *sMalloc(size_t size);
-extern void *sRealloc(void *ptr, size_t size);
 
 extern void sAtexit(void (*function)(void));
 
