@@ -41,8 +41,8 @@ static void checkReadDir(DirIterator *dir)
   assert_true(errno == 0);
 
   assert_true(!strIsEmpty(path));
-  assert_true(!strIsEqual(path, str(".")));
-  assert_true(!strIsEqual(path, str("..")));
+  assert_true(!strIsEqual(path, wrap(".")));
+  assert_true(!strIsEqual(path, wrap("..")));
 }
 
 static bool checkPathExists(const char *path)
@@ -103,11 +103,11 @@ static bool checkStats(StringView path, const struct stat *stats, void *user_dat
   (void)stats;
   (void)user_data;
 
-  if(strIsEqual(path, str("tmp/file")))
+  if(strIsEqual(path, wrap("tmp/file")))
   {
     assert_true(S_ISREG(stats->st_mode));
   }
-  if(strIsEqual(path, str("tmp/test1")))
+  if(strIsEqual(path, wrap("tmp/test1")))
   {
     assert_true(S_ISDIR(stats->st_mode));
   }
@@ -119,8 +119,8 @@ static bool dontPassNeededDirectories(StringView path, const struct stat *stats,
   (void)stats;
   (void)user_data;
 
-  assert_true(!strIsEqual(path, str("tmp/test1")));
-  assert_true(!strIsEqual(path, str("tmp/test1/test2")));
+  assert_true(!strIsEqual(path, wrap("tmp/test1")));
+  assert_true(!strIsEqual(path, wrap("tmp/test1/test2")));
   return false;
 }
 static bool countCalls(StringView path, const struct stat *stats, void *user_data)
@@ -136,35 +136,35 @@ static bool deleteSpecificFiles(StringView path, const struct stat *stats, void 
   (void)stats;
   (void)user_data;
 
-  return strIsEqual(path, str("tmp/test1/test3")) || strIsEqual(path, str("tmp/test1/foo")) ||
-    strIsEqual(path, str("tmp/test1/test2/file"));
+  return strIsEqual(path, wrap("tmp/test1/test3")) || strIsEqual(path, wrap("tmp/test1/foo")) ||
+    strIsEqual(path, wrap("tmp/test1/test2/file"));
 }
 static bool checkIfTest1DirWasProvided(StringView path, const struct stat *stats, void *user_data)
 {
   (void)path;
   (void)stats;
 
-  if(strIsEqual(path, str("tmp/test1")))
+  if(strIsEqual(path, wrap("tmp/test1")))
   {
     bool *value = user_data;
     assert_true(*value == false);
     *value = true;
   }
 
-  return strIsEqual(path, str("tmp/test1/test2"));
+  return strIsEqual(path, wrap("tmp/test1/test2"));
 }
 
 static void testRemoveRecursivelyIf(void)
 {
   testGroupStart("sRemoveRecursivelyIf(): dry run mode");
-  sMkdir(str("tmp/test1"));
-  sMkdir(str("tmp/test1/test2"));
-  sMkdir(str("tmp/test1/test3"));
+  sMkdir(wrap("tmp/test1"));
+  sMkdir(wrap("tmp/test1/test2"));
+  sMkdir(wrap("tmp/test1/test3"));
   sSymlink(wrap("/dev/null"), wrap("tmp/test1/foo"));
   sFclose(sFopenWrite(wrap("tmp/file")));
   sFclose(sFopenWrite(wrap("tmp/test1/test2/file")));
 
-  sRemoveRecursivelyIf(str("tmp"), alwaysReturnFalse, NULL);
+  sRemoveRecursivelyIf(wrap("tmp"), alwaysReturnFalse, NULL);
 
   assert_true(checkPathExists("tmp/file"));
   assert_true(checkPathExists("tmp/test1"));
@@ -175,21 +175,21 @@ static void testRemoveRecursivelyIf(void)
   testGroupEnd();
 
   testGroupStart("sRemoveRecursivelyIf(): pass valid stats to callback");
-  sRemoveRecursivelyIf(str("tmp"), checkStats, NULL);
+  sRemoveRecursivelyIf(wrap("tmp"), checkStats, NULL);
   testGroupEnd();
 
   testGroupStart("sRemoveRecursivelyIf(): skip still needed directories");
-  sRemoveRecursivelyIf(str("tmp"), dontPassNeededDirectories, NULL);
+  sRemoveRecursivelyIf(wrap("tmp"), dontPassNeededDirectories, NULL);
   testGroupEnd();
 
   testGroupStart("sRemoveRecursivelyIf(): pass user data to callback");
   size_t value = 0;
-  sRemoveRecursivelyIf(str("tmp"), countCalls, &value);
+  sRemoveRecursivelyIf(wrap("tmp"), countCalls, &value);
   assert_true(value == 4);
   testGroupEnd();
 
   testGroupStart("sRemoveRecursivelyIf(): selective deletion");
-  sRemoveRecursivelyIf(str("tmp"), deleteSpecificFiles, NULL);
+  sRemoveRecursivelyIf(wrap("tmp"), deleteSpecificFiles, NULL);
   assert_true(checkPathExists("tmp/file"));
   assert_true(checkPathExists("tmp/test1"));
   assert_true(!checkPathExists("tmp/test1/foo"));
@@ -200,7 +200,7 @@ static void testRemoveRecursivelyIf(void)
 
   testGroupStart("sRemoveRecursivelyIf(): pass unneeded dirs to callback");
   bool test1_dir_was_provided = false;
-  sRemoveRecursivelyIf(str("tmp"), checkIfTest1DirWasProvided, &test1_dir_was_provided);
+  sRemoveRecursivelyIf(wrap("tmp"), checkIfTest1DirWasProvided, &test1_dir_was_provided);
   assert_true(test1_dir_was_provided);
 
   assert_true(checkPathExists("tmp/file"));
@@ -217,64 +217,64 @@ void testRegexWrapper(void)
   CR_Region *r = CR_RegionNew();
 
   testGroupStart("regex: compiling regular expressions");
-  const regex_t *r1 = sRegexCompile(r, str("^foo$"), str(__FILE__), __LINE__);
+  const regex_t *r1 = sRegexCompile(r, wrap("^foo$"), wrap(__FILE__), __LINE__);
   assert_true(r1 != NULL);
 
-  const regex_t *r2 = sRegexCompile(r, str("^(foo|bar)$"), str(__FILE__), __LINE__);
+  const regex_t *r2 = sRegexCompile(r, wrap("^(foo|bar)$"), wrap(__FILE__), __LINE__);
   assert_true(r2 != NULL);
 
-  const regex_t *r3 = sRegexCompile(r, str(".*"), str(__FILE__), __LINE__);
+  const regex_t *r3 = sRegexCompile(r, wrap(".*"), wrap(__FILE__), __LINE__);
   assert_true(r3 != NULL);
 
-  const regex_t *r4 = sRegexCompile(r, str("^...$"), str(__FILE__), __LINE__);
+  const regex_t *r4 = sRegexCompile(r, wrap("^...$"), wrap(__FILE__), __LINE__);
   assert_true(r4 != NULL);
 
-  const regex_t *r5 = sRegexCompile(r, str("^a"), str(__FILE__), __LINE__);
+  const regex_t *r5 = sRegexCompile(r, wrap("^a"), wrap(__FILE__), __LINE__);
   assert_true(r5 != NULL);
 
-  const regex_t *r6 = sRegexCompile(r, str("x"), str(__FILE__), __LINE__);
+  const regex_t *r6 = sRegexCompile(r, wrap("x"), wrap(__FILE__), __LINE__);
   assert_true(r6 != NULL);
 
-  const regex_t *r7 = sRegexCompile(r, str(".?"), str(__FILE__), __LINE__);
+  const regex_t *r7 = sRegexCompile(r, wrap(".?"), wrap(__FILE__), __LINE__);
   assert_true(r7 != NULL);
 
-  const regex_t *r8 = sRegexCompile(r, str("a?"), str(__FILE__), __LINE__);
+  const regex_t *r8 = sRegexCompile(r, wrap("a?"), wrap(__FILE__), __LINE__);
   assert_true(r8 != NULL);
 
-  const regex_t *r9 = sRegexCompile(r, str("[abc]"), str(__FILE__), __LINE__);
+  const regex_t *r9 = sRegexCompile(r, wrap("[abc]"), wrap(__FILE__), __LINE__);
   assert_true(r9 != NULL);
   testGroupEnd();
 
   testGroupStart("regex: matching regular expressions");
-  assert_true(sRegexIsMatching(r1, str("foo")));
-  assert_true(!sRegexIsMatching(r1, str("fooo")));
-  assert_true(!sRegexIsMatching(r1, str("bar")));
-  assert_true(sRegexIsMatching(r2, str("foo")));
-  assert_true(sRegexIsMatching(r2, str("bar")));
-  assert_true(sRegexIsMatching(r1, str("foo")));
-  assert_true(!sRegexIsMatching(r1, str("fooo")));
-  assert_true(!sRegexIsMatching(r1, str("bar")));
-  assert_true(sRegexIsMatching(r2, str("foo")));
-  assert_true(sRegexIsMatching(r2, str("bar")));
-  assert_true(sRegexIsMatching(r4, str("bar")));
-  assert_true(!sRegexIsMatching(r4, str("baar")));
-  assert_true(sRegexIsMatching(r4, str("xyz")));
-  assert_true(!sRegexIsMatching(r4, str("  ")));
-  assert_true(!sRegexIsMatching(r6, str("  ")));
-  assert_true(sRegexIsMatching(r6, str(" x")));
-  assert_true(sRegexIsMatching(r6, str(" \\x")));
-  assert_true(!sRegexIsMatching(r9, str("this is test")));
-  assert_true(sRegexIsMatching(r9, str("this is a test")));
+  assert_true(sRegexIsMatching(r1, wrap("foo")));
+  assert_true(!sRegexIsMatching(r1, wrap("fooo")));
+  assert_true(!sRegexIsMatching(r1, wrap("bar")));
+  assert_true(sRegexIsMatching(r2, wrap("foo")));
+  assert_true(sRegexIsMatching(r2, wrap("bar")));
+  assert_true(sRegexIsMatching(r1, wrap("foo")));
+  assert_true(!sRegexIsMatching(r1, wrap("fooo")));
+  assert_true(!sRegexIsMatching(r1, wrap("bar")));
+  assert_true(sRegexIsMatching(r2, wrap("foo")));
+  assert_true(sRegexIsMatching(r2, wrap("bar")));
+  assert_true(sRegexIsMatching(r4, wrap("bar")));
+  assert_true(!sRegexIsMatching(r4, wrap("baar")));
+  assert_true(sRegexIsMatching(r4, wrap("xyz")));
+  assert_true(!sRegexIsMatching(r4, wrap("  ")));
+  assert_true(!sRegexIsMatching(r6, wrap("  ")));
+  assert_true(sRegexIsMatching(r6, wrap(" x")));
+  assert_true(sRegexIsMatching(r6, wrap(" \\x")));
+  assert_true(!sRegexIsMatching(r9, wrap("this is test")));
+  assert_true(sRegexIsMatching(r9, wrap("this is a test")));
   testGroupEnd();
 
   testGroupStart("regex: reject invalid regular expressions");
   char error_buffer[128];
 
-  assert_error_any(sRegexCompile(r, str("^(foo|bar"), str("example.txt"), 197));
+  assert_error_any(sRegexCompile(r, wrap("^(foo|bar"), wrap("example.txt"), 197));
   getLastErrorMessage(error_buffer, sizeof(error_buffer));
   assert_true(strstr(error_buffer, "example.txt: line 197: ") == error_buffer);
 
-  assert_error_any(sRegexCompile(r, str("*test*"), str("this/is/a/file.c"), 4));
+  assert_error_any(sRegexCompile(r, wrap("*test*"), wrap("this/is/a/file.c"), 4));
   getLastErrorMessage(error_buffer, sizeof(error_buffer));
   assert_true(strstr(error_buffer, "this/is/a/file.c: line 4: ") == error_buffer);
   testGroupEnd();
@@ -671,8 +671,8 @@ int main(void)
 
   assert_error_errno(sRemoveRecursively(wrap("")), "failed to access \"\"", ENOENT);
 
-  sRemoveRecursively(str("tmp"));
-  sMkdir(str("tmp")); /* Asserts that the previous line worked. */
+  sRemoveRecursively(wrap("tmp"));
+  sMkdir(wrap("tmp")); /* Asserts that the previous line worked. */
   testGroupEnd();
 
   testRemoveRecursivelyIf();
