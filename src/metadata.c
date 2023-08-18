@@ -484,6 +484,7 @@ static void writePathList(const PathNode *node_list, RepoWriter *writer)
 Metadata *metadataNew(CR_Region *r)
 {
   Metadata *metadata = CR_RegionAlloc(r, sizeof *metadata);
+  metadata->r = r;
 
   metadata->current_backup.id = 0;
   metadata->current_backup.completion_time = 0;
@@ -495,7 +496,7 @@ Metadata *metadataNew(CR_Region *r)
   metadata->config_history = NULL;
 
   metadata->total_path_count = 0;
-  metadata->path_table = strTableNew(r);
+  metadata->path_table = strTableNew(metadata->r);
   metadata->paths = NULL;
 
   return metadata;
@@ -509,6 +510,7 @@ Metadata *metadataLoad(CR_Region *r, StringView path)
 
   /* Allocate and initialize metadata. */
   Metadata *metadata = CR_RegionAlloc(r, sizeof *metadata);
+  metadata->r = r;
 
   metadata->current_backup.id = 0;
   metadata->current_backup.completion_time = 0;
@@ -527,7 +529,7 @@ Metadata *metadataLoad(CR_Region *r, StringView path)
   else
   {
     metadata->backup_history =
-      CR_RegionAlloc(r,
+      CR_RegionAlloc(metadata->r,
                      sSizeMul(sizeof *metadata->backup_history,
                               metadata->backup_history_length));
   }
@@ -542,12 +544,12 @@ Metadata *metadataLoad(CR_Region *r, StringView path)
     metadata->backup_history[id].ref_count = 0;
   }
 
-  Allocator *region_wrapper = allocatorWrapRegion(r);
+  Allocator *region_wrapper = allocatorWrapRegion(metadata->r);
   metadata->config_history = readFullPathHistory(
     region_wrapper, content, &reader_position, path, metadata);
 
   metadata->total_path_count = readSize(content, &reader_position, path);
-  metadata->path_table = strTableNew(r);
+  metadata->path_table = strTableNew(metadata->r);
 
   metadata->paths = readPathSubnodes(
     region_wrapper, content, &reader_position, path, NULL, metadata);

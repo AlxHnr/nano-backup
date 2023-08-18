@@ -174,6 +174,9 @@ struct PathNode
 /** Represents the metadata of a repository. */
 typedef struct
 {
+  /** Owns this metadata object. */
+  CR_Region *r;
+
   /** The current backup. Its id will always be 0 and its timestamp will
     contain the time when the backup has finished. This variable is shared
     across all newly created backup states. */
