@@ -44,6 +44,7 @@ extern struct stat sStat(StringView path);
 extern struct stat sLStat(StringView path);
 extern void sMkdir(StringView path);
 extern void sSymlink(StringView target, StringView path);
+extern StringView sSymlinkReadTarget(StringView path, Allocator *a);
 extern void sRename(StringView oldpath, StringView newpath);
 extern void sChmod(StringView path, mode_t mode);
 extern void sChown(StringView path, uid_t user, gid_t group);

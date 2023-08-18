@@ -445,6 +445,42 @@ void sSymlink(StringView target, StringView path)
   }
 }
 
+StringView sSymlinkReadTarget(StringView path, Allocator *a)
+{
+  const struct stat stats = sLStat(path);
+
+  const uint64_t buffer_length = sUint64Add(stats.st_size, 1);
+  if(buffer_length > SIZE_MAX)
+  {
+    die("symlink does not fit in memory: \"" PRI_STR "\"", STR_FMT(path));
+  }
+  else if(buffer_length > SSIZE_MAX)
+  {
+    /* In this case the behaviour of readlink() is implementation
+       dependent and not portable. */
+    die("symlink is too large: \"" PRI_STR "\"", STR_FMT(path));
+  }
+
+  char *buffer = allocate(a, buffer_length);
+
+  /* Although st_size bytes are enough to store the symlinks target path,
+     the full buffer is used. This allows to detect whether the symlink
+     has increased in size while reading. */
+  const ssize_t read_bytes =
+    readlink(nullTerminate(path), buffer, buffer_length);
+  if(read_bytes == -1)
+  {
+    dieErrno("failed to read symlink: \"" PRI_STR "\"", STR_FMT(path));
+  }
+  else if(read_bytes != stats.st_size)
+  {
+    die("symlink changed while reading: \"" PRI_STR "\"", STR_FMT(path));
+  }
+  buffer[read_bytes] = '\0';
+
+  return str(buffer);
+}
+
 /** Safe wrapper around rename(). */
 void sRename(StringView oldpath, StringView newpath)
 {

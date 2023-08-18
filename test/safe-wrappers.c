@@ -90,6 +90,26 @@ static void checkReadSimpleTxt(FILE *stream)
   checkReadLine(stream, "/home/user/.config");
 }
 
+static void testSymlinkReading(void)
+{
+  CR_Region *r = CR_RegionNew();
+  Allocator *a = allocatorWrapRegion(r);
+
+  testGroupStart("sSymlinkReadTarget(): error handling");
+  assert_error_errno(sSymlinkReadTarget(wrap("non-existing-file.txt"), a),
+                     "failed to access \"non-existing-file.txt\"", ENOENT);
+  assert_error(sSymlinkReadTarget(wrap("example.txt"), a), "failed to read symlink: \"example.txt\"");
+  assert_error(sSymlinkReadTarget(wrap("test directory"), a), "failed to read symlink: \"test directory\"");
+  testGroupEnd();
+
+  testGroupStart("sSymlinkReadTarget(): reading symlink");
+  assert_true(strIsEqual(sSymlinkReadTarget(wrap("symlink.txt"), a), wrap("example.txt")));
+  assert_true(strIsEqual(sSymlinkReadTarget(wrap("test directory/empty-directory"), a), wrap(".empty")));
+  testGroupEnd();
+
+  CR_RegionRelease(r);
+}
+
 static bool alwaysReturnFalse(StringView path, const struct stat *stats, void *user_data)
 {
   (void)path;
@@ -520,6 +540,8 @@ int main(void)
   assert_error_errno(sSymlink(wrap("backup"), wrap("tmp/non-existing/bar")),
                      "failed to create symlink: \"tmp/non-existing/bar\"", ENOENT);
   testGroupEnd();
+
+  testSymlinkReading();
 
   testGroupStart("sRename()");
   assert_true(!sPathExists(wrap("tmp/file-1")));
