@@ -14,9 +14,9 @@
 #include "search-tree.h"
 #include "str.h"
 
-static void ensureUserConsent(const char *question)
+static void ensureUserConsent(const char *question,
+                              Allocator *reusable_buffer)
 {
-  char *line = NULL;
   while(true)
   {
     printf("%s (y/n) ", question);
@@ -29,18 +29,15 @@ static void ensureUserConsent(const char *question)
       dieErrno("failed to flush stdout");
     }
 
-    free(line);
-    line = sReadLine(stdin);
-
-    if(line == NULL || strcmp(line, "n") == 0 || strcmp(line, "no") == 0)
+    StringView line = sReadLine(stdin, reusable_buffer);
+    if(strIsEmpty(line) || strIsEqual(line, str("n")) ||
+       strIsEqual(line, str("no")))
     {
-      free(line);
       exit(EXIT_FAILURE);
     }
-    else if(strcmp(line, "y") == 0 || strcmp(line, "yes") == 0)
+    if(strIsEqual(line, str("y")) || strIsEqual(line, str("yes")))
     {
-      free(line);
-      return;
+      break;
     }
   }
 }
@@ -165,7 +162,7 @@ static void backup(CR_Region *r, StringView repo_arg)
       printf("\n\n");
     }
 
-    ensureUserConsent("proceed?");
+    ensureUserConsent("proceed?", allocatorWrapOneSingleGrowableBuffer(r));
     finishBackup(metadata, repo_arg, tmp_file_path);
     metadataWrite(metadata, repo_arg, tmp_file_path, metadata_path);
 
@@ -216,7 +213,7 @@ static void restore(CR_Region *r, StringView repo_arg, const size_t id,
   const ChangeSummary changes = printMetadataChanges(metadata, NULL);
   if(containsChanges(&changes) && printf("\n") == 1)
   {
-    ensureUserConsent("restore?");
+    ensureUserConsent("restore?", allocatorWrapOneSingleGrowableBuffer(r));
     finishRestore(metadata, id, repo_arg);
   }
 }

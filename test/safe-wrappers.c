@@ -78,28 +78,32 @@ static bool checkBytesLeft(FileStream *stream)
   return bytes_left;
 }
 
-static void checkReadLine(FILE *stream, const char *expected_line)
+static void checkReadLine(FILE *stream, const char *expected_line, Allocator *a)
 {
-  char *line = sReadLine(stream);
-  assert_true(strcmp(line, expected_line) == 0);
-  free(line);
+  StringView line = sReadLine(stream, a);
+  assert_true(strIsEqual(line, wrap(expected_line)));
 }
 
 /** Tests sReadLine() by reading lines from "valid-config-files/simple.txt"
   using the given file stream. */
 static void checkReadSimpleTxt(FILE *stream)
 {
+  CR_Region *r = CR_RegionNew();
+  Allocator *a = allocatorWrapRegion(r);
+
   assert_true(stream != NULL);
 
-  checkReadLine(stream, "[copy]");
-  checkReadLine(stream, "/home/user/Pictures");
-  checkReadLine(stream, "");
-  checkReadLine(stream, "[mirror]");
-  checkReadLine(stream, "/home/foo");
-  checkReadLine(stream, "");
-  checkReadLine(stream, "[track]");
-  checkReadLine(stream, "/etc");
-  checkReadLine(stream, "/home/user/.config");
+  checkReadLine(stream, "[copy]", a);
+  checkReadLine(stream, "/home/user/Pictures", a);
+  checkReadLine(stream, "", a);
+  checkReadLine(stream, "[mirror]", a);
+  checkReadLine(stream, "/home/foo", a);
+  checkReadLine(stream, "", a);
+  checkReadLine(stream, "[track]", a);
+  checkReadLine(stream, "/etc", a);
+  checkReadLine(stream, "/home/user/.config", a);
+
+  CR_RegionRelease(r);
 }
 
 static void testSymlinkReading(void)
@@ -320,18 +324,6 @@ int main(void)
   void *ptr = sMalloc(2048);
   assert_true(ptr != NULL);
   assert_error(sMalloc(0), "unable to allocate 0 bytes");
-  testGroupEnd();
-
-  testGroupStart("sRealloc()");
-  ptr = sRealloc(ptr, 64);
-  assert_true(ptr != NULL);
-
-  void *ptr_backup = ptr;
-  assert_error((ptr = sRealloc(ptr, 0)), "unable to reallocate 0 bytes");
-
-  /* Assert that ptr does not change if sRealloc() fails. */
-  assert_true(ptr == ptr_backup);
-  free(ptr);
   testGroupEnd();
 
   testGroupStart("sAtexit()");
@@ -722,10 +714,10 @@ int main(void)
   {
     r = CR_RegionNew();
 
-    errno = 22;
+    errno = EROFS; /* Test that errno doesn't get modified. */
     StringView cwd = sGetCurrentDir(allocatorWrapRegion(r));
     assert_true(!strIsEmpty(cwd));
-    assert_true(errno == 22);
+    assert_true(errno == EROFS);
 
     char *cwd_copy = CR_RegionAlloc(r, cwd.length + 1);
     assert_true(getcwd(cwd_copy, cwd.length + 1) == cwd_copy);
@@ -736,23 +728,32 @@ int main(void)
   testGroupEnd();
 
   testGroupStart("sReadLine()");
-  FILE *in_stream = fopen("valid-config-files/simple.txt", "rb");
-  checkReadSimpleTxt(in_stream);
-  assert_true(feof(in_stream) == 0);
-  assert_true(sReadLine(in_stream) == NULL);
-  assert_true(feof(in_stream));
-  assert_true(sReadLine(in_stream) == NULL);
-  assert_true(sReadLine(in_stream) == NULL);
-  assert_true(fclose(in_stream) == 0);
+  {
+    r = CR_RegionNew();
+    Allocator *a = allocatorWrapRegion(r);
+    errno = EROFS; /* Test that errno doesn't get modified. */
 
-  in_stream = fopen("valid-config-files/simple-noeol.txt", "rb");
-  checkReadSimpleTxt(in_stream);
-  assert_true(feof(in_stream));
-  assert_true(sReadLine(in_stream) == NULL);
-  assert_true(feof(in_stream));
-  assert_true(sReadLine(in_stream) == NULL);
-  assert_true(sReadLine(in_stream) == NULL);
-  assert_true(fclose(in_stream) == 0);
+    FILE *in_stream = fopen("valid-config-files/simple.txt", "rb");
+    checkReadSimpleTxt(in_stream);
+    assert_true(feof(in_stream) == 0);
+    assert_true(strIsEmpty(sReadLine(in_stream, a)));
+    assert_true(feof(in_stream));
+    assert_true(strIsEmpty(sReadLine(in_stream, a)));
+    assert_true(strIsEmpty(sReadLine(in_stream, a)));
+    assert_true(fclose(in_stream) == 0);
+
+    in_stream = fopen("valid-config-files/simple-noeol.txt", "rb");
+    checkReadSimpleTxt(in_stream);
+    assert_true(feof(in_stream));
+    assert_true(strIsEmpty(sReadLine(in_stream, a)));
+    assert_true(feof(in_stream));
+    assert_true(strIsEmpty(sReadLine(in_stream, a)));
+    assert_true(strIsEmpty(sReadLine(in_stream, a)));
+    assert_true(fclose(in_stream) == 0);
+
+    assert_true(errno == EROFS);
+    CR_RegionRelease(r);
+  }
   testGroupEnd();
 
   testGroupStart("sIsTTY()");

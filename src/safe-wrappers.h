@@ -62,7 +62,7 @@ extern void sRemoveRecursivelyIf(StringView path,
                                  void *user_data);
 
 extern StringView sGetCurrentDir(Allocator *a);
-extern char *sReadLine(FILE *stream);
+extern StringView sReadLine(FILE *stream, Allocator *a);
 extern bool sIsTTY(FILE *stream);
 extern size_t sStringToSize(StringView string);
 extern time_t sTime(void);

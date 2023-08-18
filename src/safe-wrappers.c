@@ -641,62 +641,39 @@ StringView sGetCurrentDir(Allocator *a)
   }
 }
 
-/** Reads a line from the given stream and terminates the program on
-  failure.
-
-  @param stream The stream to read from.
-
-  @return A new string that must be freed by the caller using free().
-  Returns NULL if the given stream has reached EOF.
-*/
-char *sReadLine(FILE *stream)
+/** @return Will be empty if the given stream has reached EOF. */
+StringView sReadLine(FILE *stream, Allocator *a)
 {
-  size_t capacity = 16;
-  size_t used = 0;
-  char *buffer = sMalloc(capacity);
-
   const int old_errno = errno;
-  errno = 0;
 
-  bool reached_end = false;
-  do
+  size_t capacity = 4; /* Small value to test growth. */
+  char *buffer = allocate(getTemporaryBuffer(false), capacity);
+  size_t used = 0;
+
+  while(true)
   {
+    errno = 0;
+    const int character = fgetc(stream);
+    if(character == '\n' || character == '\r' || character == '\0' ||
+       (character == EOF && errno == 0))
+    {
+      errno = old_errno;
+      return strCopy(strUnterminated(buffer, used), a);
+    }
+    if(character == EOF && errno != 0)
+    {
+      dieErrno("failed to read line");
+    }
+
+    buffer[used] = (char)character;
+    used++;
+
     if(used == capacity)
     {
       capacity = sSizeMul(capacity, 2);
-      buffer = sRealloc(buffer, capacity);
+      buffer = allocate(getTemporaryBuffer(false), capacity);
     }
-
-    const int character = fgetc(stream);
-    if(character == '\n' || character == '\r' || character == '\0')
-    {
-      reached_end = true;
-    }
-    else if(character == EOF)
-    {
-      if(errno != 0)
-      {
-        free(buffer);
-        dieErrno("failed to read line");
-      }
-      else if(used == 0)
-      {
-        free(buffer);
-        buffer = NULL;
-      }
-
-      reached_end = true;
-    }
-    else
-    {
-      buffer[used] = (char)character;
-      used++;
-    }
-  } while(!reached_end);
-  errno = old_errno;
-
-  if(buffer) buffer[used] = '\0';
-  return buffer;
+  }
 }
 
 /** Check if the given file stream belongs to a terminal. */
