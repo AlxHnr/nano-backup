@@ -6,9 +6,6 @@
 #include "metadata.h"
 #include "str.h"
 
-extern void readSymlink(StringView path, struct stat stats,
-                        char **buffer_ptr);
-
 typedef struct
 {
   Allocator *a;

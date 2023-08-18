@@ -23,7 +23,7 @@ static unsigned char *io_buffer = NULL;
   the type SRT_regular, SRT_symlink or SRT_directory. Otherwise it will
   result in undefined behaviour.
 */
-static void setPathHistoryState(PathState *state,
+static void setPathHistoryState(Allocator *a, PathState *state,
                                 const SearchResult result)
 {
   state->uid = result.stats.st_uid;
@@ -38,10 +38,15 @@ static void setPathHistoryState(PathState *state,
   }
   else if(result.type == SRT_symlink)
   {
+    StringView target = sSymlinkReadTarget(result.path, a);
+    if((off_t)target.length != result.stats.st_size)
+    {
+      die("symlink changed while reading: \"" PRI_STR "\"",
+          STR_FMT(result.path));
+    }
+
     state->type = PST_symlink;
-    static char *buffer = NULL;
-    readSymlink(result.path, result.stats, &buffer);
-    strSet(&state->metadata.symlink_target, strLegacyCopy(str(buffer)));
+    strSet(&state->metadata.symlink_target, target);
   }
   else if(result.type == SRT_directory)
   {
@@ -61,7 +66,7 @@ static void setPathHistoryState(PathState *state,
 
   @return A new PathHistory point that should not be freed by the caller.
 */
-static PathHistory *buildPathHistoryPoint(Metadata *metadata,
+static PathHistory *buildPathHistoryPoint(Allocator *a, Metadata *metadata,
                                           const SearchResult result)
 {
   PathHistory *point = CR_RegionAlloc(metadata->r, sizeof *point);
@@ -69,7 +74,7 @@ static PathHistory *buildPathHistoryPoint(Metadata *metadata,
   point->backup = &metadata->current_backup;
   point->backup->ref_count = sSizeAdd(point->backup->ref_count, 1);
 
-  setPathHistoryState(&point->state, result);
+  setPathHistoryState(a, &point->state, result);
 
   point->next = NULL;
 
@@ -373,7 +378,7 @@ static void handleNodeChanges(AllocatorPair *allocator_pair,
   }
   else if(result.policy != BPOL_none)
   {
-    setPathHistoryState(state, result);
+    setPathHistoryState(allocator_pair->a, state, result);
   }
 }
 
@@ -403,7 +408,8 @@ static void handleFoundNode(AllocatorPair *allocator_pair,
   {
     backupHintSet(node->hint, BH_added);
 
-    PathHistory *point = buildPathHistoryPoint(metadata, result);
+    PathHistory *point =
+      buildPathHistoryPoint(allocator_pair->a, metadata, result);
 
     point->next = node->history;
     node->history = point;
@@ -504,7 +510,8 @@ static SearchResultType initiateMetadataRecursively(
 
     node->hint = BH_added;
     node->policy = result.policy;
-    node->history = buildPathHistoryPoint(metadata, result);
+    node->history =
+      buildPathHistoryPoint(allocator_pair->a, metadata, result);
     node->subnodes = NULL;
 
     /* Prepend the new node to the current node list. */

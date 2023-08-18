@@ -53,50 +53,6 @@ static void checkFileContentChanges(PathNode *node, PathState *state,
   }
 }
 
-/** Reads the content of a symlink into the given Buffer.
-
-  @param path The path to the symlink.
-  @param stats The stats of the symlink.
-  @param buffer_ptr Buffer for storing the string. This buffer must have
-  been created by CR_RegionAllocGrowable() or must point to NULL otherwise.
-  If it points to NULL, a new buffer will be allocated by
-  CR_EnsureCapacity(), to which the given pointer will be assigned.
-*/
-void readSymlink(StringView path, const struct stat stats,
-                 char **buffer_ptr)
-{
-  const uint64_t buffer_length = sUint64Add(stats.st_size, 1);
-  if(buffer_length > SIZE_MAX)
-  {
-    die("symlink does not fit in memory: \"" PRI_STR "\"", STR_FMT(path));
-  }
-  else if(buffer_length > SSIZE_MAX)
-  {
-    /* In this case the behaviour of readlink() is implementation
-       dependent and not portable. */
-    die("symlink is too large: \"" PRI_STR "\"", STR_FMT(path));
-  }
-
-  *buffer_ptr = CR_EnsureCapacity(*buffer_ptr, buffer_length);
-
-  /* Although st_size bytes are enough to store the symlinks target path,
-     the full buffer is used. This allows to detect whether the symlink
-     has increased in size since its last lstat() or not. */
-  const ssize_t read_bytes =
-    readlink(path.content, *buffer_ptr, buffer_length);
-
-  if(read_bytes == -1)
-  {
-    dieErrno("failed to read symlink: \"" PRI_STR "\"", STR_FMT(path));
-  }
-  else if(read_bytes != stats.st_size)
-  {
-    die("symlink changed while reading: \"" PRI_STR "\"", STR_FMT(path));
-  }
-
-  (*buffer_ptr)[stats.st_size] = '\0';
-}
-
 /** Compares the node against the stats in the given results and updates
   both its backup hint and the specified path state.
 
@@ -144,6 +100,11 @@ void applyNodeChanges(AllocatorPair *allocator_pair, PathNode *node,
   {
     StringView target =
       sSymlinkReadTarget(node->path, allocator_pair->reusable_buffer);
+    if((off_t)target.length != stats.st_size)
+    {
+      die("symlink changed while reading: \"" PRI_STR "\"",
+          STR_FMT(node->path));
+    }
 
     if(!strIsEqual(state->metadata.symlink_target, target))
     {
