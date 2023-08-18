@@ -19,6 +19,11 @@ static void *testAllocator(Allocator *a)
 
 int main(void)
 {
+  testGroupStart("returned fixed static allocators");
+  assert_true(allocatorWrapMalloc() == allocatorWrapMalloc());
+  assert_true(allocatorWrapAlwaysFailing() == allocatorWrapAlwaysFailing());
+  testGroupEnd();
+
   testGroupStart("allocate(): allocation failure");
   {
     Allocator *a = allocatorWrapAlwaysFailing();
