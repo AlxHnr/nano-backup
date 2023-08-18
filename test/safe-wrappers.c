@@ -212,7 +212,7 @@ static void testRemoveRecursivelyIf(void)
   testGroupEnd();
 }
 
-void testRegexWrapper(void)
+static void testRegexWrapper(void)
 {
   CR_Region *r = CR_RegionNew();
 
