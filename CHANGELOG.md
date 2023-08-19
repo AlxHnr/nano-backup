@@ -7,7 +7,7 @@
 
 ### Changed
 
-* Lock repository during backup
+* Lock backup repository while in use
 * Major internal codebase cleanup and modernization
 
 ## 0.5.1 - 2023-07-30
