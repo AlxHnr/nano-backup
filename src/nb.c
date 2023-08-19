@@ -127,7 +127,7 @@ static void backup(CR_Region *r, StringView repo_arg)
     die("repository has no config file: \"" PRI_STR "\"",
         STR_FMT(repo_arg));
   }
-  repoLock(r, repo_path);
+  repoLock(r, repo_path, RLH_readwrite);
   SearchNode *root_node = searchTreeLoad(r, config_path);
 
   Metadata *metadata = sPathExists(metadata_path)
@@ -170,7 +170,8 @@ static void backup(CR_Region *r, StringView repo_arg)
   }
 }
 
-static Metadata *metadataLoadFromRepo(CR_Region *r, StringView repo_arg)
+static Metadata *metadataLoadFromRepo(CR_Region *r, StringView repo_arg,
+                                      const RepoLockHint lock_hint)
 {
   StringView repo_path = strStripTrailingSlashes(repo_arg);
   StringView metadata_path =
@@ -181,7 +182,7 @@ static Metadata *metadataLoadFromRepo(CR_Region *r, StringView repo_arg)
     die("repository has no metadata: \"" PRI_STR "\"", STR_FMT(repo_arg));
   }
 
-  repoLock(r, repo_path);
+  repoLock(r, repo_path, lock_hint);
   return metadataLoad(r, metadata_path);
 }
 
@@ -205,7 +206,7 @@ static StringView buildFullPath(Allocator *a, StringView path)
 static void restore(CR_Region *r, StringView repo_arg, const size_t id,
                     StringView path)
 {
-  Metadata *metadata = metadataLoadFromRepo(r, repo_arg);
+  Metadata *metadata = metadataLoadFromRepo(r, repo_arg, RLH_readonly);
   StringView full_path =
     strStripTrailingSlashes(buildFullPath(allocatorWrapRegion(r), path));
   initiateRestore(metadata, id, full_path);
@@ -248,7 +249,8 @@ int main(const int arg_count, const char **arg_list)
       die("too many arguments for gc command");
     }
 
-    runGC(metadataLoadFromRepo(r, path_to_repo), path_to_repo, false);
+    runGC(metadataLoadFromRepo(r, path_to_repo, RLH_readwrite),
+          path_to_repo, false);
   }
   else if(strcmp(arg_list[2], "integrity") == 0)
   {
@@ -257,7 +259,8 @@ int main(const int arg_count, const char **arg_list)
       die("too many arguments for integrity command");
     }
 
-    runIntegrityCheck(metadataLoadFromRepo(r, path_to_repo), path_to_repo);
+    runIntegrityCheck(metadataLoadFromRepo(r, path_to_repo, RLH_readonly),
+                      path_to_repo);
   }
   else if(sRegexIsMatching(
             sRegexCompile(r, str("^[0-9]+$"), str(__FILE__), __LINE__),

@@ -57,6 +57,16 @@ extern void repoWriterWrite(const void *data, size_t size,
                             RepoWriter *writer);
 extern void repoWriterClose(RepoWriter *writer_to_close);
 
-extern void repoLock(CR_Region *r, StringView repo_path);
+/** Only affects lockfile creation. Does not prevent writing to
+  repositories. */
+typedef enum
+{
+  RLH_readwrite,
+
+  /** Ignore lockfile creation errors on read-only filesystems. */
+  RLH_readonly,
+} RepoLockHint;
+extern void repoLock(CR_Region *r, StringView repo_path,
+                     RepoLockHint lock_hint);
 
 #endif

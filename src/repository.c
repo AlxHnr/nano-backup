@@ -421,8 +421,10 @@ static void cleanupLockfile(void *lockfile_info_ptr)
 
   @param r Region to which the lifetime of the created lock will be bound.
 */
-void repoLock(CR_Region *r, StringView repo_path)
+void repoLock(CR_Region *r, StringView repo_path,
+              const RepoLockHint lock_hint)
 {
+  const int old_errno = errno;
   Allocator *a = allocatorWrapRegion(r);
 
   LockfileInfo *lockfile_info = CR_RegionAlloc(r, sizeof *lockfile_info);
@@ -434,6 +436,11 @@ void repoLock(CR_Region *r, StringView repo_path)
 
   if(lockfile_info->file_descriptor == -1)
   {
+    if(errno == EROFS && lock_hint == RLH_readonly)
+    {
+      errno = old_errno;
+      return;
+    }
     dieErrno("failed to create lockfile: \"%s\"",
              lockfile_info->file_path);
   }

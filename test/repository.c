@@ -427,10 +427,10 @@ int main(void)
   {
     CR_Region *r = CR_RegionNew();
 
-    assert_error_errno(repoLock(r, str("tmp/non/existing/path")),
+    assert_error_errno(repoLock(r, str("tmp/non/existing/path"), RLH_readwrite),
                        "failed to create lockfile: \"tmp/non/existing/path/lockfile\"", ENOENT);
 
-    repoLock(r, str("tmp"));
+    repoLock(r, str("tmp"), RLH_readwrite);
     assert_true(sPathExists(str("tmp/lockfile")));
     CR_RegionRelease(r);
     assert_true(!sPathExists(str("tmp/lockfile")));
