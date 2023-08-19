@@ -324,9 +324,13 @@ static void testRegexWrapper(void)
 int main(void)
 {
   testGroupStart("sMalloc()");
-  void *ptr = sMalloc(2048);
-  assert_true(ptr != NULL);
-  assert_error(sMalloc(0), "unable to allocate 0 bytes");
+  {
+    void *ptr = sMalloc(2048);
+    assert_true(ptr != NULL);
+    free(ptr);
+
+    assert_error(sMalloc(0), "unable to allocate 0 bytes");
+  }
   testGroupEnd();
 
   testGroupStart("sAtexit()");
