@@ -64,10 +64,6 @@ static bool shouldBeRemoved(StringView path, const struct stat *stats,
 {
   GCContext *ctx = user_data;
 
-  if(strIsEqual(path, ctx->repo_path))
-  {
-    return false;
-  }
   StringView path_relative_to_repo =
     strUnterminated(&path.content[ctx->repo_path.length + 1],
                     path.length - ctx->repo_path.length - 1);
