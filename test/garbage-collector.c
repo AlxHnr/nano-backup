@@ -6,6 +6,7 @@
 
 static void populateRepoWithDummyFiles(void)
 {
+  sMkdir(str("tmp/repo"));
   sMkdir(str("tmp/repo/a"));
   sMkdir(str("tmp/repo/a/b"));
   sMkdir(str("tmp/repo/a/c"));
@@ -42,62 +43,81 @@ static void testCollectGarbage(const Metadata *metadata, const char *repo_path, 
   assert_true(stats.deleted_items_total_size == size);
 }
 
-int main(void)
+static void testWithEmptyMetadata(CR_Region *r)
 {
-  CR_Region *r = CR_RegionNew();
-
-  testGroupStart("symlink handling");
-  sMkdir(str("tmp/repo"));
+  testGroupStart("delete unreferenced files");
   sFclose(sFopenWrite(str("tmp/file.txt")));
-  const Metadata *empty_metadata = metadataNew(r);
 
-  /* Repository is simple directory. */
   populateRepoWithDummyFiles();
-  testCollectGarbage(empty_metadata, "tmp/repo", 25, 0);
+  testCollectGarbage(metadataNew(r), "tmp/repo", 25, 0);
   assert_true(countItemsInDir("tmp/repo") == 0);
   assert_true(sPathExists(str("tmp/file.txt")));
+  sRemoveRecursively(str("tmp/repo"));
+  testGroupEnd();
+}
 
-  /* Repository is symlink to directory. */
+static void testSymlinkToRepository(CR_Region *r)
+{
+  testGroupStart("repository is symlink to directory");
   populateRepoWithDummyFiles();
   sSymlink(str("repo"), str("tmp/link-to-repo"));
-  testCollectGarbage(empty_metadata, "tmp/link-to-repo", 25, 0);
+  testCollectGarbage(metadataNew(r), "tmp/link-to-repo", 25, 0);
   assert_true(countItemsInDir("tmp/repo") == 0);
   assert_true(sPathExists(str("tmp/link-to-repo")));
   assert_true(sPathExists(str("tmp/file.txt")));
+  sRemoveRecursively(str("tmp/repo"));
+  testGroupEnd();
+}
+
+static void testInvalidRepositoryPath(CR_Region *r)
+{
+  testGroupStart("invalid symlink to repository");
+  Metadata *metadata = metadataNew(r);
+  populateRepoWithDummyFiles();
 
   /* Repository is symlink to file. */
   sRemove(str("tmp/link-to-repo"));
   sSymlink(str("file.txt"), str("tmp/link-to-repo"));
-  populateRepoWithDummyFiles();
-  assert_error_errno(collectGarbage(empty_metadata, str("tmp/link-to-repo")),
+  assert_error_errno(collectGarbage(metadata, str("tmp/link-to-repo")),
                      "failed to open directory \"tmp/link-to-repo\"", ENOTDIR);
-  assert_true(countItemsInDir("tmp/repo") == 25);
-  assert_true(sPathExists(str("tmp/link-to-repo")));
-  assert_true(sPathExists(str("tmp/file.txt")));
 
   /* Repository is broken symlink. */
   sRemove(str("tmp/link-to-repo"));
   sSymlink(str("non-existing"), str("tmp/link-to-repo"));
-
-  assert_error_errno(collectGarbage(empty_metadata, str("tmp/link-to-repo")),
+  assert_error_errno(collectGarbage(metadata, str("tmp/link-to-repo")),
                      "failed to open directory \"tmp/link-to-repo\"", ENOENT);
 
   assert_true(countItemsInDir("tmp/repo") == 25);
   assert_true(sPathExists(str("tmp/link-to-repo")));
   assert_true(sPathExists(str("tmp/file.txt")));
+
   sRemoveRecursively(str("tmp/repo"));
   testGroupEnd();
+}
 
+static void testExcludeInternalFiles(CR_Region *r)
+{
   testGroupStart("excluding internal files from deletion");
   sMkdir(str("tmp/repo"));
   sFclose(sFopenWrite(str("tmp/repo/config")));
   sFclose(sFopenWrite(str("tmp/repo/metadata")));
   sFclose(sFopenWrite(str("tmp/repo/lockfile")));
-  testCollectGarbage(empty_metadata, "tmp/repo", 0, 0);
+  testCollectGarbage(metadataNew(r), "tmp/repo", 0, 0);
   assert_true(sPathExists(str("tmp/repo/config")));
   assert_true(sPathExists(str("tmp/repo/metadata")));
   assert_true(sPathExists(str("tmp/repo/lockfile")));
+  sRemoveRecursively(str("tmp/repo"));
   testGroupEnd();
+}
+
+int main(void)
+{
+  CR_Region *r = CR_RegionNew();
+
+  testWithEmptyMetadata(r);
+  testSymlinkToRepository(r);
+  testInvalidRepositoryPath(r);
+  testExcludeInternalFiles(r);
 
   CR_RegionRelease(r);
 }
