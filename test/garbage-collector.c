@@ -222,6 +222,26 @@ static void testWithComplexMetadata(CR_Region *r)
   testGroupEnd();
 }
 
+static void testGatheringTotalDeletedSize(CR_Region *r)
+{
+  testGroupStart("calculate total size of deleted files");
+  sMkdir(str("tmp/repo"));
+  sMkdir(str("tmp/repo/foo"));
+
+  FileStream *writer = sFopenWrite(str("tmp/repo/foo/bar.txt"));
+  sFwrite("Test Data", 9, writer);
+  sFclose(writer);
+
+  writer = sFopenWrite(str("tmp/repo/example.txt"));
+  sFwrite("More data to write", 18, writer);
+  sFclose(writer);
+
+  testCollectGarbage(metadataNew(r), "tmp/repo", 3, 27);
+
+  sRemoveRecursively(str("tmp/repo"));
+  testGroupEnd();
+}
+
 int main(void)
 {
   CR_Region *r = CR_RegionNew();
@@ -231,6 +251,7 @@ int main(void)
   testExcludeInternalFiles(r);
   testSymlinkToRepository(r);
   testInvalidRepositoryPath(r);
+  testGatheringTotalDeletedSize(r);
 
   CR_RegionRelease(r);
 }
