@@ -226,7 +226,9 @@ static void testRemoveRecursivelyIf(void)
   testGroupEnd();
 
   testGroupStart("sRemoveRecursivelyIf(): selective deletion");
+  assert_true(errno == 0);
   sRemoveRecursivelyIf(wrap("tmp"), deleteSpecificFiles, NULL);
+  assert_true(errno == 0);
   assert_true(checkPathExists("tmp/file"));
   assert_true(checkPathExists("tmp/test1"));
   assert_true(!checkPathExists("tmp/test1/foo"));
@@ -653,7 +655,9 @@ int main(void)
   sRemove(wrap("tmp/file-to-remove"));
   assert_true(!sPathExists(wrap("tmp/file-to-remove")));
 
+  assert_true(errno == 0);
   sRemove(wrap("tmp/dir-to-remove"));
+  assert_true(errno == 0);
   assert_true(!sPathExists(wrap("tmp/dir-to-remove")));
 
   assert_error_errno(sRemove(wrap("tmp/non-existing")), "failed to remove \"tmp/non-existing\"", ENOENT);
@@ -707,6 +711,7 @@ int main(void)
 
   sRemoveRecursively(wrap("tmp"));
   sMkdir(wrap("tmp")); /* Asserts that the previous line worked. */
+  errno = 0;
   testGroupEnd();
 
   testRemoveRecursivelyIf();

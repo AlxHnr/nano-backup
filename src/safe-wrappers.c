@@ -518,13 +518,14 @@ void sUtime(StringView path, const time_t time)
   }
 }
 
-/** Safe wrapper around remove(). */
 void sRemove(StringView path)
 {
+  const int old_errno = errno;
   if(remove(nullTerminate(path)) != 0)
   {
     dieErrno("failed to remove \"" PRI_STR "\"", STR_FMT(path));
   }
+  errno = old_errno;
 }
 
 bool alwaysReturnTrue(StringView path, const struct stat *stats,
