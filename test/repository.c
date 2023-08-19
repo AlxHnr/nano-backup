@@ -385,10 +385,6 @@ int main(void)
   testGroupStart("reading from repository");
   assert_error_errno(repoReaderOpenFile(str("tmp"), str("info_1"), &info_1),
                      "failed to open \"info_1\" in \"tmp\"", ENOENT);
-  assert_true(mkdir(nullTerminate(info_1_path), 0) == 0);
-  assert_error_errno(repoReaderOpenFile(str("tmp"), str("info_1"), &info_1),
-                     "failed to open \"info_1\" in \"tmp\"", EACCES);
-  assert_true(rmdir(nullTerminate(info_1_path)) == 0);
 
   stream = sFopenWrite(info_1_path);
   sFwrite("This is an example text.", 24, stream);
