@@ -29,9 +29,9 @@ static void ensureUserConsent(const char *question,
       dieErrno("failed to flush stdout");
     }
 
-    StringView line = sReadLine(stdin, reusable_buffer);
-    if(strIsEmpty(line) || strIsEqual(line, str("n")) ||
-       strIsEqual(line, str("no")))
+    StringView line = str("");
+    if(!sReadLine(stdin, reusable_buffer, &line) ||
+       strIsEqual(line, str("n")) || strIsEqual(line, str("no")))
     {
       exit(EXIT_FAILURE);
     }

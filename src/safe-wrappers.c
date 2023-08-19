@@ -614,34 +614,50 @@ StringView sGetCurrentDir(Allocator *a)
   }
 }
 
-/** @return Will be empty if the given stream has reached EOF. */
-StringView sReadLine(FILE *stream, Allocator *a)
+/** All non-EOF related errors will be handled by terminating the program
+  with an error message.
+
+  @param a Will be used to allocate the memory in `result_out`.
+  @param result_out Will contain the read line. Will be set to an empty
+  string if this function returns false.
+
+  @return True on success. False when called on an EOF stream.
+*/
+bool sReadLine(FILE *stream, Allocator *a, StringView *result_out)
 {
   const int old_errno = errno;
 
   size_t capacity = 4; /* Small value to test growth. */
   char *buffer = allocate(getTemporaryBuffer(false), capacity);
-  size_t used = 0;
+  size_t length_used = 0;
 
   while(true)
   {
     errno = 0;
     const int character = fgetc(stream);
-    if(character == '\n' || character == '\r' || character == '\0' ||
-       (character == EOF && errno == 0))
+    if(character == EOF)
     {
+      if(errno != 0) dieErrno("failed to read line");
+
+      if(length_used == 0)
+      {
+        strSet(result_out, str(""));
+        errno = old_errno;
+        return false;
+      }
+    }
+    if(character == EOF || character == '\n' || character == '\r' ||
+       character == '\0')
+    {
+      strSet(result_out, strCopy(strUnterminated(buffer, length_used), a));
       errno = old_errno;
-      return strCopy(strUnterminated(buffer, used), a);
-    }
-    if(character == EOF && errno != 0)
-    {
-      dieErrno("failed to read line");
+      return true;
     }
 
-    buffer[used] = (char)character;
-    used++;
+    buffer[length_used] = (char)character;
+    length_used++;
 
-    if(used == capacity)
+    if(length_used == capacity)
     {
       capacity = sSizeMul(capacity, 2);
       buffer = allocate(getTemporaryBuffer(false), capacity);

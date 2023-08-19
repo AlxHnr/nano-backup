@@ -80,7 +80,8 @@ static bool checkBytesLeft(FileStream *stream)
 
 static void checkReadLine(FILE *stream, const char *expected_line, Allocator *a)
 {
-  StringView line = sReadLine(stream, a);
+  StringView line = str("");
+  assert_true(sReadLine(stream, a, &line));
   assert_true(strIsEqual(line, wrap(expected_line)));
 }
 
@@ -732,25 +733,36 @@ int main(void)
     r = CR_RegionNew();
     Allocator *a = allocatorWrapRegion(r);
     errno = EROFS; /* Test that errno doesn't get modified. */
+    StringView line = str("");
 
     FILE *in_stream = fopen("valid-config-files/simple.txt", "rb");
     checkReadSimpleTxt(in_stream);
     assert_true(feof(in_stream) == 0);
-    assert_true(strIsEmpty(sReadLine(in_stream, a)));
+
+    assert_true(!sReadLine(in_stream, a, &line));
+    assert_true(strIsEmpty(line));
     assert_true(feof(in_stream));
-    assert_true(strIsEmpty(sReadLine(in_stream, a)));
-    assert_true(strIsEmpty(sReadLine(in_stream, a)));
+
+    assert_true(!sReadLine(in_stream, a, &line));
+    assert_true(strIsEmpty(line));
+    assert_true(!sReadLine(in_stream, a, &line));
+    assert_true(strIsEmpty(line));
     assert_true(fclose(in_stream) == 0);
 
     in_stream = fopen("valid-config-files/simple-noeol.txt", "rb");
     checkReadSimpleTxt(in_stream);
     assert_true(feof(in_stream));
-    assert_true(strIsEmpty(sReadLine(in_stream, a)));
-    assert_true(feof(in_stream));
-    assert_true(strIsEmpty(sReadLine(in_stream, a)));
-    assert_true(strIsEmpty(sReadLine(in_stream, a)));
-    assert_true(fclose(in_stream) == 0);
 
+    assert_true(!sReadLine(in_stream, a, &line));
+    assert_true(strIsEmpty(line));
+    assert_true(feof(in_stream));
+
+    assert_true(!sReadLine(in_stream, a, &line));
+    assert_true(strIsEmpty(line));
+    assert_true(!sReadLine(in_stream, a, &line));
+    assert_true(strIsEmpty(line));
+
+    assert_true(fclose(in_stream) == 0);
     assert_true(errno == EROFS);
     CR_RegionRelease(r);
   }
