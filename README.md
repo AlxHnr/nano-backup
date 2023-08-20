@@ -1,48 +1,48 @@
 [![pipeline](https://github.com/AlxHnr/nano-backup/actions/workflows/ci.yml/badge.svg)](https://github.com/AlxHnr/nano-backup/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/github/AlxHnr/nano-backup/coverage.svg?branch=master)](https://codecov.io/github/AlxHnr/nano-backup?branch=master)
 [![license](https://img.shields.io/badge/license-MIT-brightgreen.svg)](https://github.com/AlxHnr/nano-backup/blob/master/LICENSE)
-![screenshot](https://cdn.rawgit.com/AlxHnr/nano-backup/1729b21e/screenshot.svg)
+![screenshot](./screenshot.svg)
 
-* **Precise** - Displays a good, concise summary about _what_ has changed
-  on your system
-* **Full control** - Never sneaks in unapproved changes
-* **Atomic** - If it crashes, the backup will be like it was before
-* **Few dependencies** - Only needs a C Compiler and GNU Make
-* **Portable** - Conforms strictly to C99 and POSIX.1-2001
-* **Fast and snappy** - Reduces friction and is satisfying to use
+The first thing nano-backup shows you when you do a backup, is _what has
+changed_ since the last backup. This allows you to review all the files you
+have tinkered with before _committing them_ to your repository. The goal
+here is to enable a fast review, restore and commit cycle, giving you
+precise control about the state of your system.
 
-**Note**: Nano-backup does not try to replace existing backup tools and
-implements only a handful of backup strategies. It focuses on local backups
-and stores full snapshots of files. This makes it unsuitable for backing up
-large VM images.
+Nano-backup focuses only on local backups. It does not support cloud
+providers, encryption, compression or granular chunk/delta based
+deduplication. It only implements whole-file deduplication. Encryption can
+be achieved by backing up to a LUKS partition.
 
 ## Installation
 
-Clone this repository and run the following command inside the project
-directory:
+Nano-backup depends only on a C compiler and GNU Make.  Download and unpack
+the latest stable release and run the following command from inside the
+extracted directory:
 
 ```sh
-make && cp build/nb /usr/local/bin
+CFLAGS="-O2" LDFLAGS="-O2" make -j"$(nproc)"
+sudo cp ./build/nb /usr/local/bin/
 ```
 
 ## Usage
 
-To create a backup repository just create a new directory:
+A repository is a directory with a file named `config` inside it:
 
 ```sh
 mkdir repo/
+vi repo/config
 ```
 
-The repository can be configured via the file `config` inside it. Here is
-an example for backing up two directories:
+Here is an example config:
 
-```desktop
-[copy]
+```ini
+[mirror]
 /home/user/Videos
 /home/user/Pictures
 ```
 
-The first line sets the copy [policy](#policies). The other lines are
+The first line sets the mirror [policy](#policies). The other lines are
 absolute paths to files or directories which should be backed up. To do a
 backup, pass the repository to nano-backup:
 
@@ -54,35 +54,33 @@ To prevent files from being backed up, set the ignore policy. This allows
 specifying regular expressions, which will be matched against full,
 absolute filepaths. They must be valid POSIX extended regular expressions:
 
-```desktop
+```ini
 [ignore]
-\.(pyc|class)$
-^/home/user/.+~$
+\.pyc$
+^/home/user/.*/__pycache__$
 ```
 
 Regular expressions can also be used for matching files you want to backup.
 Just prefix a pattern with an additional slash:
 
-```desktop
-[copy]
+```ini
+[mirror]
 /home/user//\.(png|jpg)$
 /home//^(foo|bar)$/.bashrc
 ```
 
-**Note**: This expression will not match recursively and can be terminated
-by a slash.
+**Note**: These expressions will not match recursively and can be
+terminated by a slash.
 
 ### Restoring files
 
-To restore a file or directory, pass its full or relative path to
-nano-backup:
+Files can be restored like this:
 
 ```sh
 nb repo/ 0 file.txt
 ```
 
-The _0_ is the id of the latest backup. The backup before it would be _1_,
-etc.
+_0_ is the id of the latest backup. The backup before it would be _1_, etc.
 
 **Note**: This number will be ignored for copied/mirrored files, which will
 always be restored to their latest state.
@@ -90,9 +88,9 @@ always be restored to their latest state.
 ## Policies
 
 Policies specify how files should be backed up. They apply only to the last
-element of a path:
+element of a path, but will match all files inside it recursively:
 
-```desktop
+```ini
 [policy]
 /home/user/last-element
 ```
@@ -109,8 +107,6 @@ summarize   | Allows specifying regular expressions for directories which should
 
 ### How do I synchronize two repositories?
 
-Here is an example for the repositories _old/_ and _current/_:
-
 ```sh
 cp -rn current/* old/
 cp current/{config,metadata} old/
@@ -119,8 +115,7 @@ nb old/ gc
 
 ### Can I run a hook before/after each backup?
 
-No. Nano-backup tries to be as minimal as possible. The recommended way is
-to write a wrapper:
+No, write a wrapper script instead:
 
 ```sh
 #/bin/sh -e
@@ -132,19 +127,6 @@ nb "$HOME/backup"
 ... # Run stuff after the backup.
 ```
 
-### How do I tell it to do automatic backups once a day?
+### Can I tell it to do automatic backups once a day?
 
-You can't. This is the task of tools like cron.
-
-### Does it support encrypted backups?
-
-No. There are many filesystems solving this problem, some even support
-distributed cloud storage. Use them for housing your repository.
-
-### Does it deduplicate data chunks of variable length?
-
-No, it does only whole-file deduplication.
-
-### Does it compress the backed up files?
-
-No.
+No, this is the task of tools like cron.
