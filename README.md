@@ -16,12 +16,12 @@ be achieved by backing up to a LUKS partition.
 
 ## Installation
 
-Nano-backup depends only on a C compiler and GNU Make.  Download and unpack
-the latest stable release and run the following command from inside the
-extracted directory:
+Nano-backup depends only on a C compiler and a POSIX.1-2001 compliant
+operating system. Run the following command from inside the projects
+directory:
 
 ```sh
-CFLAGS="-O2" LDFLAGS="-O2" make -j"$(nproc)"
+./scripts/build-release.sh
 sudo cp ./build/nb /usr/local/bin/
 ```
 
