@@ -1,9 +1,31 @@
-Backups are atomic by design. A backup is either completed or stays at its
-current state. Even if the program crashes (e.g. segfault).
+# Introduction
 
-## Handling errors
+The codebase conforms strictly to C99 and POSIX.1-2001. All code and tests
+must be able to compile and run without depending on GNU-specific
+extensions or non-POSIX compliant command line tools. Exempt from this rule
+are tools used _only_ during development. Like GNU Make, clang-format, or
+compiler-specific pragmas within ifdef statements _for testing_. The goal
+is to allow users to compile the codebase during an emergency on a bare
+POSIX system without having to wrangle with dependencies.
 
-Errors are handled by calling `die()` or `dieErrno()`:
+The `./scripts/` directory contains helper scripts for replicating what the
+CI jobs do locally. To generate a compilation database for tools like
+clangd, run this script:
+
+```sh
+./scripts/generate-compile-commands-json.sh
+```
+
+Backups are atomic by design. A crash, like a segfault, will leave the
+backup as it was before. This simplifies a lot of things, like error
+handling.
+
+# Error handling
+
+Every non-recoverable error, or any other situation which prevents a backup
+from completing reliably, is handled by calling `die()` or `dieErrno()`.
+Those calls will cleanup all currently held resources and free all
+associated memory.
 
 ```c
 #include "error-handling.h"
@@ -12,16 +34,43 @@ if(some_function() == -1)
 {
   die("failed to call some function");
 }
+
+if(posix_function() == -1)
+{
+  /* This will print an explanation of the current errno value. */
+  dieErrno("failed to foobar");
+}
 ```
 
 ## Managing memory
 
 Memory is managed via
 [regions](https://en.wikipedia.org/wiki/Region-based_memory_management),
-which get freed automatically when the program terminates. This memory will
-also be released if the program terminates by calling `die()` or
-`dieErrno()`. See the examples in `third-party/CRegion/README.md` for more
-informations.
+which get freed automatically when the program exits or terminates with an
+error.
+
+```c
+#include "CRegion/region.h"
+
+CR_Region *r = CR_RegionNew();
+
+char *data = CR_RegionAlloc(r, 1024); /* Will call die() on failure. */
+
+CR_RegionRelease(r); /* If omitted, it will be released trough atexit() */
+```
+
+Callbacks can be attached to regions and will be called when the region
+gets released:
+
+```c
+void cleanup(void *data) { ... }
+
+Foo *foo = fooNew();
+
+CR_RegionAttach(r, cleanup, foo);
+```
+
+Generic wrappers around regions can be found in ./src/allocator.h.
 
 ## Handling strings
 
@@ -49,23 +98,22 @@ program:
 ```c
 #include "test.h"
 
-#include "safe-wrappers.h"
-
 int main(void)
 {
   testGroupStart("some asserts");
 
   assert_true(5 + 5 == 10);
 
+  /* Calls to die() can be tested like this: */
   assert_error(sMalloc(0), "unable to allocate 0 bytes");
 
   testGroupEnd();
 }
 ```
 
-This file must be stored in the test directory, e.g. `"test/foo.c"`. Now
-"foo" must be added to `"test/run-tests.sh"`. This has to be done manually
-to ensure that tests run in the correct order.
+The example test above must be stored in the test directory, e.g.
+`"test/foo.c"`. Now "foo" must be added to `"test/run-tests.sh"`. This has
+to be done manually to ensure that tests run in the correct order.
 
 ### Testing the final executable
 
