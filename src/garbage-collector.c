@@ -57,6 +57,9 @@ typedef struct
 
   /** Populated with informations during garbage collection. */
   GCStatistics statistics;
+
+  GCProgressCallback *progress_callback;
+  void *callback_user_data;
 } GCContext;
 
 static bool shouldBeRemoved(StringView path, const struct stat *stats,
@@ -69,6 +72,11 @@ static bool shouldBeRemoved(StringView path, const struct stat *stats,
                     path.length - ctx->repo_path.length - 1);
   if(strTableGet(ctx->paths_to_preserve, path_relative_to_repo) != NULL)
   {
+    if(ctx->progress_callback != NULL)
+    {
+      ctx->progress_callback(strTableCountMappings(ctx->paths_to_preserve),
+                             ctx->callback_user_data);
+    }
     return false;
   }
 
@@ -82,20 +90,32 @@ static bool shouldBeRemoved(StringView path, const struct stat *stats,
   return true;
 }
 
+GCStatistics collectGarbage(const Metadata *metadata, StringView repo_path)
+{
+  return collectGarbageProgress(metadata, repo_path, NULL, NULL);
+}
+
 /** Removes unreferenced files and directories from the given repository.
 
   @param metadata The metadata to search for referenced files.
   @param repo_path The path to the repository which should be cleaned up.
+  @param progress_callback Can be NULL.
+  @param progress_user_data Will be passed to `progress_callback`.
 
   @return Statistics about items removed from the repository.
 */
-GCStatistics collectGarbage(const Metadata *metadata, StringView repo_path)
+GCStatistics collectGarbageProgress(const Metadata *metadata,
+                                    StringView repo_path,
+                                    GCProgressCallback progress_callback,
+                                    void *callback_user_data)
 {
   CR_Region *r = CR_RegionNew();
 
   GCContext ctx = {
     .repo_path = repo_path,
     .paths_to_preserve = strTableNew(r),
+    .progress_callback = progress_callback,
+    .callback_user_data = callback_user_data,
   };
   strTableMap(ctx.paths_to_preserve, str("config"), (void *)0x1);
   strTableMap(ctx.paths_to_preserve, str("metadata"), (void *)0x1);

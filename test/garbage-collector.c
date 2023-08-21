@@ -242,6 +242,42 @@ static void testGatheringTotalDeletedSize(CR_Region *r)
   testGroupEnd();
 }
 
+static void assertNeverCalled(const size_t max_call_limit, void *user_data)
+{
+  (void)max_call_limit;
+  (void)user_data;
+  assert_true(false);
+}
+static void increment(const size_t max_call_limit, void *user_data)
+{
+  size_t *value = user_data;
+  (*value)++;
+  assert_true(max_call_limit == 5);
+}
+
+static void testProgressCallback(CR_Region *r)
+{
+  testGroupStart("call user-defined progress callback");
+  sMkdir(str("tmp/repo"));
+
+  collectGarbageProgress(metadataNew(r), str("tmp/repo"), assertNeverCalled, NULL);
+  sFclose(sFopenWrite(str("tmp/repo/foo.txt")));
+  collectGarbageProgress(metadataNew(r), str("tmp/repo"), assertNeverCalled, NULL);
+  assert_true(countItemsInDir("tmp/repo") == 0);
+
+  sFclose(sFopenWrite(str("tmp/repo/config")));
+  sFclose(sFopenWrite(str("tmp/repo/metadata")));
+  sMkdir(str("tmp/repo/7"));
+  sMkdir(str("tmp/repo/7/f1"));
+  sMkdir(str("tmp/repo/7/f1/1e53c1ddfc806aa108f531847debf26ac9f5ex90x0"));
+  size_t counter = 0;
+  collectGarbageProgress(genTestMetadata(r), str("tmp/repo"), increment, &counter);
+  assert_true(counter == 3);
+
+  sRemoveRecursively(str("tmp/repo"));
+  testGroupEnd();
+}
+
 int main(void)
 {
   CR_Region *r = CR_RegionNew();
@@ -252,6 +288,7 @@ int main(void)
   testSymlinkToRepository(r);
   testInvalidRepositoryPath(r);
   testGatheringTotalDeletedSize(r);
+  testProgressCallback(r);
 
   CR_RegionRelease(r);
 }
