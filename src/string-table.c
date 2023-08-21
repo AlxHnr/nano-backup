@@ -154,3 +154,9 @@ void *strTableGet(const StringTable *table, StringView key)
 
   return NULL;
 }
+
+/** @return Count of all associations inside the given table. */
+size_t strTableCountMappings(const StringTable *table)
+{
+  return table->associations;
+}

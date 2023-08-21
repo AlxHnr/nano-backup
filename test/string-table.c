@@ -97,4 +97,19 @@ int main(void)
     CR_RegionRelease(r);
   }
   testGroupEnd();
+
+  testGroupStart("strTableCountMappings()");
+  {
+    CR_Region *r = CR_RegionNew();
+    StringTable *table = strTableNew(r);
+    assert_true(strTableCountMappings(table) == 0);
+    strTableMap(table, str("1"), r);
+    assert_true(strTableCountMappings(table) == 1);
+    strTableMap(table, str("2"), r);
+    strTableMap(table, str("3"), r);
+    strTableMap(table, str("4"), r);
+    assert_true(strTableCountMappings(table) == 4);
+    CR_RegionRelease(r);
+  }
+  testGroupEnd();
 }
