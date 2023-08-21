@@ -56,4 +56,15 @@ int main(void)
   assert_error(sUint64Mul(1229782938247303442, 15), expected_error_u64);
   assert_error(sUint64Mul(2305843009213693952, 8), expected_error_u64);
   testGroupEnd();
+
+  testGroupStart("sUint64GetDifference()");
+  assert_true(sUint64GetDifference(0, 0) == 0);
+  assert_true(sUint64GetDifference(0, 1) == 1);
+  assert_true(sUint64GetDifference(1, 0) == 1);
+  assert_true(sUint64GetDifference(780, 90) == 690);
+  assert_true(sUint64GetDifference(12, 443) == 431);
+  assert_true(sUint64GetDifference(78, 78) == 0);
+  assert_true(sUint64GetDifference(UINT64_MAX, UINT64_MAX) == 0);
+  assert_true(sUint64GetDifference(UINT64_MAX, 20) == UINT64_MAX - 20);
+  testGroupEnd();
 }

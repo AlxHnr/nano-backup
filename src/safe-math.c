@@ -46,3 +46,12 @@ size_t sUint64Mul(const uint64_t a, const uint64_t b)
 
   return a * b;
 }
+
+uint64_t sUint64GetDifference(const uint64_t a, const uint64_t b)
+{
+  if(a < b)
+  {
+    return b - a;
+  }
+  return a - b;
+}
