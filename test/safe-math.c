@@ -39,4 +39,21 @@ int main(void)
   assert_error(sUint64Add(512, UINT64_MAX - 90), expected_error_u64);
   assert_error(sUint64Add(UINT64_MAX, 1), expected_error_u64);
   testGroupEnd();
+
+  testGroupStart("sUint64Mul()");
+  assert_true(sUint64Mul(0, 5) == 0);
+  assert_true(sUint64Mul(5, 3) == 15);
+  assert_true(sUint64Mul(3, 5) == 15);
+  assert_true(sUint64Mul(70, 80) == 5600);
+  assert_true(sUint64Mul(0, 0) == 0);
+  assert_true(sUint64Mul(3, 0) == 0);
+  assert_true(sUint64Mul(2348, 0) == 0);
+  assert_true(sUint64Mul(UINT64_MAX, 0) == 0);
+  assert_true(sUint64Mul(1, UINT64_MAX) == UINT64_MAX);
+  assert_true(sUint64Mul(1229782938247303441, 15) == UINT64_MAX);
+  assert_error(sUint64Mul(UINT64_MAX, 25), expected_error_u64);
+  assert_error(sUint64Mul(UINT64_MAX - 80, 295), expected_error_u64);
+  assert_error(sUint64Mul(1229782938247303442, 15), expected_error_u64);
+  assert_error(sUint64Mul(2305843009213693952, 8), expected_error_u64);
+  testGroupEnd();
 }

@@ -34,3 +34,15 @@ uint64_t sUint64Add(const uint64_t a, const uint64_t b)
 
   return a + b;
 }
+
+/** Multiplies two uint64_t values and terminates the program on overflows.
+ */
+size_t sUint64Mul(const uint64_t a, const uint64_t b)
+{
+  if(b != 0 && a > UINT64_MAX / b)
+  {
+    die("overflow calculating unsigned 64-bit value");
+  }
+
+  return a * b;
+}
