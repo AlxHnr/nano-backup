@@ -727,6 +727,18 @@ time_t sTime(void)
   return current_time;
 }
 
+uint64_t sTimeMilliseconds(void)
+{
+  struct timespec timespec;
+  if(clock_gettime(CLOCK_REALTIME, &timespec) == -1)
+  {
+    dieErrno("failed to determine current time");
+  }
+
+  return sUint64Add(sUint64Mul(timespec.tv_sec, 1000),
+                    timespec.tv_nsec / 1000000);
+}
+
 /** Wrapper around rand() which seeds srand() the first time its called. */
 int sRand(void)
 {

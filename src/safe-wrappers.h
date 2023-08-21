@@ -65,6 +65,7 @@ extern bool sReadLine(FILE *stream, Allocator *a, StringView *result_out);
 extern bool sIsTTY(FILE *stream);
 extern size_t sStringToSize(StringView string);
 extern time_t sTime(void);
+extern uint64_t sTimeMilliseconds(void);
 extern int sRand(void);
 
 typedef struct

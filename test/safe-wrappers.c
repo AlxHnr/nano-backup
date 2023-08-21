@@ -851,6 +851,10 @@ int main(void)
   assert_true(sTime() != (time_t)-1);
   testGroupEnd();
 
+  testGroupStart("sTimeMilliseconds()");
+  (void)sTimeMilliseconds();
+  testGroupEnd();
+
   testGroupStart("sDirOpen()");
   DirIterator *test_directory = sDirOpen(wrap("test directory"));
   assert_true(test_directory != NULL);
