@@ -64,12 +64,12 @@ static bool storedFileIsHealthy(const RegularFileInfo *file_info,
 /** Check the integrity of the stored file associated with the given
   history point.
 
-  @param context Informations related to the current integrity check.
+  @param ctx Informations related to the current integrity check.
   @param point History point to check.
 
   @return True if the given history point is healthy.
 */
-static bool historyPointIsHealthy(IntegrityCheckContext *context,
+static bool historyPointIsHealthy(IntegrityCheckContext *ctx,
                                   const PathHistory *point)
 {
   if(point->state.type != PST_regular_file)
@@ -83,24 +83,23 @@ static bool historyPointIsHealthy(IntegrityCheckContext *context,
     return true;
   }
 
-  repoBuildRegularFilePath(&context->unique_subpath_buffer, file_info);
-  StringView unique_subpath = str(context->unique_subpath_buffer);
+  repoBuildRegularFilePath(&ctx->unique_subpath_buffer, file_info);
+  StringView unique_subpath = str(ctx->unique_subpath_buffer);
 
   const void *cached_result =
-    strTableGet(context->unique_subpath_cache, unique_subpath);
+    strTableGet(ctx->unique_subpath_cache, unique_subpath);
   void *subpath_is_healthy = (void *)0x1;
   void *subpath_is_broken = (void *)0x2;
 
   if(cached_result == NULL)
   {
-    StringView full_unique_path =
-      strAppendPath(context->repo_path, unique_subpath,
-                    context->reusable_buffer_allocator);
+    StringView full_unique_path = strAppendPath(
+      ctx->repo_path, unique_subpath, ctx->reusable_buffer_allocator);
 
     const bool is_healthy =
       storedFileIsHealthy(file_info, full_unique_path);
-    strTableMap(context->unique_subpath_cache,
-                strCopy(unique_subpath, context->r_wrapper),
+    strTableMap(ctx->unique_subpath_cache,
+                strCopy(unique_subpath, ctx->r_wrapper),
                 is_healthy ? subpath_is_healthy : subpath_is_broken);
     return is_healthy;
   }
@@ -109,10 +108,10 @@ static bool historyPointIsHealthy(IntegrityCheckContext *context,
 
 /** Validate the integrity of all files in the given subtree recursively.
 
-  @param context Pre-populated context to be used for this integrity check.
+  @param ctx Pre-populated context to be used for this integrity check.
   @param node_list List of path nodes to traverse recursively.
 */
-static void checkIntegrityRecursively(IntegrityCheckContext *context,
+static void checkIntegrityRecursively(IntegrityCheckContext *ctx,
                                       const PathNode *node_list)
 {
   for(const PathNode *node = node_list; node != NULL; node = node->next)
@@ -120,17 +119,17 @@ static void checkIntegrityRecursively(IntegrityCheckContext *context,
     for(const PathHistory *point = node->history; point != NULL;
         point = point->next)
     {
-      if(!historyPointIsHealthy(context, point))
+      if(!historyPointIsHealthy(ctx, point))
       {
         ListOfBrokenPathNodes *broken_node =
-          CR_RegionAlloc(context->r, sizeof(*broken_node));
+          CR_RegionAlloc(ctx->r, sizeof(*broken_node));
         broken_node->node = node;
-        broken_node->next = context->broken_nodes;
-        context->broken_nodes = broken_node;
+        broken_node->next = ctx->broken_nodes;
+        ctx->broken_nodes = broken_node;
         break;
       }
     }
-    checkIntegrityRecursively(context, node->subnodes);
+    checkIntegrityRecursively(ctx, node->subnodes);
   }
 }
 
@@ -151,7 +150,7 @@ ListOfBrokenPathNodes *checkIntegrity(CR_Region *r,
 {
   CR_Region *disposable_r = CR_RegionNew();
 
-  IntegrityCheckContext context = {
+  IntegrityCheckContext ctx = {
     .r = r,
     .r_wrapper = allocatorWrapRegion(r),
     .broken_nodes = NULL,
@@ -162,8 +161,8 @@ ListOfBrokenPathNodes *checkIntegrity(CR_Region *r,
     .unique_subpath_cache = strTableNew(disposable_r),
   };
 
-  checkIntegrityRecursively(&context, metadata->paths);
+  checkIntegrityRecursively(&ctx, metadata->paths);
 
   CR_RegionRelease(disposable_r);
-  return context.broken_nodes;
+  return ctx.broken_nodes;
 }
