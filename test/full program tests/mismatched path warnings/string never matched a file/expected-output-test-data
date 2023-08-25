@@ -4,3 +4,5 @@ config: line 9: string never matched a file: "unmatched-string"
 New: 32 (0 b)
 
 proceed? (y/n) 
+
+Discarding unreferenced data... 100.0% (0 b deleted)

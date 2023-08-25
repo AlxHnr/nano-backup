@@ -6,3 +6,5 @@ config: line 7: regex matches not only directories: "^(b|foo )"
 New: 6 (0 b), Lost: 2 (0 b)
 
 proceed? (y/n) 
+
+Discarding unreferenced data... 100.0% (0 b deleted)

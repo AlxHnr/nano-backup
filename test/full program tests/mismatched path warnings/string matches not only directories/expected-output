@@ -5,3 +5,5 @@ config: line 2: string matches not only directories: "super"
 New: 5 (0 b), Lost: 2 (0 b)
 
 proceed? (y/n) 
+
+Discarding unreferenced data... 100.0% (0 b deleted)

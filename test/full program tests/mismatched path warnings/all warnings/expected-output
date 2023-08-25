@@ -16,3 +16,5 @@ config: line 21: regex matches not only directories: "^(bird|gentoo)$"
 New: 35 (40 b), Lost: 9 (0 b)
 
 proceed? (y/n) 
+
+Discarding unreferenced data... 100.0% (0 b deleted)

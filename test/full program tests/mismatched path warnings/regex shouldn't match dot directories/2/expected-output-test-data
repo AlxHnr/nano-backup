@@ -6,3 +6,5 @@ config: line 6: regex never matched a directory: "^..$"
 Lost: 1 (0 b)
 
 proceed? (y/n) 
+
+Discarding unreferenced data... 100.0% (0 b deleted)

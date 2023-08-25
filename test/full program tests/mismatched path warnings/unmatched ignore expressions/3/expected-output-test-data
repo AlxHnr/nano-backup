@@ -5,3 +5,5 @@ config: line 10: regex never matched a path: "test directory/void"
 New: 18 (0 b)
 
 proceed? (y/n) 
+
+Discarding unreferenced data... 100.0% (0 b deleted)

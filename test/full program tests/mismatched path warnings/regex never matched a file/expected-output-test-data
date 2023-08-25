@@ -11,3 +11,5 @@ config: line 3: regex never matched a file: "foo:bar[0-9]+$"
 New: 9 (0 b)
 
 proceed? (y/n) 
+
+Discarding unreferenced data... 100.0% (0 b deleted)

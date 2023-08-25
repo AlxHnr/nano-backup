@@ -5,3 +5,5 @@ config: line 3: regex never matched a file: "^.$"
 New: 1 (25 b), Lost: 1 (0 b)
 
 proceed? (y/n) 
+
+Discarding unreferenced data... 100.0% (0 b deleted)

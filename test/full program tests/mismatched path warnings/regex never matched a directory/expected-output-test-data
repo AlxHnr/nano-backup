@@ -6,3 +6,5 @@ config: line 3: regex never matched a directory: "foo:bar[0-9]+$"
 New: 8 (0 b)
 
 proceed? (y/n) 
+
+Discarding unreferenced data... 100.0% (0 b deleted)

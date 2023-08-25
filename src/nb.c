@@ -10,6 +10,7 @@
 #include "integrity.h"
 #include "metadata.h"
 #include "restore.h"
+#include "safe-math.h"
 #include "safe-wrappers.h"
 #include "search-tree.h"
 #include "str.h"
@@ -66,20 +67,77 @@ static void printStats(const char *summary, const TextColor color,
   printf(")");
 }
 
+static void printGCProgress(const size_t items_visited,
+                            const size_t max_call_limit,
+                            const uint64_t deleted_items_size)
+{
+  if(sIsTTY(stdout))
+  {
+    printf("\033[1F\033[2K");
+  }
+  printf("Discarding unreferenced data... ");
+
+  if(items_visited == max_call_limit)
+  {
+    colorPrintf(stdout, TC_green_bold, "100.0%%");
+    printf(" (");
+    printHumanReadableSize(deleted_items_size);
+    printf(" deleted)\n");
+  }
+  else if(items_visited > 0)
+  {
+    const size_t permille = sSizeMul(items_visited, 1000) / max_call_limit;
+    printf("%3zu.%zu%% (", permille / 10, permille % 10);
+    printHumanReadableSize(deleted_items_size);
+    printf(" deleted)\n");
+  }
+  else
+  {
+    printf("\n");
+  }
+}
+
+typedef struct
+{
+  size_t items_visited;
+  uint64_t last_print_timestamp;
+} GCProgressContext;
+
+static void gcProgressCallback(const uint64_t deleted_items_size,
+                               const size_t max_call_limit,
+                               void *user_data)
+{
+  GCProgressContext *ctx = user_data;
+
+  const uint64_t now = sTimeMilliseconds();
+  if(sUint64GetDifference(ctx->last_print_timestamp, now) > 50)
+  {
+    printGCProgress(ctx->items_visited, max_call_limit,
+                    deleted_items_size);
+    ctx->last_print_timestamp = now;
+  }
+  ctx->items_visited++;
+}
+
 static void runGC(const Metadata *metadata, StringView repo_path,
                   const bool prepend_newline)
 {
-  const GCStatistics gc_stats = collectGarbage(metadata, repo_path);
-
-  if(gc_stats.deleted_items_count > 0)
+  if(prepend_newline)
   {
-    printf("%sDiscarded unreferenced items: ",
-           prepend_newline ? "\n" : "");
-    colorPrintf(stdout, TC_blue_bold, "%zu", gc_stats.deleted_items_count);
-    printf(" (");
-    printHumanReadableSize(gc_stats.deleted_items_total_size);
-    printf(")\n");
+    printf("\n");
   }
+
+  GCProgressCallback *gc_progress_callback = NULL;
+  if(sIsTTY(stdout))
+  {
+    gc_progress_callback = gcProgressCallback;
+    printf("\n");
+    printGCProgress(0, 100, 0);
+  }
+
+  const GCStatistics gc_stats = collectGarbageProgress(
+    metadata, repo_path, gc_progress_callback, &(GCProgressContext){ 0 });
+  printGCProgress(100, 100, gc_stats.deleted_items_total_size);
 }
 
 static void runIntegrityCheck(const Metadata *metadata,
