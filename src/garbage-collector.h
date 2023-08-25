@@ -12,15 +12,19 @@ typedef struct
 extern GCStatistics collectGarbage(const Metadata *metadata,
                                    StringView repo_path);
 
-/** Callback for implementing progress animations based on rough estimates.
-  Will be called for each visited item. If there are no items to visit,
-  this function will never be called.
+/** Callback for implementing progress animations. Will be called for each
+  file spared from deletion. If there are no files to preserve, this
+  function will never be called.
 
+  @param deleted_items_size Volume in bytes of already deleted files. This
+  value is imprecise and depends on the traversal order of the current
+  filesystem. To get an accurate total, refer to `GCStatistics`.
   @param max_call_limit Upper bound (constant) on how often this function
-  may be called. This value is based on estimates on how many items exist
-  for visiting.
+  may be called. This value is based on estimates on how many files may
+  exist inside the repository.
 */
-typedef void GCProgressCallback(size_t max_call_limit, void *user_data);
+typedef void GCProgressCallback(uint64_t deleted_items_size,
+                                size_t max_call_limit, void *user_data);
 
 extern GCStatistics
 collectGarbageProgress(const Metadata *metadata, StringView repo_path,

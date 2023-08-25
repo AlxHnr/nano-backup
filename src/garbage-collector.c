@@ -74,7 +74,8 @@ static bool shouldBeRemoved(StringView path, const struct stat *stats,
   {
     if(ctx->progress_callback != NULL)
     {
-      ctx->progress_callback(strTableCountMappings(ctx->paths_to_preserve),
+      ctx->progress_callback(ctx->statistics.deleted_items_total_size,
+                             strTableCountMappings(ctx->paths_to_preserve),
                              ctx->callback_user_data);
     }
     return false;

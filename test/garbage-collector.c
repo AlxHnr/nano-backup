@@ -242,17 +242,19 @@ static void testGatheringTotalDeletedSize(CR_Region *r)
   testGroupEnd();
 }
 
-static void assertNeverCalled(const size_t max_call_limit, void *user_data)
+static void assertNeverCalled(const uint64_t deleted_items_size, const size_t max_call_limit, void *user_data)
 {
+  (void)deleted_items_size;
   (void)max_call_limit;
   (void)user_data;
   assert_true(false);
 }
-static void increment(const size_t max_call_limit, void *user_data)
+static void increment(const uint64_t deleted_items_size, const size_t max_call_limit, void *user_data)
 {
   size_t *value = user_data;
   (*value)++;
   assert_true(max_call_limit == 5);
+  assert_true(deleted_items_size == 0);
 }
 
 static void testProgressCallback(CR_Region *r)
