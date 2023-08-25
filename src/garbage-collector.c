@@ -101,7 +101,7 @@ GCStatistics collectGarbage(const Metadata *metadata, StringView repo_path)
   @param metadata The metadata to search for referenced files.
   @param repo_path The path to the repository which should be cleaned up.
   @param progress_callback Can be NULL.
-  @param progress_user_data Will be passed to `progress_callback`.
+  @param callback_user_data Will be passed to `progress_callback`.
 
   @return Statistics about items removed from the repository.
 */
