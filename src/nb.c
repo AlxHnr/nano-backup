@@ -24,10 +24,6 @@ static void ensureUserConsent(const char *question,
     {
       printf("\n");
     }
-    if(fflush(stdout) != 0)
-    {
-      dieErrno("failed to flush stdout");
-    }
 
     StringView line = str("");
     if(!sReadLine(stdin, reusable_buffer, &line) ||
@@ -222,6 +218,8 @@ static void restore(CR_Region *r, StringView repo_arg, const size_t id,
 int main(const int arg_count, const char **arg_list)
 {
   CR_Region *r = CR_RegionNew();
+  setbuf(stdout, NULL);
+  setbuf(stderr, NULL);
 
   if(arg_count < 2)
   {
