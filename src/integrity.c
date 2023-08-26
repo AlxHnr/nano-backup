@@ -4,6 +4,7 @@
 
 #include "CRegion/alloc-growable.h"
 #include "file-hash.h"
+#include "safe-math.h"
 #include "safe-wrappers.h"
 #include "string-table.h"
 
@@ -27,6 +28,10 @@ typedef struct
   /** Cache to store the result of checked files. */
   StringTable *unique_subpath_cache;
   Allocator *unique_subpath_cache_key_allocator;
+
+  /** Volume of all files inside the repository with a size larger than
+    FILE_HASH_SIZE. */
+  uint64_t files_to_check_total_size;
 } IntegrityCheckContext;
 
 /**
@@ -39,6 +44,18 @@ typedef struct
 typedef bool CheckFileCallback(IntegrityCheckContext *ctx,
                                const RegularFileInfo *file_info,
                                StringView unique_subpath);
+
+/** Updates `ctx->files_to_hash_total_size`. */
+static bool addToTotalFileSize(IntegrityCheckContext *ctx,
+                               const RegularFileInfo *file_info,
+                               StringView ignored)
+{
+  (void)ignored;
+
+  ctx->files_to_check_total_size =
+    sUint64Add(ctx->files_to_check_total_size, file_info->size);
+  return true;
+}
 
 /**
   @param file_info Metadata of the file to check. The files size must be
@@ -178,7 +195,13 @@ ListOfBrokenPathNodes *checkIntegrity(CR_Region *r,
     .repo_path = repo_path,
   };
 
+  /* Dry run to populate `ctx->files_to_hash_total_size`. */
   CR_Region *disposable_r = attachDisposableRegion(&ctx);
+  checkIntegrityRecursively(&ctx, metadata->paths, addToTotalFileSize);
+  CR_RegionRelease(disposable_r);
+  disposable_r = attachDisposableRegion(&ctx);
+
+  /* Do a real check. */
   checkIntegrityRecursively(&ctx, metadata->paths, storedFileIsHealthy);
   CR_RegionRelease(disposable_r);
 
