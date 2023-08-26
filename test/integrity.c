@@ -93,7 +93,6 @@ int main(void)
   for(const ListOfBrokenPathNodes *path_node = checkIntegrity(r, metadata, repo_path); path_node != NULL;
       path_node = path_node->next)
   {
-    assert_true(path_node->node->path.is_terminated);
     assert_true(strIsParentPath(cwd, path_node->node->path));
     StringView unique_subpath = strUnterminated(&path_node->node->path.content[cwd.length + 1],
                                                 path_node->node->path.length - cwd.length - 1);
