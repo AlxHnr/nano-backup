@@ -11,7 +11,6 @@ typedef struct
 {
   /** Used for allocating broken path nodes. */
   CR_Region *r;
-  Allocator *r_wrapper;
 
   /** All broken path nodes found during the check will be stored here. The
     lifetime of this list is bound to the region `r` in this struct. */
@@ -27,20 +26,33 @@ typedef struct
 
   /** Cache to store the result of checked files. */
   StringTable *unique_subpath_cache;
+  Allocator *unique_subpath_cache_key_allocator;
 } IntegrityCheckContext;
 
-/** Check the integrity of a single stored file.
-
+/**
   @param file_info Metadata of the file to check. The files size must be
   larger than FILE_HASH_SIZE.
-  @param path_to_stored_file Absolute or relative path to the unique file
-  inside the backup repository.
+  @param unique_subpath Path to the stored file relative to the repository.
 
-  @return True if the given file is healthy.
+  @return True if the specified file is healthy.
 */
-static bool storedFileIsHealthy(const RegularFileInfo *file_info,
-                                const StringView path_to_stored_file)
+typedef bool CheckFileCallback(IntegrityCheckContext *ctx,
+                               const RegularFileInfo *file_info,
+                               StringView unique_subpath);
+
+/**
+  @param file_info Metadata of the file to check. The files size must be
+  larger than FILE_HASH_SIZE.
+  @param unique_subpath Path to the stored file relative to the
+  repositories directory.
+*/
+static bool storedFileIsHealthy(IntegrityCheckContext *ctx,
+                                const RegularFileInfo *file_info,
+                                StringView unique_subpath)
 {
+  StringView path_to_stored_file = strAppendPath(
+    ctx->repo_path, unique_subpath, ctx->reusable_buffer_allocator);
+
   if(!sPathExists(path_to_stored_file))
   {
     return false;
@@ -70,7 +82,8 @@ static bool storedFileIsHealthy(const RegularFileInfo *file_info,
   @return True if the given history point is healthy.
 */
 static bool historyPointIsHealthy(IntegrityCheckContext *ctx,
-                                  const PathHistory *point)
+                                  const PathHistory *point,
+                                  CheckFileCallback check_file_callback)
 {
   if(point->state.type != PST_regular_file)
   {
@@ -93,13 +106,11 @@ static bool historyPointIsHealthy(IntegrityCheckContext *ctx,
 
   if(cached_result == NULL)
   {
-    StringView full_unique_path = strAppendPath(
-      ctx->repo_path, unique_subpath, ctx->reusable_buffer_allocator);
-
     const bool is_healthy =
-      storedFileIsHealthy(file_info, full_unique_path);
-    strTableMap(ctx->unique_subpath_cache,
-                strCopy(unique_subpath, ctx->r_wrapper),
+      check_file_callback(ctx, file_info, unique_subpath);
+    StringView key_copy =
+      strCopy(unique_subpath, ctx->unique_subpath_cache_key_allocator);
+    strTableMap(ctx->unique_subpath_cache, key_copy,
                 is_healthy ? subpath_is_healthy : subpath_is_broken);
     return is_healthy;
   }
@@ -108,18 +119,19 @@ static bool historyPointIsHealthy(IntegrityCheckContext *ctx,
 
 /** Validate the integrity of all files in the given subtree recursively.
 
-  @param ctx Pre-populated context to be used for this integrity check.
   @param node_list List of path nodes to traverse recursively.
 */
-static void checkIntegrityRecursively(IntegrityCheckContext *ctx,
-                                      const PathNode *node_list)
+static void
+checkIntegrityRecursively(IntegrityCheckContext *ctx,
+                          const PathNode *node_list,
+                          CheckFileCallback check_file_callback)
 {
   for(const PathNode *node = node_list; node != NULL; node = node->next)
   {
     for(const PathHistory *point = node->history; point != NULL;
         point = point->next)
     {
-      if(!historyPointIsHealthy(ctx, point))
+      if(!historyPointIsHealthy(ctx, point, check_file_callback))
       {
         ListOfBrokenPathNodes *broken_node =
           CR_RegionAlloc(ctx->r, sizeof(*broken_node));
@@ -129,8 +141,20 @@ static void checkIntegrityRecursively(IntegrityCheckContext *ctx,
         break;
       }
     }
-    checkIntegrityRecursively(ctx, node->subnodes);
+    checkIntegrityRecursively(ctx, node->subnodes, check_file_callback);
   }
+}
+
+static CR_Region *attachDisposableRegion(IntegrityCheckContext *ctx)
+{
+  CR_Region *disposable_r = CR_RegionNew();
+  ctx->reusable_buffer_allocator =
+    allocatorWrapOneSingleGrowableBuffer(disposable_r);
+  ctx->unique_subpath_buffer = CR_RegionAllocGrowable(disposable_r, 1);
+  ctx->unique_subpath_cache = strTableNew(disposable_r);
+  ctx->unique_subpath_cache_key_allocator =
+    allocatorWrapRegion(disposable_r);
+  return disposable_r;
 }
 
 /** Check if all the files in the specified repository match up with their
@@ -148,21 +172,15 @@ ListOfBrokenPathNodes *checkIntegrity(CR_Region *r,
                                       const Metadata *metadata,
                                       StringView repo_path)
 {
-  CR_Region *disposable_r = CR_RegionNew();
-
   IntegrityCheckContext ctx = {
     .r = r,
-    .r_wrapper = allocatorWrapRegion(r),
     .broken_nodes = NULL,
     .repo_path = repo_path,
-    .reusable_buffer_allocator =
-      allocatorWrapOneSingleGrowableBuffer(disposable_r),
-    .unique_subpath_buffer = CR_RegionAllocGrowable(disposable_r, 1),
-    .unique_subpath_cache = strTableNew(disposable_r),
   };
 
-  checkIntegrityRecursively(&ctx, metadata->paths);
-
+  CR_Region *disposable_r = attachDisposableRegion(&ctx);
+  checkIntegrityRecursively(&ctx, metadata->paths, storedFileIsHealthy);
   CR_RegionRelease(disposable_r);
+
   return ctx.broken_nodes;
 }
