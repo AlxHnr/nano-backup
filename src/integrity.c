@@ -57,7 +57,7 @@ static bool storedFileIsHealthy(const RegularFileInfo *file_info,
   }
 
   uint8_t hash[FILE_HASH_SIZE];
-  fileHash(path_to_stored_file, stats, hash);
+  fileHash(path_to_stored_file, stats, hash, NULL, NULL);
   return memcmp(file_info->hash, hash, FILE_HASH_SIZE) == 0;
 }
 

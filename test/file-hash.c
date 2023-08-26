@@ -5,7 +5,20 @@
 
 static void fileHashWrapper(const char *path, uint8_t *hash)
 {
-  fileHash(str(path), sStat(str(path)), hash);
+  fileHash(str(path), sStat(str(path)), hash, NULL, NULL);
+}
+
+static void assertNeverCalled(size_t processed_block_size, void *user_data)
+{
+  (void)processed_block_size;
+  (void)user_data;
+  assert_true(false);
+}
+
+static void appendBlockSize(size_t processed_block_size, void *user_data)
+{
+  size_t *total_size = user_data;
+  *total_size += processed_block_size;
 }
 
 int main(void)
@@ -15,11 +28,11 @@ int main(void)
 
   testGroupStart("fileHash()");
   stats = sStat(str("example.txt"));
-  assert_error_errno(fileHash(str("non-existing.txt"), stats, hash),
+  assert_error_errno(fileHash(str("non-existing.txt"), stats, hash, NULL, NULL),
                      "failed to open \"non-existing.txt\" for reading", ENOENT);
-  assert_error_errno(fileHash(str("test directory"), stats, hash), "IO error while reading \"test directory\"",
-                     EISDIR);
-  assert_error_errno(fileHash(str("test directory"), sStat(str("empty.txt")), hash),
+  assert_error_errno(fileHash(str("test directory"), stats, hash, NULL, NULL),
+                     "IO error while reading \"test directory\"", EISDIR);
+  assert_error_errno(fileHash(str("test directory"), sStat(str("empty.txt")), hash, NULL, NULL),
                      "failed to check for remaining bytes in \"test directory\"", EISDIR);
 
   const uint8_t empty_hash[FILE_HASH_SIZE] = {
@@ -62,17 +75,34 @@ int main(void)
 
   stats = sStat(str("valid-config-files/inheritance-1.txt"));
   stats.st_size += 1;
-  assert_error(fileHash(str("valid-config-files/inheritance-1.txt"), stats, hash),
+  assert_error(fileHash(str("valid-config-files/inheritance-1.txt"), stats, hash, NULL, NULL),
                "reading \"valid-config-files/inheritance-1.txt\": reached end of file unexpectedly");
 
   stats.st_size -= 2;
-  assert_error(fileHash(str("valid-config-files/inheritance-1.txt"), stats, hash),
+  assert_error(fileHash(str("valid-config-files/inheritance-1.txt"), stats, hash, NULL, NULL),
                "file changed while calculating hash: \"valid-config-files/inheritance-1.txt\"");
 
   stats.st_size += 1;
   stats.st_blksize = 1;
-  fileHash(str("valid-config-files/inheritance-1.txt"), stats, hash);
+  fileHash(str("valid-config-files/inheritance-1.txt"), stats, hash, NULL, NULL);
   assert_true(memcmp(hash, inheritance_1, FILE_HASH_SIZE) == 0);
 
+  testGroupEnd();
+
+  testGroupStart("fileHash(): progress callback on empty files");
+  {
+    StringView path = str("empty.txt");
+    fileHash(path, sLStat(path), hash, assertNeverCalled, NULL);
+  }
+  testGroupEnd();
+
+  testGroupStart("fileHash(): progress callback: blocksize passing");
+  {
+    StringView path = str("valid-config-files/no-paths-and-no-ignores.txt");
+
+    size_t total_filesize = 0;
+    fileHash(path, sLStat(path), hash, appendBlockSize, &total_filesize);
+    assert_true(total_filesize == 179);
+  }
   testGroupEnd();
 }

@@ -9,7 +9,12 @@
 /** The amount of bytes required to store a files hash. */
 #define FILE_HASH_SIZE ((size_t)20)
 
-extern void fileHash(StringView path, struct stat stats,
-                     uint8_t *hash_out);
+typedef void HashProgressCallback(size_t processed_block_size,
+                                  void *user_data);
+
+extern void fileHash(StringView filepath, struct stat stats,
+                     uint8_t *hash_out,
+                     HashProgressCallback progress_callback,
+                     void *callback_user_data);
 
 #endif

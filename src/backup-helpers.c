@@ -26,7 +26,7 @@ static void checkFileContentChanges(PathNode *node, PathState *state,
 
   if(state->metadata.file_info.size > FILE_HASH_SIZE)
   {
-    fileHash(node->path, stats, hash);
+    fileHash(node->path, stats, hash, NULL, NULL);
   }
   else
   {

@@ -763,7 +763,7 @@ static void addFileToRepo(PathNode *node, StringView repo_path,
   {
     if(!(node->hint & BH_fresh_hash))
     {
-      fileHash(node->path, stats, file_info->hash);
+      fileHash(node->path, stats, file_info->hash, NULL, NULL);
     }
 
     if(!searchFileDuplicates(node, repo_path, stats))
