@@ -27,6 +27,40 @@ static void makeBackup(CR_Region *r, Metadata *metadata)
   metadataWrite(metadata, repo_path, tmp_file_path, metadata_path);
 }
 
+/** These files get backed up during tests. */
+static uint64_t getSizeOfAllValidConfigFiles(void)
+{
+  uint64_t result = 0;
+
+  DirIterator *iterator = sDirOpen(str("valid-config-files"));
+  for(StringView path = sDirGetNext(iterator); !strIsEmpty(path); strSet(&path, sDirGetNext(iterator)))
+  {
+    const uint64_t size = sStat(path).st_size;
+    if(size > FILE_HASH_SIZE)
+    {
+      result += size;
+    }
+  }
+  sDirClose(iterator);
+
+  return result;
+}
+
+typedef struct
+{
+  uint64_t total_bytes_processed;
+  const uint64_t expected_total_bytes_to_process;
+} ProgressContext;
+
+static void progressCallback(const uint64_t processed_block_size, const uint64_t total_bytes_to_process,
+                             void *user_data)
+{
+  ProgressContext *ctx = user_data;
+
+  ctx->total_bytes_processed += processed_block_size;
+  assert_true(total_bytes_to_process == ctx->expected_total_bytes_to_process);
+}
+
 int main(void)
 {
   CR_Region *r = CR_RegionNew();
@@ -64,15 +98,29 @@ int main(void)
   writeToFile("tmp/files/smaller file", "1234");
   makeBackup(r, metadataLoad(r, metadata_path));
 
+  /** Total volume of all generated files larger than FILE_HASH_SIZE. */
+  const uint64_t total_size_of_large_generated_files = 321;
+
   StringView cwd = sGetCurrentDir(allocatorWrapRegion(r));
   const Metadata *metadata = metadataLoad(r, metadata_path);
   testGroupEnd();
 
-  testGroupStart("checkIntegrity() on healthy repository");
-  assert_true(checkIntegrity(r, metadata, repo_path) == NULL);
+  testGroupStart("checkIntegrity(): healthy repository");
+  assert_true(checkIntegrity(r, metadata, repo_path, NULL, NULL) == NULL);
   testGroupEnd();
 
-  testGroupStart("checkIntegrity() on corrupted repository");
+  testGroupStart("checkIntegrity(): healthy repository: progress callback");
+  {
+    ProgressContext ctx = {
+      .total_bytes_processed = 0,
+      .expected_total_bytes_to_process = getSizeOfAllValidConfigFiles() + total_size_of_large_generated_files,
+    };
+    checkIntegrity(r, metadata, repo_path, progressCallback, &ctx);
+    assert_true(ctx.total_bytes_processed == ctx.expected_total_bytes_to_process);
+  }
+  testGroupEnd();
+
+  testGroupStart("prepare corrupted repository");
   /* tmp/files/21-bytes.txt: overwrite content with same size. */
   writeToFile("tmp/repo/9/14/63ea1831fa59be6f547140553e6134f3ec0bbx15x0", "modified content here");
   /* tmp/files/unchanged extra file: overwrite content with different size. */
@@ -87,11 +135,13 @@ int main(void)
   sRemove(str("tmp/repo/8/4b/6afb97314b5c2f7b8eefede7f7f9c1db0c84fx23x0"));
   sSymlink(str("nano-backup nano-backup nano-backup"),
            str("tmp/repo/8/4b/6afb97314b5c2f7b8eefede7f7f9c1db0c84fx23x0"));
+  testGroupEnd();
 
+  testGroupStart("checkIntegrity(): corrupted repository");
   size_t broken_path_node_count = 0;
   StringTable *broken_path_nodes = strTableNew(r);
-  for(const ListOfBrokenPathNodes *path_node = checkIntegrity(r, metadata, repo_path); path_node != NULL;
-      path_node = path_node->next)
+  const ListOfBrokenPathNodes *broken_node_list = checkIntegrity(r, metadata, repo_path, NULL, NULL);
+  for(const ListOfBrokenPathNodes *path_node = broken_node_list; path_node != NULL; path_node = path_node->next)
   {
     assert_true(strIsParentPath(cwd, path_node->node->path));
     StringView unique_subpath = strUnterminated(&path_node->node->path.content[cwd.length + 1],
@@ -108,6 +158,17 @@ int main(void)
   assert_true(strTableGet(broken_path_nodes, str("tmp/files/additional-file-03")) != NULL);
   assert_true(strTableGet(broken_path_nodes, str("tmp/files/breaks-via-deduplication.txt")) != NULL);
   assert_true(broken_path_node_count == 7);
+  testGroupEnd();
+
+  testGroupStart("checkIntegrity(): corrupted repository: progress callback");
+  {
+    ProgressContext ctx = {
+      .total_bytes_processed = 0,
+      .expected_total_bytes_to_process = getSizeOfAllValidConfigFiles() + total_size_of_large_generated_files,
+    };
+    checkIntegrity(r, metadata, repo_path, progressCallback, &ctx);
+    assert_true(ctx.total_bytes_processed == ctx.expected_total_bytes_to_process);
+  }
   testGroupEnd();
 
   CR_RegionRelease(r);

@@ -145,7 +145,7 @@ static void runIntegrityCheck(const Metadata *metadata,
 {
   CR_Region *r = CR_RegionNew();
   const ListOfBrokenPathNodes *broken_nodes =
-    checkIntegrity(r, metadata, repo_path);
+    checkIntegrity(r, metadata, repo_path, NULL, NULL);
 
   size_t broken_node_count = 0;
   for(const ListOfBrokenPathNodes *path_node = broken_nodes;

@@ -32,7 +32,27 @@ typedef struct
   /** Volume of all files inside the repository with a size larger than
     FILE_HASH_SIZE. */
   uint64_t files_to_check_total_size;
+
+  IntegrityProgressCallback *progress_callback;
+  void *callback_user_data;
 } IntegrityCheckContext;
+
+static void callProgressCallback(const IntegrityCheckContext *ctx,
+                                 const uint64_t processed_block_size)
+{
+  if(ctx->progress_callback != NULL)
+  {
+    ctx->progress_callback(processed_block_size,
+                           ctx->files_to_check_total_size,
+                           ctx->callback_user_data);
+  }
+}
+
+static void fileHashCallback(const uint64_t processed_block_size,
+                             void *user_data)
+{
+  callProgressCallback(user_data, processed_block_size);
+}
 
 /**
   @param file_info Metadata of the file to check. The files size must be
@@ -72,21 +92,24 @@ static bool storedFileIsHealthy(IntegrityCheckContext *ctx,
 
   if(!sPathExists(path_to_stored_file))
   {
+    callProgressCallback(ctx, file_info->size);
     return false;
   }
 
   const struct stat stats = sLStat(path_to_stored_file);
   if(!S_ISREG(stats.st_mode))
   {
+    callProgressCallback(ctx, file_info->size);
     return false;
   }
   if((uint64_t)stats.st_size != file_info->size)
   {
+    callProgressCallback(ctx, file_info->size);
     return false;
   }
 
   uint8_t hash[FILE_HASH_SIZE];
-  fileHash(path_to_stored_file, stats, hash, NULL, NULL);
+  fileHash(path_to_stored_file, stats, hash, fileHashCallback, ctx);
   return memcmp(file_info->hash, hash, FILE_HASH_SIZE) == 0;
 }
 
@@ -185,14 +208,16 @@ static CR_Region *attachDisposableRegion(IntegrityCheckContext *ctx)
   nodes associated with corrupted files. The lifetime of the returned list
   will be bound to the given region.
 */
-ListOfBrokenPathNodes *checkIntegrity(CR_Region *r,
-                                      const Metadata *metadata,
-                                      StringView repo_path)
+ListOfBrokenPathNodes *checkIntegrity(
+  CR_Region *r, const Metadata *metadata, StringView repo_path,
+  IntegrityProgressCallback progress_callback, void *callback_user_data)
 {
   IntegrityCheckContext ctx = {
     .r = r,
     .broken_nodes = NULL,
     .repo_path = repo_path,
+    .progress_callback = progress_callback,
+    .callback_user_data = callback_user_data,
   };
 
   /* Dry run to populate `ctx->files_to_hash_total_size`. */
