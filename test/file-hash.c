@@ -8,16 +8,16 @@ static void fileHashWrapper(const char *path, uint8_t *hash)
   fileHash(str(path), sStat(str(path)), hash, NULL, NULL);
 }
 
-static void assertNeverCalled(size_t processed_block_size, void *user_data)
+static void assertNeverCalled(uint64_t processed_block_size, void *user_data)
 {
   (void)processed_block_size;
   (void)user_data;
   assert_true(false);
 }
 
-static void appendBlockSize(size_t processed_block_size, void *user_data)
+static void appendBlockSize(uint64_t processed_block_size, void *user_data)
 {
-  size_t *total_size = user_data;
+  uint64_t *total_size = user_data;
   *total_size += processed_block_size;
 }
 
@@ -100,7 +100,7 @@ int main(void)
   {
     StringView path = str("valid-config-files/no-paths-and-no-ignores.txt");
 
-    size_t total_filesize = 0;
+    uint64_t total_filesize = 0;
     fileHash(path, sLStat(path), hash, appendBlockSize, &total_filesize);
     assert_true(total_filesize == 179);
   }
