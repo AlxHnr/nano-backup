@@ -67,34 +67,70 @@ static void printStats(const char *summary, const TextColor color,
   printf(")");
 }
 
-static void printGCProgress(const size_t items_visited,
-                            const size_t max_call_limit,
-                            const uint64_t deleted_items_size)
+static void startOverprintingPreviousLine(void)
 {
   if(sIsTTY(stdout))
   {
     printf("\033[1F\033[2K");
   }
-  printf("Discarding unreferenced data... ");
+}
 
-  if(items_visited == max_call_limit)
+static bool shouldUpdateProgressLine(uint64_t *last_print_timestamp)
+{
+  const uint64_t now = sTimeMilliseconds();
+  if(sUint64GetDifference(*last_print_timestamp, now) > 50)
+  {
+    *last_print_timestamp = now;
+    return true;
+  }
+  return false;
+}
+
+static void printProgress(const bool assume_is_finished,
+                          const uint64_t processed_amount,
+                          const uint64_t total_amount,
+                          const uint64_t amount_to_format,
+                          const char *info_text,
+                          const char *formatted_action_suffix)
+{
+  startOverprintingPreviousLine();
+  printf("%s... ", info_text);
+
+  if(assume_is_finished)
   {
     colorPrintf(stdout, TC_green_bold, "100.0%%");
     printf(" (");
-    printHumanReadableSize(deleted_items_size);
-    printf(" deleted)\n");
+    printHumanReadableSize(amount_to_format);
+    printf(" %s)\n", formatted_action_suffix);
   }
-  else if(items_visited > 0)
+  else if(processed_amount >= total_amount)
   {
-    const size_t permille = sSizeMul(items_visited, 1000) / max_call_limit;
+    printf("99.9%% (");
+    printHumanReadableSize(amount_to_format);
+    printf(" %s)\n", formatted_action_suffix);
+  }
+  else if(processed_amount > 0)
+  {
+    const size_t permille =
+      sUint64Mul(processed_amount, 1000) / total_amount;
     printf("%3zu.%zu%% (", permille / 10, permille % 10);
-    printHumanReadableSize(deleted_items_size);
-    printf(" deleted)\n");
+    printHumanReadableSize(amount_to_format);
+    printf(" %s)\n", formatted_action_suffix);
   }
   else
   {
     printf("\n");
   }
+}
+
+static void printGCProgress(const bool assume_is_finished,
+                            const size_t items_visited,
+                            const size_t max_call_limit,
+                            const uint64_t deleted_items_size)
+{
+  printProgress(assume_is_finished, items_visited, max_call_limit,
+                deleted_items_size, "Discarding unreferenced data",
+                "deleted");
 }
 
 typedef struct
@@ -109,12 +145,10 @@ static void gcProgressCallback(const uint64_t deleted_items_size,
 {
   GCProgressContext *ctx = user_data;
 
-  const uint64_t now = sTimeMilliseconds();
-  if(sUint64GetDifference(ctx->last_print_timestamp, now) > 50)
+  if(shouldUpdateProgressLine(&ctx->last_print_timestamp))
   {
-    printGCProgress(ctx->items_visited, max_call_limit,
+    printGCProgress(false, ctx->items_visited, max_call_limit,
                     deleted_items_size);
-    ctx->last_print_timestamp = now;
   }
   ctx->items_visited++;
 }
@@ -132,12 +166,13 @@ static void runGC(const Metadata *metadata, StringView repo_path,
   {
     gc_progress_callback = gcProgressCallback;
     printf("\n");
-    printGCProgress(0, 100, 0);
+    printGCProgress(false, 0, 100, 0);
   }
 
   const GCStatistics gc_stats = collectGarbageProgress(
     metadata, repo_path, gc_progress_callback, &(GCProgressContext){ 0 });
-  printGCProgress(100, 100, gc_stats.deleted_items_total_size);
+  printGCProgress(true, 0, 100, gc_stats.deleted_items_total_size);
+}
 }
 
 static void runIntegrityCheck(const Metadata *metadata,
