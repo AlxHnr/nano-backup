@@ -4,4 +4,4 @@ Status of repository: Incomplete
 ?? /generated/files/file1.txt (corrupted)
 ?? /generated/files/file2.txt (corrupted)
 
-nb: found 2 items with corrupted backup history
+nb: error: found 2 items with corrupted backup history

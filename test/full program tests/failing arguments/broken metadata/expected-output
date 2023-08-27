@@ -1,1 +1,1 @@
-nb: corrupted metadata: expected 8 bytes, got 2: "generated/repo/metadata"
+nb: error: corrupted metadata: expected 8 bytes, got 2: "generated/repo/metadata"

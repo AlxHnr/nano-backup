@@ -18,7 +18,7 @@ void die(const char *format, ...)
   va_list arguments;
   va_start(arguments, format);
 
-  fprintf(stderr, "nb: ");
+  fprintf(stderr, "nb: error: ");
   vfprintf(stderr, format, arguments);
   fprintf(stderr, "\n");
 
@@ -37,7 +37,7 @@ void dieErrno(const char *format, ...)
   va_list arguments;
   va_start(arguments, format);
 
-  fprintf(stderr, "nb: ");
+  fprintf(stderr, "nb: error: ");
   vfprintf(stderr, format, arguments);
   fprintf(stderr, ": %s\n", strerror(errno));
 
