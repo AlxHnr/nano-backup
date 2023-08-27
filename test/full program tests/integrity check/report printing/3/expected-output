@@ -1,3 +1,6 @@
+Checking integrity... 100.0% (13.7 KiB processed)
+Status of repository: Incomplete
+
 ?? /generated/files/another-directory/sample01.txt (corrupted)
 
 nb: found 1 item with corrupted backup history

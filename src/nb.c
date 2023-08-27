@@ -173,14 +173,63 @@ static void runGC(const Metadata *metadata, StringView repo_path,
     metadata, repo_path, gc_progress_callback, &(GCProgressContext){ 0 });
   printGCProgress(true, 0, 100, gc_stats.deleted_items_total_size);
 }
+
+static void printIntegrityProgress(const bool assume_is_finished,
+                                   const uint64_t bytes_processed,
+                                   const uint64_t total_bytes_to_process)
+{
+  printProgress(assume_is_finished, bytes_processed,
+                total_bytes_to_process, bytes_processed,
+                "Checking integrity", "processed");
+}
+
+typedef struct
+{
+  uint64_t bytes_processed;
+  uint64_t last_print_timestamp;
+} IntegrityProgressContext;
+
+static void
+integrityProgressCallback(const uint64_t processed_block_size,
+                          const uint64_t total_bytes_to_process,
+                          void *user_data)
+{
+  IntegrityProgressContext *ctx = user_data;
+
+  ctx->bytes_processed =
+    sUint64Add(ctx->bytes_processed, processed_block_size);
+  if(sIsTTY(stdout) &&
+     shouldUpdateProgressLine(&ctx->last_print_timestamp))
+  {
+    printIntegrityProgress(false, ctx->bytes_processed,
+                           total_bytes_to_process);
+  }
 }
 
 static void runIntegrityCheck(const Metadata *metadata,
                               StringView repo_path)
 {
   CR_Region *r = CR_RegionNew();
-  const ListOfBrokenPathNodes *broken_nodes =
-    checkIntegrity(r, metadata, repo_path, NULL, NULL);
+  if(sIsTTY(stdout))
+  {
+    printf("\n");
+    printIntegrityProgress(false, 0, 100);
+  }
+
+  IntegrityProgressContext ctx = { 0 };
+  const ListOfBrokenPathNodes *broken_nodes = checkIntegrity(
+    r, metadata, repo_path, integrityProgressCallback, &ctx);
+  printIntegrityProgress(true, ctx.bytes_processed, ctx.bytes_processed);
+
+  printf("Status of repository: ");
+  if(broken_nodes == NULL)
+  {
+    colorPrintf(stdout, TC_green_bold, "Healthy\n");
+  }
+  else
+  {
+    colorPrintf(stdout, TC_red_bold, "Incomplete\n\n");
+  }
 
   size_t broken_node_count = 0;
   for(const ListOfBrokenPathNodes *path_node = broken_nodes;
