@@ -146,10 +146,8 @@ void generateCollidingFiles(const uint8_t *hash, const size_t size, const size_t
 {
   assert_true(files_to_create <= UINT8_MAX + 1);
 
-  RegularFileInfo info;
+  RegularFileInfo info = { .size = size };
   memcpy(info.hash, hash, FILE_HASH_SIZE);
-  info.size = size;
-  info.slot = 0;
 
   StringView repo_path = str("tmp/repo");
   CR_Region *r = CR_RegionNew();

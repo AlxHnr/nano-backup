@@ -584,6 +584,7 @@ static bool removeRecursivelyIf(StringView path,
   Will never be called on non-empty directories.
   @param user_data Will be passed to each call of `should_remove`.
 */
+/* cppcheck-suppress funcArgOrderDifferent */
 void sRemoveRecursivelyIf(StringView path,
                           ShouldRemoveCallback should_remove,
                           void *user_data)
