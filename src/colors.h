@@ -6,6 +6,8 @@
 /** Defines various text color attributes. */
 typedef enum
 {
+  TC_none,
+  TC_bold,
   TC_red,
   TC_red_bold,
   TC_green,
@@ -18,8 +20,6 @@ typedef enum
   TC_magenta_bold,
   TC_cyan,
   TC_cyan_bold,
-  TC_white,
-  TC_white_bold,
 } TextColor;
 
 extern void colorPrintf(FILE *stream, TextColor color, const char *format,
