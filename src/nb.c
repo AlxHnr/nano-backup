@@ -98,7 +98,7 @@ static void printProgress(const bool assume_is_finished,
 
   if(assume_is_finished)
   {
-    colorPrintf(stdout, TC_green_bold, "100.0%%");
+    colorPrintf(stdout, TC_bold, "100.0%%");
     printf(" (");
     printHumanReadableSize(amount_to_format);
     printf(" %s)\n", formatted_action_suffix);
