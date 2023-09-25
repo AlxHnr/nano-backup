@@ -4,6 +4,7 @@
 
 * New policy: `summarize`: prevents directories from being listed
   recursively during a backup
+* Progress animation for integrity check and garbage collection
 
 ### Changed
 
