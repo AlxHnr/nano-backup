@@ -3,22 +3,13 @@
 [![license](https://img.shields.io/badge/license-0BSD-brightgreen.svg)](https://github.com/AlxHnr/nano-backup/blob/master/LICENSE)
 ![screenshot](./screenshot.svg)
 
-The first thing nano-backup shows you when you do a backup, is _what has
-changed_ since the last backup. This allows you to review all the files you
-have tinkered with before _committing them_ to your repository. The goal
-here is to enable a fast review, restore and commit cycle, giving you
-precise control about the state of your system.
-
-Nano-backup focuses only on local backups. It does not support cloud
-providers, encryption, compression or granular chunk/delta based
-deduplication. It only implements whole-file deduplication. Encryption can
-be achieved by backing up to a LUKS partition.
+The first thing nano-backup shows you when you do a backup are the changes
+since the last backup. This allows you to review all the files you have
+modified before _committing_ them. The goal here is to enable a fast
+review-rollback-commit cycle, giving you precise control about the state of
+your system.
 
 ## Installation
-
-Nano-backup depends only on a C compiler and a POSIX.1-2001 compliant
-operating system. Run the following command from inside the projects
-directory:
 
 ```sh
 ./scripts/build-release.sh
@@ -105,12 +96,46 @@ summarize   | Allows specifying regular expressions for directories which should
 
 ## Frequently asked questions
 
+### Is this project still maintained?
+
+It is a finished project and no longer under development. While it lacks
+some nice-to-have features, it is rock solid and ready for daily use.
+
+### What are the limitations of this tool?
+
+* No builtin file compression, encryption and cloud support, but see
+  complementary tools below
+* The restore feature is very primitive and you can't mount your backup
+* It only supports whole-file deduplication instead of modern chunk-based
+  deduplication
+* Single-threaded
+
 ### How do I synchronize two repositories?
 
 ```sh
 cp -rn current/* old/
-cp current/{config,metadata} old/
+cp current/config old/
+cp current/metadata old/
 nb old/ gc
+```
+
+### How do I encrypt my backup?
+
+Backup either to a LUKS partition or to a gocryptfs directory.
+
+### How do I backup to a cloud provider?
+
+Pushing to the cloud requires third-party tools like rclone. Note that you
+should not backup directly to a mounted cloud partition, because
+nano-backup has no retry mechanism. While this will not cause any data
+loss, having to retry manually is annoying. Instead, backup to a local
+directory first and then sync it with rclone to a cloud mountpoint (ideally
+with gocryptfs in-between):
+
+```sh
+rclone --config= sync --progress --inplace --ignore-existing /local/backup/ /cloud-mount/backup/
+rclone --config= copyto --progress /local/backup/config /cloud-mount/backup/config
+rclone --config= copyto --progress /local/backup/metadata /cloud-mount/backup/metadata
 ```
 
 ### Can I run a hook before/after each backup?
