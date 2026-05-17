@@ -1,6 +1,6 @@
 [![pipeline](https://github.com/AlxHnr/nano-backup/actions/workflows/ci.yml/badge.svg)](https://github.com/AlxHnr/nano-backup/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/github/AlxHnr/nano-backup/coverage.svg?branch=master)](https://codecov.io/github/AlxHnr/nano-backup?branch=master)
-[![license](https://img.shields.io/badge/license-MIT-brightgreen.svg)](https://github.com/AlxHnr/nano-backup/blob/master/LICENSE)
+[![license](https://img.shields.io/badge/license-0BSD-brightgreen.svg)](https://github.com/AlxHnr/nano-backup/blob/master/LICENSE)
 ![screenshot](./screenshot.svg)
 
 The first thing nano-backup shows you when you do a backup, is _what has
